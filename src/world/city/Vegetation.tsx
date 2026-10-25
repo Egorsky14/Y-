@@ -247,7 +247,7 @@ const SPECIES: Species[] = ['palm', 'mesquite', 'olive', 'shrub-sage', 'shrub-gr
 
 export function Vegetation() {
   const quality = useApp((s) => s.settings.quality);
-  const density = quality === 'low' ? 0.35 : quality === 'medium' ? 0.7 : 1;
+  const density = quality === 'low' ? 0.35 : quality === 'medium' ? 0.7 : quality === 'high' ? 1 : 1.4;
   const instances = useMemo(() => collectInstances(density), [density]);
   const geometries = useMemo(() => Object.fromEntries(SPECIES.map((s) => [s, buildSpecies(s)])) as Record<Species, THREE.BufferGeometry>, []);
   const material = useMemo(() => new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.95, metalness: 0, flatShading: false }), []);

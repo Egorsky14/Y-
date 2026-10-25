@@ -6,8 +6,8 @@ import type { MapControls as MapControlsImpl } from 'three-stdlib';
 import { getGameState, useApp } from '@/app/store';
 import { HQ_LOT } from '@/game/world/cityLayout';
 
-export const DEFAULT_TARGET = new THREE.Vector3(10, 0, 0);
-export const DEFAULT_OFFSET = new THREE.Vector3(-70, 92, 118);
+export const DEFAULT_TARGET = new THREE.Vector3(22, 0, 14);
+export const DEFAULT_OFFSET = new THREE.Vector3(-74, 54, 92);
 const HQ_TARGET = new THREE.Vector3(HQ_LOT.center.x - 10, 0, HQ_LOT.center.z - 5);
 const PAN_LIMIT = 250;
 

@@ -12,10 +12,13 @@ export function SettingsPanel() {
       <div className="panel-body split">
         <div className="col">
           <h4>Graphics quality</h4>
-          <div className="grid3">
-            {(['low', 'medium', 'high'] as Quality[]).map((q) => (
+          <div className="grid2">
+            {(['low', 'medium', 'high', 'ultra'] as Quality[]).map((q) => (
               <button key={q} className={`option ${settings.quality === q ? 'selected' : ''}`} onClick={() => setSettings({ quality: q, shadows: q !== 'low' })}>
-                <span style={{ textTransform: 'capitalize' }}>{q}<small>{q === 'low' ? 'No shadows, 1× pixel ratio' : q === 'medium' ? '2k shadows, 1.25× DPR' : '4k shadows, 1.75× DPR'}</small></span>
+                <span style={{ textTransform: 'capitalize' }}>
+                  {q}
+                  <small>{q === 'low' ? 'No shadows, 1× DPR, sparse desert, no rain' : q === 'medium' ? '2k shadows, 1.25× DPR, light rain' : q === 'high' ? '4k shadows, 1.5× DPR, full vegetation' : '4k tight shadows, 2× DPR, dense vegetation, heavy rain'}</small>
+                </span>
               </button>
             ))}
           </div>

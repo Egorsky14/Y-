@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import { Canvas } from '@react-three/fiber';
 import { useApp, useGame } from '@/app/store';
 import { CameraRig, DEFAULT_OFFSET, DEFAULT_TARGET } from './CameraRig';
-import { Lighting } from './Lighting';
+import { Atmosphere } from './Atmosphere';
 import { Ground } from '../city/Ground';
 import { Roads } from '../roads/Roads';
 import { House } from '../buildings/House';
@@ -44,17 +44,16 @@ export function GameScene() {
   return (
     <Canvas
       shadows={quality !== 'low'}
-      dpr={quality === 'high' ? [1, 1.75] : quality === 'medium' ? [1, 1.25] : 1}
-      camera={{ position: [initial.x, initial.y, initial.z], fov: 42, near: 1, far: 2500 }}
+      dpr={quality === 'ultra' ? [1, 2] : quality === 'high' ? [1, 1.5] : quality === 'medium' ? [1, 1.25] : 1}
+      camera={{ position: [initial.x, initial.y, initial.z], fov: 38, near: 1, far: 3000 }}
       gl={{ antialias: true, powerPreference: 'high-performance', toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.05 }}
       onPointerMissed={(e) => {
         if (e.button === 0) select(null);
       }}
       style={{ position: 'absolute', inset: 0 }}
     >
-      <fog attach="fog" args={['#cfe0ea', 420, 1300]} />
       <Suspense fallback={null}>
-        <Lighting />
+        <Atmosphere />
         <StudioEnvironment />
         <Ground />
         <Roads />

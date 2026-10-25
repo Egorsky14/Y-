@@ -23,7 +23,7 @@ export interface CameraCommand {
   distance?: number;
 }
 
-export type Quality = 'low' | 'medium' | 'high';
+export type Quality = 'low' | 'medium' | 'high' | 'ultra';
 
 export interface Settings {
   quality: Quality;

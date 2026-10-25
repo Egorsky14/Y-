@@ -2,8 +2,7 @@ import { useApp, useGame } from '@/app/store';
 import { formatClock, weekdayName, CAMPAIGN_DAYS } from '@/game/simulation/time';
 import { Icon, Money, Stars } from '../components/common';
 import { openReceivablesTotal } from '@/game/economy/ledger';
-
-const WEATHER = ['Sunny · 98°F', 'Sunny · 104°F', 'Clear · 92°F', 'Hazy · 101°F', 'Sunny · 107°F', 'Breezy · 95°F', 'Sunny · 99°F'];
+import { weatherForDay } from '@/game/simulation/weather';
 
 export function TopHud() {
   const cash = useGame((s) => s.finance.cash);
@@ -12,6 +11,7 @@ export function TopHud() {
   const reputation = useGame((s) => s.company.reputation);
   const reviews = useGame((s) => s.company.reviews.length);
   const day = useGame((s) => s.clock.day);
+  const weather = useGame((s) => weatherForDay(s.seed, s.clock.day));
   const clock = useGame((s) => formatClock(s.clock));
   const speed = useGame((s) => s.speed);
   const company = useGame((s) => s.company.name);
@@ -50,7 +50,7 @@ export function TopHud() {
         </div>
         <div className="hud-stat">
           <span className="label">Weather</span>
-          <span className="value" style={{ fontSize: 13.5 }}>{WEATHER[(day - 1) % WEATHER.length]}</span>
+          <span className="value" style={{ fontSize: 13.5 }}>{weather.label} · {weather.highF}°F</span>
           <span className="sub">Las Vegas, NV</span>
         </div>
       </div>
