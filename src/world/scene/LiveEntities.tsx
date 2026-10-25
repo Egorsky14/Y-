@@ -85,6 +85,11 @@ function VehicleView({ id }: { id: string }) {
     const night = minute > WORKDAY_END + 30 || minute < 6 * 60 + 30;
     const headlightIntensity = night ? 2.4 : 0.35;
     for (const m of r.headlights) if (Math.abs(m.emissiveIntensity - headlightIntensity) > 0.01) m.emissiveIntensity += (headlightIntensity - m.emissiveIntensity) * Math.min(1, dt * 3);
+    // Tail lamps: running lights at night, brake lights while slowing or stopped with the engine on (en route or returning).
+    const moving = v.status === 'enroute' || v.status === 'returning';
+    const braking = moving && (accel < -0.8 || speed < 0.3);
+    const tailIntensity = (night ? 1.2 : 0.4) + (braking ? 2.2 : 0);
+    for (const m of r.taillights) if (Math.abs(m.emissiveIntensity - tailIntensity) > 0.01) m.emissiveIntensity += (tailIntensity - m.emissiveIntensity) * Math.min(1, dt * 6);
   });
 
   if (!vehicle) return null;
