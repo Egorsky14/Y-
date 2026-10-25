@@ -7,6 +7,8 @@ import { Atmosphere } from './Atmosphere';
 import { Ground } from '../city/Ground';
 import { Roads } from '../roads/Roads';
 import { House } from '../buildings/House';
+import { buildNeighborhood } from '../buildings/HouseBuilder';
+import { useMemo } from 'react';
 import { Headquarters } from '../buildings/Headquarters';
 import { CompetitorBuilding, Park, SupplyWarehouse } from '../buildings/Commercial';
 import { Vegetation } from '../city/Vegetation';
@@ -28,8 +30,10 @@ function Houses() {
       .join('|'),
   );
   const active = new Set(activeLots.split('|'));
+  const statics = useMemo(() => buildNeighborhood(HOUSE_LOTS), []);
   return (
     <>
+      <primitive object={statics} />
       {HOUSE_LOTS.map((lot) => (
         <House key={lot.id} lot={lot} hasActiveJob={active.has(lot.id)} />
       ))}

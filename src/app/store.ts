@@ -21,6 +21,8 @@ export interface CameraCommand {
   target?: { x: number; z: number };
   vehicleId?: string;
   distance?: number;
+  /** Optional view direction (radians around +y) for cinematic focus; default keeps the current heading. */
+  azimuth?: number;
 }
 
 export type Quality = 'low' | 'medium' | 'high' | 'ultra';

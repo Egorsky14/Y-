@@ -22,6 +22,11 @@
 ### Milestone 5 (partial) — Campaign and polish
 - 90-day campaign, 15 milestones, celebrations, tutorial hints, autosave, manual save/load with schema version, graphics settings, campaign summary, hotkeys.
 
+### Graphics overhaul (branch `v3-premium-graphics`) ✅ Phases A–E, F measured
+- glTF asset pipeline and four detailed vehicles; premium neighborhood with PBR materials and
+  instanced landscaping; rebuilt headquarters; articulated characters; clock and weather driven
+  lighting; quality presets; regression at 1920×1080 and 1366×768. See `docs/graphics/`.
+
 ## Pending
 
 ### Milestone 4 — World expansion ❌
@@ -30,7 +35,8 @@
 
 ### Milestone 5 — Remaining polish ❌
 - Sound effects and music (none yet; the settings toggle is a placeholder).
-- Garage-door open/close animation, technician carrying parts, install-crew equipment animation at the property.
+- Skeletal (rigged, clip-based) characters and a celebration beat at job completion; install crews do not yet carry visible equipment to the pad.
+- Level of detail for distant houses and vegetation; texture atlases; static geometry baked to glTF.
 - Visual regression suite (pixel comparisons) on top of the existing e2e screenshots.
 - GLB asset pipeline for flagship vehicles and characters (procedural models are in place and licensed clean).
 - Comfort advisor in-home sales visits as their own job type (today the advisor passively boosts close rates).

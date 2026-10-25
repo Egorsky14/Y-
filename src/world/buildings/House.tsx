@@ -1,28 +1,23 @@
-import { useMemo } from 'react';
 import { condenserPosition, type Lot } from '@/game/world/cityLayout';
 import { PALETTE } from '../assets/palette';
 import { Condenser } from './parts';
 import { Selectable } from '../interactions/Selectable';
 import { useApp } from '@/app/store';
-import { buildHouse } from './HouseBuilder';
 
 const FACING_ROTATION: Record<Lot['facing'], number> = { north: 0, south: Math.PI, west: Math.PI / 2, east: -Math.PI / 2 };
 
 /**
- * A customer lot: merged static architecture (one draw call per material), the gameplay
- * condenser with its status ring, and a forgiving click volume. Vegetation is instanced
- * elsewhere from the same deterministic yard plan.
+ * A customer lot's interactive parts: a forgiving click volume and the gameplay condenser
+ * with its status ring. The architecture itself is merged into the shared Neighborhood meshes.
  */
 export function House({ lot, hasActiveJob }: { lot: Lot; hasActiveJob: boolean }) {
   const condenser = condenserPosition(lot);
   const isSelected = useApp((s) => s.selection?.kind === 'lot' && s.selection.id === lot.id);
-  const model = useMemo(() => buildHouse(lot), [lot]);
 
   return (
     <group position={[lot.center.x, 0, lot.center.z]}>
       <Selectable selection={{ kind: 'lot', id: lot.id }} ringRadius={11} ringOffset={[0, 0.08, 0]}>
-        <group rotation={[0, FACING_ROTATION[lot.facing], 0]}>
-          <primitive object={model} />
+        <group rotation={[0, FACING_ROTATION[lot.facing], 0]} name={`house:${lot.id}`}>
           <mesh position={[0, 2, 0]} visible={false}>
             <boxGeometry args={[lot.width - 2, 6, lot.depth - 4]} />
             <meshBasicMaterial />

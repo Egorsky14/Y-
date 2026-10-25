@@ -20,3 +20,31 @@
 3. Playtest balance for days 1–10 with a human: lead volume, starting diagnostic fee, used-van prices.
 4. Add sound effects behind the existing settings toggle.
 5. Consider GLB flagship vehicle models through `public/models` with attribution in `ASSET_LICENSES.md`.
+
+## Session 2 — premium graphics overhaul
+
+- Audited the baseline in the browser first (`docs/graphics/before`, `GRAPHICS_AUDIT.md`).
+- Built a Node glTF pipeline because Blender is not available here; the vehicles are parametric
+  profiles with real wheel arches exported through `GLTFExporter`.
+  - Bug: extrude bevels widened bodies by 7 cm and buried glass, mirrors and decals; fixed by
+    shrinking the extrusion depth.
+  - Bug: decal textures appeared upside down; the exporter already rewrites V, so canvas
+    textures keep three's default `flipY`.
+  - Bug: the exporter wraps assets in a named group, so animated nodes were not found until the
+    rig looked one level deeper.
+- Rebuilt houses as merged PBR geometry (draw calls fell from 1,352 to about 800 while detail
+  rose tenfold). Bugs fixed along the way: glass panes hidden behind solid frames, soffit slabs
+  of secondary roofs poking through main roofs, side-wall glass placed inside the wall.
+- Headquarters, roads, terrain, vegetation and characters followed; the worker rig initially sank
+  waist-deep because a per-frame reset zeroed the pelvis height.
+- The camera's 18 m zoom floor had been hiding character detail; it is now 5 m.
+- Atmosphere: the first evening capture looked identical to morning because the capture raced
+  the eased transition; a probe (`window.__egoAtmo`) confirmed the sun, exposure and weather
+  tracking the clock.
+- The opening service call moved to a lot inside the new hero framing so its pin is visible
+  on launch.
+- Phase F: all 32 houses merged into shared per-material meshes (515 draw calls at the hero
+  view, down from 1,352 in the base build). The 17-step gameplay test then timed out: at about
+  1 fps under SwiftShader the game loop's 0.25 s catch-up clamp made simulated time run at a
+  quarter of wall time. The clamp is now 1 s and the per-test timeout 600 s; no assertion
+  changed. Full suite: gameplay 6.9 min, graphics 3.0 min at 1080p and 2.0 min at 768p.

@@ -431,16 +431,35 @@ export function applyWorldUVs(geometry: THREE.BufferGeometry, metersPerRepeat: n
 }
 
 /** Collects transformed geometries per material and merges them into one mesh per material. */
+export type MaterialResolver = Record<string, THREE.Material> | ((key: string) => THREE.Material);
+
 export class MeshBuilder {
   private parts = new Map<string, THREE.BufferGeometry[]>();
-  constructor(private materials: Record<string, THREE.Material>, private uvScale: Record<string, number> = {}) {}
+  /** Optional parent transform applied after each part's local transform (e.g. a lot's placement). */
+  private frame: THREE.Matrix4 | null = null;
+  constructor(private materials: MaterialResolver, private uvScale: Record<string, number> = {}) {}
+
+  setFrame(matrix: THREE.Matrix4 | null): this {
+    this.frame = matrix;
+    return this;
+  }
+
+  private resolveMaterial(key: string): THREE.Material {
+    if (typeof this.materials === 'function') return this.materials(key);
+    return this.materials[key];
+  }
+
+  private resolveUvScale(key: string): number | undefined {
+    return this.uvScale[key] ?? this.uvScale[key.split(':')[0]];
+  }
 
   add(material: string, geometry: THREE.BufferGeometry, position: [number, number, number] = [0, 0, 0], rotation: [number, number, number] = [0, 0, 0], scale: [number, number, number] = [1, 1, 1]): this {
     let g = geometry.index ? geometry.toNonIndexed() : geometry.clone();
     const m = new THREE.Matrix4().compose(new THREE.Vector3(...position), new THREE.Quaternion().setFromEuler(new THREE.Euler(...rotation)), new THREE.Vector3(...scale));
+    if (this.frame) m.premultiply(this.frame);
     g.applyMatrix4(m);
     if (!g.attributes.normal) g.computeVertexNormals();
-    const perRepeat = this.uvScale[material];
+    const perRepeat = this.resolveUvScale(material);
     if (perRepeat) g = applyWorldUVs(g, perRepeat);
     else if (!g.attributes.uv) g.setAttribute('uv', new THREE.BufferAttribute(new Float32Array(g.attributes.position.count * 2), 2));
     for (const key of Object.keys(g.attributes)) if (!['position', 'normal', 'uv'].includes(key)) g.deleteAttribute(key);
@@ -459,7 +478,7 @@ export class MeshBuilder {
     for (const [material, geos] of this.parts) {
       const merged = geos.length === 1 ? geos[0] : BGU.mergeGeometries(geos, false);
       if (!merged) continue;
-      const mesh = new THREE.Mesh(merged, this.materials[material]);
+      const mesh = new THREE.Mesh(merged, this.resolveMaterial(material));
       mesh.name = `${name}:${material}`;
       mesh.castShadow = shadows;
       mesh.receiveShadow = true;

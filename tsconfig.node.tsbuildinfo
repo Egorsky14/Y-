@@ -1,0 +1,1 @@
+{"root":["./vite.config.ts","./vitest.config.ts","./playwright.config.ts","./e2e/gameplay.spec.ts","./e2e/global.d.ts","./e2e/graphics.spec.ts"],"version":"5.9.3"}

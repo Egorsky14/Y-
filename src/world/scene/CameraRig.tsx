@@ -70,8 +70,14 @@ export function CameraRig() {
     } else if (command.type === 'focus' && command.target) {
       toTarget = new THREE.Vector3(command.target.x, 0, command.target.z);
       const dist = command.distance ?? Math.min(offset.length(), 70);
-      const dir = offset.clone().normalize();
-      if (dir.y < 0.45) dir.y = 0.6; // never fly in flat
+      let dir: THREE.Vector3;
+      if (command.azimuth !== undefined) {
+        const el = 0.62;
+        dir = new THREE.Vector3(Math.sin(command.azimuth) * Math.cos(el), Math.sin(el), Math.cos(command.azimuth) * Math.cos(el));
+      } else {
+        dir = offset.clone().normalize();
+        if (dir.y < 0.45) dir.y = 0.6; // never fly in flat
+      }
       toPos = toTarget.clone().add(dir.normalize().multiplyScalar(dist));
     } else if (command.type === 'follow' && command.vehicleId) {
       const v = getGameState()?.vehicles[command.vehicleId];

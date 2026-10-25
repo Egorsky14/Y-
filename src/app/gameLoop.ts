@@ -15,7 +15,9 @@ export function startGameLoop(): () => void {
   let accumulator = 0;
 
   const frame = (now: number) => {
-    const dt = Math.min(0.25, (now - last) / 1000);
+    // Clamp catch-up to one second so a hitch or a slow frame never spirals, while a 2 fps
+    // software renderer still keeps the simulation on real time.
+    const dt = Math.min(1.0, (now - last) / 1000);
     last = now;
     const { engine, screen, settings } = useApp.getState();
     if (engine && screen === 'game') {

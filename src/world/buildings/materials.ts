@@ -74,4 +74,5 @@ export const UV_SCALES: Record<string, number> = {
   sand: 10,
   siding: 2.0,
   officeWall: 2.5,
+  roofCap: 1,
 };

@@ -9,3 +9,7 @@ interface EgoTestHook {
 interface Window {
   __ego?: EgoTestHook;
 }
+interface Window {
+  __egoRender?: { calls: number; triangles: number; geometries: number; textures: number; frame: number; houses: number; vehicleModels: number; workers: number; instanced: number };
+  __egoVehicles?: Record<string, { x: number; z: number; heading: number; wheelSpin: number; steer: number; roll: number; pitch: number }>;
+}

@@ -138,33 +138,70 @@ function blockWall(b: B, lot: Lot, frontZ: number) {
   b.box('darkMetal', [0.05, 1.7, 1.2], [x1 - 0.0, 0.85, frontZ + 1.2]);
 }
 
+/** Resolves shared material keys, including per-variant keys such as `wall:#f0e3c8`. */
+export function houseMaterialResolver(key: string): THREE.Material {
+  const [kind, arg] = key.split(':');
+  switch (kind) {
+    case 'wall':
+      return wallMaterial(arg);
+    case 'roof':
+      return roofMaterial(arg as RoofKind);
+    case 'roofCap':
+      return arg === 'tile' ? STATIC_MATERIALS.doorColor('#8c3f2b') : STATIC_MATERIALS.dark();
+    case 'door':
+      return STATIC_MATERIALS.doorColor(arg);
+    case 'trim': return STATIC_MATERIALS.trim();
+    case 'frame': return STATIC_MATERIALS.frame();
+    case 'glass': return STATIC_MATERIALS.glass();
+    case 'garage': return STATIC_MATERIALS.garage();
+    case 'concrete': return STATIC_MATERIALS.concrete();
+    case 'block': return STATIC_MATERIALS.block();
+    case 'gravel': return STATIC_MATERIALS.gravel();
+    case 'lawn': return STATIC_MATERIALS.lawn();
+    case 'mulch': return STATIC_MATERIALS.mulch();
+    case 'metal': return STATIC_MATERIALS.metal();
+    case 'darkMetal': return STATIC_MATERIALS.darkMetal();
+    case 'lamp': return STATIC_MATERIALS.lamp();
+    case 'water': return STATIC_MATERIALS.water();
+    case 'wood': return STATIC_MATERIALS.wood();
+    case 'white': return STATIC_MATERIALS.white();
+    case 'dark': return STATIC_MATERIALS.dark();
+    default:
+      throw new Error(`Unknown house material ${key}`);
+  }
+}
+
+const FACING_ROTATION: Record<Lot['facing'], number> = { north: 0, south: Math.PI, west: Math.PI / 2, east: -Math.PI / 2 };
+
+/** Builds every house lot into one shared builder so the whole neighborhood is a handful of draw calls. */
+export function buildNeighborhood(lots: Lot[]): THREE.Group {
+  const shared = new MeshBuilder(houseMaterialResolver, UV_SCALES);
+  for (const lot of lots) {
+    const m = new THREE.Matrix4().compose(new THREE.Vector3(lot.center.x, 0, lot.center.z), new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), FACING_ROTATION[lot.facing]), new THREE.Vector3(1, 1, 1));
+    shared.setFrame(m);
+    addHouse(shared, lot);
+  }
+  shared.setFrame(null);
+  return shared.build('houses');
+}
+
+/** Single-lot build (used by tests and previews). */
 export function buildHouse(lot: Lot): THREE.Group {
+  const b = new MeshBuilder(houseMaterialResolver, UV_SCALES);
+  addHouse(b, lot);
+  return b.build(`house:${lot.id}`);
+}
+
+export function addHouse(shared: MeshBuilder, lot: Lot): void {
   const style: HouseStyle = lot.style ?? 'ranch';
   const variant = houseVariant(lot);
   const plan = yardPlan(lot);
-  const mats: Record<string, THREE.Material> = {
-    wall: wallMaterial(variant.wall),
-    roof: roofMaterial(variant.roof),
-    roofCap: variant.roof === 'tile' ? STATIC_MATERIALS.doorColor('#8c3f2b') : STATIC_MATERIALS.dark(),
-    trim: STATIC_MATERIALS.trim(),
-    frame: STATIC_MATERIALS.frame(),
-    glass: STATIC_MATERIALS.glass(),
-    garage: STATIC_MATERIALS.garage(),
-    concrete: STATIC_MATERIALS.concrete(),
-    block: STATIC_MATERIALS.block(),
-    gravel: STATIC_MATERIALS.gravel(),
-    lawn: STATIC_MATERIALS.lawn(),
-    mulch: STATIC_MATERIALS.mulch(),
-    metal: STATIC_MATERIALS.metal(),
-    darkMetal: STATIC_MATERIALS.darkMetal(),
-    lamp: STATIC_MATERIALS.lamp(),
-    water: STATIC_MATERIALS.water(),
-    wood: STATIC_MATERIALS.wood(),
-    white: STATIC_MATERIALS.white(),
-    dark: STATIC_MATERIALS.dark(),
-    door: STATIC_MATERIALS.doorColor(variant.door),
-  };
-  const b = new MeshBuilder(mats, UV_SCALES);
+  // Alias generic keys to this house's variant materials; everything else is shared.
+  const alias: Record<string, string> = { wall: `wall:${variant.wall}`, roof: `roof:${variant.roof}`, roofCap: `roofCap:${variant.roof}`, door: `door:${variant.door}` };
+  const b = {
+    add: (k: string, g: THREE.BufferGeometry, p?: [number, number, number], r?: [number, number, number], s?: [number, number, number]) => shared.add(alias[k] ?? k, g, p, r, s),
+    box: (k: string, size: [number, number, number], p: [number, number, number], r?: [number, number, number]) => shared.box(alias[k] ?? k, size, p, r),
+  } as unknown as B;
   const lotW = lot.width;
   const lotD = lot.depth;
   const lotFront = -lotD / 2;
@@ -348,7 +385,4 @@ export function buildHouse(lot: Lot): THREE.Group {
   for (let i = 0; i < 3; i++) b.box('lamp', [0.12, 0.3, 0.12], [walkX + 0.9, 0.15, frontZ - 2.5 - i * 2.2]);
   // Backyard block walls and side gate
   blockWall(b, lot, frontZ + 2);
-
-  const group = b.build(`house:${lot.id}`);
-  return group;
 }
