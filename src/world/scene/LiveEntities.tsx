@@ -119,7 +119,9 @@ function WorkerView({ id }: { id: string }) {
   const group = useRef<THREE.Group>(null);
   const info = useGame((s) => {
     const e = s.employees[id];
-    return e ? { role: e.role, look: e.look, status: e.status, jobId: e.jobId } : null;
+    if (!e) return null;
+    const job = e.jobId ? s.jobs[e.jobId] : undefined;
+    return { role: e.role, look: e.look, status: e.status, jobId: e.jobId, jobStatus: job?.status };
   });
 
   useFrame((_, dt) => {
@@ -153,7 +155,20 @@ function WorkerView({ id }: { id: string }) {
   });
 
   if (!info) return null;
-  const anim: WorkerAnim = info.status === 'walking' ? 'walk' : info.status === 'working' ? 'work' : info.status === 'training' ? 'train' : 'idle';
+  const anim: WorkerAnim =
+    info.status === 'walking'
+      ? 'carry'
+      : info.status === 'working'
+        ? info.jobStatus === 'diagnosing'
+          ? 'inspect'
+          : info.jobStatus === 'repairing'
+            ? 'repair'
+            : info.jobStatus === 'installing' || info.jobStatus === 'arriving'
+              ? 'install'
+              : 'stand-inspect'
+        : info.status === 'training'
+          ? 'train'
+          : 'idle';
   return (
     <group ref={group} name={`employee:${id}`}>
       <Selectable selection={{ kind: 'employee', id }} ringRadius={1.1} ringOffset={[0, 0.07, 0]}>

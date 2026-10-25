@@ -35,6 +35,8 @@ function windowBox(b: B, w: number, h: number, pos: [number, number, number], ro
   b.box('frame', [w + 0.18, h + 0.18, 0.1], pos, rot);
   const q = new THREE.Quaternion().setFromEuler(new THREE.Euler(...rot));
   const out = new THREE.Vector3(0, 0, -0.06).applyQuaternion(q);
+  // Glass must sit outside the wall: flip if the rotation's front points toward the house center.
+  if (out.x * pos[0] + out.z * pos[2] < 0) out.multiplyScalar(-1);
   b.box('glass', [w, h, 0.02], [pos[0] + out.x, pos[1] + out.y, pos[2] + out.z], rot);
   b.box('frame', [0.05, h, 0.03], [pos[0] + out.x * 1.3, pos[1], pos[2] + out.z * 1.3], rot);
   b.box('frame', [w, 0.05, 0.03], [pos[0] + out.x * 1.3, pos[1], pos[2] + out.z * 1.3], rot);

@@ -157,7 +157,7 @@ export function CameraRig() {
       target={DEFAULT_TARGET}
       enableDamping
       dampingFactor={0.12}
-      minDistance={18}
+      minDistance={5}
       maxDistance={340}
       minPolarAngle={0.2}
       maxPolarAngle={1.22}

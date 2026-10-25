@@ -197,9 +197,9 @@ export function asphaltPbr(): PbrSet {
       cctx.ellipse(rnd() * size, rnd() * size, 30 + rnd() * 80, 20 + rnd() * 50, rnd() * 3, 0, Math.PI * 2);
       cctx.fill();
     }
-    cctx.strokeStyle = 'rgba(30,30,32,0.45)';
-    cctx.lineWidth = 1.2;
-    for (let i = 0; i < 6; i++) {
+    cctx.strokeStyle = 'rgba(30,30,32,0.16)';
+    cctx.lineWidth = 1.0;
+    for (let i = 0; i < 2; i++) {
       cctx.beginPath();
       let x = rnd() * size;
       let y = rnd() * size;
