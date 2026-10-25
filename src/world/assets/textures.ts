@@ -223,6 +223,10 @@ export function windowTexture(): THREE.Texture {
       ctx.fillStyle = 'rgba(255,255,255,0.35)';
       ctx.fillRect(60, 0, 8, 128);
       ctx.fillRect(0, 60, 128, 8);
+      // Frame baked into the texture so a window is a single draw call.
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 10;
+      ctx.strokeRect(0, 0, 128, 128);
     },
     { repeat: [1, 1] },
   );

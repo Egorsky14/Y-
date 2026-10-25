@@ -54,7 +54,7 @@ Fixed during review:
 
 Known rendering issues:
 - HQ grounds are still sparse at a distance (gravel texture reads flat from the default camera height).
-- Vehicles have no door/garage animations; workers teleport into the van (the van hides them while driving).
+- HQ bay doors roll up while a truck moves inside the lot (screenshot `14`), but vehicles still start from parking stalls rather than inside the bay, and workers teleport into the van (the van hides them while driving).
 - The Sky shader and fog give a slightly washed horizon on software GL; on a GPU with 4k shadows the scene is crisper.
 - No LOD yet: all 32 houses render full detail at any distance.
 
@@ -64,10 +64,10 @@ Measured on the production build via the in-scene `RenderProbe` at 1920×1080:
 
 | View | Draw calls | Triangles | Geometries | Textures |
 | --- | --- | --- | --- | --- |
-| Default overview | 1,471 | 70,896 | 1,144 | 15 |
-| HQ close-up | 1,052 | 65,094 | 1,146 | 15 |
+| Default overview | 1,352 | 70,678 | 1,025 | 15 |
+| HQ close-up | 997 | 65,004 | 1,027 | 15 |
 
-JS heap after load: 52 MB. Frame time in the CI container (SwiftShader software rasterizer): ≈630 ms at 1080p with 4k shadows; ≈400 ms at 1600×900. This container has no GPU, so the 60 FPS target on a midrange GPU is **not measured here**. The triangle count is trivial for any discrete GPU; draw calls (~1.5k, dominated by per-mesh house parts) are the metric to reduce first (merge static house geometry, drop the per-window frame mesh) if a real machine falls short.
+(Windows were merged into single textured planes after a first measurement of 1,471 / 1,052 calls.) JS heap after load: 39 MB. Frame time in the CI container (SwiftShader software rasterizer): ≈630 ms at 1080p with 4k shadows; ≈400 ms at 1600×900. This container has no GPU, so the 60 FPS target on a midrange GPU is **not measured here**. The triangle count is trivial for any discrete GPU; draw calls (~1.5k, dominated by per-mesh house parts) are the metric to reduce first (merge static house geometry, drop the per-window frame mesh) if a real machine falls short.
 
 Graphics settings (Low/Medium/High) change DPR (1 / 1.25 / 1.75) and shadow map size (none / 2k / 4k) and are persisted.
 

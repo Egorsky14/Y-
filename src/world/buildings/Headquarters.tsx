@@ -1,4 +1,7 @@
-import { useMemo } from 'react';
+import { useMemo, useRef } from 'react';
+import * as THREE from 'three';
+import { useFrame } from '@react-three/fiber';
+import { getGameState } from '@/app/store';
 import { HQ_LOT, hqParkingStalls } from '@/game/world/cityLayout';
 import { useGame } from '@/app/store';
 import { PALETTE } from '../assets/palette';
@@ -146,18 +149,15 @@ export function Headquarters() {
           <Box size={[46, 6.2, 30]} position={[0, 3.1, 0]} color="#2b3036" roughness={0.75} />
           <Box size={[46.4, 0.4, 30.4]} position={[0, 6.3, 0]} color="#171a1e" />
           <Box size={[46.2, 0.4, 30.2]} position={[0, 4.4, 0]} color={PALETTE.egoTeal} emissive={PALETTE.egoTeal} emissiveIntensity={0.3} />
-          {/* Roll-up door facing the parking lot */}
-          <Box size={[0.3, 4.6, 7]} position={[-23.1, 2.3, -6]} color="#d9dbdd" castShadow={false} />
-          {[-1.6, -0.6, 0.4, 1.4].map((y) => (
-            <Box key={y} size={[0.1, 0.08, 6.8]} position={[-23.3, 2.3 + y, -6]} color="#9aa0a6" castShadow={false} />
-          ))}
+          {/* Roll-up door facing the parking lot; rolls up while trucks leave or return */}
+          <BayDoor position={[-23.1, 0, -6]} />
           <mesh position={[-23.3, 5.3, -6]} rotation={[0, -Math.PI / 2, 0]}>
             <planeGeometry args={[6, 0.9]} />
             <meshStandardMaterial map={signTexture('SERVICE BAY 1', '#ffffff', '#171a1e')} />
           </mesh>
           {has('expanded-garage') && (
             <>
-              <Box size={[0.3, 4.6, 7]} position={[-23.1, 2.3, 6]} color="#d9dbdd" castShadow={false} />
+              <BayDoor position={[-23.1, 0, 6]} />
               <mesh position={[-23.3, 5.3, 6]} rotation={[0, -Math.PI / 2, 0]}>
                 <planeGeometry args={[6, 0.9]} />
                 <meshStandardMaterial map={signTexture('SERVICE BAY 2', '#ffffff', '#171a1e')} />
@@ -272,6 +272,38 @@ export function Headquarters() {
           </mesh>
         </group>
       ))}
+    </group>
+  );
+}
+
+/** Sectional bay door that rolls up when any vehicle is within the HQ lot and moving. */
+function BayDoor({ position }: { position: [number, number, number] }) {
+  const door = useRef<THREE.Group>(null);
+  const open = useRef(0);
+  useFrame((_, dt) => {
+    const s = getGameState();
+    if (!s || !door.current) return;
+    const active = Object.values(s.vehicles).some((v) => {
+      if (v.status !== 'enroute' && v.status !== 'returning') return false;
+      const inLot = v.position.x > 4 && v.position.x < 70 && v.position.z > 8 && v.position.z < 92;
+      return inLot;
+    });
+    const target = active ? 1 : 0;
+    open.current += (target - open.current) * Math.min(1, dt * 1.8);
+    door.current.position.y = open.current * 3.9;
+    door.current.scale.y = 1 - open.current * 0.82;
+  });
+  return (
+    <group position={position}>
+      <group ref={door}>
+        <Box size={[0.3, 4.6, 7]} position={[0, 2.3, 0]} color="#d9dbdd" castShadow={false} />
+        {[-1.6, -0.6, 0.4, 1.4].map((y) => (
+          <Box key={y} size={[0.1, 0.08, 6.8]} position={[-0.2, 2.3 + y, 0]} color="#9aa0a6" castShadow={false} />
+        ))}
+      </group>
+      {/* Door header and dark bay interior visible when open */}
+      <Box size={[0.4, 0.5, 7.4]} position={[0.1, 4.85, 0]} color="#171a1e" castShadow={false} />
+      <Box size={[0.2, 4.6, 7]} position={[0.6, 2.3, 0]} color="#0c0e11" castShadow={false} />
     </group>
   );
 }

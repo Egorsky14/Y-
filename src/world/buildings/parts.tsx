@@ -46,16 +46,10 @@ export function Box({ size, position, color, rotation, castShadow = true, roughn
 export function Window({ position, size = [1.3, 1.1], rotation }: { position: [number, number, number]; size?: [number, number]; rotation?: [number, number, number] }) {
   const map = useMemo(() => windowTexture(), []);
   return (
-    <group position={position} rotation={rotation}>
-      <mesh>
-        <planeGeometry args={size} />
-        <meshStandardMaterial map={map} color={PALETTE.glass} roughness={0.2} metalness={0.4} emissive="#1c3550" emissiveIntensity={0.25} />
-      </mesh>
-      <mesh position={[0, 0, -0.01]}>
-        <planeGeometry args={[size[0] + 0.16, size[1] + 0.16]} />
-        <meshStandardMaterial color={PALETTE.trim} roughness={0.9} />
-      </mesh>
-    </group>
+    <mesh position={position} rotation={rotation}>
+      <planeGeometry args={[size[0] + 0.16, size[1] + 0.16]} />
+      <meshStandardMaterial map={map} color="#9cc4e0" roughness={0.25} metalness={0.35} emissive="#1c3550" emissiveIntensity={0.2} />
+    </mesh>
   );
 }
 
