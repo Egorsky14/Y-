@@ -30,6 +30,7 @@ function easeInOut(t: number): number {
  */
 export function CameraRig() {
   const controls = useRef<MapControlsImpl>(null);
+  const photo = useApp((s) => s.photo.on);
   const { camera } = useThree();
   const command = useApp((s) => s.cameraCommand);
   const flight = useRef<Flight | null>(null);
@@ -163,10 +164,10 @@ export function CameraRig() {
       target={DEFAULT_TARGET}
       enableDamping
       dampingFactor={0.12}
-      minDistance={5}
+      minDistance={photo ? 1.5 : 5}
       maxDistance={340}
       minPolarAngle={0.2}
-      maxPolarAngle={1.22}
+      maxPolarAngle={photo ? 1.5 : 1.22}
       zoomSpeed={1.1}
       panSpeed={1.0}
       rotateSpeed={0.6}

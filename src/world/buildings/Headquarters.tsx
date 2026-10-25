@@ -9,6 +9,12 @@ import { buildHeadquarters, HQ } from './HeadquartersBuilder';
 import { STATIC_MATERIALS } from './materials';
 import { garageDoorPbr } from '../assets/pbr';
 
+declare global {
+  interface Window {
+    __egoBayDoors?: Record<number, number>;
+  }
+}
+
 /**
  * Headquarters: merged static campus rebuilt when upgrades change, plus live parts
  * (animated bay doors) and textured signage.
@@ -57,7 +63,7 @@ export function Headquarters() {
               <planeGeometry args={[3.0, 0.56]} />
               <meshStandardMaterial map={signTexture(i === 2 ? 'FLEET BAY' : `SERVICE BAY ${i + 1}`, '#ffffff', '#171a1e')} />
             </mesh>
-            <BayDoor position={[sx0 + 0.2, 0, z]} active={activeBays[i]} />
+            <BayDoor position={[sx0 + 0.2, 0, z]} active={activeBays[i]} index={i} />
           </group>
         ))}
         {/* Monument sign face toward the street */}
@@ -75,7 +81,7 @@ export function Headquarters() {
 }
 
 /** Sectional overhead door (four panels, window row) that rolls up the tracks while a vehicle moves inside the lot. */
-function BayDoor({ position, active }: { position: [number, number, number]; active: boolean }) {
+function BayDoor({ position, active, index }: { position: [number, number, number]; active: boolean; index: number }) {
   const door = useRef<THREE.Group>(null);
   const open = useRef(0);
   const panels = useMemo(() => {
@@ -96,6 +102,7 @@ function BayDoor({ position, active }: { position: [number, number, number]; act
     const k = open.current;
     door.current.position.y = k * 4.1;
     door.current.scale.y = 1 - k * 0.86;
+    (window.__egoBayDoors ??= {})[index] = k;
   });
   return (
     <group position={position}>

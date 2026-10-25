@@ -57,6 +57,8 @@ interface AppState {
   panel: PanelId;
   cameraCommand: CameraCommand | null;
   followVehicleId: string | null;
+  /** Photo mode: HUD hidden, free camera, optional preview time of day (minutes) and weather; never touches the simulation. */
+  photo: { on: boolean; minute: number | null; weather: 'clear' | 'heat-wave' | 'overcast' | 'monsoon' | null };
   settings: Settings;
   toasts: Toast[];
   lastError: string | null;
@@ -74,6 +76,7 @@ interface AppState {
   openPanel: (panel: PanelId) => void;
   togglePanel: (panel: Exclude<PanelId, null>) => void;
   camera: (cmd: Omit<CameraCommand, 'id'>) => void;
+  setPhoto: (patch: Partial<AppState['photo']>) => void;
   setFollow: (vehicleId: string | null) => void;
   setSettings: (patch: Partial<Settings>) => void;
   dismissToast: (id: number) => void;
@@ -103,6 +106,7 @@ export const useApp = create<AppState>((set, get) => ({
   panel: null,
   cameraCommand: null,
   followVehicleId: null,
+  photo: { on: false, minute: null, weather: null },
   settings: loadSettings(),
   toasts: [],
   lastError: null,
@@ -151,6 +155,7 @@ export const useApp = create<AppState>((set, get) => ({
   openPanel: (panel) => set({ panel }),
   togglePanel: (panel) => set((s) => ({ panel: s.panel === panel ? null : panel })),
   camera: (cmd) => set({ cameraCommand: { ...cmd, id: cameraCommandId++ }, followVehicleId: cmd.type === 'follow' ? (cmd.vehicleId ?? null) : null }),
+  setPhoto: (patch) => set((st) => ({ photo: { ...st.photo, ...patch } })),
   setFollow: (vehicleId) => set({ followVehicleId: vehicleId }),
   setSettings: (patch) => {
     const settings = { ...get().settings, ...patch };

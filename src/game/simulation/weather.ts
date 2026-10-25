@@ -29,7 +29,10 @@ export function sunAngles(minute: number): { elevation: number; azimuth: number 
   const sunrise = 5.75 * 60;
   const sunset = 19.5 * 60;
   const t = (minute - sunrise) / (sunset - sunrise); // 0 at sunrise, 1 at sunset
-  const elevation = Math.sin(Math.PI * Math.min(1, Math.max(0, t))) * 1.22 - (t < 0 || t > 1 ? 0.35 : 0);
+  // Daytime arc, then a civil-twilight ramp down to -0.35 rad over about two hours instead of a step.
+  const inside = Math.min(1, Math.max(0, t));
+  const outside = Math.abs(t - inside); // 0 during the day, grows past sunset / before sunrise
+  const elevation = Math.sin(Math.PI * inside) * 1.22 - 0.35 * Math.min(1, outside * 7);
   // East (+x) at sunrise sweeping through the south (+z) to the west (-x).
   const azimuth = Math.PI * (1 - Math.min(1.1, Math.max(-0.1, t)));
   return { elevation, azimuth };

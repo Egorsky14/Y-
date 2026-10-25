@@ -10,6 +10,12 @@ import { Selectable } from '../interactions/Selectable';
 import { PALETTE } from '../assets/palette';
 import { condenserPosition, condenserSideDir, inwardDir, lotById, workPosition } from '@/game/world/cityLayout';
 
+declare global {
+  interface Window {
+    __egoWorkers?: Record<string, { x: number; z: number; y: number; status: string }>;
+  }
+}
+
 /** Vehicles read their live position from the simulation every frame and smooth toward it. */
 export function Vehicles() {
   const ids = useGame((s) => Object.keys(s.vehicles).join('|'));
@@ -163,6 +169,7 @@ function WorkerView({ id }: { id: string }) {
       const d = Math.atan2(Math.sin(wanted - g.rotation.y), Math.cos(wanted - g.rotation.y));
       g.rotation.y += d * Math.min(1, dt * 7);
     }
+    (window.__egoWorkers ??= {})[id] = { x: g.position.x, z: g.position.z, y: g.position.y, status: e.status };
   });
 
   if (!info) return null;

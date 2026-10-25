@@ -73,6 +73,8 @@ test('renders the premium world and drives the branded van with animated wheels'
   await page.getByTestId('dispatch-go').click();
   await page.getByTestId('cam-follow').click();
   await page.waitForFunction(() => !!window.__egoVehicles?.['veh-1'], null, { timeout: 30_000 });
+  // Bay door 1 rolls up while the van moves through the yard.
+  await page.waitForFunction(() => (window.__egoBayDoors?.[0] ?? 0) > 0.2, null, { timeout: 60_000 });
   const v0 = await page.evaluate(() => window.__egoVehicles!['veh-1']);
   // Poll until the rendered van has travelled and its wheels have turned (software GL is slow).
   await page.waitForFunction(
@@ -108,6 +110,11 @@ test('renders the premium world and drives the branded van with animated wheels'
   );
   expect(tech.status).toBe('working');
   expect(tech.vehicle).toBe('onsite');
+  // The rendered technician stands on the ground at the simulated spot (no sinking, no floating).
+  const techRender = await page.evaluate((id) => window.__egoWorkers?.[id], (await state(page, (s, id) => s.jobs[id].technicianId, leadId)) as string);
+  expect(techRender).toBeTruthy();
+  expect(Math.abs(techRender!.y)).toBeLessThan(0.12);
+  expect(Math.hypot(techRender!.x - tech.pos.x, techRender!.z - tech.pos.z)).toBeLessThan(1.5);
   expect(tech.lotId).toBe('c-n-4'); // the tutorial customer's lot, across the street from HQ
   // c-n-4 is a ranch home centered at (-21, 25), 16 m wide: the worker must be clear of the wall.
   expect(Math.abs(tech.pos.x - -21)).toBeGreaterThan(8 + 0.9);
@@ -123,6 +130,37 @@ test('renders the premium world and drives the branded van with animated wheels'
   const paid = await state(page, (s, id) => ({ cash: s.finance.cash as number, collected: s.jobs[id].financials.revenueCollected as number }), leadId);
   expect(paid.collected).toBeGreaterThanOrEqual(95);
   expect(paid.cash).toBeGreaterThan(25000);
+
+  // 13. Lighting follows the clock: evening drops the sun and exposure, night brings the lamps up.
+  const noon = await page.evaluate(() => window.__egoAtmo!);
+  await page.evaluate(() => {
+    const s = window.__ego!.getState() as S;
+    window.__ego!.advanceMinutes(Math.max(0, 20.5 * 60 - s.clock.minute));
+  });
+  await page.waitForFunction((dayExposure) => !!window.__egoAtmo && window.__egoAtmo.exposure < dayExposure - 0.15 && window.__egoAtmo.sunIntensity < 0.6, noon.exposure, { timeout: 30_000 });
+  const evening = await page.evaluate(() => window.__egoAtmo!);
+  expect(evening.elevation).toBeLessThan(noon.elevation);
+
+  // 14. Photo mode hides the HUD, frees the camera and restores everything on exit without touching the simulation.
+  const cashBefore = await state(page, (s) => s.finance.cash as number);
+  await page.getByTestId('photo-mode-toggle').click();
+  await expect(page.getByTestId('photo-mode')).toBeVisible();
+  await expect(page.getByTestId('hud-cash')).toHaveCount(0);
+  await page.evaluate(() => window.__ego!.app.getState().setPhoto({ minute: 12 * 60, weather: 'clear' }));
+  await page.waitForFunction(() => !!window.__egoAtmo && window.__egoAtmo.minute === 12 * 60, null, { timeout: 20_000 });
+  await page.getByTestId('photo-exit').click();
+  await expect(page.getByTestId('hud-cash')).toBeVisible();
+  const cashAfter = await state(page, (s) => s.finance.cash as number);
+  expect(cashAfter).toBe(cashBefore);
+
+  // 15. Layout: the HUD, action bar and world controls all fit the viewport.
+  for (const id of ['hud-cash', 'cam-reset', 'nav-fleet']) {
+    const box = await page.getByTestId(id).boundingBox();
+    expect(box, id).toBeTruthy();
+    expect(box!.x).toBeGreaterThanOrEqual(0);
+    expect(box!.x + box!.width).toBeLessThanOrEqual(testInfo.project.use.viewport!.width + 1);
+    expect(box!.y + box!.height).toBeLessThanOrEqual(testInfo.project.use.viewport!.height + 1);
+  }
 
   // 17. No browser errors (Three.js deprecation warnings are not errors).
   const real = errors.filter((e) => !e.includes('deprecated') && !e.includes('PCFSoftShadowMap'));

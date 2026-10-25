@@ -4,6 +4,7 @@ import { Canvas } from '@react-three/fiber';
 import { useApp, useGame } from '@/app/store';
 import { CameraRig, DEFAULT_OFFSET, DEFAULT_TARGET } from './CameraRig';
 import { Atmosphere } from './Atmosphere';
+import { NightLights } from './NightLights';
 import { Ground } from '../city/Ground';
 import { Roads } from '../roads/Roads';
 import { House } from '../buildings/House';
@@ -50,7 +51,7 @@ export function GameScene() {
       shadows={quality !== 'low'}
       dpr={quality === 'ultra' ? [1, 2] : quality === 'high' ? [1, 1.5] : quality === 'medium' ? [1, 1.25] : 1}
       camera={{ position: [initial.x, initial.y, initial.z], fov: 38, near: 1, far: 3000 }}
-      gl={{ antialias: true, powerPreference: 'high-performance', toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.05 }}
+      gl={{ antialias: true, powerPreference: 'high-performance', toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.05, preserveDrawingBuffer: true }}
       onCreated={({ gl }) => {
         // Synchronous shader-log reads stall startup on slow drivers; errors still surface via the console.
         gl.debug.checkShaderErrors = import.meta.env.DEV;
@@ -62,6 +63,7 @@ export function GameScene() {
     >
       <Suspense fallback={null}>
         <Atmosphere />
+        <NightLights />
         <StudioEnvironment />
         <Ground />
         <Roads />
