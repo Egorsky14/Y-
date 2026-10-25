@@ -9,7 +9,7 @@ import { Roads } from '../roads/Roads';
 import { House } from '../buildings/House';
 import { Headquarters } from '../buildings/Headquarters';
 import { CompetitorBuilding, Park, SupplyWarehouse } from '../buildings/Commercial';
-import { Landscaping } from '../city/Landscaping';
+import { Vegetation } from '../city/Vegetation';
 import { JobMarkers, Vehicles, Workers } from './LiveEntities';
 import { HOUSE_LOTS } from '@/game/world/cityLayout';
 import { LabelProjector } from '../interactions/LabelProjector';
@@ -58,7 +58,7 @@ export function GameScene() {
         <StudioEnvironment />
         <Ground />
         <Roads />
-        <Landscaping />
+        <Vegetation />
         <Houses />
         <Headquarters />
         <SupplyWarehouse />
