@@ -14,6 +14,10 @@ import { JobMarkers, Vehicles, Workers } from './LiveEntities';
 import { HOUSE_LOTS } from '@/game/world/cityLayout';
 import { LabelProjector } from '../interactions/LabelProjector';
 import { RenderProbe } from './RenderProbe';
+import { StudioEnvironment } from './StudioEnvironment';
+import { preloadVehicleModels } from '../vehicles/VehicleGltf';
+
+preloadVehicleModels();
 
 function Houses() {
   const activeLots = useGame((s) =>
@@ -51,6 +55,7 @@ export function GameScene() {
       <fog attach="fog" args={['#cfe0ea', 420, 1300]} />
       <Suspense fallback={null}>
         <Lighting />
+        <StudioEnvironment />
         <Ground />
         <Roads />
         <Landscaping />

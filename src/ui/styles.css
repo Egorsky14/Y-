@@ -174,7 +174,7 @@ h4 { font-size: 13px; color: var(--muted); text-transform: uppercase; letter-spa
 .ledger td:last-child { text-align: right; }
 .share-bar { display: flex; height: 18px; border-radius: 999px; overflow: hidden; background: var(--panel-2); }
 .share-bar span { display: block; height: 100%; }
-.vehicle-preview { height: 220px; border-radius: 12px; overflow: hidden; background: radial-gradient(ellipse at 50% 70%, rgba(25,211,197,0.14), transparent 60%), linear-gradient(180deg, #1a2029, #0d1116); border: 1px solid var(--border); }
+.vehicle-preview { flex: none; height: 220px; border-radius: 12px; overflow: hidden; background: radial-gradient(ellipse at 50% 70%, rgba(25,211,197,0.14), transparent 60%), linear-gradient(180deg, #1a2029, #0d1116); border: 1px solid var(--border); }
 .spec-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px 10px; font-size: 12.5px; }
 .spec-grid div { display: flex; flex-direction: column; }
 .spec-grid span { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; }
