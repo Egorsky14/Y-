@@ -68,11 +68,11 @@ export function CameraRig() {
       toTarget = HQ_TARGET.clone();
       toPos = HQ_TARGET.clone().add(new THREE.Vector3(-45, 55, 70));
     } else if (command.type === 'focus' && command.target) {
-      toTarget = new THREE.Vector3(command.target.x, 0, command.target.z);
+      toTarget = new THREE.Vector3(command.target.x, command.targetY ?? 0, command.target.z);
       const dist = command.distance ?? Math.min(offset.length(), 70);
       let dir: THREE.Vector3;
       if (command.azimuth !== undefined) {
-        const el = 0.62;
+        const el = command.elevation ?? 0.62;
         dir = new THREE.Vector3(Math.sin(command.azimuth) * Math.cos(el), Math.sin(el), Math.cos(command.azimuth) * Math.cos(el));
       } else {
         dir = offset.clone().normalize();

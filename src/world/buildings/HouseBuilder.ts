@@ -198,7 +198,7 @@ export function buildNeighborhood(lots: Lot[]): THREE.Group {
   }
   shared.setFrame(null);
   const g = shared.build('houses');
-  console.debug(`[build] neighborhood ${(performance.now() - t0).toFixed(0)} ms`);
+  if (import.meta.env.DEV) console.debug(`[build] neighborhood ${(performance.now() - t0).toFixed(0)} ms`);
   return g;
 }
 

@@ -36,6 +36,7 @@ function coping(b: MeshBuilder, material: string, cx: number, cz: number, w: num
 }
 
 export function buildHeadquarters(upgrades: HqUpgradeId[]): THREE.Group {
+  const t0 = performance.now();
   const has = (id: HqUpgradeId) => upgrades.includes(id);
   const S = STATIC_MATERIALS;
   const mats: Record<string, THREE.Material> = {
@@ -515,5 +516,7 @@ export function buildHeadquarters(upgrades: HqUpgradeId[]): THREE.Group {
     b.box('darkMetal', [18.6, 0.3, 8.6], [px, 4.6, pz]);
     b.box('concrete', [18.6, 0.2, 8.6], [px, 0.1, pz]);
   }
-  return b.build('hq');
+  const g = b.build('hq');
+  if (import.meta.env.DEV) console.debug(`[build] hq ${(performance.now() - t0).toFixed(0)} ms`);
+  return g;
 }

@@ -145,7 +145,7 @@ function buildRoads(): THREE.Group {
     b.box('concrete', horizontal ? [wide, CURB_H + 0.02, walk + 0.9] : [walk + 0.9, CURB_H + 0.02, wide], [ax, CURB_H / 2 + 0.005, az]);
   }
   const g = b.build('roads');
-  console.debug(`[build] roads ${(performance.now() - t0).toFixed(0)} ms`);
+  if (import.meta.env.DEV) console.debug(`[build] roads ${(performance.now() - t0).toFixed(0)} ms`);
   return g;
 }
 

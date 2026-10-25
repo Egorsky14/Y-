@@ -23,6 +23,10 @@ export interface CameraCommand {
   distance?: number;
   /** Optional view direction (radians around +y) for cinematic focus; default keeps the current heading. */
   azimuth?: number;
+  /** Camera elevation above the target in radians (default 0.62); only with azimuth. */
+  elevation?: number;
+  /** Height of the look-at point above the ground (default 0). */
+  targetY?: number;
 }
 
 export type Quality = 'low' | 'medium' | 'high' | 'ultra';
