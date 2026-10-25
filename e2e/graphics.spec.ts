@@ -154,6 +154,9 @@ test('renders the premium world and drives the branded van with animated wheels'
   expect(cashAfter).toBe(cashBefore);
 
   // 15. Layout: the HUD, action bar and world controls all fit the viewport.
+  const bar = await page.getByTestId('nav-finance').boundingBox();
+  const controls = await page.getByTestId('cam-reset').boundingBox();
+  expect(bar && controls && bar.x + bar.width <= controls.x, 'action bar overlaps world controls').toBe(true);
   for (const id of ['hud-cash', 'cam-reset', 'nav-fleet']) {
     const box = await page.getByTestId(id).boundingBox();
     expect(box, id).toBeTruthy();
