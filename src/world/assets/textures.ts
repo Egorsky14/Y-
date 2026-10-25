@@ -164,33 +164,172 @@ export function stuccoTexture(): THREE.Texture {
   );
 }
 
-/** Company wordmark decal with transparent background. */
-export function wordmarkTexture(variant: 'light' | 'dark' = 'light'): THREE.Texture {
-  return canvasTexture(`wordmark-${variant}`, 1024, 256, (ctx) => {
+/** Draws the EGO bolt glyph into a canvas context. */
+function drawBolt(ctx: CanvasRenderingContext2D, x: number, y: number, h: number, color = '#19d3c5') {
+  const k = h / 180;
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.moveTo(x + 15 * k, y);
+  ctx.lineTo(x + 85 * k, y);
+  ctx.lineTo(x + 50 * k, y + 85 * k);
+  ctx.lineTo(x + 95 * k, y + 85 * k);
+  ctx.lineTo(x + 15 * k, y + 180 * k);
+  ctx.lineTo(x + 40 * k, y + 105 * k);
+  ctx.lineTo(x, y + 105 * k);
+  ctx.closePath();
+  ctx.fill();
+}
+
+/** Company wordmark decal with transparent background. The tagline is optional: it is only legible on large panels. */
+export function wordmarkTexture(variant: 'light' | 'dark' = 'light', tagline = true): THREE.Texture {
+  return canvasTexture(`wordmark-${variant}-${tagline ? 'tag' : 'plain'}`, 1024, 256, (ctx) => {
     ctx.clearRect(0, 0, 1024, 256);
     ctx.textBaseline = 'middle';
     ctx.textAlign = 'left';
-    // Teal bolt/thermometer glyph
+    const ink = variant === 'light' ? '#ffffff' : '#0b0f14';
+    if (tagline) {
+      drawBolt(ctx, 45, 40, 180);
+      ctx.font = '900 150px Inter, Arial Black, Arial, sans-serif';
+      ctx.fillStyle = ink;
+      ctx.fillText('EGO', 165, 108);
+      ctx.fillStyle = '#19d3c5';
+      ctx.font = '800 92px Inter, Arial Black, Arial, sans-serif';
+      ctx.fillText('HVAC', 560, 104);
+      ctx.fillStyle = variant === 'light' ? 'rgba(255,255,255,0.85)' : 'rgba(11,15,20,0.85)';
+      ctx.font = '600 40px Inter, Arial, sans-serif';
+      ctx.fillText('MEASURED. VERIFIED. DONE RIGHT.', 170, 200);
+    } else {
+      drawBolt(ctx, 40, 38, 180);
+      ctx.font = '900 170px Inter, Arial Black, Arial, sans-serif';
+      ctx.fillStyle = ink;
+      ctx.fillText('EGO', 165, 128);
+      ctx.fillStyle = '#19d3c5';
+      ctx.font = '800 118px Inter, Arial Black, Arial, sans-serif';
+      ctx.fillText('HVAC', 580, 132);
+    }
+  });
+}
+
+/** Monument sign face: wordmark, legal name and the tagline on a charcoal panel. */
+export function monumentTexture(): THREE.Texture {
+  return canvasTexture('monument', 1024, 512, (ctx) => {
+    ctx.fillStyle = '#15181c';
+    ctx.fillRect(0, 0, 1024, 512);
     ctx.fillStyle = '#19d3c5';
-    ctx.beginPath();
-    ctx.moveTo(60, 40);
-    ctx.lineTo(130, 40);
-    ctx.lineTo(95, 125);
-    ctx.lineTo(140, 125);
-    ctx.lineTo(60, 220);
-    ctx.lineTo(85, 145);
-    ctx.lineTo(45, 145);
-    ctx.closePath();
-    ctx.fill();
+    ctx.fillRect(0, 0, 1024, 14);
+    drawBolt(ctx, 70, 70, 190);
+    ctx.textBaseline = 'middle';
+    ctx.textAlign = 'left';
+    ctx.fillStyle = '#ffffff';
     ctx.font = '900 150px Inter, Arial Black, Arial, sans-serif';
-    ctx.fillStyle = variant === 'light' ? '#ffffff' : '#0b0f14';
-    ctx.fillText('EGO', 165, 108);
+    ctx.fillText('EGO', 200, 150);
     ctx.fillStyle = '#19d3c5';
-    ctx.font = '800 92px Inter, Arial Black, Arial, sans-serif';
-    ctx.fillText('HVAC', 560, 104);
-    ctx.fillStyle = variant === 'light' ? 'rgba(255,255,255,0.85)' : 'rgba(11,15,20,0.85)';
-    ctx.font = '600 40px Inter, Arial, sans-serif';
-    ctx.fillText('MEASURED. VERIFIED. DONE RIGHT.', 170, 200);
+    ctx.font = '800 100px Inter, Arial Black, Arial, sans-serif';
+    ctx.fillText('HVAC', 590, 154);
+    ctx.fillStyle = 'rgba(255,255,255,0.45)';
+    ctx.fillRect(80, 270, 864, 3);
+    ctx.fillStyle = '#e9eef2';
+    ctx.font = '600 50px Inter, Arial, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('EGO HVAC SERVICES LLC', 512, 330);
+    ctx.fillStyle = '#9fb3bd';
+    ctx.font = '500 40px Inter, Arial, sans-serif';
+    ctx.fillText('MOST HVAC COMPANIES GUESS. WE MEASURE.', 512, 420);
+  });
+}
+
+/** Painted pavement text (white on transparent). */
+export function pavementTextTexture(text: string, color = '#e8e8e4'): THREE.Texture {
+  return canvasTexture(`pave-${text}-${color}`, 512, 128, (ctx) => {
+    ctx.clearRect(0, 0, 512, 128);
+    ctx.textBaseline = 'middle';
+    ctx.textAlign = 'center';
+    ctx.fillStyle = color;
+    ctx.font = '800 96px Inter, Arial Black, Arial, sans-serif';
+    ctx.fillText(text, 256, 68);
+  });
+}
+
+/** International symbol of access on a blue field. */
+export function adaTexture(): THREE.Texture {
+  return canvasTexture('ada', 128, 128, (ctx) => {
+    ctx.fillStyle = '#1f5fb8';
+    ctx.fillRect(0, 0, 128, 128);
+    ctx.strokeStyle = '#ffffff';
+    ctx.fillStyle = '#ffffff';
+    ctx.lineWidth = 9;
+    ctx.beginPath();
+    ctx.arc(44, 30, 10, 0, Math.PI * 2); // head
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(58, 82, 26, Math.PI * 0.9, Math.PI * 2.2); // wheel
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(48, 44);
+    ctx.lineTo(50, 74);
+    ctx.lineTo(86, 74);
+    ctx.lineTo(100, 100);
+    ctx.stroke();
+  });
+}
+
+/** Chain-link fence fabric: diamond wire mesh with transparent gaps. */
+export function chainLinkTexture(): THREE.Texture {
+  return canvasTexture(
+    'chain-link',
+    128,
+    128,
+    (ctx) => {
+      ctx.clearRect(0, 0, 128, 128);
+      ctx.strokeStyle = 'rgba(190,196,202,0.95)';
+      ctx.lineWidth = 3;
+      const step = 32;
+      for (let i = -4; i < 8; i++) {
+        ctx.beginPath();
+        ctx.moveTo(i * step, 0);
+        ctx.lineTo(i * step + 128, 128);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(i * step + 128, 0);
+        ctx.lineTo(i * step, 128);
+        ctx.stroke();
+      }
+    },
+    { srgb: true },
+  );
+}
+
+/** Soft dark tire-wear band: opaque in the center, feathered to transparent at the edges. */
+export function wearTexture(): THREE.Texture {
+  return canvasTexture('wear', 256, 64, (ctx) => {
+    ctx.clearRect(0, 0, 256, 64);
+    const g = ctx.createLinearGradient(0, 0, 0, 64);
+    g.addColorStop(0, 'rgba(20,20,22,0)');
+    g.addColorStop(0.35, 'rgba(20,20,22,0.28)');
+    g.addColorStop(0.65, 'rgba(20,20,22,0.28)');
+    g.addColorStop(1, 'rgba(20,20,22,0)');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, 256, 64);
+    const rnd = seededNoise(99);
+    for (let i = 0; i < 1400; i++) {
+      ctx.fillStyle = `rgba(40,40,42,${rnd() * 0.25})`;
+      ctx.fillRect(rnd() * 256, rnd() * 64, 1, 1);
+    }
+  });
+}
+
+/** Oil drip stain: irregular dark blob with a feathered edge. */
+export function stainTexture(): THREE.Texture {
+  return canvasTexture('stain', 128, 128, (ctx) => {
+    ctx.clearRect(0, 0, 128, 128);
+    const rnd = seededNoise(123);
+    for (let i = 0; i < 10; i++) {
+      const g = ctx.createRadialGradient(64 + (rnd() - 0.5) * 50, 64 + (rnd() - 0.5) * 40, 0, 64 + (rnd() - 0.5) * 20, 64, 18 + rnd() * 30);
+      g.addColorStop(0, 'rgba(18,16,14,0.22)');
+      g.addColorStop(1, 'rgba(18,16,14,0)');
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, 128, 128);
+    }
   });
 }
 

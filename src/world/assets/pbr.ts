@@ -186,37 +186,44 @@ export function shinglePbr(color: [number, number, number] = [92, 98, 106]): Pbr
 
 export function asphaltPbr(): PbrSet {
   return getOrMake('asphalt', () => {
-    const size = 512;
-    const color = tintedColor(size, 51, [78, 80, 84], 14, 16000, 1.6);
+    const size = 1024;
+    // Base: dark binder with fine light aggregate speckle and slow mottling.
+    const color = tintedColor(size, 51, [64, 66, 70], 6, 60000, 1.2);
     const cctx = color.getContext('2d')!;
     const rnd = makeDecoRng(52);
-    // Patches and faint cracks
-    for (let i = 0; i < 14; i++) {
-      cctx.fillStyle = `rgba(${66 + rnd() * 16},${66 + rnd() * 16},${68 + rnd() * 16},0.12)`;
+    for (let i = 0; i < 26000; i++) {
+      const v = 96 + rnd() * 70;
+      cctx.fillStyle = `rgba(${v},${v},${v - 4},${0.35 + rnd() * 0.4})`;
+      cctx.fillRect(rnd() * size, rnd() * size, 1, 1);
+    }
+    for (let i = 0; i < 40; i++) {
+      const g = 56 + rnd() * 26;
+      cctx.fillStyle = `rgba(${g},${g},${g + 2},0.16)`;
       cctx.beginPath();
-      cctx.ellipse(rnd() * size, rnd() * size, 30 + rnd() * 80, 20 + rnd() * 50, rnd() * 3, 0, Math.PI * 2);
+      cctx.ellipse(rnd() * size, rnd() * size, 60 + rnd() * 200, 40 + rnd() * 120, rnd() * 3, 0, Math.PI * 2);
       cctx.fill();
     }
-    cctx.strokeStyle = 'rgba(30,30,32,0.16)';
-    cctx.lineWidth = 1.0;
-    for (let i = 0; i < 2; i++) {
-      cctx.beginPath();
+    // Sealed cracks: dark meandering lines with a lighter edge
+    for (let i = 0; i < 5; i++) {
       let x = rnd() * size;
       let y = rnd() * size;
+      cctx.lineWidth = 1.4 + rnd();
+      cctx.strokeStyle = 'rgba(22,22,24,0.55)';
+      cctx.beginPath();
       cctx.moveTo(x, y);
-      for (let k = 0; k < 8; k++) {
-        x += (rnd() - 0.5) * 60;
-        y += rnd() * 40;
+      for (let k = 0; k < 14; k++) {
+        x += (rnd() - 0.5) * 70;
+        y += (rnd() - 0.2) * 50;
         cctx.lineTo(x, y);
       }
       cctx.stroke();
     }
     const [h, hctx] = makeCanvas(size);
-    noiseFill(hctx, size, 53, 128, 60, 20000, 1.5);
-    const normal = heightToNormal(h, 0.9);
+    noiseFill(hctx, size, 53, 128, 64, 90000, 1.2);
+    const normal = heightToNormal(h, 0.7);
     const [r, rctx] = makeCanvas(size);
-    noiseFill(rctx, size, 54, 215, 25, 6000, 3);
-    return { map: toTexture(color, true), normalMap: toTexture(normal, false), roughnessMap: toTexture(r, false), metersPerRepeat: 6 };
+    noiseFill(rctx, size, 54, 218, 22, 30000, 2.5);
+    return { map: toTexture(color, true), normalMap: toTexture(normal, false), roughnessMap: toTexture(r, false), metersPerRepeat: 7 };
   });
 }
 
@@ -372,25 +379,91 @@ export function garageDoorPbr(): PbrSet {
   });
 }
 
-/** Vertical standing-seam metal siding. */
+/** Vertical ribbed architectural metal panel (PBR-style wall panel, 0.3 m rib pitch). */
 export function sidingPbr(): PbrSet {
   return getOrMake('siding', () => {
-    const size = 256;
-    const color = tintedColor(size, 111, [52, 56, 61], 5, 2500, 2);
+    const size = 512;
+    const color = tintedColor(size, 111, [74, 79, 85], 4, 4000, 2);
     const cctx = color.getContext('2d')!;
     const [h, hctx] = makeCanvas(size);
     hctx.fillStyle = '#808080';
     hctx.fillRect(0, 0, size, size);
-    for (let x = 0; x < size; x += 32) {
-      hctx.fillStyle = '#c0c0c0';
-      hctx.fillRect(x, 0, 6, size);
-      cctx.fillStyle = 'rgba(255,255,255,0.05)';
-      cctx.fillRect(x, 0, 6, size);
-      cctx.fillStyle = 'rgba(0,0,0,0.18)';
-      cctx.fillRect(x + 6, 0, 3, size);
+    const pitch = size / 7; // 7 ribs per 2 m repeat
+    for (let x = 0; x < size; x += pitch) {
+      // Trapezoid rib: ramp up, flat crown, ramp down
+      const hg = hctx.createLinearGradient(x, 0, x + pitch * 0.42, 0);
+      hg.addColorStop(0, '#808080');
+      hg.addColorStop(0.3, '#d8d8d8');
+      hg.addColorStop(0.7, '#d8d8d8');
+      hg.addColorStop(1, '#808080');
+      hctx.fillStyle = hg;
+      hctx.fillRect(x, 0, pitch * 0.42, size);
+      const cg = cctx.createLinearGradient(x, 0, x + pitch * 0.42, 0);
+      cg.addColorStop(0, 'rgba(0,0,0,0.22)');
+      cg.addColorStop(0.3, 'rgba(255,255,255,0.10)');
+      cg.addColorStop(0.7, 'rgba(255,255,255,0.06)');
+      cg.addColorStop(1, 'rgba(0,0,0,0.26)');
+      cctx.fillStyle = cg;
+      cctx.fillRect(x, 0, pitch * 0.42, size);
     }
-    const normal = heightToNormal(blurCanvas(h, 0.8), 2.0);
+    // Horizontal panel joint every repeat
+    cctx.fillStyle = 'rgba(0,0,0,0.3)';
+    cctx.fillRect(0, 0, size, 3);
+    hctx.fillStyle = '#404040';
+    hctx.fillRect(0, 0, size, 4);
+    const normal = heightToNormal(blurCanvas(h, 0.8), 2.2);
     return { map: toTexture(color, true), normalMap: toTexture(normal, false), metersPerRepeat: 2.0 };
+  });
+}
+
+/** Smooth composite (ACM) panel in charcoal with reveal joints: entry towers and sign backers. */
+export function darkPanelPbr(): PbrSet {
+  return getOrMake('dark-panel', () => {
+    const size = 256;
+    const color = tintedColor(size, 121, [38, 41, 46], 3, 2000, 2);
+    const cctx = color.getContext('2d')!;
+    const [h, hctx] = makeCanvas(size);
+    hctx.fillStyle = '#a0a0a0';
+    hctx.fillRect(0, 0, size, size);
+    for (const v of [0, size / 2]) {
+      cctx.fillStyle = 'rgba(0,0,0,0.5)';
+      cctx.fillRect(v, 0, 4, size);
+      cctx.fillRect(0, v, size, 4);
+      hctx.fillStyle = '#303030';
+      hctx.fillRect(v, 0, 4, size);
+      hctx.fillRect(0, v, size, 4);
+    }
+    const normal = heightToNormal(blurCanvas(h, 0.6), 1.6);
+    return { map: toTexture(color, true), normalMap: toTexture(normal, false), metersPerRepeat: 2.4 };
+  });
+}
+
+/** Corrugated shipping-container steel with a horizontal rib pattern. */
+export function corrugatedPbr(rgb: [number, number, number]): PbrSet {
+  return getOrMake(`corrugated-${rgb.join()}`, () => {
+    const size = 256;
+    const color = tintedColor(size, 131, rgb, 6, 3000, 2);
+    const cctx = color.getContext('2d')!;
+    const [h, hctx] = makeCanvas(size);
+    hctx.fillStyle = '#808080';
+    hctx.fillRect(0, 0, size, size);
+    const pitch = size / 8;
+    for (let x = 0; x < size; x += pitch) {
+      const hg = hctx.createLinearGradient(x, 0, x + pitch, 0);
+      hg.addColorStop(0, '#606060');
+      hg.addColorStop(0.5, '#d0d0d0');
+      hg.addColorStop(1, '#606060');
+      hctx.fillStyle = hg;
+      hctx.fillRect(x, 0, pitch, size);
+      const cg = cctx.createLinearGradient(x, 0, x + pitch, 0);
+      cg.addColorStop(0, 'rgba(0,0,0,0.25)');
+      cg.addColorStop(0.5, 'rgba(255,255,255,0.08)');
+      cg.addColorStop(1, 'rgba(0,0,0,0.25)');
+      cctx.fillStyle = cg;
+      cctx.fillRect(x, 0, pitch, size);
+    }
+    const normal = heightToNormal(blurCanvas(h, 1.0), 2.0);
+    return { map: toTexture(color, true), normalMap: toTexture(normal, false), metersPerRepeat: 2.4 };
   });
 }
 

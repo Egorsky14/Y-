@@ -1,6 +1,6 @@
 import * as THREE from 'three';
-import { asphaltPbr, blockWallPbr, concretePbr, garageDoorPbr, gravelPbr, lawnPbr, pbrMaterial, sandPbr, shinglePbr, sidingPbr, stuccoPbr, tileRoofPbr } from '../assets/pbr';
-import { windowTexture } from '../assets/textures';
+import { asphaltPbr, blockWallPbr, concretePbr, corrugatedPbr, darkPanelPbr, garageDoorPbr, gravelPbr, lawnPbr, pbrMaterial, sandPbr, shinglePbr, sidingPbr, stuccoPbr, tileRoofPbr } from '../assets/pbr';
+import { adaTexture, chainLinkTexture, stainTexture, wearTexture, windowTexture } from '../assets/textures';
 
 /** Shared, cached materials for merged static geometry. Keys match MeshBuilder material names. */
 const cache = new Map<string, THREE.Material>();
@@ -40,6 +40,7 @@ export const STATIC_MATERIALS = {
     }),
   garage: () => cached('garage', () => pbrMaterial(garageDoorPbr(), { roughness: 0.7 })),
   concrete: () => cached('concrete', () => pbrMaterial(concretePbr(), { roughness: 0.92 })),
+  apron: () => cached('apron', () => pbrMaterial(concretePbr(), { roughness: 0.9, color: '#d8d4cc' })),
   asphalt: () => cached('asphalt', () => pbrMaterial(asphaltPbr(), { roughness: 0.95 })),
   block: () => cached('block', () => pbrMaterial(blockWallPbr(), { roughness: 0.95 })),
   gravel: () => cached('gravel', () => pbrMaterial(gravelPbr(), { roughness: 1 })),
@@ -59,6 +60,32 @@ export const STATIC_MATERIALS = {
   white: () => cached('white', () => new THREE.MeshStandardMaterial({ color: '#f1efe8', roughness: 0.7 })),
   dark: () => cached('dark', () => new THREE.MeshStandardMaterial({ color: '#34383d', roughness: 0.7 })),
   doorColor: (c: string) => cached(`door:${c}`, () => new THREE.MeshStandardMaterial({ color: c, roughness: 0.6, metalness: 0.1 })),
+  // ---- Visual-excellence additions: campus, pavement and equipment materials
+  darkPanel: () => cached('darkPanel', () => pbrMaterial(darkPanelPbr(), { roughness: 0.45, metalness: 0.35, envMapIntensity: 0.8 })),
+  containerBlue: () => cached('containerBlue', () => pbrMaterial(corrugatedPbr([46, 72, 104]), { roughness: 0.6, metalness: 0.4 })),
+  containerTeal: () => cached('containerTeal', () => pbrMaterial(corrugatedPbr([24, 110, 104]), { roughness: 0.6, metalness: 0.4 })),
+  curb: () => cached('curb', () => new THREE.MeshStandardMaterial({ color: '#cfcac0', roughness: 0.95 })),
+  stripe: () => cached('stripe', () => new THREE.MeshStandardMaterial({ color: '#e9e9e3', roughness: 0.7 })),
+  stripeYellow: () => cached('stripeYellow', () => new THREE.MeshStandardMaterial({ color: '#e7c23a', roughness: 0.7 })),
+  stripeBlue: () => cached('stripeBlue', () => new THREE.MeshStandardMaterial({ color: '#2160b8', roughness: 0.7 })),
+  ada: () => cached('ada', () => new THREE.MeshStandardMaterial({ map: adaTexture(), roughness: 0.7 })),
+  wear: () => cached('wear', () => new THREE.MeshStandardMaterial({ map: wearTexture(), transparent: true, depthWrite: false, roughness: 1, polygonOffset: true, polygonOffsetFactor: -1 })),
+  stain: () => cached('stain', () => new THREE.MeshStandardMaterial({ map: stainTexture(), transparent: true, depthWrite: false, roughness: 0.3, polygonOffset: true, polygonOffsetFactor: -1 })),
+  chainLink: () => cached('chainLink', () => new THREE.MeshStandardMaterial({ map: chainLinkTexture(), transparent: true, alphaTest: 0.4, side: THREE.DoubleSide, roughness: 0.5, metalness: 0.6, color: '#d8dde2' })),
+  galvanized: () => cached('galvanized', () => new THREE.MeshStandardMaterial({ color: '#aeb4b9', roughness: 0.35, metalness: 0.8 })),
+  unitCabinet: () => cached('unitCabinet', () => new THREE.MeshStandardMaterial({ color: '#c9ccce', roughness: 0.5, metalness: 0.35 })),
+  unitCabinetTan: () => cached('unitCabinetTan', () => new THREE.MeshStandardMaterial({ color: '#b9ac92', roughness: 0.55, metalness: 0.3 })),
+  grille: () => cached('grille', () => new THREE.MeshStandardMaterial({ color: '#3a3e42', roughness: 0.75, metalness: 0.4 })),
+  copper: () => cached('copper', () => new THREE.MeshStandardMaterial({ color: '#b87333', roughness: 0.35, metalness: 0.9 })),
+  insulation: () => cached('insulation', () => new THREE.MeshStandardMaterial({ color: '#1e1f22', roughness: 0.95 })),
+  rubber: () => cached('rubber', () => new THREE.MeshStandardMaterial({ color: '#17181a', roughness: 0.9 })),
+  cardboard: () => cached('cardboard', () => new THREE.MeshStandardMaterial({ color: '#b8905c', roughness: 0.95 })),
+  shrinkWrap: () => cached('shrinkWrap', () => new THREE.MeshStandardMaterial({ color: '#dfe6ea', roughness: 0.25, metalness: 0.05, transparent: true, opacity: 0.85 })),
+  redSteel: () => cached('redSteel', () => new THREE.MeshStandardMaterial({ color: '#b3362d', roughness: 0.5, metalness: 0.5 })),
+  safetyOrange: () => cached('safetyOrange', () => new THREE.MeshStandardMaterial({ color: '#e8702a', roughness: 0.6 })),
+  glassDark: () => cached('glassDark', () => new THREE.MeshStandardMaterial({ color: '#2c3d4a', roughness: 0.08, metalness: 0.7, envMapIntensity: 1.6 })),
+  interiorLight: () => cached('interiorLight', () => new THREE.MeshStandardMaterial({ color: '#fff6e6', emissive: '#fff1d6', emissiveIntensity: 1.6, roughness: 0.5 })),
+  bayFloor: () => cached('bayFloor', () => new THREE.MeshStandardMaterial({ color: '#8f9296', roughness: 0.45, metalness: 0.1 })),
 };
 
 /** World-meters-per-repeat for textured material keys used by the builders. */
@@ -75,4 +102,7 @@ export const UV_SCALES: Record<string, number> = {
   siding: 2.0,
   officeWall: 2.5,
   roofCap: 1,
+  darkPanel: 2.4,
+  containerBlue: 2.4,
+  containerTeal: 2.4,
 };

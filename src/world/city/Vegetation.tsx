@@ -59,68 +59,150 @@ function merge(parts: THREE.BufferGeometry[]): THREE.BufferGeometry {
   return merged;
 }
 
-/** A single palm frond: tapered strip that droops toward the tip, with serrated leaflets. */
-function frond(rnd: () => number, length = 3.2, color: THREE.Color): THREE.BufferGeometry {
-  const segs = 7;
+/** Pinnate (feather) frond for date palms: an arching rachis with paired leaflets held in a V. */
+function pinnateFrond(rnd: () => number, length: number, color: THREE.Color): THREE.BufferGeometry {
   const positions: number[] = [];
   const push = (v: THREE.Vector3) => positions.push(v.x, v.y, v.z);
-  const spine = (t: number) => new THREE.Vector3(0, 0.3 * t - 1.1 * t * t, t * length);
+  const spine = (t: number) => new THREE.Vector3(0, 0.55 * t - 1.35 * t * t, t * length);
+  const segs = 6;
   for (let i = 0; i < segs; i++) {
-    const t0 = i / segs;
-    const t1 = (i + 1) / segs;
-    const w0 = 0.42 * (1 - t0 * 0.85) + 0.05;
-    const w1 = 0.42 * (1 - t1 * 0.85) + 0.05;
-    const a = spine(t0);
-    const b = spine(t1);
-    // Leaflets angle slightly down from the rachis.
-    const droop0 = -0.18 * w0;
-    const droop1 = -0.18 * w1;
-    const l0 = a.clone().add(new THREE.Vector3(-w0, droop0, 0));
-    const r0 = a.clone().add(new THREE.Vector3(w0, droop0, 0));
-    const l1 = b.clone().add(new THREE.Vector3(-w1, droop1, 0));
-    const r1 = b.clone().add(new THREE.Vector3(w1, droop1, 0));
-    push(l0); push(r0); push(r1);
-    push(l0); push(r1); push(l1);
-    // Back faces so the frond is visible from below
-    push(r0); push(l0); push(l1);
-    push(r0); push(l1); push(r1);
+    const a = spine(i / segs);
+    const b = spine((i + 1) / segs);
+    const r = 0.028 * (1 - i / segs) + 0.01;
+    push(a.clone().add(new THREE.Vector3(-r, 0, 0))); push(a.clone().add(new THREE.Vector3(r, 0, 0))); push(b.clone().add(new THREE.Vector3(r, 0, 0)));
+    push(a.clone().add(new THREE.Vector3(-r, 0, 0))); push(b.clone().add(new THREE.Vector3(r, 0, 0))); push(b.clone().add(new THREE.Vector3(-r, 0, 0)));
+  }
+  const pairs = 19;
+  for (let i = 1; i <= pairs; i++) {
+    const t = 0.12 + (i / pairs) * 0.86;
+    const base = spine(t);
+    const dir = spine(Math.min(1, t + 0.02)).sub(spine(t)).normalize();
+    const len = 0.55 * (1 - Math.abs(t - 0.55) * 0.9) + 0.12;
+    for (const side of [-1, 1]) {
+      // Leaflet: narrow triangle swept forward along the rachis and raised into a V
+      const out = new THREE.Vector3(side, 0.55, 0).normalize().multiplyScalar(len);
+      const fwd = dir.clone().multiplyScalar(len * 0.55);
+      const tip = base.clone().add(out).add(fwd).add(new THREE.Vector3(0, -0.12 * len, 0));
+      const w = 0.075;
+      const b0 = base.clone().add(dir.clone().multiplyScalar(-w));
+      const b1 = base.clone().add(dir.clone().multiplyScalar(w));
+      if (side > 0) { push(b0); push(b1); push(tip); } else { push(b1); push(b0); push(tip); }
+    }
   }
   const g = new THREE.BufferGeometry();
   g.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
   g.computeVertexNormals();
-  return colored(g, color, 0.12, rnd);
+  return colored(g, color, 0.1, rnd);
+}
+
+/** Fan (costapalmate) frond for Mexican fan palms: petiole, then radiating blade segments with drooping tips. */
+function fanFrond(rnd: () => number, color: THREE.Color, dead = false): THREE.BufferGeometry {
+  const positions: number[] = [];
+  const push = (v: THREE.Vector3) => positions.push(v.x, v.y, v.z);
+  const petiole = 1.1;
+  for (const [a, b, r] of [[0, petiole, 0.03]] as [number, number, number][]) {
+    push(new THREE.Vector3(-r, 0, a)); push(new THREE.Vector3(r, 0, a)); push(new THREE.Vector3(r, 0, b));
+    push(new THREE.Vector3(-r, 0, a)); push(new THREE.Vector3(r, 0, b)); push(new THREE.Vector3(-r, 0, b));
+  }
+  const segments = dead ? 11 : 15;
+  const spread = dead ? 1.9 : 2.5;
+  for (let i = 0; i < segments; i++) {
+    const a = -spread / 2 + (i / (segments - 1)) * spread;
+    const len = 1.5 + (rnd() - 0.5) * 0.3 - Math.abs(a) * 0.12;
+    const dir = new THREE.Vector3(Math.sin(a), 0, Math.cos(a));
+    const pieces = 3;
+    let prev = new THREE.Vector3(0, 0, petiole);
+    let prevW = 0.17;
+    for (let k = 1; k <= pieces; k++) {
+      const t = k / pieces;
+      const droop = dead ? -t * t * 0.9 : -t * t * 0.55;
+      const next = new THREE.Vector3(0, droop, petiole).add(dir.clone().multiplyScalar(len * t));
+      const w = 0.17 * (1 - t * 0.7);
+      const side = new THREE.Vector3(Math.cos(a), 0, -Math.sin(a));
+      const p0 = prev.clone().add(side.clone().multiplyScalar(-prevW / 2));
+      const p1 = prev.clone().add(side.clone().multiplyScalar(prevW / 2));
+      const p2 = next.clone().add(side.clone().multiplyScalar(w / 2));
+      const p3 = next.clone().add(side.clone().multiplyScalar(-w / 2));
+      push(p0); push(p1); push(p2);
+      push(p0); push(p2); push(p3);
+      prev = next;
+      prevW = w;
+    }
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  g.computeVertexNormals();
+  return colored(g, color, dead ? 0.08 : 0.14, rnd);
+}
+
+/** Tapered trunk with leaf-boot rings in the upper part and a flared base. */
+function palmTrunk(rnd: () => number, height: number, r0: number, r1: number, lean: number, color: THREE.Color, boots: boolean): THREE.BufferGeometry[] {
+  const parts: THREE.BufferGeometry[] = [];
+  const segments = 10;
+  for (let i = 0; i < segments; i++) {
+    const t0 = i / segments;
+    const t1 = (i + 1) / segments;
+    const ra = r0 + (r1 - r0) * t0;
+    const rb = r0 + (r1 - r0) * t1;
+    const seg = new THREE.CylinderGeometry(rb, ra, height / segments + 0.02, 12);
+    parts.push(colored(transformed(seg, [lean * (t0 + 0.05), (i + 0.5) * (height / segments), 0]), color, 0.12, rnd));
+    if (boots && t0 > 0.45) {
+      // Two offset boot rings per segment: the criss-cross leaf-base pattern of a fan palm trunk
+      for (const f of [0.25, 0.75]) {
+        const y = (i + f) * (height / segments);
+        const r = ra + 0.06;
+        parts.push(colored(transformed(new THREE.CylinderGeometry(r * 0.94, r, 0.16, 8, 1), [lean * (t0 + f / segments), y, 0], [0, f * 0.4, 0]), color.clone().multiplyScalar(0.9), 0.1, rnd));
+      }
+    }
+  }
+  parts.push(colored(transformed(new THREE.CylinderGeometry(r0 + 0.02, r0 + 0.14, 0.3, 12), [0, 0.15, 0]), color.clone().multiplyScalar(0.85), 0.1, rnd));
+  return parts;
 }
 
 function buildSpecies(species: Species): THREE.BufferGeometry {
   const rnd = makeDecoRng(species.length * 977 + 13);
   switch (species) {
     case 'palm': {
-      const parts: THREE.BufferGeometry[] = [];
-      const h = 7.5;
-      // Trunk with a slight lean and ring texture via stacked tapered segments
-      const segments = 9;
-      for (let i = 0; i < segments; i++) {
-        const t = i / segments;
-        const r0 = 0.32 - t * 0.09;
-        const r1 = 0.30 - t * 0.09;
-        const seg = new THREE.CylinderGeometry(r1, r0 + 0.02, h / segments + 0.03, 10);
-        parts.push(colored(transformed(seg, [t * 0.35, (i + 0.5) * (h / segments), 0]), new THREE.Color('#8b6b4a'), 0.14, rnd));
-      }
-      const top = new THREE.Vector3(0.35, h, 0);
-      const fronds = 11;
+      // Mexican fan palm: slender trunk, round crown of fan fronds, a skirt of dead fronds.
+      const h = 8.5;
+      const lean = 0.3;
+      const parts = palmTrunk(rnd, h, 0.3, 0.22, lean, new THREE.Color('#8f7556'), true);
+      const top = new THREE.Vector3(lean * 1.05, h, 0);
+      const fronds = 17;
       for (let i = 0; i < fronds; i++) {
-        const a = (i / fronds) * Math.PI * 2 + rnd() * 0.3;
-        const pitch = -0.1 - rnd() * 0.5;
-        const f = frond(rnd, 3.0 + rnd() * 0.8, new THREE.Color(i % 3 === 0 ? '#5f8d3a' : '#6e9b45'));
+        const a = (i / fronds) * Math.PI * 2 + rnd() * 0.25;
+        const ring = i % 3; // inner fronds stand up, outer droop
+        const pitch = ring === 0 ? -0.55 + rnd() * 0.2 : ring === 1 ? -0.05 + rnd() * 0.25 : 0.5 + rnd() * 0.35;
+        const f = fanFrond(rnd, new THREE.Color(ring === 2 ? '#5c8a39' : '#6ea046'));
+        parts.push(transformed(f, [top.x, top.y + 0.15, top.z], [pitch, a, 0]));
+      }
+      for (let i = 0; i < 8; i++) {
+        const a = (i / 8) * Math.PI * 2 + 0.2;
+        const f = fanFrond(rnd, new THREE.Color('#a08650'), true);
+        parts.push(transformed(f, [top.x, top.y - 0.35, top.z], [1.75 + rnd() * 0.25, a, 0]));
+      }
+      parts.push(colored(transformed(new THREE.SphereGeometry(0.4, 8, 6), [top.x, top.y, top.z]), new THREE.Color('#6b5a3e'), 0.1, rnd));
+      return merge(parts);
+    }
+    case 'date-palm': {
+      // Canary / date palm: thick patterned trunk, dense crown of arching pinnate fronds.
+      const h = 5.5;
+      const parts = palmTrunk(rnd, h, 0.55, 0.45, 0.1, new THREE.Color('#7f6a4c'), false);
+      for (let i = 0; i < 14; i++) {
+        const y = 0.6 + (i / 14) * (h - 1.0);
+        const a = i * 2.4;
+        parts.push(colored(transformed(new THREE.BoxGeometry(0.28, 0.14, 0.2), [Math.cos(a) * 0.5, y, Math.sin(a) * 0.5], [0, -a, 0.4]), new THREE.Color('#6d5a40'), 0.1, rnd));
+      }
+      const top = new THREE.Vector3(0.1, h, 0);
+      const fronds = 22;
+      for (let i = 0; i < fronds; i++) {
+        const a = (i / fronds) * Math.PI * 2 + rnd() * 0.2;
+        const ring = i % 3;
+        const pitch = ring === 0 ? -0.7 + rnd() * 0.2 : ring === 1 ? -0.2 + rnd() * 0.25 : 0.35 + rnd() * 0.3;
+        const f = pinnateFrond(rnd, 3.4 + rnd() * 0.6, new THREE.Color(ring === 2 ? '#4f7f36' : '#5f9241'));
         parts.push(transformed(f, [top.x, top.y + 0.2, top.z], [pitch, a, 0]));
       }
-      // Dead hanging fronds
-      for (let i = 0; i < 4; i++) {
-        const a = (i / 4) * Math.PI * 2 + 0.4;
-        const f = frond(rnd, 2.2, new THREE.Color('#9a7f4f'));
-        parts.push(transformed(f, [top.x, top.y - 0.3, top.z], [1.6 + rnd() * 0.3, a, 0]));
-      }
-      parts.push(colored(transformed(new THREE.SphereGeometry(0.42, 8, 6), [top.x, top.y + 0.1, top.z]), new THREE.Color('#6b5a3e'), 0.1, rnd));
+      parts.push(colored(transformed(new THREE.SphereGeometry(0.55, 8, 6), [top.x, top.y + 0.1, top.z]), new THREE.Color('#5e4d35'), 0.1, rnd));
       return merge(parts);
     }
     case 'mesquite':
@@ -219,15 +301,20 @@ function collectInstances(density: number): Instance[] {
       }
     }
   }
-  // Headquarters: palms in the parking islands and along the west fence, agave at the sign.
+  // Headquarters: fan palms along the north bed and the street, date palms in the lot island,
+  // mesquites at the staff patio, agave and shrubs at the sign and planters.
   const hx = HQ_LOT.center.x;
   const hz = HQ_LOT.center.z;
-  for (const [lx, lz] of [[-44, -34.5], [-30, -34.5], [-16, -34.5], [-44, 10.5], [-30, 10.5], [-16, 10.5], [-55, -30], [-55, -16], [-55, 18], [-55, 30]] as [number, number][]) {
-    out.push({ species: 'palm', x: hx + lx, z: hz + lz, rotation: rnd() * 6.28, scale: 0.95 + rnd() * 0.3, tint: 0.95 + rnd() * 0.1 });
-  }
-  for (const [lx, lz] of [[-52, -15], [-48, -9], [-55, -24], [-55, 24], [-55, 34]] as [number, number][]) {
-    out.push({ species: rnd() < 0.5 ? 'agave' : 'shrub-sage', x: hx + lx, z: hz + lz, rotation: rnd() * 6.28, scale: 0.9 + rnd() * 0.4, tint: 0.95 + rnd() * 0.1 });
-  }
+  const hqPlant = (species: Species, lx: number, lz: number, scale = 1) => out.push({ species, x: hx + lx, z: hz + lz, rotation: rnd() * 6.28, scale: scale * (0.95 + rnd() * 0.2), tint: 0.95 + rnd() * 0.1 });
+  for (const lx of [-48, -38, -28, -18, -8]) hqPlant('palm', lx, -38.5, 1.0 + rnd() * 0.25);
+  for (const lz of [-30, -22, 16, 26, 36]) hqPlant('palm', -56.2, lz, 0.9 + rnd() * 0.3);
+  for (const lz of [-26, -12, 0]) hqPlant('date-palm', -25.5, lz, 0.95);
+  hqPlant('date-palm', -14, -5, 1.0);
+  for (const [lx, lz] of [[-30, 37], [-38, 38], [-46, 36], [-22, 38]] as [number, number][]) hqPlant('mesquite', lx, lz, 1.1);
+  for (const [lx, lz] of [[-54.5, -20], [-54.5, -12], [-56.3, -34], [-56.3, 8], [-56.3, 32], [-40, -36.5], [-32, -36.5], [-18, -36.5], [-10, -36.5]] as [number, number][]) hqPlant(rnd() < 0.5 ? 'agave' : 'shrub-sage', lx, lz, 0.9 + rnd() * 0.4);
+  for (const [lx, lz] of [[-44, -37.5], [-14, -37.5], [-56.5, 24]] as [number, number][]) hqPlant('boulder', lx, lz, 0.8);
+  for (const lz of [-29.2, -18.8]) hqPlant('flower-pink', -4.0, lz, 0.9); // entry planters
+  for (const [lx, lz] of [[-26, 34], [-34, 35], [-42, 34.5], [-28, 40]] as [number, number][]) hqPlant('shrub-green', lx, lz, 1.1);
   // Park
   for (let i = 0; i < 16; i++) {
     out.push({ species: i % 3 === 0 ? 'palm' : i % 3 === 1 ? 'olive' : 'mesquite', x: PARK_LOT.center.x + (rnd() - 0.5) * (PARK_LOT.width - 12), z: PARK_LOT.center.z + (rnd() - 0.5) * (PARK_LOT.depth - 12), rotation: rnd() * 6.28, scale: 0.9 + rnd() * 0.5, tint: 0.95 + rnd() * 0.1 });
@@ -243,14 +330,14 @@ function collectInstances(density: number): Instance[] {
   return out;
 }
 
-const SPECIES: Species[] = ['palm', 'mesquite', 'olive', 'shrub-sage', 'shrub-green', 'shrub-red', 'agave', 'flower-pink', 'flower-yellow', 'rock', 'boulder', 'barrel-cactus'];
+const SPECIES: Species[] = ['palm', 'date-palm', 'mesquite', 'olive', 'shrub-sage', 'shrub-green', 'shrub-red', 'agave', 'flower-pink', 'flower-yellow', 'rock', 'boulder', 'barrel-cactus'];
 
 export function Vegetation() {
   const quality = useApp((s) => s.settings.quality);
   const density = quality === 'low' ? 0.35 : quality === 'medium' ? 0.7 : quality === 'high' ? 1 : 1.4;
   const instances = useMemo(() => collectInstances(density), [density]);
   const geometries = useMemo(() => Object.fromEntries(SPECIES.map((s) => [s, buildSpecies(s)])) as Record<Species, THREE.BufferGeometry>, []);
-  const material = useMemo(() => new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.95, metalness: 0, flatShading: false }), []);
+  const material = useMemo(() => new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.95, metalness: 0, flatShading: false, side: THREE.DoubleSide }), []);
   return (
     <group name="vegetation">
       {SPECIES.map((species) => {
