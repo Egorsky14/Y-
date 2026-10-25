@@ -16,7 +16,7 @@ Date: 2026-10-25 · Build: Vite 8 production bundle · Branch `ccr-9ef3ffbb-g9q8
 
 ## Browser test (Playwright, production build, headless Chromium + SwiftShader)
 
-`npm run build && npm run test:e2e` — **3 passed** (gameplay 6.9 min at ≈1 fps software-rendered; graphics 3.0 min at 1920×1080 and 2.0 min at 1366×768).
+`npm run build && npm run test:e2e` — **3 passed** (gameplay 7.0 min at ≈1 fps software-rendered; graphics 1.6 min at 1920×1080 and 1.1 min at 1366×768).
 
 Two specs run. `graphics.spec.ts` (both viewports) checks the premium renderer: WebGL draw calls and triangles via the in-scene probe, the glTF van fetched and mounted with wheel/steer nodes, 32 merged houses, articulated workers, instanced vegetation layers, selection, routed driving whose rendered position follows the simulation with spinning wheels, the technician at the correct lot clear of the wall, diagnosis, payment and a clean console. `gameplay.spec.ts` performs the mandatory end-to-end flow through the real UI and verifies state through the `window.__ego` hook:
 

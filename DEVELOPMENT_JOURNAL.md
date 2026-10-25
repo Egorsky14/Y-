@@ -47,4 +47,4 @@
   view, down from 1,352 in the base build). The 17-step gameplay test then timed out: at about
   1 fps under SwiftShader the game loop's 0.25 s catch-up clamp made simulated time run at a
   quarter of wall time. The clamp is now 1 s and the per-test timeout 600 s; no assertion
-  changed. Full suite: gameplay 6.9 min, graphics 3.0 min at 1080p and 2.0 min at 768p.
+  changed. Full suite: gameplay 7.0 min, graphics 1.6 min at 1080p and 1.1 min at 768p.

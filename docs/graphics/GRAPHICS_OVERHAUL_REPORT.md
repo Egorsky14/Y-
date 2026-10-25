@@ -66,8 +66,8 @@ Browser (Playwright, production build, headless Chromium with SwiftShader):
 | Project | Spec | Result |
 | --- | --- | --- |
 | desktop-1080p | `gameplay.spec.ts` (17-step loop: dispatch, diagnose, repair, pay, hire, buy, assign, second job, train, improvement, save, reload) | passed, 6.9 min at 1.0 fps (SwiftShader) |
-| desktop-1080p | `graphics.spec.ts` (WebGL draw calls, glTF van fetched and mounted, 32 houses, workers, instanced layers, selection, routed driving with wheel spin and render-follows-simulation check, technician at the correct lot clear of the wall, diagnosis, payment, clean console) | passed, 3.0 min |
-| laptop-768p | `graphics.spec.ts` | passed, 2.0 min |
+| desktop-1080p | `graphics.spec.ts` (WebGL draw calls, glTF van fetched and mounted, 32 houses, workers, instanced layers, selection, routed driving with wheel spin and render-follows-simulation check, technician at the correct lot clear of the wall, diagnosis, payment, clean console) | passed, 1.6 min |
+| laptop-768p | `graphics.spec.ts` | passed, 1.1 min |
 
 The first full-suite run on the merged-neighborhood build timed out the gameplay spec at 420 s. Root cause: the heavier scene renders at about 1 fps under SwiftShader and the game loop clamped catch-up time to 0.25 s per frame, so simulated time ran at a quarter of wall time and the 17-step loop no longer fit. Fix: the clamp in `src/app/gameLoop.ts` is now 1.0 s (still bounded, so a tab switch cannot spiral), and the Playwright per-test timeout is 600 s. No assertion was removed or loosened; the test polls state exactly as before.
 
