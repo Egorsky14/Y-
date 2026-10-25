@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { advanceUntil, expectOk, firstLead, newEngine } from './helpers';
 import { reconcileCash } from '@/game/economy/ledger';
 import { faultById } from '@/game/jobs/faults';
-import { condenserPosition, lotById } from '@/game/world/cityLayout';
+import { condenserPosition, lotById, HOUSE_LOTS, workPosition, HOUSE_HALF_WIDTH } from '@/game/world/cityLayout';
 import { etaMinutes } from '@/game/fleet/fleet';
 import { spawnLead } from '@/game/jobs/leads';
 
@@ -46,6 +46,13 @@ describe('vertical slice job loop', () => {
     const tech = state.employees['emp-owner'];
     const unit = condenserPosition(lotById(customer.lotId)!);
     expect(Math.hypot(tech.position.x - unit.x, tech.position.z - unit.z)).toBeLessThan(3);
+    // The technician stands outside the house wall, never inside it.
+    for (const lot of HOUSE_LOTS) {
+      const w = workPosition(lot, 0);
+      const half = HOUSE_HALF_WIDTH[lot.style ?? 'ranch'];
+      const lateral = lot.facing === 'north' || lot.facing === 'south' ? Math.abs(w.x - lot.center.x) : Math.abs(w.z - lot.center.z);
+      expect(lateral).toBeGreaterThan(half + 1);
+    }
     expect(tech.status).toBe('working');
 
     advanceUntil(engine, (s) => s.jobs[lead.id].status === 'awaiting-diagnosis', 120);

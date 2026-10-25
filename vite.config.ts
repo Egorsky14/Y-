@@ -13,10 +13,11 @@ export default defineConfig({
     chunkSizeWarningLimit: 1500,
     rollupOptions: {
       output: {
-        manualChunks: {
-          three: ['three'],
-          r3f: ['@react-three/fiber', '@react-three/drei'],
-          react: ['react', 'react-dom'],
+        manualChunks(id: string) {
+          if (id.includes('node_modules/three/')) return 'three';
+          if (id.includes('@react-three') || id.includes('three-stdlib') || id.includes('troika') || id.includes('node_modules/zustand')) return 'r3f';
+          if (id.includes('node_modules/react')) return 'react';
+          return undefined;
         },
       },
     },

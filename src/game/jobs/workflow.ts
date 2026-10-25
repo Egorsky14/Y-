@@ -17,7 +17,7 @@ import {
 import { levelForXp } from '../employees/roles';
 import { routeFromHqToLot, routeFromLotToHq, vehicleSpeed, effectiveToolCapacity } from '../fleet/fleet';
 import { VEHICLE_SPECS } from '../fleet/vehicleCatalog';
-import { condenserPosition, lotById } from '../world/cityLayout';
+import { lotById, workPosition } from '../world/cityLayout';
 
 export type ActionResult = { ok: true } | { ok: false; reason: string };
 
@@ -123,15 +123,15 @@ export function advanceJobPhase(state: GameState, job: Job, dt: number): void {
   const tech = techFor(state, job);
   const customer = state.customers[job.customerId];
   const lot = lotById(customer.lotId)!;
-  const target = condenserPosition(lot);
   const crew = [job.technicianId, ...job.crewIds].filter((id): id is string => !!id).map((id) => state.employees[id]).filter(Boolean);
 
   if (job.status === 'arriving') {
     const t = 1 - Math.max(0, job.phaseRemaining) / job.phaseTotal;
     const vehicle = job.vehicleId ? state.vehicles[job.vehicleId] : undefined;
     crew.forEach((e, i) => {
+      const target = workPosition(lot, i);
       const from = vehicle ? vehicle.position : target;
-      e.position = { x: from.x + (target.x + i * 1.4 - from.x) * t, z: from.z + (target.z - from.z) * t };
+      e.position = { x: from.x + (target.x - from.x) * t, z: from.z + (target.z - from.z) * t };
     });
     if (job.phaseRemaining <= 0) {
       crew.forEach((e) => (e.status = 'working'));

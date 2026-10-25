@@ -167,15 +167,34 @@ export function inwardDir(facing: Facing): Vec2 {
   }
 }
 
-/** Where the outdoor condenser unit sits (side yard near the front). */
+/** Half-width of each house style on its condenser side (local +x), used to place the unit against the wall. */
+export const HOUSE_HALF_WIDTH: Record<HouseStyle, number> = { ranch: 8, 'two-story': 7, spanish: 8.5, modern: 8, premium: 9.5 };
+
+/** Unit vector pointing from the house toward its condenser side (local +x in house space). */
+export function condenserSideDir(lot: Lot): Vec2 {
+  const sideSign = lot.facing === 'north' || lot.facing === 'west' ? 1 : -1;
+  return lot.facing === 'north' || lot.facing === 'south' ? { x: sideSign, z: 0 } : { x: 0, z: sideSign };
+}
+
+/** Where the outdoor condenser unit sits: against the side wall, near the front of the house. */
 export function condenserPosition(lot: Lot): Vec2 {
   const inward = inwardDir(lot.facing);
-  // Place the unit at the front corner of the house, offset to the right side when facing the street.
-  const sideSign = lot.facing === 'north' || lot.facing === 'west' ? 1 : -1;
-  const lateral = lot.facing === 'north' || lot.facing === 'south' ? { x: sideSign * 9.5, z: 0 } : { x: 0, z: sideSign * 9.5 };
+  const side = condenserSideDir(lot);
+  const offset = HOUSE_HALF_WIDTH[lot.style ?? 'ranch'] + 0.9;
   return {
-    x: lot.center.x + lateral.x - inward.x * 4,
-    z: lot.center.z + lateral.z - inward.z * 4,
+    x: lot.center.x + side.x * offset - inward.x * 3,
+    z: lot.center.z + side.z * offset - inward.z * 3,
+  };
+}
+
+/** Where a crew member stands to work on the unit: outward from the wall, spaced along the house. */
+export function workPosition(lot: Lot, crewIndex: number): Vec2 {
+  const c = condenserPosition(lot);
+  const side = condenserSideDir(lot);
+  const inward = inwardDir(lot.facing);
+  return {
+    x: c.x + side.x * 1.3 + inward.x * crewIndex * 1.3,
+    z: c.z + side.z * 1.3 + inward.z * crewIndex * 1.3,
   };
 }
 
