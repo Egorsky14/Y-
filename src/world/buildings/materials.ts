@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { asphaltPbr, blockWallPbr, concretePbr, garageDoorPbr, gravelPbr, lawnPbr, pbrMaterial, sandPbr, shinglePbr, stuccoPbr, tileRoofPbr } from '../assets/pbr';
+import { asphaltPbr, blockWallPbr, concretePbr, garageDoorPbr, gravelPbr, lawnPbr, pbrMaterial, sandPbr, shinglePbr, sidingPbr, stuccoPbr, tileRoofPbr } from '../assets/pbr';
 import { windowTexture } from '../assets/textures';
 
 /** Shared, cached materials for merged static geometry. Keys match MeshBuilder material names. */
@@ -45,6 +45,11 @@ export const STATIC_MATERIALS = {
   gravel: () => cached('gravel', () => pbrMaterial(gravelPbr(), { roughness: 1 })),
   lawn: () => cached('lawn', () => pbrMaterial(lawnPbr(), { roughness: 1 })),
   sand: () => cached('sand', () => pbrMaterial(sandPbr(), { roughness: 1 })),
+  siding: () => cached('siding', () => pbrMaterial(sidingPbr(), { roughness: 0.55, metalness: 0.35 })),
+  officeWall: () => cached('officeWall', () => pbrMaterial(stuccoPbr(), { color: '#d8d3c9', roughness: 0.9 })),
+  storefront: () => cached('storefront', () => new THREE.MeshStandardMaterial({ color: '#7fa6c4', roughness: 0.12, metalness: 0.6, envMapIntensity: 1.4 })),
+  teal: () => cached('teal', () => new THREE.MeshStandardMaterial({ color: '#19d3c5', roughness: 0.45, metalness: 0.2, emissive: '#19d3c5', emissiveIntensity: 0.18 })),
+  bollard: () => cached('bollard', () => new THREE.MeshStandardMaterial({ color: '#f2c230', roughness: 0.6 })),
   mulch: () => cached('mulch', () => new THREE.MeshStandardMaterial({ color: '#4a3524', roughness: 1 })),
   metal: () => cached('metal', () => new THREE.MeshStandardMaterial({ color: '#8d9399', roughness: 0.45, metalness: 0.7 })),
   darkMetal: () => cached('darkMetal', () => new THREE.MeshStandardMaterial({ color: '#2b2f33', roughness: 0.6, metalness: 0.5 })),
@@ -67,4 +72,6 @@ export const UV_SCALES: Record<string, number> = {
   gravel: 1.6,
   lawn: 2,
   sand: 10,
+  siding: 2.0,
+  officeWall: 2.5,
 };

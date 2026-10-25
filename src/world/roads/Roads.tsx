@@ -20,7 +20,7 @@ function buildRoads(): THREE.Group {
     curb: new THREE.MeshStandardMaterial({ color: '#c9c4b8', roughness: 0.95 }),
     white: new THREE.MeshStandardMaterial({ color: '#e8e8e4', roughness: 0.6 }),
     yellow: new THREE.MeshStandardMaterial({ color: '#e2c45a', roughness: 0.6 }),
-    manhole: new THREE.MeshStandardMaterial({ color: '#3a3d41', roughness: 0.7, metalness: 0.5 }),
+    manhole: new THREE.MeshStandardMaterial({ color: '#5a5d61', roughness: 0.6, metalness: 0.6 }),
     pole: new THREE.MeshStandardMaterial({ color: '#8d9399', roughness: 0.45, metalness: 0.7 }),
     stop: new THREE.MeshStandardMaterial({ color: '#c4262e', roughness: 0.5 }),
     stopText: new THREE.MeshStandardMaterial({ color: '#ffffff', roughness: 0.5 }),
@@ -52,7 +52,7 @@ function buildRoads(): THREE.Group {
     }
     for (const side of [-1, 1]) b.box('white', size(length - 8, 0.12, 0.012), pos(center, side * (half - 0.35), 0.05));
     // Manholes
-    for (let a = s.from + 37; a < s.to; a += 61) b.add('manhole', new THREE.CylinderGeometry(0.45, 0.45, 0.03, 16), pos(a, 1.4, 0.055));
+    for (let a = s.from + 37; a < s.to; a += 61) b.add('manhole', new THREE.CylinderGeometry(0.45, 0.45, 0.012, 16), pos(a, 1.4, 0.046));
   }
 
   // Intersections: asphalt patch, crosswalk bars, stop lines, stop signs and street blades.

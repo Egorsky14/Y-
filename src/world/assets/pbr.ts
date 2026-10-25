@@ -192,7 +192,7 @@ export function asphaltPbr(): PbrSet {
     const rnd = makeDecoRng(52);
     // Patches and faint cracks
     for (let i = 0; i < 14; i++) {
-      cctx.fillStyle = `rgba(${60 + rnd() * 20},${60 + rnd() * 20},${62 + rnd() * 20},0.25)`;
+      cctx.fillStyle = `rgba(${66 + rnd() * 16},${66 + rnd() * 16},${68 + rnd() * 16},0.12)`;
       cctx.beginPath();
       cctx.ellipse(rnd() * size, rnd() * size, 30 + rnd() * 80, 20 + rnd() * 50, rnd() * 3, 0, Math.PI * 2);
       cctx.fill();
@@ -369,6 +369,28 @@ export function garageDoorPbr(): PbrSet {
     }
     const normal = heightToNormal(blurCanvas(h, 0.8), 1.5);
     return { map: toTexture(c, true), normalMap: toTexture(normal, false), metersPerRepeat: 2.6 };
+  });
+}
+
+/** Vertical standing-seam metal siding. */
+export function sidingPbr(): PbrSet {
+  return getOrMake('siding', () => {
+    const size = 256;
+    const color = tintedColor(size, 111, [52, 56, 61], 5, 2500, 2);
+    const cctx = color.getContext('2d')!;
+    const [h, hctx] = makeCanvas(size);
+    hctx.fillStyle = '#808080';
+    hctx.fillRect(0, 0, size, size);
+    for (let x = 0; x < size; x += 32) {
+      hctx.fillStyle = '#c0c0c0';
+      hctx.fillRect(x, 0, 6, size);
+      cctx.fillStyle = 'rgba(255,255,255,0.05)';
+      cctx.fillRect(x, 0, 6, size);
+      cctx.fillStyle = 'rgba(0,0,0,0.18)';
+      cctx.fillRect(x + 6, 0, 3, size);
+    }
+    const normal = heightToNormal(blurCanvas(h, 0.8), 2.0);
+    return { map: toTexture(color, true), normalMap: toTexture(normal, false), metersPerRepeat: 2.0 };
   });
 }
 

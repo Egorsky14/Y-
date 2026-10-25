@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import * as THREE from 'three';
 import * as BGU from 'three/examples/jsm/utils/BufferGeometryUtils.js';
-import { HOUSE_LOTS, PARK_LOT, ROAD_WIDTH, SIDEWALK_WIDTH, STREETS, WORLD_HALF, type Lot } from '@/game/world/cityLayout';
+import { HOUSE_LOTS, HQ_LOT, PARK_LOT, ROAD_WIDTH, SIDEWALK_WIDTH, STREETS, WORLD_HALF, type Lot } from '@/game/world/cityLayout';
 import { makeDecoRng } from '../assets/random';
 import { yardPlan, type Species } from './yardLayout';
 import { useApp } from '@/app/store';
@@ -218,6 +218,15 @@ function collectInstances(density: number): Instance[] {
         out.push({ species: rnd() < 0.7 ? 'palm' : 'mesquite', x, z, rotation: rnd() * Math.PI * 2, scale: 0.85 + rnd() * 0.4, tint: 0.95 + rnd() * 0.1 });
       }
     }
+  }
+  // Headquarters: palms in the parking islands and along the west fence, agave at the sign.
+  const hx = HQ_LOT.center.x;
+  const hz = HQ_LOT.center.z;
+  for (const [lx, lz] of [[-44, -34.5], [-30, -34.5], [-16, -34.5], [-44, 10.5], [-30, 10.5], [-16, 10.5], [-55, -30], [-55, -16], [-55, 18], [-55, 30]] as [number, number][]) {
+    out.push({ species: 'palm', x: hx + lx, z: hz + lz, rotation: rnd() * 6.28, scale: 0.95 + rnd() * 0.3, tint: 0.95 + rnd() * 0.1 });
+  }
+  for (const [lx, lz] of [[-52, -15], [-48, -9], [-55, -24], [-55, 24], [-55, 34]] as [number, number][]) {
+    out.push({ species: rnd() < 0.5 ? 'agave' : 'shrub-sage', x: hx + lx, z: hz + lz, rotation: rnd() * 6.28, scale: 0.9 + rnd() * 0.4, tint: 0.95 + rnd() * 0.1 });
   }
   // Park
   for (let i = 0; i < 16; i++) {
