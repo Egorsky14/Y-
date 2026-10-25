@@ -48,3 +48,24 @@
   1 fps under SwiftShader the game loop's 0.25 s catch-up clamp made simulated time run at a
   quarter of wall time. The clamp is now 1 s and the per-test timeout 600 s; no assertion
   changed. Full suite: gameplay 7.0 min, graphics 1.6 min at 1080p and 1.1 min at 768p.
+
+## Visual excellence pass (branch `v3-visual-excellence`)
+
+- Audited the premium build with native captures at three viewports and listed the 15 largest
+  visible problems before touching code (`docs/visual-excellence/BEFORE_AUDIT.md`).
+- Milestone A rebuilt the HQ as a site: the lot was re-planned around the simulation's fixed
+  stall and apron coordinates so no prop sits on a vehicle path. Parapet copings had been solid
+  slabs that hid the roof membranes; they are now edge pieces.
+- Milestone B lofted vehicle shells over the beveled tubs. The first loft was inside-out
+  (back-face culled sides); winding fixed in the builder. The right-side wrap polygon mirrored
+  until the side-polygon helper negated z for the +x face.
+- Milestone C: startup ballooned to 21 s in the software renderer. A CPU profile showed shader
+  compilation (unavoidable here) and thousands of per-pixel canvas calls; texture noise now goes
+  through ImageData writes and the normal-map pass uses typed arrays. The gameplay test still
+  needs a 1200 s budget at 0.6 fps.
+- Milestone D: the foot pivot was first placed at the knee; moved to the ankle. Pose blending
+  replaced per-frame hard resets so state changes no longer pop.
+- Milestone E: sunset was a step function in `sunAngles`; it is now a two-hour twilight ramp.
+  Atmosphere eases per frame but snaps when the clock jumps so captures show the right hour.
+- Photo Mode previews time and weather purely in presentation state; the regression asserts
+  cash is unchanged across enter and exit.
