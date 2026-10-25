@@ -46,11 +46,11 @@ export function addCondenser(b: MeshBuilder, origin: V3, yaw = 0, o: CondenserOp
   // Corner posts
   for (const sx of [-1, 1]) for (const sz of [-1, 1]) b.box(cab, [0.06, h, 0.06], at(base, [sx * (w / 2 - 0.03), y0 - base[1] + h / 2, sz * (w / 2 - 0.03)], yaw));
   // Louvered coil guards on -x, +x, -z; the +z face carries the service panel.
-  const slats = 9;
+  const slats = 13;
   for (let i = 0; i < slats; i++) {
     const y = y0 + 0.14 + (i / (slats - 1)) * (h - 0.36);
-    for (const side of [-1, 1]) b.box('grille', [0.035, 0.03, w - 0.16], at(base, [side * (w / 2 - 0.005), y - base[1], 0], yaw));
-    b.box('grille', [w - 0.16, 0.03, 0.035], at(base, [0, y - base[1], -(w / 2 - 0.005)], yaw));
+    for (const side of [-1, 1]) b.box('grille', [0.025, 0.018, w - 0.16], at(base, [side * (w / 2 - 0.005), y - base[1], 0], yaw));
+    b.box('grille', [w - 0.16, 0.018, 0.025], at(base, [0, y - base[1], -(w / 2 - 0.005)], yaw));
   }
   // Dark coil behind the slats
   for (const side of [-1, 1]) b.box('insulation', [0.02, h - 0.3, w - 0.16], at(base, [side * (w / 2 - 0.035), y0 - base[1] + h / 2, 0], yaw));
@@ -67,7 +67,7 @@ export function addCondenser(b: MeshBuilder, origin: V3, yaw = 0, o: CondenserOp
     const a = (i / 12) * Math.PI * 2;
     b.box('grille', [w * 0.74, 0.012, 0.012], at(base, [0, top - base[1] + 0.01, 0], yaw), [0, a + yaw, 0]);
   }
-  b.add('insulation', new THREE.CylinderGeometry(w * 0.38, w * 0.38, 0.02, 24), at(base, [0, top - base[1] - 0.02, 0], yaw));
+  b.add('insulation', new THREE.CylinderGeometry(w * 0.38, w * 0.38, 0.02, 24), at(base, [0, top - base[1] - 0.1, 0], yaw));
   if (o.fan !== false) {
     for (let i = 0; i < 3; i++) b.box('galvanized', [w * 0.3, 0.01, 0.09], at(base, [Math.cos((i / 3) * 6.283) * w * 0.17, top - base[1] - 0.04, Math.sin((i / 3) * 6.283) * w * 0.17], yaw), [0.5, -(i / 3) * 6.283, 0]);
   }

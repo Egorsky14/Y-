@@ -12,7 +12,7 @@ import { useMemo } from 'react';
 import { Headquarters } from '../buildings/Headquarters';
 import { CompetitorBuilding, Park, SupplyWarehouse } from '../buildings/Commercial';
 import { Vegetation } from '../city/Vegetation';
-import { JobMarkers, Vehicles, Workers } from './LiveEntities';
+import { JobMarkers, JobSiteProps, Vehicles, Workers } from './LiveEntities';
 import { HOUSE_LOTS } from '@/game/world/cityLayout';
 import { LabelProjector } from '../interactions/LabelProjector';
 import { RenderProbe } from './RenderProbe';
@@ -51,6 +51,10 @@ export function GameScene() {
       dpr={quality === 'ultra' ? [1, 2] : quality === 'high' ? [1, 1.5] : quality === 'medium' ? [1, 1.25] : 1}
       camera={{ position: [initial.x, initial.y, initial.z], fov: 38, near: 1, far: 3000 }}
       gl={{ antialias: true, powerPreference: 'high-performance', toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.05 }}
+      onCreated={({ gl }) => {
+        // Synchronous shader-log reads stall startup on slow drivers; errors still surface via the console.
+        gl.debug.checkShaderErrors = import.meta.env.DEV;
+      }}
       onPointerMissed={(e) => {
         if (e.button === 0) select(null);
       }}
@@ -69,6 +73,7 @@ export function GameScene() {
         <Park />
         <Vehicles />
         <Workers />
+        <JobSiteProps />
         <JobMarkers />
         <CameraRig />
         <LabelProjector />
