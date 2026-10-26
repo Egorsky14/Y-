@@ -142,6 +142,8 @@ test('full gameplay loop: dispatch, diagnose, repair, grow, train, save and relo
   await page.getByTestId('speed-1').click();
   await page.evaluate((pos) => window.__ego!.app.getState().camera({ type: 'focus', target: pos, distance: 26 }), onsite.pos);
   await page.waitForTimeout(1500);
+  // The Blender-authored service kit (bag, gauge manifold and hoses) is staged at the unit.
+  await page.waitForFunction(() => (window.__egoRender?.kits ?? 0) >= 1, null, { timeout: 20_000 });
   await page.screenshot({ path: SHOT('04-technician-diagnosing') });
 
   // 6. Diagnose the system.

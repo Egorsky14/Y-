@@ -1,5 +1,5 @@
 // Generates every procedural GLB asset and the manifest. Run: node tools/assets/build.mjs
-import { writeFile } from 'node:fs/promises';
+import { readFile, writeFile } from 'node:fs/promises';
 import { exportGlb } from './export.mjs';
 import { describe } from './lib.mjs';
 import { fullSizeVan, compactVan, pickup, boxTruck } from './vehicles.mjs';
@@ -20,4 +20,7 @@ for (const a of ASSETS) {
   manifest.assets.push({ id: a.id, category: a.category, file: `models/${a.category}/${a.id}.glb`, bytes, ...info, description: a.description, source: 'procedural (tools/assets)', license: 'project' });
   console.log(`${a.id}: ${info.meshes} meshes, ${info.triangles} tris, ${(bytes / 1024).toFixed(0)} KB`);
 }
+// Keep entries authored outside this generator (Blender assets, see docs/art/ASSET_PIPELINE.md).
+const previous = JSON.parse(await readFile('public/models/manifest.json', 'utf8').catch(() => '{"assets":[]}'));
+manifest.assets.push(...previous.assets.filter((a) => !a.source.startsWith('procedural')));
 await writeFile('public/models/manifest.json', JSON.stringify(manifest, null, 2));

@@ -3,7 +3,7 @@ import * as THREE from 'three';
 
 declare global {
   interface Window {
-    __egoRender?: { calls: number; triangles: number; geometries: number; textures: number; frame: number; houses: number; vehicleModels: number; workers: number; instanced: number };
+    __egoRender?: { calls: number; triangles: number; geometries: number; textures: number; frame: number; houses: number; vehicleModels: number; workers: number; instanced: number; kits: number };
     __egoVehicles?: Record<string, { x: number; z: number; heading: number; wheelSpin: number; steer: number; roll: number; pitch: number }>;
     /** Live renderer, scene and camera for profiling tools. */
     __egoThree?: { gl: THREE.WebGLRenderer; scene: THREE.Scene; camera: THREE.Camera };
@@ -26,11 +26,14 @@ export function RenderProbe() {
     let vehicleModels = 0;
     let workers = 0;
     let instanced = 0;
+    let kits = 0;
     const vehicles: NonNullable<Window['__egoVehicles']> = {};
     scene.traverse((o) => {
       if (o.name.startsWith('house:') && !o.name.includes(':', 6)) houses++;
       if (o.name.startsWith('employee:')) workers++;
       if ((o as THREE.InstancedMesh).isInstancedMesh) instanced++;
+      // A staged job-site kit counts once its glTF meshes are in the scene.
+      if (o.name === 'jobsite-kit' && o.getObjectByName('manifold')) kits++;
       if (o.name.startsWith('vehicle-model:')) {
         vehicleModels++;
         const root = o.parent?.parent?.parent; // Selectable group → vehicle group
@@ -50,7 +53,7 @@ export function RenderProbe() {
         };
       }
     });
-    window.__egoRender = { calls: i.render.calls, triangles: i.render.triangles, geometries: i.memory.geometries, textures: i.memory.textures, frame: i.render.frame, houses, vehicleModels, workers, instanced };
+    window.__egoRender = { calls: i.render.calls, triangles: i.render.triangles, geometries: i.memory.geometries, textures: i.memory.textures, frame: i.render.frame, houses, vehicleModels, workers, instanced, kits };
     window.__egoVehicles = vehicles;
   });
   return null;

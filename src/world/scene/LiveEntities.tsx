@@ -1,6 +1,7 @@
-import { useRef } from 'react';
+import { Suspense, useMemo, useRef } from 'react';
 import * as THREE from 'three';
 import { useFrame } from '@react-three/fiber';
+import { useGLTF } from '@react-three/drei';
 import { getGameState, useGame } from '@/app/store';
 import { VehicleGltf, WHEEL_RADIUS, type VehicleRig } from '../vehicles/VehicleGltf';
 import { useCallback } from 'react';
@@ -200,7 +201,27 @@ function WorkerView({ id }: { id: string }) {
   );
 }
 
-/** Tools staged beside the condenser while a technician is on site: open bag, gauge manifold with hoses, a cylinder. */
+/** Blender-authored job-site kit (tools/blender/jobsite_kit.py): bag, gauge manifold with hoses, recovery cylinder. */
+const KIT_URL = `${import.meta.env.BASE_URL}models/props/jobsite-kit.glb`;
+useGLTF.preload(KIT_URL);
+
+function JobSiteKit({ install }: { install: boolean }) {
+  const { scene } = useGLTF(KIT_URL);
+  const kit = useMemo(() => {
+    const root = scene.clone(true);
+    root.traverse((o) => {
+      if (!(o as THREE.Mesh).isMesh) return;
+      o.castShadow = true;
+      o.receiveShadow = true;
+    });
+    return root;
+  }, [scene]);
+  const cylinder = kit.getObjectByName('cylinder');
+  if (cylinder) cylinder.visible = install;
+  return <primitive object={kit} />;
+}
+
+/** Tools staged beside the condenser while a technician is on site: tool bag, gauge manifold with hoses, a recovery cylinder on installs. */
 export function JobSiteProps() {
   const sites = useGame((s) =>
     Object.values(s.jobs)
@@ -223,40 +244,10 @@ export function JobSiteProps() {
         const pz = c.z + side.z * 1.2 - inward.z * 0.9;
         const yaw = Math.atan2(side.x, side.z);
         return (
-          <group key={id} position={[px, 0, pz]} rotation={[0, yaw, 0]}>
-            <mesh position={[0, 0.14, 0]} castShadow>
-              <boxGeometry args={[0.46, 0.28, 0.3]} />
-              <meshStandardMaterial color="#1d1f22" roughness={0.8} />
-            </mesh>
-            <mesh position={[0, 0.29, 0]}>
-              <boxGeometry args={[0.4, 0.02, 0.26]} />
-              <meshStandardMaterial color="#19d3c5" roughness={0.7} />
-            </mesh>
-            {/* Gauge manifold: body, two dials, three hoses to the ground */}
-            <group position={[0.55, 0, 0.1]}>
-              <mesh position={[0, 0.12, 0]} castShadow>
-                <boxGeometry args={[0.2, 0.08, 0.06]} />
-                <meshStandardMaterial color="#b9bfc5" roughness={0.4} metalness={0.7} />
-              </mesh>
-              {[-0.06, 0.06].map((x, i) => (
-                <mesh key={x} position={[x, 0.2, 0]} rotation={[Math.PI / 2, 0, 0]}>
-                  <cylinderGeometry args={[0.045, 0.045, 0.025, 14]} />
-                  <meshStandardMaterial color={i === 0 ? '#2c6fd1' : '#d13b3b'} roughness={0.5} />
-                </mesh>
-              ))}
-              {[[-0.07, '#2c6fd1'], [0, '#e2c23a'], [0.07, '#d13b3b']].map(([x, col]) => (
-                <mesh key={String(x)} position={[Number(x), 0.05, 0.1]} rotation={[0.9, 0, 0]}>
-                  <cylinderGeometry args={[0.008, 0.008, 0.3, 6]} />
-                  <meshStandardMaterial color={String(col)} roughness={0.8} />
-                </mesh>
-              ))}
-            </group>
-            {kind === 'i' && (
-              <mesh position={[-0.5, 0.25, 0.1]} castShadow>
-                <cylinderGeometry args={[0.15, 0.15, 0.5, 12]} />
-                <meshStandardMaterial color="#8fa3b8" roughness={0.4} metalness={0.6} />
-              </mesh>
-            )}
+          <group key={id} name="jobsite-kit" position={[px, 0, pz]} rotation={[0, yaw, 0]}>
+            <Suspense fallback={null}>
+              <JobSiteKit install={kind === 'i'} />
+            </Suspense>
           </group>
         );
       })}
