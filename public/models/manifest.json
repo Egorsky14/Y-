@@ -51,9 +51,9 @@
       "id": "jobsite-kit",
       "category": "props",
       "file": "models/props/jobsite-kit.glb",
-      "bytes": 319076,
+      "bytes": 422816,
       "meshes": 3,
-      "triangles": 9968,
+      "triangles": 14096,
       "description": "Job-site service kit: soft tool bag with EGO teal webbing, 2-valve gauge manifold with low/high dials and three coiled charging hoses, recovery cylinder (nodes bag, manifold, cylinder)",
       "source": "blender 5.2.3 (tools/blender/jobsite_kit.py)",
       "license": "project"

@@ -30,11 +30,11 @@
     ]
   },
   "render": {
-    "calls": 433,
-    "triangles": 995136,
+    "calls": 407,
+    "triangles": 1001168,
     "geometries": 427,
-    "textures": 52,
-    "frame": 747,
+    "textures": 53,
+    "frame": 1284,
     "houses": 32,
     "vehicleModels": 1,
     "workers": 1,

@@ -67,22 +67,27 @@ Replaces the primitive boxes and stick hoses staged beside the condenser during 
 
 | Node | Size (m) | Triangles | Contents |
 | --- | --- | --- | --- |
-| `bag` | 0.47 × 0.34 × 0.40 | 1,120 | Soft-sided tool bag, rounded ballistic nylon, binding seams, zipper and pull, front pocket, rubber base, EGO teal band, piping and webbing handles |
-| `manifold` | 0.56 × 0.42 × 0.10 | 7,300 | Aluminium manifold body, knurled blue/red valve knobs, three brass ports, low/high dials with printed faces (blue/red pressure arcs, ticks, needles) and chrome bezels, hanging hook; blue, yellow and red charging hoses coiled side by side with brass couplers |
+| `bag` | 0.47 × 0.33 × 0.40 | 2,560 | Soft-sided tool bag (bevel + one subdivision level), ballistic nylon, binding seams, zipper and pull, front pocket, rubber base, EGO teal webbing band that follows the tapered body, piping and webbing handles |
+| `manifold` | 0.77 × 0.49 × 0.10 | 9,988 | Aluminium manifold body, knurled blue/red valve knobs, three brass ports, low/high dials with printed faces (blue/red pressure arcs, ticks, needles) and chrome bezels, hanging hook; blue, yellow and red ~1.2 m charging hoses (real ones are 36–72 in) in separate spiral coils with brass couplers |
 | `cylinder` | 0.30 × 0.30 × 0.47 | 1,548 | Grey recovery cylinder, yellow shoulder, valve guard collar, two valves with blue/red handwheels; visible on install jobs only |
 
-GLB 312 KB, 9,968 triangles (budget 16,000), 16 draw calls per staged kit (21 on installs).
+GLB 413 KB, 14,096 triangles (budget 16,000), 16 draw calls per staged kit (21 on installs).
 Evidence:
 
 - Blender close-ups: `docs/art/previews/kit-front.png`, `kit-top.png`, `manifold-close.png`
-- In game (seed 42, tutorial lead, diagnosis visit): `docs/art/ingame/kit-gameplay.png`,
-  `kit-mid.png`, `kit-close.png` (camera minimum distance is 5 m), produced by
+- In game (seed 42, tutorial lead, diagnosis visit): `docs/art/ingame/kit-gameplay.png` (26 m),
+  `kit-mid.png` (7 m), and Photo Mode close-ups `kit-close.png`, `kit-close-side.png`,
+  `manifold-close.png` (1.5 m) and `kit-with-tech.png`, produced by
   `node docs/art/scripts/kitshots.cjs <profile-build-url> docs/art/ingame`
 - Gameplay e2e now waits for `window.__egoRender.kits >= 1` at the diagnosis step.
 
 Validation caught one real defect while building it (manifold 22 mm below ground from an unbaked
 origin); the first preview showed two more (bezel cap hiding the dial faces, hoses crossing
-through each other). All three are fixed in the script.
+through each other); the in-game review found hoses too short for real charging hoses and a
+teal band standing 16 mm off the tapered bag. All are fixed in the script.
+
+Known limitation: the bag still reads as a fairly hard-sided box. Real HVAC tool bags are mostly
+open-top totes (wide base, tools visible); that redesign belongs with the technician milestone.
 
 Honest scope: this is a small hard-surface prop that proves the pipeline end to end. It does not
 yet connect the hoses to the condenser's service valves (condenser milestone).

@@ -19,7 +19,7 @@ kept); the machine-readable list is `public/models/manifest.json`.
 | Pickup truck | `vehicles/pickup.glb` | 16,548 | 33 | 763 KB | Crew cab, open bed with liner, tailgate, crossbed toolbox, headache rack, running boards |
 | Installation box truck | `vehicles/box-truck.glb` | 20,200 | 41 | 882 KB | Conventional cab, white cargo box with rub rails, roll-up door, liftgate, dual rear wheels, exhaust stack, fuel tank |
 
-| Job-site service kit (Blender) | `props/jobsite-kit.glb` | 9,968 | 3 nodes, 21 primitives | 312 KB | Soft tool bag with EGO teal webbing and handles; 2-valve gauge manifold with low/high dial faces (generated textures), knurled knobs, brass ports and three coiled charging hoses with couplers; recovery cylinder (shown on install jobs only). Real-world metres, origin at the ground point. Source `tools/blender/jobsite_kit.py` |
+| Job-site service kit (Blender) | `props/jobsite-kit.glb` | 14,096 | 3 nodes, 21 primitives | 413 KB | Soft tool bag with EGO teal webbing and handles; 2-valve gauge manifold with low/high dial faces (generated textures), knurled knobs, brass ports and three ~1.2 m coiled charging hoses with couplers; recovery cylinder (shown on install jobs only). Real-world metres, origin at the ground point. Source `tools/blender/jobsite_kit.py` |
 
 Named materials inside each model (`paint`, `glass`, `accent`, `decal-left/right/rear`, `headlight`,
 `rubber`, `rim`, `chrome`, …) are remapped at runtime for per-vehicle paint, EGO HVAC wordmark

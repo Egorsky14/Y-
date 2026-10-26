@@ -44,14 +44,21 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
   });
   // Hide the HUD so only the 3D frame is captured.
   await ev(() => { const s = document.createElement('style'); s.textContent = 'body *:not(canvas){visibility:hidden !important}'; document.head.appendChild(s); for (let e = document.querySelector('canvas'); e; e = e.parentElement) e.style.setProperty('visibility', 'visible', 'important'); });
-  const shot = async (name, distance, azimuth) => {
-    await ev((c) => window.__ego.app.getState().camera(c), { type: 'focus', target: { x: kit.x, z: kit.z }, distance, azimuth });
+  const shot = async (name, distance, azimuth, elevation, target = kit) => {
+    await ev((c) => window.__ego.app.getState().camera(c), { type: 'focus', target: { x: target.x, z: target.z }, distance, azimuth, ...(elevation !== undefined ? { elevation } : {}) });
     await sleep(2600);
     await page.screenshot({ path: path.join(outDir, `${name}.png`) });
   };
   await shot('kit-gameplay', 26, kit.yaw + 0.9);
   await shot('kit-mid', 7, kit.yaw + 0.7);
-  await shot('kit-close', 2.4, kit.yaw + 0.5);
+  // Photo Mode allows the camera down to 1.5 m (gameplay stops at 5 m); it never touches the simulation.
+  await ev(() => window.__ego.app.getState().setPhoto({ on: true }));
+  await sleep(800);
+  const man = await ev(() => { const k = window.__egoThree.scene.getObjectByName('jobsite-kit'); const m = k.getObjectByName('manifold'); const b = new (m.position.constructor)(); m.updateWorldMatrix(true, true); const box = { min: [Infinity, Infinity, Infinity], max: [-Infinity, -Infinity, -Infinity] }; m.traverse((o) => { if (!o.isMesh) return; o.geometry.computeBoundingBox(); const bb = o.geometry.boundingBox.clone().applyMatrix4(o.matrixWorld); for (let i = 0; i < 3; i++) { box.min[i] = Math.min(box.min[i], bb.min.getComponent(i)); box.max[i] = Math.max(box.max[i], bb.max.getComponent(i)); } }); void b; return { x: (box.min[0] + box.max[0]) / 2, z: (box.min[2] + box.max[2]) / 2 }; });
+  await shot('kit-close', 1.8, kit.yaw + 0.5, 0.55);
+  await shot('kit-close-side', 1.8, kit.yaw + 2.1, 0.45);
+  await shot('manifold-close', 1.5, kit.yaw + 0.3, 0.95, man);
+  await shot('kit-with-tech', 3.2, kit.yaw - 0.4, 0.35);
   const render = await ev(() => window.__egoRender);
   fs.writeFileSync(path.join(outDir, 'kitshots.json'), JSON.stringify({ jobId, kit, render, errors }, null, 2));
   console.log(JSON.stringify({ jobId, kit, kits: render.kits, calls: render.calls, errors }));

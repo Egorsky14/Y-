@@ -206,24 +206,49 @@ for v in bm.verts:  # soft top: the opening is a little narrower than the base
         v.co.y *= 0.86
 bm.to_mesh(body.data)
 bm.free()
-bag_parts.append(smooth(bevel(body, 0.06, 4), 50))  # generous radius: soft ballistic nylon, not a hard case
+# Generous bevel plus one subdivision level: the pillowed silhouette of sewn ballistic nylon, not a hard case.
+bevel(body, 0.06, 4)
+soft = body.modifiers.new("subsurf", "SUBSURF")
+soft.levels = soft.render_levels = 1
+bag_parts.append(smooth(body, 50))
 # Binding seams along the top edges and a teal webbing band around the bag.
 for y in (-0.129, 0.129):
     bag_parts.append(smooth(bevel(prim(bpy.ops.mesh.primitive_cube_add, "seam", "nylon-edge", location=(0, y, 0.272), scale=(0.215, 0.008, 0.01), size=2), 0.004, 1), 60))
-band = prim(bpy.ops.mesh.primitive_cube_add, "band", "teal", location=(0, 0, 0.17), scale=(0.234, 0.153, 0.018), size=2)
-bm = bmesh.new()
-bm.from_mesh(band.data)
-bmesh.ops.delete(bm, geom=[f for f in bm.faces if abs(f.normal.z) > 0.9], context="FACES")
-bm.to_mesh(band.data)
-bm.free()
-bag_parts.append(band)
+
+
+def rounded_ring(name, mat, hx, hy, radius, z0, z1, thickness=0.003, corner_segments=6):
+    """Closed band around a rounded rectangle (outer half-extents hx, hy): webbing that hugs a body."""
+    def outline(ox, oy, r):
+        pts = []
+        for cx, cy, a0 in ((ox - r, oy - r, 0), (-ox + r, oy - r, 0.5 * math.pi), (-ox + r, -oy + r, math.pi), (ox - r, -oy + r, 1.5 * math.pi)):
+            for k in range(corner_segments + 1):
+                a = a0 + 0.5 * math.pi * k / corner_segments
+                pts.append((cx + r * math.cos(a), cy + r * math.sin(a)))
+        return pts
+    bm = bmesh.new()
+    rings = []
+    for ox, oy, r, z in ((hx, hy, radius, z0), (hx, hy, radius, z1), (hx - thickness, hy - thickness, radius - thickness, z1), (hx - thickness, hy - thickness, radius - thickness, z0)):
+        rings.append([bm.verts.new((x, y, z)) for x, y in outline(ox, oy, r)])
+    n = len(rings[0])
+    for a, b in zip(rings, rings[1:] + rings[:1]):
+        for i in range(n):
+            j = (i + 1) % n
+            bm.faces.new((a[i], a[j], b[j], b[i]))
+    bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
+    return smooth(obj_from_bmesh(name, bm, mat), 40)
+
+
+# The body tapers toward the opening; at the band height (z 0.15-0.186) it is ~0.137 m half-deep.
+bag_parts.append(rounded_ring("band", "teal", 0.233, 0.141, 0.065, 0.152, 0.186))
 # Zipper track and pull along the opening.
 bag_parts.append(prim(bpy.ops.mesh.primitive_cube_add, "zip", "zip", location=(0, 0, 0.279), scale=(0.2, 0.006, 0.003), size=2))
 bag_parts.append(smooth(prim(bpy.ops.mesh.primitive_cylinder_add, "pull", "zip", location=(0.12, 0.012, 0.281), rotation=(math.pi / 2, 0, 0), vertices=10, radius=0.008, depth=0.012), 50))
 # Front pocket with its own teal piping.
 pocket = prim(bpy.ops.mesh.primitive_cube_add, "pocket", "nylon", location=(0, -0.152, 0.11), scale=(0.15, 0.025, 0.07), size=2)
-bag_parts.append(smooth(bevel(pocket, 0.018, 2), 50))
-bag_parts.append(prim(bpy.ops.mesh.primitive_cube_add, "pocket-pipe", "teal", location=(0, -0.176, 0.176), scale=(0.142, 0.004, 0.005), size=2))
+bevel(pocket, 0.018, 2)
+pocket.modifiers.new("subsurf", "SUBSURF").levels = 1
+bag_parts.append(smooth(pocket, 50))
+bag_parts.append(prim(bpy.ops.mesh.primitive_cube_add, "pocket-pipe", "teal", location=(0, -0.171, 0.171), scale=(0.138, 0.004, 0.005), size=2))
 # Rubber base and two webbing handles arching over the opening.
 bag_parts.append(smooth(bevel(prim(bpy.ops.mesh.primitive_cube_add, "base", "black", location=(0, 0, 0.012), scale=(0.236, 0.156, 0.012), size=2), 0.008, 2), 50))
 for y in (-0.06, 0.06):
@@ -281,15 +306,17 @@ manifold = join("manifold", man_parts)
 # (three coils side by side, so no hose passes through another), coupler at the end.
 hose_parts = []
 for i, (p, mat) in enumerate(zip(ports, ("hose-blue", "hose-yellow", "hose-red"))):
-    r = 0.085
-    cx, cy = (i - 1) * 0.2, -0.27
+    # Charging hoses are 36-72 in long; these run ~1.2 m: a short drop from the port, then ~1.3 turns.
+    r = 0.12
+    cx, cy = (i - 1) * 0.28, -0.32
     top = Vector((cx, cy + r * 0.8, 0.0075))
     pts = [p, p + Vector((0, -0.022, -0.004)), p.lerp(top, 0.45) + Vector((0, 0, -0.005)), top]
     pts[2].z = max(pts[2].z, 0.012)
-    turns = 0.85
-    for k in range(1, 10):
-        a = math.pi / 2 + (k / 9) * 2 * math.pi * turns * (1 if i != 0 else -1)
-        rk = r * (1 - 0.18 * k / 9)  # slight spiral so the coil never overlaps itself
+    turns = 1.3
+    steps = 16
+    for k in range(1, steps + 1):
+        a = math.pi / 2 + (k / steps) * 2 * math.pi * turns * (1 if i != 0 else -1)
+        rk = r * (1 - 0.35 * k / steps)  # spiral inward: successive passes clear each other by ~3 cm
         pts.append(Vector((cx + math.cos(a) * rk, cy + math.sin(a) * rk * 0.8, 0.0075)))
     hose = tube(f"hose{i}", mat, [tuple(v) for v in pts], 0.0065, resolution=8, bevel_res=2)
     hose_parts.append(hose)
@@ -303,7 +330,7 @@ for i, (p, mat) in enumerate(zip(ports, ("hose-blue", "hose-yellow", "hose-red")
     hose_parts.append(coupler)
 hoses = join("hoses", hose_parts)
 for ob in (manifold, hoses):  # lay the manifold set beside the bag
-    ob.location = (0.55, 0.1, 0)
+    ob.location = (0.75, 0.1, 0)  # clear of the bag, coils included
 with bpy.context.temp_override(active_object=manifold, selected_objects=[manifold, hoses], selected_editable_objects=[manifold, hoses]):
     bpy.ops.object.join()
 manifold.name = "manifold"
@@ -340,7 +367,7 @@ def tris(ob):
 report = []
 EXPECT = {  # name: (min size xyz, max size xyz) in metres, and the parts must sit on the ground
     "bag": ((0.42, 0.28, 0.32), (0.52, 0.40, 0.40)),
-    "manifold": ((0.3, 0.3, 0.06), (0.65, 0.65, 0.15)),
+    "manifold": ((0.7, 0.4, 0.06), (1.0, 0.7, 0.15)),
     "cylinder": ((0.28, 0.28, 0.44), (0.33, 0.33, 0.5)),
 }
 ok = True

@@ -112,3 +112,41 @@ with hysteresis, so there is no whole-world pop.
    chunks would let close views skip off-screen trees.
 4. `preserveDrawingBuffer: true` is set only for Photo Mode's `toBlob`; it can be dropped by
    capturing in the frame callback. Unmeasured.
+
+## 7. Gameplay smoothness (vsync on)
+
+`scripts/smooth.cjs` plays seed 42 through the game's own actions and records every frame
+interval, the GPU time of every render and Chrome's Long Animation Frame entries (which scripts
+ran in a slow frame), on unminified builds. Two rounds per build, `data/smooth.json`.
+
+| Segment (≈10 s each) | Before Fleet fix (both builds) | After |
+| --- | --- | --- |
+| Idle overview, 1× | 60 fps, 1% low 58.9–59.2, 0 hitches | 60, 59.0–59.2, 0 |
+| Accept, dispatch, follow the van, 1× | 60, 52.7–59.0, one 33 ms frame in one run | 60, 58.8–59.1, 0 |
+| Driving, follow camera, 5× | 60, 58.8–59.2, 0 | 60, 58.6–58.7, 0 |
+| Technician at the unit, close camera | 60, 59.1–59.4, 0 | 60, 58.5–59.0, 0 |
+| Camera transitions (reset, HQ, focus, neighborhood) | 60, 58.9–59.2, 0 | 60, 58.7–58.9, 0 |
+| Opening and closing panels | 54 fps, **worst frame 883–983 ms** | 59.4–59.6, worst frame 50–67 ms |
+
+(hitch = frame interval over 25 ms, i.e. a missed vsync.)
+
+**Fleet panel freeze, cause confirmed.** Per-panel test: only Fleet stalled (917 ms first open,
+150 ms reopen; every other panel ≤ 33 ms). CPU profile: 765 ms in `getProgramInfoLog`, then (with
+shader-log reads off) the same wait in `getProgramParameter` under `getUniforms`: the panel's
+vehicle preview is a second WebGL context, and ANGLE (D3D11) finishes shader programs on their
+first draw even when `KHR_parallel_shader_compile` is available and `compileAsync` has resolved.
+Fix: no synchronous shader-log reads, `compileAsync` before the first frame with a fade-in, and a
+hidden warm-up preview rendered once at game start so Chrome caches the binaries. First Fleet
+open: 767–817 ms → 83–117 ms worst frame (three runs each). Cost: new game → first frame
+3.7–3.9 s → 4.8–5.0 s.
+
+**Start-up freeze (pre-existing, not changed).** A new game blocks for 3.4–3.9 s on both the
+original integration build and this branch before the world appears. Cold-start CPU profile:
+2.2 s first-draw shader finalisation for the main scene (same ANGLE behaviour), 0.47 s PMREM
+environment generation, ~0.6 s world construction in JavaScript (houses 0.2 s, normal-map
+generation 0.2 s). Options: fewer material variants, caching generated textures, and a loading
+screen so the wait reads as loading.
+
+GPU time per frame under vsync dropped from ~11 ms to 7–9 ms between the two rounds of
+measurements, after a game window that was open on the machine was closed; absolute GPU figures
+from different sessions are not comparable.
