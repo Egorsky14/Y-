@@ -14,6 +14,7 @@ import { MarketingPanel } from '@/ui/panels/MarketingPanel';
 import { FinancePanel } from '@/ui/panels/FinancePanel';
 import { SettingsPanel } from '@/ui/panels/SettingsPanel';
 import { Celebration, ErrorBanner, Toasts, TutorialHint } from '@/ui/overlays/Overlays';
+import { PreviewWarmup } from '@/ui/panels/VehiclePreview';
 import { MainMenu } from '@/ui/menus/MainMenu';
 import { CampaignSummary } from '@/ui/menus/CampaignSummary';
 import { WorldLabels } from '@/ui/overlays/WorldLabels';
@@ -94,6 +95,7 @@ export function App() {
       <div className="app-world">
         <GameScene />
       </div>
+      <PreviewWarmup />
       <div className={`app-ui ${photo ? 'photo' : ''}`}>
         {photo ? (
           <PhotoMode />
