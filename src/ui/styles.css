@@ -234,6 +234,10 @@ h4 { font-size: 13px; color: var(--muted); text-transform: uppercase; letter-spa
   .bank-inputs input { width: 96px; }
   .bank-schedule th:nth-child(2), .bank-schedule td:nth-child(2) { display: none; }
 }
+/* Same breakpoint as the compact (phone) layout: amount fields get finger-sized like its buttons. */
+@media (max-width: 900px), (max-height: 560px) {
+  .bank-inputs input { min-height: 40px; font-size: 16px; }
+}
 
 /* ---------- Toasts and celebrations ---------- */
 .toasts { position: absolute; left: 14px; top: 86px; width: 340px; display: flex; flex-direction: column; gap: 8px; }

@@ -19,9 +19,12 @@ export default defineConfig({
   projects: [
     { name: 'desktop-1080p', use: { viewport: { width: 1920, height: 1080 } }, testIgnore: /mobile\.spec\.ts/ },
     { name: 'laptop-768p', use: { viewport: { width: 1366, height: 768 } }, testMatch: /graphics\.spec\.ts/ },
-    { name: 'small-1024', use: { viewport: { width: 1024, height: 768 } }, testMatch: /graphics\.spec\.ts/ },
+    { name: 'small-1024', use: { viewport: { width: 1024, height: 768 } }, testMatch: /(graphics|banking-layout)\.spec\.ts/ },
     // Phones and a tablet, emulated in Chromium (touch, coarse pointer, mobile viewport and DPR).
-    { name: 'iphone-portrait', use: { ...devices['iPhone 14'], browserName: 'chromium' }, testMatch: /mobile\.spec\.ts/ },
+    // The banking layout check also runs on phones with touch: iPhone 14 in Safari (390×664, browser
+    // bars visible) and the full 390×844 screen (installed web app, no browser bars).
+    { name: 'iphone-portrait', use: { ...devices['iPhone 14'], browserName: 'chromium' }, testMatch: /(mobile|banking-layout)\.spec\.ts/ },
+    { name: 'phone-390x844', use: { ...devices['iPhone 14'], viewport: { width: 390, height: 844 }, browserName: 'chromium' }, testMatch: /banking-layout\.spec\.ts/ },
     { name: 'iphone-landscape', use: { ...devices['iPhone 14 landscape'], browserName: 'chromium' }, testMatch: /mobile\.spec\.ts/ },
     { name: 'android-portrait', use: { ...devices['Pixel 7'], browserName: 'chromium' }, testMatch: /mobile\.spec\.ts/ },
     { name: 'android-landscape', use: { ...devices['Pixel 7 landscape'], browserName: 'chromium' }, testMatch: /mobile\.spec\.ts/ },
