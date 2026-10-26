@@ -2,7 +2,7 @@ import { useMemo, useRef } from 'react';
 import * as THREE from 'three';
 import { useFrame, useThree } from '@react-three/fiber';
 import { getGameState, useApp } from '@/app/store';
-import { sunAngles, weatherForDay, type WeatherKind } from '@/game/simulation/weather';
+import { SUNRISE_MINUTE, SUNSET_MINUTE, sunAngles, weatherForDay, type WeatherKind } from '@/game/simulation/weather';
 import { STATIC_MATERIALS } from '../buildings/materials';
 
 /**
@@ -27,33 +27,56 @@ interface Look {
 }
 
 
+const { clamp } = THREE.MathUtils;
+
+/**
+ * 0 by day, rising to 1 over the 45 minutes after sunset and falling over the 45 minutes before
+ * sunrise. Minute based so twilight is a band, not the instant the sun crosses the horizon.
+ */
+export function nightFactor(minute: number): number {
+  if (minute >= SUNSET_MINUTE) return clamp((minute - SUNSET_MINUTE) / 45, 0, 1);
+  if (minute <= SUNRISE_MINUTE) return clamp((SUNRISE_MINUTE - minute) / 45, 0, 1);
+  return 0;
+}
+
 function lookFor(minute: number, weather: WeatherKind): Look {
   const { elevation } = sunAngles(minute);
-  const day = THREE.MathUtils.clamp(elevation / 0.35, 0, 1); // 0 night → 1 full day
-  const golden = THREE.MathUtils.clamp(1 - Math.abs(elevation - 0.18) / 0.2, 0, 1) * day; // low sun warmth
-  const night = 1 - THREE.MathUtils.clamp((elevation + 0.1) / 0.25, 0, 1);
+  // Daylight follows the sun's height with atmospheric fall-off: noon 1, a 16° sun ≈ 0.45,
+  // the horizon 0. The old curve saturated at 20°, which made 6:30 PM look like noon.
+  const daylight = Math.pow(clamp(elevation / 1.22, 0, 1), 0.55);
+  // Low-sun warmth: 0 at noon, ≈0.45 at 6:30 PM, 1 at the horizon.
+  const warm = clamp(1 - elevation / 0.5, 0, 1);
+  const night = nightFactor(minute);
+  // Horizon afterglow / pre-dawn glow centred on the sunset and sunrise minutes.
+  const glow = Math.max(clamp(1 - Math.abs(minute - SUNSET_MINUTE) / 50, 0, 1), clamp(1 - Math.abs(minute - SUNRISE_MINUTE) / 50, 0, 1));
 
-  const sunDay = new THREE.Color('#fff1dc').lerp(new THREE.Color('#ffb36b'), golden * 0.8);
+  const sunColor = new THREE.Color('#fff1dc').lerp(new THREE.Color('#ffb66e'), warm).lerp(new THREE.Color('#ff7f45'), warm * warm * 0.6);
   const zenithDay = new THREE.Color('#5f9fd8');
-  const horizonDay = new THREE.Color('#d8e6ee');
+  const zenithDusk = new THREE.Color('#2f4f80');
   const zenithNight = new THREE.Color('#0b1626');
-  const horizonNight = new THREE.Color('#1d2a3d');
+  const horizonDay = new THREE.Color('#d8e6ee');
   const horizonGolden = new THREE.Color('#f2b27a');
+  const horizonAfterglow = new THREE.Color('#f08a58');
+  const horizonNight = new THREE.Color('#1d2a3d');
+  const groundDay = new THREE.Color('#c9a97a');
+  const groundWarm = new THREE.Color('#b58a5c');
+  const groundNight = new THREE.Color('#2a2d36');
 
   let look: Look = {
-    sunIntensity: 2.6 * day,
-    sunColor: sunDay,
-    skyZenith: zenithDay.clone().lerp(zenithNight, night),
-    skyHorizon: horizonDay.clone().lerp(horizonGolden, golden * 0.7).lerp(horizonNight, night),
-    ground: new THREE.Color('#c9a97a').lerp(new THREE.Color('#2a2d36'), night),
-    hemi: 0.85 * (0.25 + 0.75 * day),
-    ambient: 0.25 * (0.3 + 0.7 * day),
+    sunIntensity: 2.6 * daylight,
+    sunColor,
+    skyZenith: zenithDay.clone().lerp(zenithDusk, (1 - daylight) * 0.85).lerp(zenithNight, night),
+    skyHorizon: horizonDay.clone().lerp(horizonGolden, warm * 0.8).lerp(horizonAfterglow, glow * 0.6).lerp(horizonNight, night * (1 - glow * 0.35)),
+    ground: groundDay.clone().lerp(groundWarm, warm * 0.5).lerp(groundNight, night),
+    hemi: 0.85 * (0.28 + 0.72 * daylight),
+    ambient: 0.25 * (0.35 + 0.65 * daylight),
     fogNear: 420,
     fogFar: 1400,
-    exposure: 1.0 - night * 0.35,
+    exposure: 1.0 - (1 - daylight) * 0.12 - night * 0.3,
     rain: 0,
-    envIntensity: 0.45 * (0.3 + 0.7 * day),
+    envIntensity: 0.45 * (0.3 + 0.7 * daylight),
   };
+  const day = daylight; // weather branches below scale by daylight
   switch (weather) {
     case 'heat-wave':
       look = { ...look, sunIntensity: look.sunIntensity * 1.08, sunColor: look.sunColor.clone().lerp(new THREE.Color('#ffd9a8'), 0.4), skyHorizon: look.skyHorizon.clone().lerp(new THREE.Color('#e9d6b8'), 0.5 * day), fogNear: 260, fogFar: 1000, exposure: look.exposure * 1.04 };
@@ -129,7 +152,8 @@ export function Atmosphere() {
     c.ground.lerp(target.ground, k);
 
     const { elevation, azimuth } = sunAngles(minute);
-    const el = Math.max(elevation, 0.06);
+    // Floor the shadow sun just above the horizon: long evening shadows without acne.
+    const el = Math.max(elevation, 0.05);
     const dir = new THREE.Vector3(Math.cos(azimuth) * Math.cos(el), Math.sin(el), Math.sin(azimuth) * Math.cos(el));
     if (sun.current) {
       sun.current.position.copy(dir.clone().multiplyScalar(320));
@@ -155,10 +179,15 @@ export function Atmosphere() {
     if (scene.fog !== fog) scene.fog = fog;
     gl.toneMappingExposure = c.exposure;
     scene.environmentIntensity = c.envIntensity;
-    // Exterior lamps come on as the sun drops.
-    const night = 1 - THREE.MathUtils.clamp((elevation + 0.05) / 0.3, 0, 1);
-    (STATIC_MATERIALS.lamp() as THREE.MeshStandardMaterial).emissiveIntensity = 0.3 + night * 3.2;
-    (STATIC_MATERIALS.storefront() as THREE.MeshStandardMaterial).emissive.setRGB(0.9 * night, 0.75 * night, 0.45 * night);
+    // Exterior lamps, interior window glow and the teal signage come on through dusk. Lamps lead
+    // (they switch on while the sun is still low), windows and signage follow the night factor.
+    const dusk = clamp(1 - elevation / 0.3, 0, 1);
+    const night = nightFactor(minute);
+    const lit = Math.max(dusk * 0.6, night);
+    (STATIC_MATERIALS.lamp() as THREE.MeshStandardMaterial).emissiveIntensity = 0.3 + lit * 3.2;
+    (STATIC_MATERIALS.storefront() as THREE.MeshStandardMaterial).emissive.setRGB(0.9 * lit, 0.75 * lit, 0.45 * lit);
+    (STATIC_MATERIALS.glass() as THREE.MeshStandardMaterial).emissive.setRGB(0.95 * lit, 0.7 * lit, 0.38 * lit);
+    (STATIC_MATERIALS.teal() as THREE.MeshStandardMaterial).emissiveIntensity = 0.18 + lit * 1.1;
     window.__egoAtmo = { minute, weather, elevation, sunIntensity: c.sunIntensity, exposure: c.exposure, fogNear: c.fogNear, rain: c.rain };
     if (sky.current) sky.current.position.copy(camera.position);
   });
