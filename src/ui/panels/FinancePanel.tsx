@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { useGame } from '@/app/store';
 import { PanelShell, Tabs } from './PanelShell';
-import { openReceivablesTotal, totalLoanBalance, reconcileCash } from '@/game/economy/ledger';
+import { FINANCING_CATEGORIES, openReceivablesTotal, totalLoanBalance, reconcileCash } from '@/game/economy/ledger';
+import { BankingTab } from './BankingTab';
 import { Money } from '../components/common';
 import type { LedgerEntry } from '@/game/simulation/types';
 import { formatClock } from '@/game/simulation/time';
 
-type Tab = 'overview' | 'ledger' | 'receivables';
+type Tab = 'overview' | 'banking' | 'ledger' | 'receivables';
 
 const CATEGORY_LABEL: Record<LedgerEntry['category'], string> = {
   'service-revenue': 'Service revenue',
@@ -19,7 +20,15 @@ const CATEGORY_LABEL: Record<LedgerEntry['category'], string> = {
   'vehicle-purchase': 'Vehicle purchases',
   'vehicle-sale': 'Vehicle sales',
   'vehicle-upgrade': 'Vehicle upgrades',
-  'loan-payment': 'Loan payments',
+  'loan-payment': 'Loan payments (legacy)',
+  'loan-proceeds': 'Loan proceeds',
+  'loan-principal': 'Loan principal',
+  'loan-interest': 'Loan interest',
+  'loan-fee': 'Loan fees',
+  'late-fee': 'Late fees',
+  'credit-draw': 'Credit line draws',
+  'credit-repayment': 'Credit line repayments',
+  'credit-interest': 'Credit line interest',
   'lease-payment': 'Lease payments',
   training: 'Training',
   marketing: 'Marketing',
@@ -35,9 +44,12 @@ export function FinancePanel() {
   const reconcile = useGame((s) => reconcileCash(s));
   const ar = useGame((s) => openReceivablesTotal(s));
   const debt = useGame((s) => totalLoanBalance(s));
+  const pastDueCount = useGame((s) => s.finance.loans.filter((l) => (l.pastDue ?? 0) > 0).length + ((s.finance.banking?.creditLine?.pastDue ?? 0) > 0 ? 1 : 0));
   const [tab, setTab] = useState<Tab>('overview');
+  const line = finance.banking?.creditLine && finance.banking.creditLine.status !== 'closed' ? finance.banking.creditLine : undefined;
   const byCategory = new Map<string, number>();
-  for (const e of finance.ledger) if (e.category !== 'opening-balance') byCategory.set(e.category, (byCategory.get(e.category) ?? 0) + e.amount);
+  // Financing (proceeds, principal, draws, repayments) moves cash but is not income or expense.
+  for (const e of finance.ledger) if (e.category !== 'opening-balance' && !FINANCING_CATEGORIES.has(e.category)) byCategory.set(e.category, (byCategory.get(e.category) ?? 0) + e.amount);
   const grossRevenue = stats.totalRevenue;
   const cogs = -(byCategory.get('parts') ?? 0);
   const grossProfit = grossRevenue - cogs;
@@ -45,7 +57,8 @@ export function FinancePanel() {
   const history = finance.history.slice(-30);
   const maxCash = Math.max(1, ...history.map((h) => Math.abs(h.cash)), Math.abs(finance.cash));
   return (
-    <PanelShell title="Finances" subtitle={reconcile.ok ? 'Books reconciled: cash equals the ledger.' : `Reconciliation drift: ${reconcile.expected} vs ${reconcile.actual}`} testId="panel-finance" tabs={<Tabs value={tab} onChange={setTab} items={[{ id: 'overview', label: 'Overview' }, { id: 'ledger', label: 'Ledger' }, { id: 'receivables', label: 'A/R & Debt' }]} />}>
+    <PanelShell title="Finances" subtitle={reconcile.ok ? 'Books reconciled: cash equals the ledger.' : `Reconciliation drift: ${reconcile.expected} vs ${reconcile.actual}`} testId="panel-finance" tabs={<Tabs value={tab} onChange={setTab} items={[{ id: 'overview', label: 'Overview' }, { id: 'banking', label: 'Banking & Credit', badge: pastDueCount }, { id: 'ledger', label: 'Ledger' }, { id: 'receivables', label: 'A/R & Debt' }]} />}>
+      {tab === 'banking' && <BankingTab />}
       {tab === 'overview' && (
         <div className="panel-body col" style={{ gap: 16 }}>
           <div className="stat-tiles">
@@ -118,13 +131,19 @@ export function FinancePanel() {
           </div>
           <div className="col">
             <h4>Loans &amp; leases</h4>
-            {finance.loans.length === 0 && finance.leases.length === 0 && <div className="card muted">Debt free.</div>}
+            {finance.loans.length === 0 && finance.leases.length === 0 && !line && <div className="card muted">Debt free.</div>}
             {finance.loans.map((l) => (
               <div key={l.id} className="card">
                 <div className="row between"><b>{l.purpose}</b><Money value={l.balance} /></div>
-                <div className="muted" style={{ fontSize: 12.5 }}>{l.aprPercent}% APR · <Money value={l.monthlyPayment} />/mo · next payment day {l.nextPaymentDay}</div>
+                <div className="muted" style={{ fontSize: 12.5 }}>{l.lender ? `${l.lender} · ` : ''}{l.aprPercent}% APR · <Money value={l.monthlyPayment} />/mo · next payment day {l.nextPaymentDay}{(l.pastDue ?? 0) > 0 ? ' · past due' : ''}</div>
               </div>
             ))}
+            {line && (
+              <div className="card">
+                <div className="row between"><b>Line of credit · {line.lender}</b><Money value={line.principal} /></div>
+                <div className="muted" style={{ fontSize: 12.5 }}>{line.aprPercent}% APR · limit <Money value={line.limit} />{line.minimumDue > 0 ? <> · minimum <Money value={line.minimumDue} /> due day {line.paymentDueDay}</> : null}{line.pastDue > 0 ? ' · past due' : ''}</div>
+              </div>
+            )}
             {finance.leases.map((l) => (
               <div key={l.id} className="card">
                 <div className="row between"><b>Lease {l.vehicleId}</b><Money value={l.monthlyPayment} /></div>
