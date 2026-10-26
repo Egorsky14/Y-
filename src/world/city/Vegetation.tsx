@@ -1,5 +1,6 @@
-import { useMemo } from 'react';
+import { useMemo, useRef } from 'react';
 import * as THREE from 'three';
+import { useFrame, useThree } from '@react-three/fiber';
 import * as BGU from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { HOUSE_LOTS, HQ_LOT, PARK_LOT, ROAD_WIDTH, SIDEWALK_WIDTH, STREETS, WORLD_HALF, type Lot } from '@/game/world/cityLayout';
 import { makeDecoRng } from '../assets/random';
@@ -95,8 +96,11 @@ function pinnateFrond(rnd: () => number, length: number, color: THREE.Color): TH
   return colored(g, color, 0.1, rnd);
 }
 
+/** Detail level of a species mesh: `far` keeps the silhouette with fewer blade segments and trunk facets. */
+type Lod = 'near' | 'far';
+
 /** Fan (costapalmate) frond for Mexican fan palms: petiole, then radiating blade segments with drooping tips. */
-function fanFrond(rnd: () => number, color: THREE.Color, dead = false): THREE.BufferGeometry {
+function fanFrond(rnd: () => number, color: THREE.Color, dead = false, lod: Lod = 'near'): THREE.BufferGeometry {
   const positions: number[] = [];
   const push = (v: THREE.Vector3) => positions.push(v.x, v.y, v.z);
   const petiole = 1.1;
@@ -104,13 +108,15 @@ function fanFrond(rnd: () => number, color: THREE.Color, dead = false): THREE.Bu
     push(new THREE.Vector3(-r, 0, a)); push(new THREE.Vector3(r, 0, a)); push(new THREE.Vector3(r, 0, b));
     push(new THREE.Vector3(-r, 0, a)); push(new THREE.Vector3(r, 0, b)); push(new THREE.Vector3(-r, 0, b));
   }
+  const far = lod === 'far';
   const segments = dead ? 11 : 15;
   const spread = dead ? 1.9 : 2.5;
   for (let i = 0; i < segments; i++) {
     const a = -spread / 2 + (i / (segments - 1)) * spread;
     const len = 1.5 + (rnd() - 0.5) * 0.3 - Math.abs(a) * 0.12;
     const dir = new THREE.Vector3(Math.sin(a), 0, Math.cos(a));
-    const pieces = 3;
+    // Far fronds keep every blade (the fan outline) and bend each blade once instead of twice.
+    const pieces = far ? 2 : 3;
     let prev = new THREE.Vector3(0, 0, petiole);
     let prevW = 0.17;
     for (let k = 1; k <= pieces; k++) {
@@ -135,55 +141,94 @@ function fanFrond(rnd: () => number, color: THREE.Color, dead = false): THREE.Bu
   return colored(g, color, dead ? 0.08 : 0.14, rnd);
 }
 
+/**
+ * Drops the end caps of a colored (non-indexed) cylinder. The caps of stacked trunk segments and
+ * boot rings sit inside the trunk and are never seen. Coloring runs on the full cylinder first so
+ * the random stream, and with it every frond placed after the trunk, is unchanged.
+ */
+function torsoOnly(g: THREE.BufferGeometry, radial: number, heightSegments = 1): THREE.BufferGeometry {
+  const keep = radial * heightSegments * 6;
+  for (const key of Object.keys(g.attributes)) {
+    const a = g.attributes[key] as THREE.BufferAttribute;
+    g.setAttribute(key, new THREE.BufferAttribute((a.array as Float32Array).slice(0, keep * a.itemSize), a.itemSize));
+  }
+  return g;
+}
+
 /** Tapered trunk with leaf-boot rings in the upper part and a flared base. */
-function palmTrunk(rnd: () => number, height: number, r0: number, r1: number, lean: number, color: THREE.Color, boots: boolean): THREE.BufferGeometry[] {
+function palmTrunk(rnd: () => number, height: number, r0: number, r1: number, lean: number, color: THREE.Color, boots: boolean, lod: Lod = 'near'): THREE.BufferGeometry[] {
   const parts: THREE.BufferGeometry[] = [];
-  const segments = 10;
+  const far = lod === 'far';
+  const segments = far ? 6 : 10;
+  const radial = far ? 7 : 12;
+  const bootRadial = far ? 6 : 8;
   for (let i = 0; i < segments; i++) {
     const t0 = i / segments;
     const t1 = (i + 1) / segments;
     const ra = r0 + (r1 - r0) * t0;
     const rb = r0 + (r1 - r0) * t1;
-    const seg = new THREE.CylinderGeometry(rb, ra, height / segments + 0.02, 12);
-    parts.push(colored(transformed(seg, [lean * (t0 + 0.05), (i + 0.5) * (height / segments), 0]), color, 0.12, rnd));
+    const seg = new THREE.CylinderGeometry(rb, ra, height / segments + 0.02, radial);
+    parts.push(torsoOnly(colored(transformed(seg, [lean * (t0 + 0.05), (i + 0.5) * (height / segments), 0]), color, 0.12, rnd), radial));
     if (boots && t0 > 0.45) {
       // Two offset boot rings per segment: the criss-cross leaf-base pattern of a fan palm trunk
-      for (const f of [0.25, 0.75]) {
+      for (const f of far ? [0.5] : [0.25, 0.75]) {
         const y = (i + f) * (height / segments);
         const r = ra + 0.06;
-        parts.push(colored(transformed(new THREE.CylinderGeometry(r * 0.94, r, 0.16, 8, 1), [lean * (t0 + f / segments), y, 0], [0, f * 0.4, 0]), color.clone().multiplyScalar(0.9), 0.1, rnd));
+        parts.push(torsoOnly(colored(transformed(new THREE.CylinderGeometry(r * 0.94, r, far ? 0.22 : 0.16, bootRadial, 1), [lean * (t0 + f / segments), y, 0], [0, f * 0.4, 0]), color.clone().multiplyScalar(0.9), 0.1, rnd), bootRadial));
       }
     }
   }
-  parts.push(colored(transformed(new THREE.CylinderGeometry(r0 + 0.02, r0 + 0.14, 0.3, 12), [0, 0.15, 0]), color.clone().multiplyScalar(0.85), 0.1, rnd));
+  parts.push(torsoOnly(colored(transformed(new THREE.CylinderGeometry(r0 + 0.02, r0 + 0.14, 0.3, radial), [0, 0.15, 0]), color.clone().multiplyScalar(0.85), 0.1, rnd), radial));
   return parts;
+}
+
+/** Frond placements of the fan-palm crown, recorded by the near build so the far build matches it. */
+let fanCrown: { pitch: number; yaw: number; ring: number; dead: boolean }[] | null = null;
+
+function fanPalm(lod: Lod): THREE.BufferGeometry {
+  // Mexican fan palm: slender trunk, round crown of fan fronds, a skirt of dead fronds.
+  const rnd = makeDecoRng('palm'.length * 977 + 13);
+  const h = 8.5;
+  const lean = 0.3;
+  const parts = palmTrunk(rnd, h, 0.3, 0.22, lean, new THREE.Color('#8f7556'), true, lod);
+  const top = new THREE.Vector3(lean * 1.05, h, 0);
+  if (lod === 'far') {
+    // Same crown as the near mesh (placements recorded there), coarser fronds and trunk.
+    if (!fanCrown) fanPalm('near');
+    for (const f of fanCrown!) {
+      const color = new THREE.Color(f.dead ? '#a08650' : f.ring === 2 ? '#5c8a39' : '#6ea046');
+      parts.push(transformed(fanFrond(rnd, color, f.dead, 'far'), [top.x, top.y + (f.dead ? -0.35 : 0.15), top.z], [f.pitch, f.yaw, 0]));
+    }
+    parts.push(colored(transformed(new THREE.SphereGeometry(0.4, 6, 4), [top.x, top.y, top.z]), new THREE.Color('#6b5a3e'), 0.1, rnd));
+    return merge(parts);
+  }
+  const crown: NonNullable<typeof fanCrown> = [];
+  const fronds = 17;
+  for (let i = 0; i < fronds; i++) {
+    const a = (i / fronds) * Math.PI * 2 + rnd() * 0.25;
+    const ring = i % 3; // inner fronds stand up, outer droop
+    const pitch = ring === 0 ? -0.55 + rnd() * 0.2 : ring === 1 ? -0.05 + rnd() * 0.25 : 0.5 + rnd() * 0.35;
+    const f = fanFrond(rnd, new THREE.Color(ring === 2 ? '#5c8a39' : '#6ea046'));
+    parts.push(transformed(f, [top.x, top.y + 0.15, top.z], [pitch, a, 0]));
+    crown.push({ pitch, yaw: a, ring, dead: false });
+  }
+  for (let i = 0; i < 8; i++) {
+    const a = (i / 8) * Math.PI * 2 + 0.2;
+    const f = fanFrond(rnd, new THREE.Color('#a08650'), true);
+    const pitch = 1.75 + rnd() * 0.25;
+    parts.push(transformed(f, [top.x, top.y - 0.35, top.z], [pitch, a, 0]));
+    crown.push({ pitch, yaw: a, ring: 3, dead: true });
+  }
+  parts.push(colored(transformed(new THREE.SphereGeometry(0.4, 8, 6), [top.x, top.y, top.z]), new THREE.Color('#6b5a3e'), 0.1, rnd));
+  fanCrown = crown;
+  return merge(parts);
 }
 
 function buildSpecies(species: Species): THREE.BufferGeometry {
   const rnd = makeDecoRng(species.length * 977 + 13);
   switch (species) {
-    case 'palm': {
-      // Mexican fan palm: slender trunk, round crown of fan fronds, a skirt of dead fronds.
-      const h = 8.5;
-      const lean = 0.3;
-      const parts = palmTrunk(rnd, h, 0.3, 0.22, lean, new THREE.Color('#8f7556'), true);
-      const top = new THREE.Vector3(lean * 1.05, h, 0);
-      const fronds = 17;
-      for (let i = 0; i < fronds; i++) {
-        const a = (i / fronds) * Math.PI * 2 + rnd() * 0.25;
-        const ring = i % 3; // inner fronds stand up, outer droop
-        const pitch = ring === 0 ? -0.55 + rnd() * 0.2 : ring === 1 ? -0.05 + rnd() * 0.25 : 0.5 + rnd() * 0.35;
-        const f = fanFrond(rnd, new THREE.Color(ring === 2 ? '#5c8a39' : '#6ea046'));
-        parts.push(transformed(f, [top.x, top.y + 0.15, top.z], [pitch, a, 0]));
-      }
-      for (let i = 0; i < 8; i++) {
-        const a = (i / 8) * Math.PI * 2 + 0.2;
-        const f = fanFrond(rnd, new THREE.Color('#a08650'), true);
-        parts.push(transformed(f, [top.x, top.y - 0.35, top.z], [1.75 + rnd() * 0.25, a, 0]));
-      }
-      parts.push(colored(transformed(new THREE.SphereGeometry(0.4, 8, 6), [top.x, top.y, top.z]), new THREE.Color('#6b5a3e'), 0.1, rnd));
-      return merge(parts);
-    }
+    case 'palm':
+      return fanPalm('near');
     case 'date-palm': {
       // Canary / date palm: thick patterned trunk, dense crown of arching pinnate fronds.
       const h = 5.5;
@@ -271,6 +316,8 @@ interface Instance {
   rotation: number;
   scale: number;
   tint: number;
+  /** Open-desert scatter lies outside the sun's shadow camera, so it never casts. */
+  scatter?: boolean;
 }
 
 function collectInstances(density: number): Instance[] {
@@ -325,7 +372,7 @@ function collectInstances(density: number): Instance[] {
     const a = rnd() * Math.PI * 2;
     const d = 232 + rnd() * 320;
     const r = rnd();
-    out.push({ species: r < 0.6 ? 'shrub-sage' : r < 0.8 ? 'rock' : r < 0.9 ? 'boulder' : 'agave', x: Math.cos(a) * d, z: Math.sin(a) * d, rotation: rnd() * 6.28, scale: 1 + rnd() * 1.4, tint: 0.9 + rnd() * 0.2 });
+    out.push({ species: r < 0.6 ? 'shrub-sage' : r < 0.8 ? 'rock' : r < 0.9 ? 'boulder' : 'agave', x: Math.cos(a) * d, z: Math.sin(a) * d, rotation: rnd() * 6.28, scale: 1 + rnd() * 1.4, tint: 0.9 + rnd() * 0.2, scatter: true });
   }
   return out;
 }
@@ -337,28 +384,37 @@ export function Vegetation() {
   const density = quality === 'low' ? 0.35 : quality === 'medium' ? 0.7 : quality === 'high' ? 1 : 1.4;
   const instances = useMemo(() => collectInstances(density), [density]);
   const geometries = useMemo(() => Object.fromEntries(SPECIES.map((s) => [s, buildSpecies(s)])) as Record<Species, THREE.BufferGeometry>, []);
+  const farPalm = useMemo(() => fanPalm('far'), []);
   const material = useMemo(() => new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.95, metalness: 0, flatShading: false, side: THREE.DoubleSide }), []);
   return (
     <group name="vegetation">
       {SPECIES.map((species) => {
-        const list = instances.filter((i) => i.species === species);
-        if (list.length === 0) return null;
-        return <SpeciesLayer key={species} geometry={geometries[species]} material={material} list={list} castShadow={species !== 'rock' && species !== 'flower-pink' && species !== 'flower-yellow'} />;
+        const castShadow = species !== 'rock' && species !== 'flower-pink' && species !== 'flower-yellow';
+        const list = instances.filter((i) => i.species === species && !i.scatter);
+        const scatter = instances.filter((i) => i.species === species && i.scatter);
+        return (
+          <group key={species}>
+            {list.length > 0 && species === 'palm' && <LodLayer near={geometries.palm} far={farPalm} material={material} list={list} />}
+            {list.length > 0 && species !== 'palm' && <SpeciesLayer geometry={geometries[species]} material={material} list={list} castShadow={castShadow} />}
+            {scatter.length > 0 && <SpeciesLayer geometry={geometries[species]} material={material} list={scatter} castShadow={false} />}
+          </group>
+        );
       })}
     </group>
   );
+}
+
+function instanceMatrix(it: Instance, m = new THREE.Matrix4()): THREE.Matrix4 {
+  return m.compose(new THREE.Vector3(it.x, 0, it.z), new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), it.rotation), new THREE.Vector3(it.scale, it.scale, it.scale));
 }
 
 function SpeciesLayer({ geometry, material, list, castShadow }: { geometry: THREE.BufferGeometry; material: THREE.Material; list: Instance[]; castShadow: boolean }) {
   const ref = (mesh: THREE.InstancedMesh | null) => {
     if (!mesh) return;
     const m = new THREE.Matrix4();
-    const q = new THREE.Quaternion();
     const c = new THREE.Color();
     list.forEach((it, i) => {
-      q.setFromAxisAngle(new THREE.Vector3(0, 1, 0), it.rotation);
-      m.compose(new THREE.Vector3(it.x, 0, it.z), q, new THREE.Vector3(it.scale, it.scale, it.scale));
-      mesh.setMatrixAt(i, m);
+      mesh.setMatrixAt(i, instanceMatrix(it, m));
       c.setScalar(it.tint);
       mesh.setColorAt(i, c);
     });
@@ -367,4 +423,50 @@ function SpeciesLayer({ geometry, material, list, castShadow }: { geometry: THRE
     mesh.computeBoundingSphere();
   };
   return <instancedMesh ref={ref} args={[geometry, material, list.length]} castShadow={castShadow} receiveShadow frustumCulled={false} />;
+}
+
+/** Camera distance (m) where fan palms switch to the far mesh; the band around it stops flicker. */
+const PALM_LOD_DISTANCE = 60;
+const PALM_LOD_BAND = 4;
+
+/**
+ * Two instanced meshes over one instance list: each instance is drawn by the near or the far mesh
+ * depending on its distance to the camera. Buckets are rebuilt only when the camera moves.
+ */
+function LodLayer({ near, far, material, list }: { near: THREE.BufferGeometry; far: THREE.BufferGeometry; material: THREE.Material; list: Instance[] }) {
+  const nearRef = useRef<THREE.InstancedMesh>(null);
+  const farRef = useRef<THREE.InstancedMesh>(null);
+  const camera = useThree((s) => s.camera);
+  const cache = useMemo(() => ({ matrices: list.map((it) => instanceMatrix(it)), isNear: new Uint8Array(list.length), last: new THREE.Vector3(Infinity, 0, 0) }), [list]);
+  useFrame(() => {
+    const nm = nearRef.current;
+    const fm = farRef.current;
+    if (!nm || !fm || camera.position.distanceToSquared(cache.last) < 0.25) return;
+    cache.last.copy(camera.position);
+    const c = new THREE.Color();
+    let n = 0;
+    let f = 0;
+    list.forEach((it, i) => {
+      // Distance to the crown, which carries nearly all of the palm's triangles.
+      const d = Math.hypot(it.x - camera.position.x, 8 * it.scale - camera.position.y, it.z - camera.position.z);
+      const isNear = cache.isNear[i] ? d < PALM_LOD_DISTANCE + PALM_LOD_BAND : d < PALM_LOD_DISTANCE - PALM_LOD_BAND;
+      cache.isNear[i] = isNear ? 1 : 0;
+      const mesh = isNear ? nm : fm;
+      const k = isNear ? n++ : f++;
+      mesh.setMatrixAt(k, cache.matrices[i]);
+      mesh.setColorAt(k, c.setScalar(it.tint));
+    });
+    for (const [mesh, count] of [[nm, n], [fm, f]] as const) {
+      mesh.count = count;
+      mesh.visible = count > 0;
+      mesh.instanceMatrix.needsUpdate = true;
+      if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
+    }
+  });
+  return (
+    <>
+      <instancedMesh ref={nearRef} name="palm:near" args={[near, material, list.length]} castShadow receiveShadow frustumCulled={false} />
+      <instancedMesh ref={farRef} name="palm:far" args={[far, material, list.length]} castShadow receiveShadow frustumCulled={false} />
+    </>
+  );
 }

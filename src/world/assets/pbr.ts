@@ -612,7 +612,10 @@ export class MeshBuilder {
       if (!merged) continue;
       const mesh = new THREE.Mesh(merged, this.resolveMaterial(material));
       mesh.name = `${name}:${material}`;
-      mesh.castShadow = shadows;
+      // Paint, decals and ground plates under 3 cm tall cannot throw a visible shadow; keep them out of the shadow pass.
+      merged.computeBoundingBox();
+      const flat = merged.boundingBox!.max.y - merged.boundingBox!.min.y < 0.03;
+      mesh.castShadow = shadows && !flat;
       mesh.receiveShadow = true;
       group.add(mesh);
     }
