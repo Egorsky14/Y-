@@ -63,18 +63,21 @@ Omit the second argument to skip the preview renders (export only, ~3 s).
 ## Demonstration: job-site service kit
 
 Replaces the primitive boxes and stick hoses staged beside the condenser during a service call
-(`JobSiteProps` in `src/world/scene/LiveEntities.tsx`).
+(`JobSiteProps` in `src/world/scene/LiveEntities.tsx`). Since the service-call scene work
+(`SERVICE_CALL_SCENE.md`) the kit is authored in the **outdoor unit's frame**: origin on the ground at
+the unit centre, +Y (glTF −Z) toward the street and the unit's service face, +X away from the house
+wall. The game places it on the unit, so the hose couplers land on the unit's service valve ports.
 
 | Node | Size (m) | Triangles | Contents |
 | --- | --- | --- | --- |
 | `bag` | 0.47 × 0.33 × 0.40 | 2,560 | Soft-sided tool bag (bevel + one subdivision level), ballistic nylon, binding seams, zipper and pull, front pocket, rubber base, EGO teal webbing band that follows the tapered body, piping and webbing handles |
-| `manifold` | 0.77 × 0.49 × 0.10 | 9,988 | Aluminium manifold body, knurled blue/red valve knobs, three brass ports, low/high dials with printed faces (blue/red pressure arcs, ticks, needles) and chrome bezels, hanging hook; blue, yellow and red ~1.2 m charging hoses (real ones are 36–72 in) in separate spiral coils with brass couplers |
+| `manifold` | 1.13 × 0.66 × 1.00 | 7,244 | Upright aluminium manifold hung by its hook on the unit's top edge, knurled blue/red valve knobs, three brass ports pointing down, low/high dials with printed faces (blue/red pressure arcs, ticks, needles) and chrome bezels facing the street; blue hose to the suction service port and red to the liquid port (couplers seated on the port tips), yellow utility hose coiled on the ground |
 | `cylinder` | 0.30 × 0.30 × 0.47 | 1,548 | Grey recovery cylinder, yellow shoulder, valve guard collar, two valves with blue/red handwheels; visible on install jobs only |
 
-GLB 413 KB, 14,096 triangles (budget 16,000), 16 draw calls per staged kit (21 on installs).
+GLB 349 KB, 11,352 triangles (budget 16,000), 16 draw calls per staged kit (21 on installs).
 Evidence:
 
-- Blender close-ups: `docs/art/previews/kit-front.png`, `kit-top.png`, `manifold-close.png`
+- Blender close-ups: `docs/art/previews/kit-front.png`, `kit-top.png`, `valves-close.png` (staging on a stand-in unit)
 - In game (seed 42, tutorial lead, diagnosis visit): `docs/art/ingame/kit-gameplay.png` (26 m),
   `kit-mid.png` (7 m), and Photo Mode close-ups `kit-close.png`, `kit-close-side.png`,
   `manifold-close.png` (1.5 m) and `kit-with-tech.png`, produced by

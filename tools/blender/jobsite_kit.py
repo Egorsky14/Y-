@@ -5,10 +5,13 @@ Run headless (see docs/art/ASSET_PIPELINE.md):
 
 Builds three named parts in real-world metres (Blender Z-up; the glTF exporter writes Y-up):
   bag       soft-sided technician tool bag, EGO teal webbing and handles
-  manifold  2-valve refrigerant gauge manifold with low/high dials, knurled knobs and three
-            charging hoses (blue, yellow, red) coiled on the ground with brass couplers
+  manifold  2-valve refrigerant gauge manifold hung on the unit's top edge, low/high dials facing
+            the street; blue and red hoses to the suction and liquid service ports, yellow
+            utility hose coiled on the ground
   cylinder  refrigerant recovery cylinder: grey body, yellow shoulder, valve guard, two valves
-The kit origin is the ground point the game stages it on; +X runs along the house wall.
+The kit is authored in the outdoor unit's frame: origin on the ground at the unit centre, +Y
+toward the street (the unit's service face), +X away from the house wall. The game places it on
+the unit, so the hose couplers land on the unit's service valves.
 Validates dimensions, transforms and triangle budget, then exports and optionally renders
 close-up previews with EEVEE.
 """
@@ -255,33 +258,42 @@ for y in (-0.06, 0.06):
     bag_parts.append(tube(f"handle{y}", "teal", [(-0.12, y, 0.26), (-0.09, y, 0.36), (0.09, y, 0.36), (0.12, y, 0.26)], 0.009, resolution=6, bevel_res=1))
 bag = join("bag", bag_parts)
 
-# ---------------------------------------------------------------- gauge manifold, lying on its back on the ground
+# ---------------------------------------------------------------- staging frame: the condenser
+# The kit is authored in the frame of the house's outdoor unit (see HouseBuilder / addCondenser):
+# origin on the ground at the unit centre, +Y toward the street (the unit's service face), +X away
+# from the house wall. The game places the kit on the unit, so these numbers line up exactly.
+UNIT_W = 0.92                      # cabinet width (pad 1.32 m square, 0.1 m tall)
+UNIT_TOP = 0.1 + 0.86              # top deck height
+FACE_Y = UNIT_W / 2                # service face (panel in the middle, valves at the -X corner)
+VALVE_PORT_Y = FACE_Y + 0.085      # service port tips point out of the face (toward the street)
+VALVE_PORT_Z = 0.1 + 0.15
+SUCTION_X = -UNIT_W * 0.39         # larger suction valve, nearest the wall
+LIQUID_X = -UNIT_W * 0.28
+MAN_POS = Vector((0.30, FACE_Y + 0.035, 0.80))   # manifold body centre, hung on the top edge
+
+# ---------------------------------------------------------------- gauge manifold, hung on the unit's top edge
 man_parts = []
-# Body block (0.17 x 0.05 x 0.045) with hose ports along the bottom edge (-Y side when lying).
-man_parts.append(smooth(bevel(prim(bpy.ops.mesh.primitive_cube_add, "man-body", "alu", location=(0, 0, 0.025), scale=(0.085, 0.025, 0.0225), size=2), 0.006, 2), 45))
-# Knurled valve knobs on both ends, along X.
-for side, mat in ((-1, "blue"), (1, "red")):
+# Upright body (0.17 wide x 0.045 deep x 0.05 tall), gauges above it facing the street, ports below.
+man_parts.append(smooth(bevel(prim(bpy.ops.mesh.primitive_cube_add, "man-body", "alu", location=(0, 0, 0), scale=(0.085, 0.0225, 0.025), size=2), 0.006, 2), 45))
+for side, mat in ((-1, "blue"), (1, "red")):  # low side (blue) toward the suction valve, high side (red)
     knob = lathe(f"knob{side}", mat, [(0.0, 0.0), (0.019, 0.0), (0.021, 0.004), (0.021, 0.026), (0.018, 0.03), (0.0, 0.03)], 20)
     knob.rotation_euler = (0, side * math.pi / 2, 0)
-    knob.location = (side * 0.085, 0, 0.025)
+    knob.location = (side * 0.085, 0, 0)
     man_parts.append(knob)
     stem = lathe(f"stem{side}", "chrome", [(0.0, 0.0), (0.006, 0.0), (0.006, 0.012), (0.0, 0.012)], 10)
     stem.rotation_euler = (0, side * math.pi / 2, 0)
-    stem.location = (side * 0.079, 0, 0.025)
+    stem.location = (side * 0.079, 0, 0)
     man_parts.append(stem)
-# Three brass ports along the -Y face (low, utility, high).
 ports = []
-for x in (-0.05, 0.0, 0.05):
+for x in (-0.05, 0.0, 0.05):  # low, utility, high: pointing down
     port = lathe(f"port{x}", "brass", [(0.0, 0.0), (0.008, 0.0), (0.008, 0.014), (0.006, 0.016), (0.006, 0.024), (0.0, 0.024)], 12)
-    port.rotation_euler = (math.pi / 2, 0, 0)
-    port.location = (x, -0.024, 0.025)
+    port.rotation_euler = (math.pi, 0, 0)
+    port.location = (x, 0, -0.025)
     man_parts.append(port)
-    ports.append(Vector((x, -0.048, 0.025)))
-# Two dials on short necks, faces up.
+    ports.append(MAN_POS + Vector((x, 0, -0.049)))
 for x, face in ((-0.048, "face-low"), (0.048, "face-high")):
-    tilt = 0.0  # faces up: legible from the game camera; one pivot keeps the needle on the face
-    neck = lathe(f"neck{x}", "brass", [(0.0, 0.0), (0.006, 0.0), (0.006, 0.02), (0.0, 0.02)], 10)
-    neck.location = (x, 0.004, 0.045)
+    neck = lathe(f"neck{x}", "brass", [(0.0, 0.0), (0.006, 0.0), (0.006, 0.03), (0.0, 0.03)], 10)
+    neck.location = (x, 0, 0.025)
     man_parts.append(neck)
     case = lathe(f"case{x}", "black", [(0.0, 0.0), (0.04, 0.0), (0.043, 0.004), (0.043, 0.028), (0.0, 0.028)], 32)
     bezel = lathe(f"bezel{x}", "chrome", [(0.039, 0.024), (0.045, 0.026), (0.045, 0.032), (0.039, 0.034), (0.037, 0.03)], 32, caps=False)
@@ -294,43 +306,49 @@ for x, face in ((-0.048, "face-low"), (0.048, "face-high")):
     bmesh.ops.translate(bm, verts=bm.verts, vec=(0, 0, 0.029))
     dial = obj_from_bmesh(f"dial{x}", bm, face)
     needle = prim(bpy.ops.mesh.primitive_cube_add, f"needle{x}", "black", location=(0.012, 0.006, 0.0305), rotation=(0, 0, math.radians(35 if x < 0 else -25)), scale=(0.022, 0.0015, 0.0008), size=2)
+    # Gauge built facing +Z, then stood up to face the street (+Y), centred above the body.
+    # Rx(-90°) maps (x, y, z) to (x, z, -y); ZYX order applies the needle's in-plane angle first.
     for part in (case, bezel, dial, needle):
-        part.location = Vector((x, 0.004, 0.062)) + part.location
-        part.rotation_euler = (tilt, 0, part.rotation_euler.z)
+        spin = part.rotation_euler.z
+        part.rotation_mode = "ZYX"
+        part.rotation_euler = (-math.pi / 2, 0, spin)
+        part.location = Vector((x, -0.01, 0.1)) + Vector((part.location.x, part.location.z, -part.location.y))
         man_parts.append(part)
-# Hanging hook on top.
-man_parts.append(tube("hook", "chrome", [(0, 0.024, 0.035), (0, 0.05, 0.05), (0, 0.075, 0.04), (0, 0.07, 0.022)], 0.003, resolution=4, bevel_res=1))
+# Hook up behind the gauges and over the top edge of the cabinet.
+hook_x = 0.0
+man_parts.append(tube("hook", "chrome", [(hook_x, -0.02, 0.02), (hook_x, -0.03, UNIT_TOP + 0.025 - MAN_POS.z), (hook_x, -0.07, UNIT_TOP + 0.03 - MAN_POS.z), (hook_x, -0.095, UNIT_TOP + 0.008 - MAN_POS.z)], 0.003, resolution=6, bevel_res=1))
 manifold = join("manifold", man_parts)
+manifold.location = MAN_POS
 
-# Charging hoses: from each port, a smooth bend down to the ground, then a loose coil of its own
-# (three coils side by side, so no hose passes through another), coupler at the end.
+# Charging hoses: blue (low side) to the suction valve port, red (high side) to the liquid valve
+# port, each sagging over the pad in front of the unit; the yellow utility hose drops off the pad
+# into a loose coil beside the technician. Brass couplers seat on the service ports.
 hose_parts = []
-for i, (p, mat) in enumerate(zip(ports, ("hose-blue", "hose-yellow", "hose-red"))):
-    # Charging hoses are 36-72 in long; these run ~1.2 m: a short drop from the port, then ~1.3 turns.
-    r = 0.12
-    cx, cy = (i - 1) * 0.28, -0.32
-    top = Vector((cx, cy + r * 0.8, 0.0075))
-    pts = [p, p + Vector((0, -0.022, -0.004)), p.lerp(top, 0.45) + Vector((0, 0, -0.005)), top]
-    pts[2].z = max(pts[2].z, 0.012)
-    turns = 1.3
-    steps = 16
-    for k in range(1, steps + 1):
-        a = math.pi / 2 + (k / steps) * 2 * math.pi * turns * (1 if i != 0 else -1)
-        rk = r * (1 - 0.35 * k / steps)  # spiral inward: successive passes clear each other by ~3 cm
-        pts.append(Vector((cx + math.cos(a) * rk, cy + math.sin(a) * rk * 0.8, 0.0075)))
-    hose = tube(f"hose{i}", mat, [tuple(v) for v in pts], 0.0065, resolution=8, bevel_res=2)
-    hose_parts.append(hose)
-    end = pts[-1]
-    prev = pts[-2]
-    d = (end - prev).normalized()
-    coupler = lathe(f"coupler{i}", "brass", [(0.0, 0.0), (0.009, 0.0), (0.009, 0.022), (0.006, 0.026), (0.0, 0.026)], 12)
-    coupler.rotation_mode = "QUATERNION"
-    coupler.rotation_quaternion = Vector((0, 0, 1)).rotation_difference(d)
-    coupler.location = end
+P = lambda x, y, z: Vector((x, y, z))
+COUPLER = 0.026
+routes = {  # each ends straight in front of its port so the coupler seats on the port tip
+    "hose-blue": [ports[0], P(ports[0].x, 0.50, 0.62), P(0.18, 0.57, 0.30), P(-0.05, 0.64, 0.16), P(SUCTION_X + 0.03, 0.665, 0.215), P(SUCTION_X, 0.63, VALVE_PORT_Z), P(SUCTION_X, VALVE_PORT_Y + COUPLER, VALVE_PORT_Z)],
+    "hose-red": [ports[2], P(ports[2].x, 0.52, 0.60), P(0.28, 0.62, 0.26), P(0.02, 0.70, 0.16), P(LIQUID_X + 0.06, 0.72, 0.22), P(LIQUID_X, 0.665, VALVE_PORT_Z), P(LIQUID_X, VALVE_PORT_Y + COUPLER, VALVE_PORT_Z)],
+}
+for i, (mat, pts) in enumerate(routes.items()):
+    hose_parts.append(tube(f"hose-{i}", mat, [tuple(v) for v in pts], 0.0065, resolution=10, bevel_res=2))
+    coupler = lathe(f"coupler-{i}", "brass", [(0.0, 0.0), (0.009, 0.0), (0.009, 0.022), (0.006, COUPLER), (0.0, COUPLER)], 12)
+    coupler.rotation_euler = (math.pi / 2, 0, 0)  # pointing toward the unit, onto the port tip
+    coupler.location = pts[-1]
     hose_parts.append(coupler)
+yellow = [ports[1], P(ports[1].x + 0.01, 0.52, 0.55), P(0.36, 0.60, 0.20), P(0.40, 0.68, 0.115), P(0.43, 0.725, 0.06), P(0.47, 0.775, 0.0125), P(0.52, 0.82, 0.0095)]
+cx, cy, r = 0.64, 0.96, 0.13
+for k in range(1, 15):
+    a = math.pi * 0.9 + (k / 14) * 2 * math.pi * 1.15
+    rk = r * (1 - 0.3 * k / 14)
+    yellow.append(P(cx + math.cos(a) * rk, cy + math.sin(a) * rk * 0.85, 0.0095))  # resting on the ground
+hose_parts.append(tube("hose-yellow", "hose-yellow", [tuple(v) for v in yellow], 0.0065, resolution=8, bevel_res=2))
+cap = lathe("coupler-y", "brass", [(0.0, 0.0), (0.009, 0.0), (0.009, 0.022), (0.006, 0.026), (0.0, 0.026)], 12)
+cap.rotation_mode = "QUATERNION"
+cap.rotation_quaternion = Vector((0, 0, 1)).rotation_difference((yellow[-1] - yellow[-2]).normalized())
+cap.location = yellow[-1]
+hose_parts.append(cap)
 hoses = join("hoses", hose_parts)
-for ob in (manifold, hoses):  # lay the manifold set beside the bag
-    ob.location = (0.75, 0.1, 0)  # clear of the bag, coils included
 with bpy.context.temp_override(active_object=manifold, selected_objects=[manifold, hoses], selected_editable_objects=[manifold, hoses]):
     bpy.ops.object.join()
 manifold.name = "manifold"
@@ -349,8 +367,9 @@ for side, mat in ((-1, "blue"), (1, "red")):
     wheel.location = (side * 0.03, 0, 0.445)
     cyl_parts += [v, wheel]
 cylinder = join("cylinder", cyl_parts)
-cylinder.location = (-0.5, 0.1, 0)
-bag.location = (0, 0, 0)
+cylinder.location = (1.05, 0.30, 0)         # beside the unit's open side (install jobs only)
+bag.location = (1.12, 1.52, 0)              # set down behind the technician's right side, clear of his kneeling leg
+bag.rotation_euler = (0, 0, math.radians(-12))
 
 # ---------------------------------------------------------------- validation
 def dims(ob):
@@ -365,9 +384,9 @@ def tris(ob):
 
 
 report = []
-EXPECT = {  # name: (min size xyz, max size xyz) in metres, and the parts must sit on the ground
+EXPECT = {  # name: (min size xyz, max size xyz) in metres; every part reaches the ground (bag, cylinder, coiled hose)
     "bag": ((0.42, 0.28, 0.32), (0.52, 0.40, 0.40)),
-    "manifold": ((0.7, 0.4, 0.06), (1.0, 0.7, 0.15)),
+    "manifold": ((0.9, 0.5, 0.9), (1.3, 0.85, 1.1)),
     "cylinder": ((0.28, 0.28, 0.44), (0.33, 0.33, 0.5)),
 }
 ok = True
@@ -416,7 +435,19 @@ if PREVIEW_DIR:
     scene.render.engine = "BLENDER_EEVEE"
     scene.render.resolution_x, scene.render.resolution_y = 1280, 800
     scene.view_settings.view_transform = "AgX"
-    for name, target, dist, az, el in (("kit-front", (0.05, -0.05, 0.12), 1.9, -0.35, 0.42), ("kit-top", (0.3, -0.05, 0.03), 1.25, 0.25, 1.05), ("manifold-close", (0.55, 0.08, 0.06), 0.55, -0.3, 0.75)):
+    # Stand-in condenser (not exported) so the staging reads in context.
+    bpy.ops.mesh.primitive_cube_add(size=1, location=(0, 0, 0.05))
+    pad = bpy.context.active_object
+    pad.scale = (UNIT_W + 0.4, UNIT_W + 0.4, 0.1)
+    pad.data.materials.append(material("pad", "#bdb8ae", roughness=0.9))
+    bpy.ops.mesh.primitive_cube_add(size=1, location=(0, 0, 0.1 + 0.43))
+    unit = bpy.context.active_object
+    unit.scale = (UNIT_W, UNIT_W, 0.86)
+    unit.data.materials.append(material("unit", "#e4e6e8", roughness=0.5))
+    for vx in (SUCTION_X, LIQUID_X):
+        bpy.ops.mesh.primitive_cylinder_add(radius=0.008, depth=0.035, location=(vx, VALVE_PORT_Y - 0.0175, VALVE_PORT_Z), rotation=(math.pi / 2, 0, 0))
+        bpy.context.active_object.data.materials.append(M["brass"])
+    for name, target, dist, az, el in (("kit-front", (0.3, 0.7, 0.45), 2.6, math.pi - 0.45, 0.42), ("kit-top", (0.3, 0.8, 0.2), 2.1, math.pi + 0.3, 1.0), ("valves-close", (-0.3, 0.6, 0.26), 0.55, math.pi - 0.6, 0.35)):
         t = Vector(target)
         cam.location = t + Vector((math.sin(az) * math.cos(el), -math.cos(az) * math.cos(el), math.sin(el))) * dist
         cam.rotation_euler = (t - cam.location).to_track_quat("-Z", "Y").to_euler()

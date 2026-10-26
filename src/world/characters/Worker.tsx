@@ -11,6 +11,8 @@ interface WorkerProps {
   look: number;
   anim: WorkerAnim;
   scale?: number;
+  /** Walk-cycle rate multiplier, matched to how fast the character covers ground (1 ≈ 1.5 m/s). */
+  pace?: number;
 }
 
 const SKIN = ['#f1c7a6', '#d9a57c', '#b97a52', '#8d5a3b', '#f6d7bf', '#6b4430'];
@@ -43,7 +45,7 @@ type Pose = Record<string, [number, number, number]>;
  * Stylized-realistic worker (~1.8 m): articulated shoulders, elbows, hips and knees driven by
  * procedural clips per job state, blended across state changes. Feet stay on the ground.
  */
-export function Worker({ role, look, anim, scale = 1 }: WorkerProps) {
+export function Worker({ role, look, anim, scale = 1, pace = 1 }: WorkerProps) {
   const root = useRef<THREE.Group>(null);
   const refs = {
     pelvis: useRef<THREE.Group>(null), torso: useRef<THREE.Group>(null), head: useRef<THREE.Group>(null),
@@ -61,6 +63,7 @@ export function Worker({ role, look, anim, scale = 1 }: WorkerProps) {
   const heavy = 0.92 + ((look >> 2) % 5) * 0.04; // torso width variation
   const heightState = useRef({ pelvis: PELVIS_Y, root: 0 });
   const blend = useRef<Pose>({});
+  const stride = useRef(0);
 
   const materials = useMemo(
     () => ({
@@ -105,8 +108,10 @@ export function Worker({ role, look, anim, scale = 1 }: WorkerProps) {
     switch (anim) {
       case 'walk':
       case 'carry': {
-        const s = Math.sin(t * 7.2);
-        const c = Math.cos(t * 7.2);
+        // Stride phase advances with the ground speed so the feet do not slide.
+        stride.current += dt * 7.2 * pace;
+        const s = Math.sin(stride.current + phase);
+        const c = Math.cos(stride.current + phase);
         set('legL', s * 0.62);
         set('legR', -s * 0.62);
         set('shinL', Math.max(0, -c) * 0.95);

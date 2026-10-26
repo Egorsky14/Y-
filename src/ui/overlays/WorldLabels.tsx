@@ -1,4 +1,5 @@
 import { useCallback, useMemo } from 'react';
+import { vanVisuals } from '@/world/scene/serviceCall';
 import * as THREE from 'three';
 import { getGameState, useApp, useGame } from '@/app/store';
 import { registerLabel } from '@/world/interactions/labels';
@@ -100,7 +101,9 @@ function VehicleTag({ id, nickname, status, eta }: { id: string; nickname: strin
     () => (out: THREE.Vector3) => {
       const v = getGameState()?.vehicles[id];
       if (!v) return false;
-      out.set(v.position.x, 4.2, v.position.z);
+      // Parked at a job, the van is drawn in the curb lane rather than at the route's end.
+      const parked = vanVisuals.get(id);
+      out.set(parked?.x ?? v.position.x, 4.2, parked?.z ?? v.position.z);
       return true;
     },
     [id],

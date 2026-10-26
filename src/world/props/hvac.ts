@@ -46,6 +46,10 @@ export interface CondenserOptions {
   lineSet?: boolean;
   /** Skip the fan blades (they are drawn live for running units). */
   fan?: boolean;
+  /** Centre of the service panel across the +z face (default w * 0.2, toward the +x corner). */
+  panelX?: number;
+  /** Brass suction and liquid service valves low on the +z face at these unit-local x positions, each with a service port for gauge hoses. */
+  serviceValves?: [number, number];
 }
 
 /** Outdoor condensing unit: louvered coil guard on three sides, service panel, top fan grille. */
@@ -74,9 +78,20 @@ export function addCondenser(b: MeshBuilder, origin: V3, yaw = 0, o: CondenserOp
   for (const side of [-1, 1]) p.box('insulation', [0.02, h - 0.3, w - 0.16], at(base, [side * (w / 2 - 0.035), y0 - base[1] + h / 2, 0], yaw));
   p.box('insulation', [w - 0.16, h - 0.3, 0.02], at(base, [0, y0 - base[1] + h / 2, -(w / 2 - 0.035)], yaw));
   // Service panel with two screws and the electrical whip
-  p.box(cab, [w * 0.46, h - 0.2, 0.03], at(base, [w * 0.2, y0 - base[1] + h / 2, w / 2 - 0.02], yaw));
-  p.box('darkMetal', [0.03, 0.03, 0.02], at(base, [w * 0.05, y0 - base[1] + h - 0.2, w / 2 + 0.0], yaw));
-  p.box('darkMetal', [0.03, 0.03, 0.02], at(base, [w * 0.36, y0 - base[1] + 0.2, w / 2 + 0.0], yaw));
+  const px = o.panelX ?? w * 0.2;
+  p.box(cab, [w * 0.46, h - 0.2, 0.03], at(base, [px, y0 - base[1] + h / 2, w / 2 - 0.02], yaw));
+  p.box('darkMetal', [0.03, 0.03, 0.02], at(base, [px - w * 0.15, y0 - base[1] + h - 0.2, w / 2 + 0.0], yaw));
+  p.box('darkMetal', [0.03, 0.03, 0.02], at(base, [px + w * 0.16, y0 - base[1] + 0.2, w / 2 + 0.0], yaw));
+  if (o.serviceValves) {
+    // Suction (larger) and liquid service valves: brass body, stem cap on top, and the service port
+    // pointing out of the face (tip at w/2 + 0.085, 0.15 above the pad) where a gauge hose couples.
+    for (const [i, vx] of o.serviceValves.entries()) {
+      const r = i === 0 ? 0.03 : 0.022;
+      p.box('copper', [r * 2, 0.07, 0.05], at(base, [vx, y0 - base[1] + 0.14, w / 2 + 0.025], yaw));
+      p.add('darkMetal', new THREE.CylinderGeometry(r * 0.75, r * 0.75, 0.03, 8), at(base, [vx, y0 - base[1] + 0.19, w / 2 + 0.025], yaw));
+      p.add('copper', new THREE.CylinderGeometry(0.008, 0.008, 0.035, 6), at(base, [vx, y0 - base[1] + 0.15, w / 2 + 0.0675], yaw), [Math.PI / 2, 0, 0]);
+    }
+  }
   // Top: fan guard ring, radial wires, hub and motor cap
   const top = y0 + h;
   p.add('grille', new THREE.TorusGeometry(w * 0.36, 0.014, 6, 32), at(base, [0, top - base[1] + 0.01, 0], yaw), [Math.PI / 2, 0, 0]);

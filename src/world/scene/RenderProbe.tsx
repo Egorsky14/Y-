@@ -32,8 +32,12 @@ export function RenderProbe() {
       if (o.name.startsWith('house:') && !o.name.includes(':', 6)) houses++;
       if (o.name.startsWith('employee:')) workers++;
       if ((o as THREE.InstancedMesh).isInstancedMesh) instanced++;
-      // A staged job-site kit counts once its glTF meshes are in the scene.
-      if (o.name === 'jobsite-kit' && o.getObjectByName('manifold')) kits++;
+      // A job-site kit counts once it is staged at the unit with the gauges hooked up (visible).
+      if (o.name === 'jobsite-kit') {
+        let shown = !!o.getObjectByName('manifold');
+        for (let n = o.getObjectByName('manifold') ?? null; n && n !== o && shown; n = n.parent) shown = n.visible;
+        if (shown) kits++;
+      }
       if (o.name.startsWith('vehicle-model:')) {
         vehicleModels++;
         const root = o.parent?.parent?.parent; // Selectable group → vehicle group

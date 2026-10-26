@@ -398,13 +398,22 @@ export function addHouse(shared: MeshBuilder, lot: Lot): void {
     const half = HOUSE_HALF_WIDTH[style];
     const ux = half + 0.9;
     const uz = -3;
-    addCondenser(b as unknown as MeshBuilder, [ux, 0, uz], -Math.PI / 2, { pad: true, lineSet: true, fan: false, size: style === 'premium' ? 1.08 : 0.92, height: style === 'premium' ? 1.0 : 0.86 });
+    // The unit turns its service side (unit +z) to the street-side approach: the panel sits in the
+    // middle of that face, the suction and liquid service valves at its corner nearest the wall,
+    // and the line set runs from the wall into those valves. The technician kneels in front of the
+    // panel (workPosition), and the gauge hoses of the job-site kit end at the valve ports.
+    const w = style === 'premium' ? 1.08 : 0.92;
+    addCondenser(b as unknown as MeshBuilder, [ux, 0, uz], Math.PI, { pad: true, lineSet: false, fan: false, size: w, height: style === 'premium' ? 1.0 : 0.86, panelX: -0.01, serviceValves: [w * 0.39, w * 0.28] });
     b.box('galvanized', [0.06, 0.32, 0.22], [half + 0.03, 1.45, uz - 0.3]); // disconnect box
     b.box('galvanized', [0.02, 0.08, 0.1], [half + 0.05, 1.3, uz - 0.3]);
     b.box('galvanized', [0.04, 1.3, 0.04], [half + 0.03, 0.65, uz - 0.3]); // conduit down the wall
-    b.box('insulation', [half + 0.9 - 0.5 - half, 0.07, 0.07], [half + 0.25, 0.35, uz + 0.1]); // suction line to the wall
-    b.box('copper', [0.4, 0.025, 0.025], [half + 0.25, 0.3, uz + 0.2]);
-    b.box('unitCabinet', [0.12, 0.5, 0.5], [half + 0.06, 0.9, uz + 0.1]); // line-set wall cover
+    const lineZ = uz - w / 2 - 0.03;
+    const suctionX = ux - w * 0.39 - 0.035;
+    const liquidX = ux - w * 0.28 - 0.025;
+    b.box('insulation', [suctionX - half, 0.07, 0.07], [(half + suctionX) / 2, 0.24, lineZ]); // insulated suction line, wall → suction valve
+    b.box('copper', [liquidX - half, 0.022, 0.022], [(half + liquidX) / 2, 0.19, lineZ - 0.045]); // bare liquid line, wall → liquid valve
+    b.box('copper', [0.022, 0.06, 0.022], [liquidX + 0.01, 0.215, lineZ - 0.045]);
+    b.box('unitCabinet', [0.12, 0.55, 0.22], [half + 0.06, 0.38, lineZ]); // line-set wall cover
   }
   // ---- Solar array on about half the roofs, trash bins by the garage, a patio set behind the house
   const seed = hashLot(lot.id + 'p');

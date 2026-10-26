@@ -11,3 +11,7 @@ e2e/.auth
 
 # Raw before/after captures (48 MB); compact sheets live in docs/perf/compare
 docs/perf/shots/
+
+# Raw service-call captures (44 MB); compact sheets live in docs/art/servicecall/compare
+docs/art/servicecall/before/
+docs/art/servicecall/after/

@@ -187,15 +187,43 @@ export function condenserPosition(lot: Lot): Vec2 {
   };
 }
 
-/** Where a crew member stands to work on the unit: outward from the wall, spaced along the house. */
-export function workPosition(lot: Lot, crewIndex: number): Vec2 {
-  const c = condenserPosition(lot);
+/**
+ * House-local frame → world: local +x runs toward the condenser side of the lot, local +z away
+ * from the street (the front of the house faces -z). Matches condenserPosition (local (half + 0.9, -3)).
+ */
+export function lotLocalToWorld(lot: Lot, x: number, z: number): Vec2 {
   const side = condenserSideDir(lot);
   const inward = inwardDir(lot.facing);
-  return {
-    x: c.x + side.x * 1.3 + inward.x * crewIndex * 1.3,
-    z: c.z + side.z * 1.3 + inward.z * crewIndex * 1.3,
-  };
+  return { x: lot.center.x + side.x * x + inward.x * z, z: lot.center.z + side.z * x + inward.z * z };
+}
+
+/** World heading (atan2(dx, dz), as used by vehicles and workers) of a house-local direction. */
+export function lotLocalHeading(lot: Lot, dx: number, dz: number): number {
+  const side = condenserSideDir(lot);
+  const inward = inwardDir(lot.facing);
+  return Math.atan2(side.x * dx + inward.x * dz, side.z * dx + inward.z * dz);
+}
+
+/**
+ * Where a crew member works on the unit. The lead technician kneels on the street side in front
+ * of the service panel (the unit's street-facing front, see HouseBuilder), just past the unit's
+ * centre line and away from the wall; extra crew stand beside the unit on the open side.
+ */
+export function workPosition(lot: Lot, crewIndex: number): Vec2 {
+  const ux = HOUSE_HALF_WIDTH[lot.style ?? 'ranch'] + 0.9;
+  const uz = -3;
+  if (crewIndex === 0) return lotLocalToWorld(lot, ux + 0.14, uz - 1.02);
+  return lotLocalToWorld(lot, ux + 1.25, uz - 1.4 - (crewIndex - 1) * 1.1);
+}
+
+/** Lane-side parking for a service vehicle at a house: in the curb lane, nose toward the condenser side. */
+export function curbParking(lot: Lot): { x: number; z: number; heading: number } {
+  const ux = HOUSE_HALF_WIDTH[lot.style ?? 'ranch'] + 0.9;
+  const streetZ = -(LOT_SETBACK + lot.depth / 2);
+  // Van centre 1.25 m off the curb face, its curb-side door about a metre short of the unit's line
+  // so the nose stays clear of a corner crosswalk; the walk up the yard is then nearly straight.
+  const p = lotLocalToWorld(lot, ux - 0.95, streetZ + ROAD_WIDTH / 2 - 1.25);
+  return { ...p, heading: lotLocalHeading(lot, 1, 0) };
 }
 
 /** HQ parking stalls, in world coordinates. Expanded garage adds more. */
