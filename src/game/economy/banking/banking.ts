@@ -3,8 +3,8 @@ import { pushEvent } from '../../simulation/events';
 import { postTransaction } from '../ledger';
 import { BANKING, CREDIT_LINE_PRODUCTS, DAYS_PER_MONTH, LOAN_PRODUCTS } from './config';
 import { cents, dailyInterest } from './amortization';
-import { banking, createLoan, installmentDue, logBanking, payInstallment, payLoanPastDue, payoffQuote, settleLoan } from './loans';
-import { businessSnapshot, creditLineOffer, creditRating, loanOffer, ratingBand } from './underwriting';
+import { banking, createLoan, installmentDue, logBanking, recordOnTime, payInstallment, payLoanPastDue, payoffQuote, settleLoan } from './loans';
+import { businessSnapshot, creditLineOffer, creditRating, loanOffer, loanOfferForAmount, ratingBand } from './underwriting';
 
 /**
  * Business banking: player actions (accept a loan, prepay, pay off; open, draw on, repay and
@@ -19,12 +19,17 @@ const money = (v: number) => `$${Math.round(v).toLocaleString('en-US')}`;
 
 // ---------------------------------------------------------------- term loans
 
-export function acceptLoanOffer(state: GameState, offerId: string): BankingResult {
+/** Accepts a quoted loan for `amount` (default: the full approval), from the product minimum up to the approval. */
+export function acceptLoanOffer(state: GameState, offerId: string, amount?: number): BankingResult {
   const productId = offerId.split('@')[0];
   const product = LOAN_PRODUCTS.find((p) => p.id === productId);
   if (!product) return fail('That offer is no longer available.');
-  const offer = loanOffer(state, product);
-  if (offer.id !== offerId) return fail('This quote has expired. Review the new terms.');
+  const quote = loanOffer(state, product);
+  if (quote.id !== offerId) return fail('This quote has expired. Review the new terms.');
+  const requested = amount === undefined ? quote.amount : Math.floor(amount / 100) * 100;
+  if (quote.approved && !(requested >= quote.minAmount)) return fail(`${quote.lender} lends at least ${money(quote.minAmount)}.`);
+  if (quote.approved && requested > quote.amount) return fail(`${quote.lender} approved up to ${money(quote.amount)}.`);
+  const offer = quote.approved ? loanOfferForAmount(quote, requested) : quote;
   logBanking(state, { type: 'application', text: `Applied to ${offer.lender} for ${money(offer.amount)}` });
   if (!offer.approved) {
     logBanking(state, { type: 'decline', text: `${offer.lender} declined: ${offer.reasons[0]}` });
@@ -235,7 +240,7 @@ function processLoan(state: GameState, loan: Loan, day: number): void {
       loan.nextPaymentDay += DAYS_PER_MONTH;
     } else if ((loan.pastDue ?? 0) <= 0 && state.finance.cash >= due.total) {
       const paid = payInstallment(state, loan);
-      b.onTimePayments++;
+      recordOnTime(state);
       logBanking(state, { type: 'payment', text: `Installment ${loan.paymentsMade}${loan.termMonths ? ` of ${loan.termMonths}` : ''} · ${loan.purpose} (interest ${money(due.interest)}, principal ${money(due.principal)})`, amount: paid });
     } else {
       const fee = loan.lateFee ?? 0;
@@ -280,11 +285,11 @@ function processCreditLine(state: GameState, line: CreditLine, day: number): voi
   }
   if (line.paymentDueDay > 0 && day >= line.paymentDueDay) {
     if (line.minimumDue <= 0.004) {
-      b.onTimePayments++; // paid ahead of the due date
+      recordOnTime(state); // paid ahead of the due date
     } else if (state.finance.cash >= line.minimumDue) {
       const amount = line.minimumDue;
       applyLinePayment(state, line, amount);
-      b.onTimePayments++;
+      recordOnTime(state);
       logBanking(state, { type: 'repayment', text: 'Autopay: credit-line minimum payment', amount });
     } else {
       line.feesDue = cents(line.feesDue + line.lateFee);

@@ -322,6 +322,10 @@ export interface BankingState {
   creditScore: number;
   creditFactors: CreditRatingFactor[];
   onTimePayments: number;
+  /** 30-day periods with at least one on-time payment (credit history grows by time, not by account count). */
+  onTimeMonths?: number;
+  /** Index (day / 30) of the last period counted in onTimeMonths. */
+  lastOnTimeMonth?: number;
   /** Days on which a payment was missed; older misses weigh less. */
   missedPaymentDays: number[];
   history: BankingEvent[];

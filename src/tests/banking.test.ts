@@ -9,6 +9,7 @@ import { banking, installmentDue, pastDuePrincipal, payoffQuote } from '@/game/e
 import { businessSnapshot, creditLineOffers, creditRating, loanOffers } from '@/game/economy/banking/underwriting';
 import { BANKING } from '@/game/economy/banking/config';
 import { deserialize, migrate, serialize, type SaveEnvelope } from '@/persistence/save';
+import { balanceSheet, cashFlows, financingCosts } from '@/game/economy/balanceSheet';
 import { newEngine } from './helpers';
 
 /** Runs the banking part of endOfDay for each day up to and including `to`. */
@@ -341,7 +342,61 @@ describe('credit rating and exploits', () => {
     runDays(s, 31 + 30 * 3);
     expect(banking(s).onTimePayments).toBe(4);
     expect(banking(s).creditScore).toBeGreaterThan(start);
-    expect(banking(s).creditFactors.some((f) => f.label.startsWith('On-time payments'))).toBe(true);
+    expect(banking(s).onTimeMonths).toBe(4);
+    expect(banking(s).creditFactors.find((f) => f.label.startsWith('On-time payment history'))?.points).toBe(12);
+  });
+
+  it('payment history grows by months, not by the number of accounts', () => {
+    const s = createNewGame({ seed: 42 });
+    ok(applyAction(s, { type: 'bank-accept-loan', offerId: offer(s, 'microloan').id }));
+    ok(applyAction(s, { type: 'bank-accept-loan', offerId: offer(s, 'online-term').id }));
+    openLine(s);
+    ok(applyAction(s, { type: 'bank-credit-draw', amount: 1000 }));
+    runDays(s, 91);
+    expect(banking(s).onTimePayments).toBeGreaterThanOrEqual(8); // 3 + 3 installments + line minimums
+    expect(banking(s).onTimeMonths).toBe(3);
+  });
+
+  it('holding borrowed cash does not raise the rating', () => {
+    // An established company: 25 days of steady revenue and costs.
+    const base = createNewGame({ seed: 42 });
+    for (let d = 2; d <= 25; d++) {
+      base.clock.day = d;
+      postTransaction(base, { amount: 900, category: 'service-revenue', memo: 'Jobs' });
+      postTransaction(base, { amount: -600, category: 'payroll', memo: 'Wages' });
+    }
+    const before = creditRating(base).score;
+    const patterns: [string, (s: GameState) => void][] = [
+      ['microloan', (s) => ok(applyAction(s, { type: 'bank-accept-loan', offerId: offer(s, 'microloan').id }))],
+      ['small microloan', (s) => ok(applyAction(s, { type: 'bank-accept-loan', offerId: offer(s, 'microloan').id, amount: 3000 }))],
+      ['online loan', (s) => ok(applyAction(s, { type: 'bank-accept-loan', offerId: offer(s, 'online-term').id }))],
+      ['line, 10% drawn', (s) => ok(applyAction(s, { type: 'bank-credit-draw', amount: Math.round(openLine(s).limit * 0.1) }))],
+      ['line, fully drawn', (s) => ok(applyAction(s, { type: 'bank-credit-draw', amount: availableCredit(openLine(s)) }))],
+      ['everything', (s) => {
+        for (const o of loanOffers(s)) if (o.approved) ok(applyAction(s, { type: 'bank-accept-loan', offerId: o.id }));
+        ok(applyAction(s, { type: 'bank-credit-draw', amount: availableCredit(openLine(s)) }));
+      }],
+    ];
+    for (const [name, borrow] of patterns) {
+      const borrower: GameState = JSON.parse(JSON.stringify(base));
+      borrow(borrower);
+      expect(borrower.finance.cash, name).toBeGreaterThan(base.finance.cash);
+      expect(creditRating(borrower).score, name).toBeLessThanOrEqual(before);
+    }
+  });
+
+  it('lets the player borrow less than the approval, within the product minimum', () => {
+    const s = createNewGame({ seed: 42 });
+    const o = offer(s, 'microloan');
+    expect(applyAction(s, { type: 'bank-accept-loan', offerId: o.id, amount: 1000 })).toEqual({ ok: false, reason: 'Silver State Small Business Fund lends at least $3,000.' });
+    expect(applyAction(s, { type: 'bank-accept-loan', offerId: o.id, amount: o.amount + 500 }).ok).toBe(false);
+    const cash = s.finance.cash;
+    ok(applyAction(s, { type: 'bank-accept-loan', offerId: o.id, amount: 4050 })); // rounds down to $100
+    const loan = onlyLoan(s);
+    expect(loan.balance).toBe(4000);
+    expect(loan.monthlyPayment).toBe(monthlyPayment(4000, o.aprPercent, o.termMonths));
+    expect(s.finance.cash).toBeCloseTo(cash + 4000 - 80, 2); // 2% origination on $4,000
+    expect(reconcileCash(s).ok).toBe(true);
   });
 
   it('borrowing never creates net worth, and total credit is capped', () => {
@@ -361,6 +416,33 @@ describe('credit rating and exploits', () => {
     expect(reconcileCash(s).ok).toBe(true);
     const financing = s.finance.ledger.filter((e) => FINANCING_CATEGORIES.has(e.category)).reduce((a, e) => a + e.amount, 0);
     expect(financing).toBeCloseTo(totalLoanBalance(s), 2);
+  });
+});
+
+describe('balance sheet', () => {
+  it('values vans and liabilities; a loan held as cash lowers equity by exactly its cost', () => {
+    const plain = createNewGame({ seed: 42 });
+    const borrower = createNewGame({ seed: 42 });
+    const start = balanceSheet(plain);
+    expect(start.vehicles).toBeGreaterThan(0); // Unit 1 is an asset
+    expect(start.equity).toBeCloseTo(plain.finance.cash + start.vehicles, 2);
+    ok(applyAction(borrower, { type: 'bank-accept-loan', offerId: offer(borrower, 'online-term').id }));
+    openLine(borrower);
+    ok(applyAction(borrower, { type: 'bank-credit-draw', amount: 2000 }));
+    // Borrowing moves cash and liabilities together; only the origination fee leaves equity.
+    expect(balanceSheet(borrower).equity).toBeCloseTo(start.equity - financingCosts(borrower), 2);
+    runDays(plain, 75);
+    runDays(borrower, 75);
+    const p = balanceSheet(plain);
+    const b = balanceSheet(borrower);
+    expect(b.totalLiabilities).toBeGreaterThan(0);
+    expect(b.cash).toBeGreaterThan(p.cash);
+    // Equity differs by interest and fees paid plus interest accrued but not yet paid.
+    const accrued = b.totalLiabilities - (borrower.finance.loans[0].balance + banking(borrower).creditLine!.principal);
+    expect(p.equity - b.equity).toBeCloseTo(financingCosts(borrower) + accrued, 2);
+    const cf = cashFlows(borrower);
+    expect(cf.financing).toBeCloseTo(borrower.finance.loans[0].balance + banking(borrower).creditLine!.principal, 2);
+    expect(cf.operating + cf.investing + cf.financing + cf.owner + cf.capital).toBeCloseTo(borrower.finance.cash, 2);
   });
 });
 

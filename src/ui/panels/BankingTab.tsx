@@ -3,7 +3,7 @@ import { useApp, useGame } from '@/app/store';
 import { Bar, Money } from '../components/common';
 import { availableCredit, creditLineOwed } from '@/game/economy/banking/banking';
 import { banking, installmentDue, payoffQuote } from '@/game/economy/banking/loans';
-import { businessSnapshot, creditLineOffers, creditRating, loanOffers, ratingBand, type CreditLineOffer, type LoanOffer } from '@/game/economy/banking/underwriting';
+import { businessSnapshot, creditLineOffers, creditRating, loanOfferForAmount, loanOffers, ratingBand, type CreditLineOffer, type LoanOffer } from '@/game/economy/banking/underwriting';
 import { amortizationSchedule } from '@/game/economy/banking/amortization';
 import { BANKING } from '@/game/economy/banking/config';
 import type { DebtStatus, Loan } from '@/game/simulation/types';
@@ -36,6 +36,11 @@ export function BankingTab() {
   const lineOffers = useGame((s) => creditLineOffers(s));
   const quotes = useGame((s) => Object.fromEntries(s.finance.loans.map((l) => [l.id, payoffQuote(s, l)])));
   const [review, setReview] = useState<Review | null>(null);
+  const [loanAmountText, setLoanAmountText] = useState('');
+  // The loan terms update live with the amount; an out-of-range amount shows the approval's terms.
+  const loanAmount = Math.floor(parseAmount(loanAmountText) / 100) * 100;
+  const loanAmountValid = review?.kind === 'loan' && loanAmount >= review.offer.minAmount && loanAmount <= review.offer.amount;
+  const loanTerms = review?.kind === 'loan' ? loanOfferForAmount(review.offer, loanAmountValid ? loanAmount : review.offer.amount) : null;
   const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null);
   const [drawText, setDrawText] = useState('');
   const [repayText, setRepayText] = useState('');
@@ -80,19 +85,31 @@ export function BankingTab() {
       {review && (
         <div className="card bank-review" data-testid="bank-review">
           <h4>Review terms · {review.offer.lender}</h4>
-          {review.kind === 'loan' ? (
-            <div className="bank-terms">
-              <span>Loan amount</span><Money value={review.offer.amount} />
-              <span>Origination fee ({((review.offer.originationFee / review.offer.amount) * 100).toFixed(0)}%)</span><Money value={-review.offer.originationFee} />
-              <span>Deposited to cash</span><b><Money value={review.offer.netProceeds} /></b>
-              <span>APR · term</span><span>{review.offer.aprPercent}% · {review.offer.termMonths} months</span>
-              <span>Monthly payment</span><b><Money value={review.offer.monthlyPayment} /></b>
-              <span>Total interest</span><Money value={review.offer.totalInterest} />
-              <span>Total repayment</span><Money value={review.offer.totalRepayment} />
-              <span>Prepayment fee</span><span>{review.offer.prepaymentFeePercent ? `${review.offer.prepaymentFeePercent}% of remaining principal` : 'None'}</span>
-              <span>Late fee</span><Money value={review.offer.lateFee} />
-            </div>
-          ) : (
+          {review.kind === 'loan' && loanTerms ? (
+            <>
+              <div className="bank-inputs">
+                <label>
+                  <span>Amount to borrow</span>
+                  <input inputMode="decimal" value={loanAmountText} onChange={(e) => setLoanAmountText(e.target.value)} data-testid="bank-loan-amount" />
+                </label>
+                <span className="muted" style={{ fontSize: 12 }}>
+                  <Money value={review.offer.minAmount} /> to <Money value={review.offer.amount} /> approved. Borrow only what the plan needs: every dollar costs interest.
+                </span>
+              </div>
+              {!loanAmountValid && <div className="bank-reasons">Enter an amount between ${review.offer.minAmount.toLocaleString()} and ${review.offer.amount.toLocaleString()}.</div>}
+              <div className="bank-terms">
+                <span>Loan amount</span><Money value={loanTerms.amount} />
+                <span>Origination fee ({loanTerms.originationFeePercent}%)</span><Money value={-loanTerms.originationFee} />
+                <span>Deposited to cash</span><b><Money value={loanTerms.netProceeds} /></b>
+                <span>APR · term</span><span>{loanTerms.aprPercent}% · {loanTerms.termMonths} months</span>
+                <span>Monthly payment</span><b data-testid="bank-loan-payment"><Money value={loanTerms.monthlyPayment} /></b>
+                <span>Total interest</span><Money value={loanTerms.totalInterest} />
+                <span>Total repayment</span><Money value={loanTerms.totalRepayment} />
+                <span>Prepayment fee</span><span>{loanTerms.prepaymentFeePercent ? `${loanTerms.prepaymentFeePercent}% of principal prepaid` : 'None'}</span>
+                <span>Late fee</span><Money value={loanTerms.lateFee} />
+              </div>
+            </>
+          ) : review.kind === 'line' ? (
             <div className="bank-terms">
               <span>Credit limit</span><b><Money value={review.offer.limit} /></b>
               <span>APR on drawn balance</span><span>{review.offer.aprPercent}% (interest accrues daily)</span>
@@ -100,16 +117,17 @@ export function BankingTab() {
               <span>Minimum payment</span><span>Interest + fees + {review.offer.minimumPaymentPercent}% of balance (min ${BANKING.minimumPaymentFloor})</span>
               <span>Late fee</span><Money value={review.offer.lateFee} />
             </div>
-          )}
+          ) : null}
           <div className="muted" style={{ fontSize: 12 }}>Payments are drafted automatically from cash on the due day. If cash runs short the payment is missed: late fees, a lower rating and, after {BANKING.delinquentAfterDays} days, delinquency.</div>
           <div className="row" style={{ gap: 8, justifyContent: 'flex-end' }}>
             <button className="btn small ghost" onClick={() => setReview(null)}>Cancel</button>
             <button
               className="btn small primary"
               data-testid="bank-confirm"
+              disabled={review.kind === 'loan' && !loanAmountValid}
               onClick={() => {
                 const ok = review.kind === 'loan'
-                  ? run({ type: 'bank-accept-loan', offerId: review.offer.id }, `Loan funded: ${review.offer.lender} deposited $${review.offer.netProceeds.toLocaleString()}.`)
+                  ? run({ type: 'bank-accept-loan', offerId: review.offer.id, amount: loanTerms!.amount }, `Loan funded: ${review.offer.lender} deposited $${loanTerms!.netProceeds.toLocaleString()}.`)
                   : run({ type: 'bank-open-credit-line', offerId: review.offer.id }, `Line of credit open: $${review.offer.limit.toLocaleString()} available.`);
                 if (ok) setReview(null);
               }}
@@ -181,7 +199,7 @@ export function BankingTab() {
             {rating.factors.map((f) => (
               <div key={f.label} className="row between" style={{ fontSize: 12.5 }}><span className="muted">{f.label}</span><b className={f.points > 0 ? 'tone-green' : f.points < 0 ? 'tone-red' : 'muted'}>{f.points > 0 ? '+' : ''}{f.points}</b></div>
             ))}
-            <div className="row between muted" style={{ fontSize: 12 }}><span>On-time payments</span><b>{b.onTimePayments}</b></div>
+            <div className="row between muted" style={{ fontSize: 12 }}><span>On-time payments ({b.onTimeMonths ?? 0} month{(b.onTimeMonths ?? 0) === 1 ? '' : 's'} of history)</span><b>{b.onTimePayments}</b></div>
           </div>
 
           <div className="card col" style={{ gap: 8 }} data-testid="bank-offers">
@@ -194,7 +212,7 @@ export function BankingTab() {
                 {o.approved ? (
                   <div className="row between" style={{ alignItems: 'flex-end', gap: 8 }}>
                     <div style={{ fontSize: 12.5 }}>Up to <b><Money value={o.amount} /></b> · {o.aprPercent}% APR · {o.termMonths} mo · <Money value={o.monthlyPayment} />/mo</div>
-                    <button className="btn small primary" onClick={() => setReview({ kind: 'loan', offer: o })} data-testid={`apply-${o.productId}`}>Apply</button>
+                    <button className="btn small primary" onClick={() => { setReview({ kind: 'loan', offer: o }); setLoanAmountText(String(o.amount)); }} data-testid={`apply-${o.productId}`}>Apply</button>
                   </div>
                 ) : (
                   <ul className="bank-reasons">{o.reasons.map((r) => <li key={r}>{r}</li>)}</ul>

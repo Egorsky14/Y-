@@ -14,6 +14,8 @@ import { banking } from './loans';
 const OPERATING_REVENUE = new Set<LedgerEntry['category']>(['service-revenue', 'replacement-revenue', 'warranty-collection']);
 const OPERATING_COSTS = new Set<LedgerEntry['category']>(['payroll', 'parts', 'fuel', 'vehicle-upkeep', 'vehicle-upgrade', 'lease-payment', 'training', 'marketing', 'refund', 'owner-draw', 'loan-interest', 'loan-fee', 'late-fee', 'credit-interest', 'loan-payment']);
 
+const DEBT_COSTS = new Set<LedgerEntry['category']>(['loan-interest', 'loan-fee', 'late-fee', 'credit-interest']);
+
 export interface BusinessSnapshot {
   day: number;
   daysInBusiness: number;
@@ -22,6 +24,8 @@ export interface BusinessSnapshot {
   revenue30: number;
   costs30: number;
   profit30: number;
+  /** Interest and lender fees within costs30 (so coverage can be measured before debt costs). */
+  interest30: number;
   termDebt: number;
   lineBalance: number;
   lineLimit: number;
@@ -39,11 +43,13 @@ export function businessSnapshot(state: GameState): BusinessSnapshot {
   const from = day - DAYS_PER_MONTH;
   let revenue30 = 0;
   let costs30 = 0;
+  let interest30 = 0;
   for (let i = state.finance.ledger.length - 1; i >= 0; i--) {
     const e = state.finance.ledger[i];
     if (e.day <= from) break;
     if (OPERATING_REVENUE.has(e.category)) revenue30 += e.amount;
     else if (OPERATING_COSTS.has(e.category)) costs30 -= e.amount;
+    if (DEBT_COSTS.has(e.category)) interest30 -= e.amount;
   }
   const line = banking(state).creditLine;
   const lineBalance = line && line.status !== 'closed' ? line.principal : 0;
@@ -62,6 +68,7 @@ export function businessSnapshot(state: GameState): BusinessSnapshot {
     revenue30: cents(revenue30),
     costs30: cents(costs30),
     profit30: cents(revenue30 - costs30),
+    interest30: cents(interest30),
     termDebt: cents(termDebt),
     lineBalance: cents(lineBalance),
     lineLimit,
@@ -86,7 +93,9 @@ export function creditRating(state: GameState, snap = businessSnapshot(state)): 
   const factors: CreditRatingFactor[] = [{ label: 'New business baseline', points: 52 }];
   const history = Math.min(12, Math.floor(snap.daysInBusiness / 7) * 1.5);
   if (history > 0) factors.push({ label: `Operating history (${snap.daysInBusiness} days)`, points: history });
-  if (b.onTimePayments > 0) factors.push({ label: `On-time payments (${b.onTimePayments})`, points: Math.min(15, b.onTimePayments * 2) });
+  // Payment history grows by months of on-time payments, so opening more accounts does not speed it up.
+  const months = b.onTimeMonths ?? 0;
+  if (months > 0) factors.push({ label: `On-time payment history (${months} month${months === 1 ? '' : 's'})`, points: Math.min(15, months * 3) });
   const missed = b.missedPaymentDays.reduce((s, d) => {
     const age = snap.day - d;
     return s + (age <= 30 ? -12 : age <= 60 ? -7 : age <= 90 ? -3 : -1);
@@ -95,13 +104,13 @@ export function creditRating(state: GameState, snap = businessSnapshot(state)): 
   if (snap.worstStatus !== 'current') factors.push({ label: snap.worstStatus === 'default' ? 'Account in default' : snap.worstStatus === 'delinquent' ? 'Account delinquent (30+ days)' : 'Payment past due', points: snap.worstStatus === 'default' ? -30 : snap.worstStatus === 'delinquent' ? -18 : -8 });
   if (snap.lineLimit > 0) {
     const u = snap.utilization;
-    const pts = u > 0.9 ? -8 : u > 0.7 ? -5 : u > 0.5 ? -2 : u > 0 && u <= 0.3 ? 3 : 0;
+    const pts = u > 0.9 ? -8 : u > 0.7 ? -5 : u > 0.5 ? -2 : 0;
     if (pts !== 0) factors.push({ label: `Credit line use ${Math.round(u * 100)}%`, points: pts });
   }
   // Leverage counts once there is a revenue history to measure it against (as for payment-to-revenue).
   if (snap.totalDebt > 0 && snap.daysInBusiness > BANKING.startupGraceDays) {
     const months = snap.totalDebt / Math.max(1, snap.revenue30);
-    const pts = months > 4 ? -10 : months > 2.5 ? -6 : months > 1.5 ? -2 : months < 0.5 ? 2 : 0;
+    const pts = months > 4 ? -10 : months > 2.5 ? -6 : months > 1.5 ? -2 : 0;
     if (pts !== 0) factors.push({ label: `Debt vs. monthly revenue (${months.toFixed(1)}×)`, points: pts });
   }
   if (snap.daysInBusiness >= 10 && snap.revenue30 > 0) {
@@ -110,14 +119,22 @@ export function creditRating(state: GameState, snap = businessSnapshot(state)): 
     if (pts !== 0) factors.push({ label: `30-day profit margin ${Math.round(margin * 100)}%`, points: pts });
   }
   if (snap.cash < 0) factors.push({ label: 'Negative cash balance', points: -8 });
-  else {
-    // Liquidity: reserves against a month of operating costs (credit for debt-free companies too).
-    if (snap.daysInBusiness >= 10 && snap.costs30 > 0) {
-      const cover = snap.cash / snap.costs30;
-      const pts = cover >= 1 ? 6 : cover >= 0.5 ? 3 : cover < 0.15 ? -3 : 0;
-      if (pts !== 0) factors.push({ label: `Cash reserves (${cover.toFixed(1)} months of costs)`, points: pts });
-    }
-    if (snap.monthlyObligations > 0 && snap.cash >= snap.monthlyObligations * 3 && snap.cash >= 5000) factors.push({ label: 'Cash covers 3+ months of debt payments', points: 4 });
+  else if (snap.daysInBusiness >= 10 && snap.costs30 > 0) {
+    // Reserves count only cash the company owns: cash minus what it owes. Borrowed money sitting
+    // in the account is not a reserve, so holding it cannot raise the rating.
+    const net = snap.cash - snap.totalDebt;
+    const cover = net / snap.costs30;
+    if (cover >= 1) factors.push({ label: `Cash reserves net of debt (${cover.toFixed(1)} months of costs)`, points: 6 });
+    else if (cover >= 0.5) factors.push({ label: `Cash reserves net of debt (${cover.toFixed(1)} months of costs)`, points: 3 });
+    if (snap.cash / snap.costs30 < 0.15) factors.push({ label: 'Thin cash buffer (under 5 days of costs)', points: -3 });
+  }
+  // Debt service coverage: operating profit before interest vs. monthly debt payments. A penalty
+  // only, like utilization and leverage: profitability is rewarded by the margin factor, and
+  // taking on debt must never raise the rating by itself (only months of on-time payments do).
+  if (snap.monthlyObligations > 0 && snap.daysInBusiness > BANKING.startupGraceDays) {
+    const dscr = (snap.profit30 + snap.interest30) / snap.monthlyObligations;
+    const pts = dscr < 1 ? -6 : dscr < 1.25 ? -3 : 0;
+    if (pts !== 0) factors.push({ label: `Debt service coverage ${dscr.toFixed(1)}×`, points: pts });
   }
   const score = Math.round(Math.max(0, Math.min(100, factors.reduce((s, f) => s + f.points, 0))));
   return { score, factors: factors.map((f) => ({ ...f, points: Math.round(f.points * 10) / 10 })) };
@@ -157,7 +174,10 @@ export interface LoanOffer {
   approved: boolean;
   /** Plain-language reasons when the offer is declined or limited. */
   reasons: string[];
+  /** The most this lender approves; the player may borrow any amount from minAmount up to it. */
   amount: number;
+  minAmount: number;
+  originationFeePercent: number;
   aprPercent: number;
   termMonths: number;
   monthlyPayment: number;
@@ -237,6 +257,8 @@ export function loanOffer(state: GameState, p: LoanProduct, snap = businessSnaps
     approved,
     reasons,
     amount: principal,
+    minAmount: p.minAmount,
+    originationFeePercent: p.originationFeePercent,
     aprPercent,
     termMonths: p.termMonths,
     monthlyPayment: t.payment,
@@ -284,6 +306,12 @@ export function creditLineOffers(state: GameState): CreditLineOffer[] {
   const snap = businessSnapshot(state);
   const score = creditRating(state, snap).score;
   return CREDIT_LINE_PRODUCTS.map((p) => creditLineOffer(state, p, snap, score));
+}
+
+/** The same quote for a smaller amount (the player chooses how much of the approval to borrow). */
+export function loanOfferForAmount(offer: LoanOffer, amount: number): LoanOffer {
+  const t = loanTotals(amount, offer.aprPercent, offer.termMonths, offer.originationFeePercent);
+  return { ...offer, amount, monthlyPayment: t.payment, totalRepayment: t.totalPayments, totalInterest: t.totalInterest, originationFee: t.fee, netProceeds: cents(amount - t.fee) };
 }
 
 /** Monthly payment for a principal at a product's quoted terms (used by the UI's what-if). */

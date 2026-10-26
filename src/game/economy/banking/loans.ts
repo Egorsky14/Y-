@@ -10,12 +10,23 @@ import { accruedLoanInterest, cents, monthlyPayment, splitInstallment } from './
  */
 
 export function emptyBanking(): BankingState {
-  return { creditScore: STARTING_CREDIT_SCORE, creditFactors: [], onTimePayments: 0, missedPaymentDays: [], history: [] };
+  return { creditScore: STARTING_CREDIT_SCORE, creditFactors: [], onTimePayments: 0, onTimeMonths: 0, missedPaymentDays: [], history: [] };
 }
 
 /** Banking state, created on first use for states built before schema 2 in tests. */
 export function banking(state: GameState): BankingState {
   return (state.finance.banking ??= emptyBanking());
+}
+
+/** Records an on-time payment; the credit history counts each 30-day period once. */
+export function recordOnTime(state: GameState): void {
+  const b = banking(state);
+  b.onTimePayments++;
+  const month = Math.floor((state.clock.day - 1) / DAYS_PER_MONTH);
+  if (b.lastOnTimeMonth !== month) {
+    b.lastOnTimeMonth = month;
+    b.onTimeMonths = (b.onTimeMonths ?? 0) + 1;
+  }
 }
 
 export function logBanking(state: GameState, event: Omit<BankingEvent, 'day'>): void {

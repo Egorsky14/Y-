@@ -32,7 +32,7 @@ export type GameAction =
   | { type: 'set-diagnostic-fee'; fee: number }
   | { type: 'dismiss-event'; eventId: number }
   // Business banking
-  | { type: 'bank-accept-loan'; offerId: string }
+  | { type: 'bank-accept-loan'; offerId: string; amount?: number }
   | { type: 'bank-loan-extra-payment'; loanId: string; amount: number }
   | { type: 'bank-loan-payoff'; loanId: string }
   | { type: 'bank-open-credit-line'; offerId: string }
@@ -105,7 +105,7 @@ export function applyAction(state: GameState, action: GameAction): ActionResult 
     case 'set-marketing':
       return setMarketingBudget(state, action.channel, action.dailyBudget);
     case 'bank-accept-loan':
-      return acceptLoanOffer(state, action.offerId);
+      return acceptLoanOffer(state, action.offerId, action.amount);
     case 'bank-loan-extra-payment':
       return extraLoanPayment(state, action.loanId, action.amount);
     case 'bank-loan-payoff':
