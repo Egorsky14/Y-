@@ -170,7 +170,7 @@ export function createNewGame(options: NewGameOptions = {}): GameState {
   // Today's remaining leads plus the tutorial lead.
   scheduleLeadsForDay(state, { minMinute: state.clock.minute + 45 });
   if (options.immediateLead !== false) {
-    spawnLead(state, { channel: 'direct', preferredLotId: 'a-s-2', faultId: 'run-capacitor' });
+    spawnLead(state, { channel: 'direct', preferredLotId: 'c-n-4', faultId: 'run-capacitor' });
   }
   // Add a few more to make the schedule interesting on day 1.
   state.leadSchedule.push({ day: 1, minute: state.clock.minute + nextInt(rng, 40, 90), channel: 'warranty' });

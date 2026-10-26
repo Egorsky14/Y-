@@ -17,4 +17,9 @@ export default tseslint.config(
       'react-hooks/set-state-in-effect': 'off',
     },
   },
+  {
+    // Imperative Three.js code mutates scene objects held in refs by design.
+    files: ['src/world/**/*.{ts,tsx}', 'src/ui/panels/VehiclePreview.tsx'],
+    rules: { 'react-hooks/immutability': 'off', 'react-hooks/refs': 'off' },
+  },
 );

@@ -15,7 +15,9 @@ export function startGameLoop(): () => void {
   let accumulator = 0;
 
   const frame = (now: number) => {
-    const dt = Math.min(0.25, (now - last) / 1000);
+    // Clamp catch-up to one second so a hitch or a slow frame never spirals, while a 2 fps
+    // software renderer still keeps the simulation on real time.
+    const dt = Math.min(1.0, (now - last) / 1000);
     last = now;
     const { engine, screen, settings } = useApp.getState();
     if (engine && screen === 'game') {
@@ -35,5 +37,22 @@ export function startGameLoop(): () => void {
     raf = requestAnimationFrame(frame);
   };
   raf = requestAnimationFrame(frame);
-  return () => cancelAnimationFrame(raf);
+  // Phones suspend or kill background tabs without warning (app switch, phone call, closing the
+  // tab): autosave whenever the page is hidden. requestAnimationFrame pauses while hidden, so the
+  // simulation waits too, and catch-up on return is capped at one second by the clamp above.
+  const persist = () => {
+    const { engine, screen, settings } = useApp.getState();
+    if (engine && screen === 'game' && settings.autosave) saveToStorage(engine.state, AUTOSAVE_KEY);
+  };
+  const onVisibility = () => {
+    if (document.visibilityState === 'hidden') persist();
+    last = performance.now();
+  };
+  document.addEventListener('visibilitychange', onVisibility);
+  window.addEventListener('pagehide', persist);
+  return () => {
+    cancelAnimationFrame(raf);
+    document.removeEventListener('visibilitychange', onVisibility);
+    window.removeEventListener('pagehide', persist);
+  };
 }

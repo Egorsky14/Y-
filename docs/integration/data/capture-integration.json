@@ -1,0 +1,169 @@
+{
+  "label": "integration",
+  "baseUrl": "http://127.0.0.1:4314/",
+  "shots": {
+    "00-opening-hud": {
+      "calls": 586,
+      "triangles": 1382096,
+      "textures": 50,
+      "geometries": 399,
+      "minute": 451
+    },
+    "01-overview-opening": {
+      "calls": 586,
+      "triangles": 1382096,
+      "textures": 50,
+      "geometries": 399,
+      "minute": 451,
+      "fps": 60.1
+    },
+    "02-overview-1000": {
+      "calls": 590,
+      "triangles": 1382134,
+      "textures": 50,
+      "geometries": 402,
+      "minute": 600,
+      "fps": 60.1
+    },
+    "03-hq-wide": {
+      "calls": 567,
+      "triangles": 1382046,
+      "textures": 51,
+      "geometries": 412,
+      "minute": 600,
+      "fps": 60.1
+    },
+    "04-hq-entrance": {
+      "calls": 378,
+      "triangles": 1358386,
+      "textures": 51,
+      "geometries": 412,
+      "minute": 600
+    },
+    "05-van-front": {
+      "calls": 403,
+      "triangles": 1372514,
+      "textures": 51,
+      "geometries": 412,
+      "minute": 600
+    },
+    "06-van-rear": {
+      "calls": 387,
+      "triangles": 1356806,
+      "textures": 51,
+      "geometries": 412,
+      "minute": 600
+    },
+    "07-condenser-idle": {
+      "calls": 348,
+      "triangles": 1332764,
+      "textures": 52,
+      "geometries": 412,
+      "minute": 600
+    },
+    "08-condenser-idle-close": {
+      "calls": 345,
+      "triangles": 1329032,
+      "textures": 52,
+      "geometries": 412,
+      "minute": 600
+    },
+    "09-neighborhood-mid": {
+      "calls": 365,
+      "triangles": 1335294,
+      "textures": 52,
+      "geometries": 415,
+      "minute": 600,
+      "fps": 60.1
+    },
+    "10-street-vegetation": {
+      "calls": 341,
+      "triangles": 1328286,
+      "textures": 52,
+      "geometries": 418,
+      "minute": 600
+    },
+    "11-tech-context": {
+      "calls": 441,
+      "triangles": 1346238,
+      "textures": 52,
+      "geometries": 432,
+      "minute": 610
+    },
+    "12-tech-close": {
+      "calls": 430,
+      "triangles": 1340484,
+      "textures": 52,
+      "geometries": 432,
+      "minute": 610
+    },
+    "13-tech-service-side": {
+      "calls": 419,
+      "triangles": 1334482,
+      "textures": 52,
+      "geometries": 433,
+      "minute": 610
+    },
+    "14-tech-front": {
+      "calls": 422,
+      "triangles": 1335132,
+      "textures": 52,
+      "geometries": 433,
+      "minute": 610
+    },
+    "15-hq-1830": {
+      "calls": 471,
+      "triangles": 1359894,
+      "textures": 52,
+      "geometries": 432,
+      "minute": 1110
+    },
+    "16-hq-1945": {
+      "calls": 472,
+      "triangles": 1360094,
+      "textures": 53,
+      "geometries": 427,
+      "minute": 1185
+    },
+    "17-hq-2100": {
+      "calls": 472,
+      "triangles": 1360094,
+      "textures": 53,
+      "geometries": 427,
+      "minute": 1260,
+      "fps": 60.2
+    },
+    "18-neighborhood-2100": {
+      "calls": 473,
+      "triangles": 1357962,
+      "textures": 53,
+      "geometries": 433,
+      "minute": 1260
+    },
+    "19-hq-0800": {
+      "calls": 471,
+      "triangles": 1359894,
+      "textures": 53,
+      "geometries": 433,
+      "minute": 480
+    }
+  },
+  "renderer": "ANGLE (Intel, Intel(R) Arc(TM) 140V GPU (8GB) (0x000064A0) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+  "leadId": "job-6",
+  "dispatch": {
+    "a": {
+      "ok": true
+    },
+    "b": {
+      "ok": true
+    },
+    "status": "diagnosing",
+    "lot": "c-n-4",
+    "pos": {
+      "x": -10.799999999999999,
+      "z": 22
+    },
+    "minute": 610
+  },
+  "errors": []
+}

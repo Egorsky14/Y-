@@ -49,10 +49,22 @@ docs/screenshots/ captured from the real build by the e2e test
 
 `cityLayout.ts` is the single source of truth for streets, lots, curbs, HQ stalls and condenser positions. `roadGraph.ts` builds nodes (intersections, street ends, curb nodes) and chains them per street. `pathfinding.ts` runs A*. Routes from HQ are `stall → apron → HQ curb → A* path → customer curb` and back. ETA is `remaining length / vehicle speed`, so UI numbers always match what the truck does.
 
+## Asset pipeline
+
+`tools/assets/*.mjs` build vehicles from parametric side profiles (wheel arches cut into the
+outline), merge parts per named material, re-index, and export glTF 2.0 binaries with the
+three.js `GLTFExporter` running in Node (browser APIs polyfilled in `export.mjs`). The runtime
+(`src/world/vehicles/VehicleGltf.tsx`) loads them with drei `useGLTF`, clones a per-vehicle rig,
+remaps named materials (paint color, wordmark decals, headlights) and exposes `wheel_*`, `steer_*`
+and `chassis` nodes for animation. Static world geometry (houses, HQ, roads) is built in the
+browser by `MeshBuilder` (`src/world/assets/pbr.ts`): geometry is transformed, given world-space
+UVs so PBR textures keep a consistent meters-per-repeat, and merged into one mesh per material.
+Vegetation is one `InstancedMesh` per species with vertex colors and per-instance tint.
+
 ## Three.js scene
 
-- `GameScene`: `Canvas` with ACES tone mapping, shadows (quality-dependent map size 1k/2k/4k), fog, drei `Sky`, hemisphere + key + fill lights.
-- Geometry: boxes, extruded gable roofs, pyramid hip roofs, instanced street trees and shrubs, canvas textures for sand/gravel/asphalt/road markings/windows/wordmarks.
+- `GameScene`: `Canvas` with ACES tone mapping and quality-dependent DPR; `Atmosphere` owns the sun (position from the game clock), hemisphere and ambient light, a gradient sky dome, fog, exposure, lamp emissives and monsoon rain, all eased toward targets derived from `weatherForDay(seed, day)`; `StudioEnvironment` supplies PMREM reflections.
+- Geometry: merged PBR houses (`HouseBuilder`), merged HQ campus (`HeadquartersBuilder`), merged roads with signage, displaced terrain and mountain rings, instanced vegetation, glTF vehicles, articulated procedural workers.
 - Interaction: `Selectable` wraps gameplay objects with pointer handlers and a hover/selection ring; each object carries an invisible click volume for forgiving picking. Decorative objects never use `Selectable`.
 - Labels: DOM elements in the UI layer register with `labels.ts`; `LabelProjector` projects world anchors to screen each frame. This avoids drei `Html`, whose nested React root failed under React 19.3.
 - Camera: drei `MapControls` plus a rig that performs eased flights (focus, HQ, reset), vehicle following, keyboard pan/orbit, and bounds clamping.

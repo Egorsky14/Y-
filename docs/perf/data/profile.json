@@ -1,0 +1,1376 @@
+{
+  "work-r1": {
+    "label": "work-r1",
+    "viewport": "1920x1080",
+    "gpu": {
+      "timer": true,
+      "renderer": "ANGLE (Intel, Intel(R) Arc(TM) 140V GPU (8GB) (0x000064A0) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+    },
+    "composition": [
+      {
+        "i": 0,
+        "type": "Mesh",
+        "name": "",
+        "sample": "",
+        "meshes": 1,
+        "instanced": 0,
+        "casters": 0,
+        "tris": 960
+      },
+      {
+        "i": 1,
+        "type": "Mesh",
+        "name": "",
+        "sample": "",
+        "meshes": 1,
+        "instanced": 0,
+        "casters": 0,
+        "tris": 2
+      },
+      {
+        "i": 5,
+        "type": "Mesh",
+        "name": "",
+        "sample": "",
+        "meshes": 1,
+        "instanced": 1,
+        "casters": 0,
+        "tris": 21600
+      },
+      {
+        "i": 6,
+        "type": "Group",
+        "name": "night-lights",
+        "sample": "night-lights",
+        "meshes": 1,
+        "instanced": 1,
+        "casters": 0,
+        "tris": 200
+      },
+      {
+        "i": 7,
+        "type": "Group",
+        "name": "terrain",
+        "sample": "terrain",
+        "meshes": 5,
+        "instanced": 0,
+        "casters": 0,
+        "tris": 23834
+      },
+      {
+        "i": 8,
+        "type": "Group",
+        "name": "roads",
+        "sample": "roads,roads:asphalt,roads:concrete,roads:curb",
+        "meshes": 32,
+        "instanced": 0,
+        "casters": 14,
+        "tris": 27708
+      },
+      {
+        "i": 9,
+        "type": "Group",
+        "name": "vegetation",
+        "sample": "vegetation",
+        "meshes": 13,
+        "instanced": 13,
+        "casters": 10,
+        "tris": 495274
+      },
+      {
+        "i": 10,
+        "type": "Group",
+        "name": "houses",
+        "sample": "houses,houses:gravel,houses:mulch,houses:wall:#d9d2c4",
+        "meshes": 53,
+        "instanced": 0,
+        "casters": 53,
+        "tris": 110356
+      },
+      {
+        "i": 11,
+        "type": "Group",
+        "name": "",
+        "sample": "house:a-n-1",
+        "meshes": 4,
+        "instanced": 0,
+        "casters": 0,
+        "tris": 48
+      },
+      {
+        "i": 12,
+        "type": "Group",
+        "name": "",
+        "sample": "house:a-n-2",
+        "meshes": 4,
+        "instanced": 0,
+        "casters": 0,
+        "tris": 48
+      },
+      {
+        "i": 13,
+        "type": "Group",
+        "name": "",
+        "sample": "house:a-n-3",
+        "meshes": 4,
+        "instanced": 0,
+        "casters": 0,
+        "tris": 48
+      },
+      {
+        "i": 14,
+        "type": "Group",
+        "name": "",
+        "sample": "house:a-n-4",
+        "meshes": 4,
+        "instanced": 0,
+        "casters": 0,
+        "tris": 48
+      },
+      {
+        "i": 15,
+        "type": "Group",
+        "name": "",
+        "sample": "house:a-s-1",
+        "meshes": 4,
+        "instanced": 0,
+        "casters": 0,
+        "tris": 48
+      },
+      {
+        "i": 16,
+        "type": "Group",
+        "name": "",
+        "sample": "house:a-s-2",
+        "meshes": 4,
+        "instanced": 0,
+        "casters": 0,
+        "tris": 48
+      },
+      {
+        "i": 17,
+        "type": "Group",
+        "name": "",
+        "sample": "house:a-s-3",
+        "meshes": 4,
+        "instanced": 0,
+        "casters": 0,
+        "tris": 48
+      },
+      {
+        "i": 18,
+        "type": "Group",
+        "name": "",
+        "sample": "house:a-s-4",
+        "meshes": 4,
+        "instanced": 0,
+        "casters": 0,
+        "tris": 48
+      },
+      {
+        "i": 19,
+        "type": "Group",
+        "name": "",
+        "sample": "house:b-n-1",
+        "meshes": 4,
+        "instanced": 0,
+        "casters": 0,
+        "tris": 48
+      },
+      {
+        "i": 20,
+        "type": "Group",
+        "name": "",
+        "sample": "house:b-n-2",
+        "meshes": 4,
+        "instanced": 0,
+        "casters": 0,
+        "tris": 48
+      },
+      {
+        "i": 21,
+        "type": "Group",
+        "name": "",
+        "sample": "house:b-n-3",
+        "meshes": 4,
+        "instanced": 0,
+        "casters": 0,
+        "tris": 48
+      },
+      {
+        "i": 22,
+        "type": "Group",
+        "name": "",
+        "sample": "house:b-n-4",
+        "meshes": 4,
+        "instanced": 0,
+        "casters": 0,
+        "tris": 48
+      },
+      {
+        "i": 23,
+        "type": "Group",
+        "name": "",
+        "sample": "house:b-s-1",
+        "meshes": 4,
+        "instanced": 0,
+        "casters": 0,
+        "tris": 48
+      },
+      {
+        "i": 24,
+        "type": "Group",
+        "name": "",
+        "sample": "house:b-s-2",
+        "meshes": 4,
+        "instanced": 0,
+        "casters": 0,
+        "tris": 48
+      },
+      {
+        "i": 25,
+        "type": "Group",
+        "name": "",
+        "sample": "house:b-s-3",
+        "meshes": 4,
+        "instanced": 0,
+        "casters": 0,
+        "tris": 48
+      },
+      {
+        "i": 26,
+        "type": "Group",
+        "name": "",
+        "sample": "house:b-s-4",
+        "meshes": 4,
+        "instanced": 0,
+        "casters": 0,
+        "tris": 48
+      },
+      {
+        "i": 27,
+        "type": "Group",
+        "name": "",
+        "sample": "house:c-n-1",
+        "meshes": 4,
+        "instanced": 0,
+        "casters": 0,
+        "tris": 48
+      },
+      {
+        "i": 28,
+        "type": "Group",
+        "name": "",
+        "sample": "house:c-n-2",
+        "meshes": 4,
+        "instanced": 0,
+        "casters": 0,
+        "tris": 48
+      },
+      {
+        "i": 29,
+        "type": "Group",
+        "name": "",
+        "sample": "house:c-n-3",
+        "meshes": 4,
+        "instanced": 0,
+        "casters": 0,
+        "tris": 48
+      },
+      {
+        "i": 30,
+        "type": "Group",
+        "name": "",
+        "sample": "house:c-n-4",
+        "meshes": 4,
+        "instanced": 0,
+        "casters": 0,
+        "tris": 48
+      },
+      {
+        "i": 31,
+        "type": "Group",
+        "name": "",
+        "sample": "house:c-s-1",
+        "meshes": 4,
+        "instanced": 0,
+        "casters": 0,
+        "tris": 48
+      },
+      {
+        "i": 32,
+        "type": "Group",
+        "name": "",
+        "sample": "house:c-s-2",
+        "meshes": 4,
+        "instanced": 0,
+        "casters": 0,
+        "tris": 48
+      },
+      {
+        "i": 33,
+        "type": "Group",
+        "name": "",
+        "sample": "house:c-s-3",
+        "meshes": 4,
+        "instanced": 0,
+        "casters": 0,
+        "tris": 48
+      },
+      {
+        "i": 34,
+        "type": "Group",
+        "name": "",
+        "sample": "house:c-s-4",
+        "meshes": 4,
+        "instanced": 0,
+        "casters": 0,
+        "tris": 48
+      },
+      {
+        "i": 35,
+        "type": "Group",
+        "name": "",
+        "sample": "house:n-o-1",
+        "meshes": 4,
+        "instanced": 0,
+        "casters": 0,
+        "tris": 48
+      },
+      {
+        "i": 36,
+        "type": "Group",
+        "name": "",
+        "sample": "house:n-o-2",
+        "meshes": 4,
+        "instanced": 0,
+        "casters": 0,
+        "tris": 48
+      },
+      {
+        "i": 37,
+        "type": "Group",
+        "name": "",
+        "sample": "house:n-o-3",
+        "meshes": 4,
+        "instanced": 0,
+        "casters": 0,
+        "tris": 48
+      },
+      {
+        "i": 38,
+        "type": "Group",
+        "name": "",
+        "sample": "house:n-o-4",
+        "meshes": 4,
+        "instanced": 0,
+        "casters": 0,
+        "tris": 48
+      },
+      {
+        "i": 39,
+        "type": "Group",
+        "name": "",
+        "sample": "house:s-o-1",
+        "meshes": 4,
+        "instanced": 0,
+        "casters": 0,
+        "tris": 48
+      },
+      {
+        "i": 40,
+        "type": "Group",
+        "name": "",
+        "sample": "house:s-o-2",
+        "meshes": 4,
+        "instanced": 0,
+        "casters": 0,
+        "tris": 48
+      },
+      {
+        "i": 41,
+        "type": "Group",
+        "name": "",
+        "sample": "house:s-o-3",
+        "meshes": 4,
+        "instanced": 0,
+        "casters": 0,
+        "tris": 48
+      },
+      {
+        "i": 42,
+        "type": "Group",
+        "name": "",
+        "sample": "house:s-o-4",
+        "meshes": 4,
+        "instanced": 0,
+        "casters": 0,
+        "tris": 48
+      },
+      {
+        "i": 43,
+        "type": "Group",
+        "name": "",
+        "sample": "hq,hq:gravel,hq:asphalt,hq:apron",
+        "meshes": 93,
+        "instanced": 0,
+        "casters": 60,
+        "tris": 31004
+      },
+      {
+        "i": 44,
+        "type": "Group",
+        "name": "",
+        "sample": "",
+        "meshes": 30,
+        "instanced": 0,
+        "casters": 20,
+        "tris": 320
+      },
+      {
+        "i": 45,
+        "type": "Group",
+        "name": "",
+        "sample": "",
+        "meshes": 37,
+        "instanced": 0,
+        "casters": 12,
+        "tris": 1068
+      },
+      {
+        "i": 46,
+        "type": "Group",
+        "name": "",
+        "sample": "",
+        "meshes": 34,
+        "instanced": 0,
+        "casters": 34,
+        "tris": 1976
+      },
+      {
+        "i": 47,
+        "type": "Group",
+        "name": "vehicle:veh-1",
+        "sample": "vehicle:veh-1,vehicle-model:compact-van,compact-van,steer_fl",
+        "meshes": 34,
+        "instanced": 0,
+        "casters": 32,
+        "tris": 16292
+      },
+      {
+        "i": 48,
+        "type": "Group",
+        "name": "employee:emp-owner",
+        "sample": "employee:emp-owner",
+        "meshes": 81,
+        "instanced": 0,
+        "casters": 16,
+        "tris": 6276
+      },
+      {
+        "i": 49,
+        "type": "Group",
+        "name": "",
+        "sample": "",
+        "meshes": 2,
+        "instanced": 0,
+        "casters": 1,
+        "tris": 18
+      }
+    ],
+    "views": {
+      "overview1000": {
+        "base": {
+          "fps": 113.1,
+          "avgMs": 8.84,
+          "p50ms": 6,
+          "p99ms": 44.5,
+          "gpuMs": 8.04,
+          "gpuP50": 7.99,
+          "calls": 590,
+          "triangles": 1382134
+        },
+        "noShadowPass": {
+          "fps": 152.3,
+          "avgMs": 6.57,
+          "p50ms": 4.7,
+          "p99ms": 47.3,
+          "gpuMs": 5.86,
+          "gpuP50": 5.8,
+          "calls": 338,
+          "triangles": 711980
+        },
+        "hide#5": {
+          "fps": 111.4,
+          "avgMs": 8.97,
+          "p50ms": 4.8,
+          "p99ms": 73.4,
+          "gpuMs": 8.27,
+          "gpuP50": 8.05,
+          "calls": 590,
+          "triangles": 1382134
+        },
+        "hide#7": {
+          "fps": 129.6,
+          "avgMs": 7.72,
+          "p50ms": 4.4,
+          "p99ms": 63.4,
+          "gpuMs": 7.03,
+          "gpuP50": 6.81,
+          "calls": 585,
+          "triangles": 1358300
+        },
+        "hide#8": {
+          "fps": 124.4,
+          "avgMs": 8.04,
+          "p50ms": 4.7,
+          "p99ms": 59,
+          "gpuMs": 7.23,
+          "gpuP50": 7.08,
+          "calls": 554,
+          "triangles": 1326774
+        },
+        "hide#9": {
+          "fps": 150.8,
+          "avgMs": 6.63,
+          "p50ms": 4.8,
+          "p99ms": 46.7,
+          "gpuMs": 5.96,
+          "gpuP50": 5.89,
+          "calls": 567,
+          "triangles": 406448
+        },
+        "hide#10": {
+          "fps": 129.3,
+          "avgMs": 7.73,
+          "p50ms": 5.1,
+          "p99ms": 46.7,
+          "gpuMs": 6.99,
+          "gpuP50": 6.93,
+          "calls": 486,
+          "triangles": 1161524
+        },
+        "hide#43": {
+          "fps": 125.1,
+          "avgMs": 8,
+          "p50ms": 4.6,
+          "p99ms": 65.2,
+          "gpuMs": 7.23,
+          "gpuP50": 7.16,
+          "calls": 454,
+          "triangles": 1320702
+        },
+        "hide#48": {
+          "fps": 112.2,
+          "avgMs": 8.92,
+          "p50ms": 5.4,
+          "p99ms": 70.1,
+          "gpuMs": 8.09,
+          "gpuP50": 8,
+          "calls": 590,
+          "triangles": 1382134
+        },
+        "baseAgain": {
+          "fps": 111.2,
+          "avgMs": 8.99,
+          "p50ms": 4.6,
+          "p99ms": 78.5,
+          "gpuMs": 8.3,
+          "gpuP50": 8.12,
+          "calls": 590,
+          "triangles": 1382134
+        }
+      },
+      "hq1000": {
+        "base": {
+          "fps": 111.1,
+          "avgMs": 9,
+          "p50ms": 4.6,
+          "p99ms": 74.9,
+          "gpuMs": 8.13,
+          "gpuP50": 7.95,
+          "calls": 567,
+          "triangles": 1382046
+        },
+        "noShadowPass": {
+          "fps": 151.4,
+          "avgMs": 6.6,
+          "p50ms": 4.1,
+          "p99ms": 49.8,
+          "gpuMs": 5.76,
+          "gpuP50": 5.65,
+          "calls": 315,
+          "triangles": 711892
+        },
+        "hide#5": {
+          "fps": 117.7,
+          "avgMs": 8.5,
+          "p50ms": 5.5,
+          "p99ms": 54,
+          "gpuMs": 7.88,
+          "gpuP50": 7.84,
+          "calls": 567,
+          "triangles": 1382046
+        },
+        "hide#7": {
+          "fps": 135.8,
+          "avgMs": 7.36,
+          "p50ms": 5.6,
+          "p99ms": 46.6,
+          "gpuMs": 6.71,
+          "gpuP50": 6.68,
+          "calls": 562,
+          "triangles": 1358212
+        },
+        "hide#8": {
+          "fps": 130.5,
+          "avgMs": 7.66,
+          "p50ms": 5.3,
+          "p99ms": 53.2,
+          "gpuMs": 7.08,
+          "gpuP50": 7.03,
+          "calls": 535,
+          "triangles": 1326694
+        },
+        "hide#9": {
+          "fps": 144.7,
+          "avgMs": 6.91,
+          "p50ms": 4.9,
+          "p99ms": 41.7,
+          "gpuMs": 6.22,
+          "gpuP50": 6.14,
+          "calls": 545,
+          "triangles": 406370
+        },
+        "hide#10": {
+          "fps": 127.2,
+          "avgMs": 7.86,
+          "p50ms": 4.5,
+          "p99ms": 57.4,
+          "gpuMs": 7.5,
+          "gpuP50": 7.33,
+          "calls": 463,
+          "triangles": 1161436
+        },
+        "hide#43": {
+          "fps": 141,
+          "avgMs": 7.09,
+          "p50ms": 4.2,
+          "p99ms": 69.1,
+          "gpuMs": 6.38,
+          "gpuP50": 6.16,
+          "calls": 416,
+          "triangles": 1320420
+        },
+        "hide#48": {
+          "fps": 111.8,
+          "avgMs": 8.94,
+          "p50ms": 5,
+          "p99ms": 67.8,
+          "gpuMs": 8.13,
+          "gpuP50": 7.92,
+          "calls": 567,
+          "triangles": 1382046
+        },
+        "baseAgain": {
+          "fps": 117.8,
+          "avgMs": 8.49,
+          "p50ms": 5.5,
+          "p99ms": 62.5,
+          "gpuMs": 7.85,
+          "gpuP50": 7.8,
+          "calls": 567,
+          "triangles": 1382046
+        }
+      }
+    },
+    "jsHeapMB": 64
+  },
+  "work-r2-veglod": {
+    "label": "work-r2-veglod",
+    "viewport": "1920x1080",
+    "gpu": {
+      "timer": true,
+      "renderer": "ANGLE (Intel, Intel(R) Arc(TM) 140V GPU (8GB) (0x000064A0) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+    },
+    "composition": [
+      {
+        "i": 0,
+        "type": "Mesh",
+        "name": "",
+        "sample": "",
+        "meshes": 1,
+        "instanced": 0,
+        "casters": 0,
+        "tris": 960
+      },
+      {
+        "i": 1,
+        "type": "Mesh",
+        "name": "",
+        "sample": "",
+        "meshes": 1,
+        "instanced": 0,
+        "casters": 0,
+        "tris": 2
+      },
+      {
+        "i": 5,
+        "type": "Mesh",
+        "name": "",
+        "sample": "",
+        "meshes": 1,
+        "instanced": 1,
+        "casters": 0,
+        "tris": 21600
+      },
+      {
+        "i": 6,
+        "type": "Group",
+        "name": "night-lights",
+        "sample": "night-lights",
+        "meshes": 1,
+        "instanced": 1,
+        "casters": 0,
+        "tris": 200
+      },
+      {
+        "i": 7,
+        "type": "Group",
+        "name": "terrain",
+        "sample": "terrain",
+        "meshes": 5,
+        "instanced": 0,
+        "casters": 0,
+        "tris": 23834
+      },
+      {
+        "i": 8,
+        "type": "Group",
+        "name": "roads",
+        "sample": "roads,roads:asphalt,roads:concrete,roads:curb",
+        "meshes": 32,
+        "instanced": 0,
+        "casters": 9,
+        "tris": 27708
+      },
+      {
+        "i": 9,
+        "type": "Group",
+        "name": "vegetation",
+        "sample": "vegetation,palm:near,palm:far",
+        "meshes": 18,
+        "instanced": 18,
+        "casters": 11,
+        "tris": 272474
+      },
+      {
+        "i": 10,
+        "type": "Group",
+        "name": "houses",
+        "sample": "houses,houses:gravel,houses:mulch,houses:wall:#d9d2c4",
+        "meshes": 53,
+        "instanced": 0,
+        "casters": 49,
+        "tris": 110356
+      },
+      {
+        "i": 11,
+        "type": "Group",
+        "name": "",
+        "sample": "house:a-n-1",
+        "meshes": 4,
+        "instanced": 0,
+        "casters": 0,
+        "tris": 48
+      },
+      {
+        "i": 12,
+        "type": "Group",
+        "name": "",
+        "sample": "house:a-n-2",
+        "meshes": 4,
+        "instanced": 0,
+        "casters": 0,
+        "tris": 48
+      },
+      {
+        "i": 13,
+        "type": "Group",
+        "name": "",
+        "sample": "house:a-n-3",
+        "meshes": 4,
+        "instanced": 0,
+        "casters": 0,
+        "tris": 48
+      },
+      {
+        "i": 14,
+        "type": "Group",
+        "name": "",
+        "sample": "house:a-n-4",
+        "meshes": 4,
+        "instanced": 0,
+        "casters": 0,
+        "tris": 48
+      },
+      {
+        "i": 15,
+        "type": "Group",
+        "name": "",
+        "sample": "house:a-s-1",
+        "meshes": 4,
+        "instanced": 0,
+        "casters": 0,
+        "tris": 48
+      },
+      {
+        "i": 16,
+        "type": "Group",
+        "name": "",
+        "sample": "house:a-s-2",
+        "meshes": 4,
+        "instanced": 0,
+        "casters": 0,
+        "tris": 48
+      },
+      {
+        "i": 17,
+        "type": "Group",
+        "name": "",
+        "sample": "house:a-s-3",
+        "meshes": 4,
+        "instanced": 0,
+        "casters": 0,
+        "tris": 48
+      },
+      {
+        "i": 18,
+        "type": "Group",
+        "name": "",
+        "sample": "house:a-s-4",
+        "meshes": 4,
+        "instanced": 0,
+        "casters": 0,
+        "tris": 48
+      },
+      {
+        "i": 19,
+        "type": "Group",
+        "name": "",
+        "sample": "house:b-n-1",
+        "meshes": 4,
+        "instanced": 0,
+        "casters": 0,
+        "tris": 48
+      },
+      {
+        "i": 20,
+        "type": "Group",
+        "name": "",
+        "sample": "house:b-n-2",
+        "meshes": 4,
+        "instanced": 0,
+        "casters": 0,
+        "tris": 48
+      },
+      {
+        "i": 21,
+        "type": "Group",
+        "name": "",
+        "sample": "house:b-n-3",
+        "meshes": 4,
+        "instanced": 0,
+        "casters": 0,
+        "tris": 48
+      },
+      {
+        "i": 22,
+        "type": "Group",
+        "name": "",
+        "sample": "house:b-n-4",
+        "meshes": 4,
+        "instanced": 0,
+        "casters": 0,
+        "tris": 48
+      },
+      {
+        "i": 23,
+        "type": "Group",
+        "name": "",
+        "sample": "house:b-s-1",
+        "meshes": 4,
+        "instanced": 0,
+        "casters": 0,
+        "tris": 48
+      },
+      {
+        "i": 24,
+        "type": "Group",
+        "name": "",
+        "sample": "house:b-s-2",
+        "meshes": 4,
+        "instanced": 0,
+        "casters": 0,
+        "tris": 48
+      },
+      {
+        "i": 25,
+        "type": "Group",
+        "name": "",
+        "sample": "house:b-s-3",
+        "meshes": 4,
+        "instanced": 0,
+        "casters": 0,
+        "tris": 48
+      },
+      {
+        "i": 26,
+        "type": "Group",
+        "name": "",
+        "sample": "house:b-s-4",
+        "meshes": 4,
+        "instanced": 0,
+        "casters": 0,
+        "tris": 48
+      },
+      {
+        "i": 27,
+        "type": "Group",
+        "name": "",
+        "sample": "house:c-n-1",
+        "meshes": 4,
+        "instanced": 0,
+        "casters": 0,
+        "tris": 48
+      },
+      {
+        "i": 28,
+        "type": "Group",
+        "name": "",
+        "sample": "house:c-n-2",
+        "meshes": 4,
+        "instanced": 0,
+        "casters": 0,
+        "tris": 48
+      },
+      {
+        "i": 29,
+        "type": "Group",
+        "name": "",
+        "sample": "house:c-n-3",
+        "meshes": 4,
+        "instanced": 0,
+        "casters": 0,
+        "tris": 48
+      },
+      {
+        "i": 30,
+        "type": "Group",
+        "name": "",
+        "sample": "house:c-n-4",
+        "meshes": 4,
+        "instanced": 0,
+        "casters": 0,
+        "tris": 48
+      },
+      {
+        "i": 31,
+        "type": "Group",
+        "name": "",
+        "sample": "house:c-s-1",
+        "meshes": 4,
+        "instanced": 0,
+        "casters": 0,
+        "tris": 48
+      },
+      {
+        "i": 32,
+        "type": "Group",
+        "name": "",
+        "sample": "house:c-s-2",
+        "meshes": 4,
+        "instanced": 0,
+        "casters": 0,
+        "tris": 48
+      },
+      {
+        "i": 33,
+        "type": "Group",
+        "name": "",
+        "sample": "house:c-s-3",
+        "meshes": 4,
+        "instanced": 0,
+        "casters": 0,
+        "tris": 48
+      },
+      {
+        "i": 34,
+        "type": "Group",
+        "name": "",
+        "sample": "house:c-s-4",
+        "meshes": 4,
+        "instanced": 0,
+        "casters": 0,
+        "tris": 48
+      },
+      {
+        "i": 35,
+        "type": "Group",
+        "name": "",
+        "sample": "house:n-o-1",
+        "meshes": 4,
+        "instanced": 0,
+        "casters": 0,
+        "tris": 48
+      },
+      {
+        "i": 36,
+        "type": "Group",
+        "name": "",
+        "sample": "house:n-o-2",
+        "meshes": 4,
+        "instanced": 0,
+        "casters": 0,
+        "tris": 48
+      },
+      {
+        "i": 37,
+        "type": "Group",
+        "name": "",
+        "sample": "house:n-o-3",
+        "meshes": 4,
+        "instanced": 0,
+        "casters": 0,
+        "tris": 48
+      },
+      {
+        "i": 38,
+        "type": "Group",
+        "name": "",
+        "sample": "house:n-o-4",
+        "meshes": 4,
+        "instanced": 0,
+        "casters": 0,
+        "tris": 48
+      },
+      {
+        "i": 39,
+        "type": "Group",
+        "name": "",
+        "sample": "house:s-o-1",
+        "meshes": 4,
+        "instanced": 0,
+        "casters": 0,
+        "tris": 48
+      },
+      {
+        "i": 40,
+        "type": "Group",
+        "name": "",
+        "sample": "house:s-o-2",
+        "meshes": 4,
+        "instanced": 0,
+        "casters": 0,
+        "tris": 48
+      },
+      {
+        "i": 41,
+        "type": "Group",
+        "name": "",
+        "sample": "house:s-o-3",
+        "meshes": 4,
+        "instanced": 0,
+        "casters": 0,
+        "tris": 48
+      },
+      {
+        "i": 42,
+        "type": "Group",
+        "name": "",
+        "sample": "house:s-o-4",
+        "meshes": 4,
+        "instanced": 0,
+        "casters": 0,
+        "tris": 48
+      },
+      {
+        "i": 43,
+        "type": "Group",
+        "name": "",
+        "sample": "hq,hq:gravel,hq:asphalt,hq:apron",
+        "meshes": 93,
+        "instanced": 0,
+        "casters": 55,
+        "tris": 31004
+      },
+      {
+        "i": 44,
+        "type": "Group",
+        "name": "",
+        "sample": "",
+        "meshes": 30,
+        "instanced": 0,
+        "casters": 20,
+        "tris": 320
+      },
+      {
+        "i": 45,
+        "type": "Group",
+        "name": "",
+        "sample": "",
+        "meshes": 37,
+        "instanced": 0,
+        "casters": 12,
+        "tris": 1068
+      },
+      {
+        "i": 46,
+        "type": "Group",
+        "name": "",
+        "sample": "",
+        "meshes": 34,
+        "instanced": 0,
+        "casters": 34,
+        "tris": 1976
+      },
+      {
+        "i": 47,
+        "type": "Group",
+        "name": "vehicle:veh-1",
+        "sample": "vehicle:veh-1,vehicle-model:compact-van,compact-van,steer_fl",
+        "meshes": 34,
+        "instanced": 0,
+        "casters": 32,
+        "tris": 16292
+      },
+      {
+        "i": 48,
+        "type": "Group",
+        "name": "employee:emp-owner",
+        "sample": "employee:emp-owner",
+        "meshes": 81,
+        "instanced": 0,
+        "casters": 16,
+        "tris": 6276
+      },
+      {
+        "i": 49,
+        "type": "Group",
+        "name": "",
+        "sample": "",
+        "meshes": 2,
+        "instanced": 0,
+        "casters": 1,
+        "tris": 18
+      }
+    ],
+    "views": {
+      "overview1000": {
+        "base": {
+          "fps": 148.4,
+          "avgMs": 6.74,
+          "p50ms": 2.7,
+          "p99ms": 50.5,
+          "gpuMs": 6.12,
+          "gpuP50": 6.01,
+          "calls": 582,
+          "triangles": 870628
+        },
+        "noShadowPass": {
+          "fps": 187.1,
+          "avgMs": 5.35,
+          "p50ms": 2,
+          "p99ms": 43.2,
+          "gpuMs": 4.78,
+          "gpuP50": 4.69,
+          "calls": 343,
+          "triangles": 489180
+        },
+        "hide#5": {
+          "fps": 149.6,
+          "avgMs": 6.68,
+          "p50ms": 2.6,
+          "p99ms": 49.5,
+          "gpuMs": 6.08,
+          "gpuP50": 5.98,
+          "calls": 582,
+          "triangles": 870628
+        },
+        "hide#7": {
+          "fps": 180.6,
+          "avgMs": 5.54,
+          "p50ms": 2.6,
+          "p99ms": 36.3,
+          "gpuMs": 4.96,
+          "gpuP50": 4.84,
+          "calls": 577,
+          "triangles": 846794
+        },
+        "hide#8": {
+          "fps": 171.3,
+          "avgMs": 5.84,
+          "p50ms": 2.7,
+          "p99ms": 37.4,
+          "gpuMs": 5.28,
+          "gpuP50": 5.18,
+          "calls": 551,
+          "triangles": 825684
+        },
+        "hide#9": {
+          "fps": 181.3,
+          "avgMs": 5.52,
+          "p50ms": 2.5,
+          "p99ms": 35.6,
+          "gpuMs": 4.91,
+          "gpuP50": 4.81,
+          "calls": 553,
+          "triangles": 394922
+        },
+        "hide#10": {
+          "fps": 171.7,
+          "avgMs": 5.82,
+          "p50ms": 2.4,
+          "p99ms": 43.6,
+          "gpuMs": 5.17,
+          "gpuP50": 5.05,
+          "calls": 482,
+          "triangles": 650230
+        },
+        "hide#43": {
+          "fps": 167.5,
+          "avgMs": 5.97,
+          "p50ms": 2.1,
+          "p99ms": 53.9,
+          "gpuMs": 5.37,
+          "gpuP50": 5.24,
+          "calls": 451,
+          "triangles": 810094
+        },
+        "hide#48": {
+          "fps": 148.2,
+          "avgMs": 6.75,
+          "p50ms": 2.7,
+          "p99ms": 49.6,
+          "gpuMs": 6.18,
+          "gpuP50": 6.07,
+          "calls": 582,
+          "triangles": 870628
+        },
+        "baseAgain": {
+          "fps": 147.8,
+          "avgMs": 6.77,
+          "p50ms": 2.6,
+          "p99ms": 51,
+          "gpuMs": 6.16,
+          "gpuP50": 6.03,
+          "calls": 582,
+          "triangles": 870628
+        }
+      },
+      "hq1000": {
+        "base": {
+          "fps": 146.8,
+          "avgMs": 6.81,
+          "p50ms": 2.7,
+          "p99ms": 55.9,
+          "gpuMs": 6.19,
+          "gpuP50": 6.08,
+          "calls": 559,
+          "triangles": 873716
+        },
+        "noShadowPass": {
+          "fps": 184.3,
+          "avgMs": 5.43,
+          "p50ms": 2.7,
+          "p99ms": 23,
+          "gpuMs": 4.96,
+          "gpuP50": 4.85,
+          "calls": 320,
+          "triangles": 490680
+        },
+        "hide#5": {
+          "fps": 142.4,
+          "avgMs": 7.02,
+          "p50ms": 3.1,
+          "p99ms": 42,
+          "gpuMs": 6.35,
+          "gpuP50": 6.29,
+          "calls": 559,
+          "triangles": 873716
+        },
+        "hide#7": {
+          "fps": 180.9,
+          "avgMs": 5.53,
+          "p50ms": 2.9,
+          "p99ms": 33.8,
+          "gpuMs": 5.03,
+          "gpuP50": 4.95,
+          "calls": 554,
+          "triangles": 849882
+        },
+        "hide#8": {
+          "fps": 166.1,
+          "avgMs": 6.02,
+          "p50ms": 2.9,
+          "p99ms": 42,
+          "gpuMs": 5.49,
+          "gpuP50": 5.43,
+          "calls": 532,
+          "triangles": 828780
+        },
+        "hide#9": {
+          "fps": 172.8,
+          "avgMs": 5.79,
+          "p50ms": 4.1,
+          "p99ms": 34.4,
+          "gpuMs": 5.28,
+          "gpuP50": 5.17,
+          "calls": 530,
+          "triangles": 394834
+        },
+        "hide#10": {
+          "fps": 142.4,
+          "avgMs": 7.02,
+          "p50ms": 4.9,
+          "p99ms": 37.6,
+          "gpuMs": 6.07,
+          "gpuP50": 5.95,
+          "calls": 459,
+          "triangles": 653318
+        },
+        "hide#43": {
+          "fps": 202.7,
+          "avgMs": 4.93,
+          "p50ms": 2.7,
+          "p99ms": 17.8,
+          "gpuMs": 4.35,
+          "gpuP50": 4.26,
+          "calls": 413,
+          "triangles": 812988
+        },
+        "hide#48": {
+          "fps": 149.2,
+          "avgMs": 6.7,
+          "p50ms": 3.1,
+          "p99ms": 46.4,
+          "gpuMs": 6.32,
+          "gpuP50": 6.27,
+          "calls": 559,
+          "triangles": 873716
+        },
+        "baseAgain": {
+          "fps": 145,
+          "avgMs": 6.9,
+          "p50ms": 3.8,
+          "p99ms": 45.7,
+          "gpuMs": 6.33,
+          "gpuP50": 6.27,
+          "calls": 560,
+          "triangles": 873726
+        }
+      }
+    },
+    "jsHeapMB": 48
+  }
+}

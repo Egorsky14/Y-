@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
 import { useApp, useGame } from '@/app/store';
 import { lotById } from '@/game/world/cityLayout';
+import { deviceProfile } from '@/app/device';
 
 export function Toasts() {
   const allToasts = useApp((s) => s.toasts);
-  const toasts = allToasts.filter((t) => t.type !== 'celebration');
+  const toasts = allToasts; // celebrations have their own queue (Celebration)
   const dismiss = useApp((s) => s.dismissToast);
   const select = useApp((s) => s.select);
   const camera = useApp((s) => s.camera);
@@ -57,23 +58,31 @@ export function Toasts() {
   );
 }
 
+/** Celebration banner: shows the queue head for its full time (from when it appears), then the next. */
 export function Celebration() {
-  const allToasts = useApp((s) => s.toasts);
-  const toast = allToasts.filter((t) => t.type === 'celebration').slice(-1)[0];
-  const dismiss = useApp((s) => s.dismissToast);
+  const queue = useApp((s) => s.celebrations);
+  const toast = queue[0];
+  const waiting = queue.length - 1;
+  const dismiss = useApp((s) => s.dismissCelebration);
+  const id = toast?.id;
   useEffect(() => {
-    if (!toast) return;
-    const id = setTimeout(() => dismiss(toast.id), 5200);
-    return () => clearTimeout(id);
-  }, [toast, dismiss]);
+    if (id === undefined) return;
+    const timer = setTimeout(() => dismiss(id), 5200);
+    return () => clearTimeout(timer);
+  }, [id, dismiss]);
   if (!toast) return null;
   return (
-    <div className="celebration" onClick={() => dismiss(toast.id)} data-testid="celebration">
+    <div className="celebration" key={toast.id} onClick={() => dismiss(toast.id)} data-testid="celebration">
       <div className="icon">🏆</div>
       <div>
         <div className="t">{toast.title}</div>
         {toast.body && <div className="b">{toast.body}</div>}
       </div>
+      {waiting > 0 && (
+        <div className="more" data-testid="celebration-waiting">
+          +{waiting} more
+        </div>
+      )}
     </div>
   );
 }
@@ -107,7 +116,7 @@ export function TutorialHint() {
     const findings = jobs.find((j) => j.status === 'awaiting-diagnosis');
     const quoted = jobs.find((j) => j.status === 'quoted');
     const install = jobs.find((j) => j.status === 'accepted' && j.kind === 'replacement');
-    if (lead) return { k: '1', text: `New service call from ${s.customers[lead.customerId].name}. Click the glowing pin or the house to accept it.` };
+    if (lead) return { k: '1', text: `New service call from ${s.customers[lead.customerId].name}. ${deviceProfile().touch ? 'Tap' : 'Click'} the glowing pin or the house to accept it.` };
     if (accepted) return { k: '2', text: `Dispatch a technician and a vehicle to ${s.customers[accepted.customerId].address}.` };
     if (findings) return { k: '3', text: `Findings are ready at ${s.customers[findings.customerId].address}. Review the measurements and choose a diagnosis.` };
     if (quoted) return { k: '4', text: 'Present a repair or replacement recommendation to the customer.' };

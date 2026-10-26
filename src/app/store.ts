@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { defaultQuality } from './device';
 import { create } from 'zustand';
 import { GameEngine } from '@/game/simulation/engine';
 import type { GameAction } from '@/game/simulation/actions';
@@ -21,9 +22,15 @@ export interface CameraCommand {
   target?: { x: number; z: number };
   vehicleId?: string;
   distance?: number;
+  /** Optional view direction (radians around +y) for cinematic focus; default keeps the current heading. */
+  azimuth?: number;
+  /** Camera elevation above the target in radians (default 0.62); only with azimuth. */
+  elevation?: number;
+  /** Height of the look-at point above the ground (default 0). */
+  targetY?: number;
 }
 
-export type Quality = 'low' | 'medium' | 'high';
+export type Quality = 'low' | 'medium' | 'high' | 'ultra';
 
 export interface Settings {
   quality: Quality;
@@ -31,6 +38,8 @@ export interface Settings {
   autosave: boolean;
   sound: boolean;
   showLabels: boolean;
+  /** True until the player picks a preset: the game may then step quality down once if frames are slow. */
+  qualityAuto: boolean;
 }
 
 export interface Toast {
@@ -51,9 +60,17 @@ interface AppState {
   panel: PanelId;
   cameraCommand: CameraCommand | null;
   followVehicleId: string | null;
+  /** Photo mode: HUD hidden, free camera, optional preview time of day (minutes) and weather; never touches the simulation. */
+  photo: { on: boolean; minute: number | null; weather: 'clear' | 'heat-wave' | 'overcast' | 'monsoon' | null };
   settings: Settings;
   toasts: Toast[];
+  /** Celebration banners, first in first out: the head is on screen, the rest wait their turn. */
+  celebrations: Toast[];
   lastError: string | null;
+  /** The world has drawn its first frames (start-up shader work is done); hides the loading screen. */
+  sceneReady: boolean;
+  /** The browser dropped the WebGL context (GPU reset, memory pressure, long background). */
+  contextLost: boolean;
   lastSavedAt: number | null;
   /** Last processed game event id for toast generation. */
   lastEventId: number;
@@ -68,14 +85,21 @@ interface AppState {
   openPanel: (panel: PanelId) => void;
   togglePanel: (panel: Exclude<PanelId, null>) => void;
   camera: (cmd: Omit<CameraCommand, 'id'>) => void;
+  setPhoto: (patch: Partial<AppState['photo']>) => void;
   setFollow: (vehicleId: string | null) => void;
   setSettings: (patch: Partial<Settings>) => void;
   dismissToast: (id: number) => void;
+  dismissCelebration: (id: number) => void;
   clearError: () => void;
+  setSceneReady: (ready: boolean) => void;
+  /** A UI-originated toast (not from the simulation), e.g. an automatic graphics change. */
+  notify: (title: string, body?: string) => void;
+  setContextLost: (lost: boolean) => void;
   bump: () => void;
 }
 
-const DEFAULT_SETTINGS: Settings = { quality: 'high', shadows: true, autosave: true, sound: false, showLabels: true };
+const DEFAULT_QUALITY = defaultQuality();
+const DEFAULT_SETTINGS: Settings = { quality: DEFAULT_QUALITY, shadows: DEFAULT_QUALITY !== 'low', autosave: true, sound: false, showLabels: true, qualityAuto: true };
 
 function loadSettings(): Settings {
   try {
@@ -89,6 +113,19 @@ function loadSettings(): Settings {
 let cameraCommandId = 1;
 let toastId = 1;
 
+/** Most celebrations kept waiting; beyond this the oldest waiting ones (never the one on screen) are dropped. */
+export const CELEBRATION_QUEUE_LIMIT = 8;
+
+/**
+ * Appends celebrations in the order they happened. The banner on screen (the head) is never
+ * replaced by a newer one; if the queue overflows, the oldest waiting entries make room.
+ */
+export function enqueueCelebrations(queue: Toast[], incoming: Toast[], limit = CELEBRATION_QUEUE_LIMIT): Toast[] {
+  const next = [...queue, ...incoming];
+  if (next.length <= limit) return next;
+  return [next[0], ...next.slice(next.length - (limit - 1))];
+}
+
 export const useApp = create<AppState>((set, get) => ({
   engine: null,
   version: 0,
@@ -97,16 +134,20 @@ export const useApp = create<AppState>((set, get) => ({
   panel: null,
   cameraCommand: null,
   followVehicleId: null,
+  photo: { on: false, minute: null, weather: null },
   settings: loadSettings(),
   toasts: [],
+  celebrations: [],
   lastError: null,
+  sceneReady: false,
+  contextLost: false,
   lastSavedAt: null,
   lastEventId: 0,
 
   newGame: (seed) => {
     const engine = GameEngine.newGame({ seed: seed ?? Math.floor(Math.random() * 1_000_000) });
     attachEngine(engine);
-    set({ engine, screen: 'game', selection: null, panel: null, toasts: [], lastEventId: 0, followVehicleId: null, version: 0 });
+    set({ engine, screen: 'game', selection: null, panel: null, toasts: [], celebrations: [], sceneReady: false, lastEventId: 0, followVehicleId: null, version: 0 });
     saveToStorage(engine.state, SAVE_KEY);
     get().camera({ type: 'reset' });
   },
@@ -117,7 +158,7 @@ export const useApp = create<AppState>((set, get) => ({
     const engine = new GameEngine(state);
     attachEngine(engine);
     const lastEventId = state.events.length ? state.events[state.events.length - 1].id : 0;
-    set({ engine, screen: state.campaignComplete ? 'summary' : 'game', selection: null, panel: null, toasts: [], lastEventId, followVehicleId: null, version: 0 });
+    set({ engine, screen: state.campaignComplete ? 'summary' : 'game', selection: null, panel: null, toasts: [], celebrations: [], sceneReady: false, lastEventId, followVehicleId: null, version: 0 });
     get().camera({ type: 'reset' });
     return true;
   },
@@ -145,6 +186,7 @@ export const useApp = create<AppState>((set, get) => ({
   openPanel: (panel) => set({ panel }),
   togglePanel: (panel) => set((s) => ({ panel: s.panel === panel ? null : panel })),
   camera: (cmd) => set({ cameraCommand: { ...cmd, id: cameraCommandId++ }, followVehicleId: cmd.type === 'follow' ? (cmd.vehicleId ?? null) : null }),
+  setPhoto: (patch) => set((st) => ({ photo: { ...st.photo, ...patch } })),
   setFollow: (vehicleId) => set({ followVehicleId: vehicleId }),
   setSettings: (patch) => {
     const settings = { ...get().settings, ...patch };
@@ -156,7 +198,11 @@ export const useApp = create<AppState>((set, get) => ({
     set({ settings });
   },
   dismissToast: (id) => set((s) => ({ toasts: s.toasts.filter((t) => t.id !== id) })),
+  dismissCelebration: (id) => set((s) => ({ celebrations: s.celebrations.filter((t) => t.id !== id) })),
   clearError: () => set({ lastError: null }),
+  setSceneReady: (sceneReady) => set({ sceneReady }),
+  notify: (title, body) => set((s) => ({ toasts: [...s.toasts, { id: toastId++, type: 'info' as const, title, body, createdAt: Date.now() }].slice(-6) })),
+  setContextLost: (contextLost) => set({ contextLost }),
   bump: () => {
     const { engine, lastEventId } = get();
     if (!engine) return;
@@ -167,7 +213,8 @@ export const useApp = create<AppState>((set, get) => ({
     set((s) => ({
       version: s.version + 1,
       lastEventId: fresh.length ? fresh[fresh.length - 1].id : lastEventId,
-      toasts: [...s.toasts, ...toasts].slice(-6),
+      toasts: [...s.toasts, ...toasts.filter((t) => t.type !== 'celebration')].slice(-6),
+      celebrations: enqueueCelebrations(s.celebrations, toasts.filter((t) => t.type === 'celebration')),
       screen: state.campaignComplete && s.screen === 'game' ? 'summary' : s.screen,
     }));
   },

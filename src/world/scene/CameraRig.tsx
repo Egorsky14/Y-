@@ -6,8 +6,8 @@ import type { MapControls as MapControlsImpl } from 'three-stdlib';
 import { getGameState, useApp } from '@/app/store';
 import { HQ_LOT } from '@/game/world/cityLayout';
 
-export const DEFAULT_TARGET = new THREE.Vector3(10, 0, 0);
-export const DEFAULT_OFFSET = new THREE.Vector3(-70, 92, 118);
+export const DEFAULT_TARGET = new THREE.Vector3(22, 0, 14);
+export const DEFAULT_OFFSET = new THREE.Vector3(-74, 54, 92);
 const HQ_TARGET = new THREE.Vector3(HQ_LOT.center.x - 10, 0, HQ_LOT.center.z - 5);
 const PAN_LIMIT = 250;
 
@@ -30,7 +30,22 @@ function easeInOut(t: number): number {
  */
 export function CameraRig() {
   const controls = useRef<MapControlsImpl>(null);
+  const photo = useApp((s) => s.photo.on);
   const { camera } = useThree();
+  const size = useThree((s) => s.size);
+
+  // Portrait screens (phones held upright): a fixed 38° vertical field of view leaves only ~18° of
+  // city across. Widen the vertical angle (to at most 75°) so the horizontal view stays close to a
+  // landscape screen's; landscape and desktop keep 38°.
+  useEffect(() => {
+    if (!(camera instanceof THREE.PerspectiveCamera) || size.height === 0) return;
+    const aspect = size.width / size.height;
+    const fov = aspect >= 1 ? 38 : Math.min(75, THREE.MathUtils.radToDeg(2 * Math.atan((Math.tan(THREE.MathUtils.degToRad(19)) * 1.6) / aspect)));
+    if (Math.abs(camera.fov - fov) > 0.01) {
+      camera.fov = fov;
+      camera.updateProjectionMatrix();
+    }
+  }, [camera, size.width, size.height]);
   const command = useApp((s) => s.cameraCommand);
   const flight = useRef<Flight | null>(null);
   const keys = useRef<Set<string>>(new Set());
@@ -68,10 +83,16 @@ export function CameraRig() {
       toTarget = HQ_TARGET.clone();
       toPos = HQ_TARGET.clone().add(new THREE.Vector3(-45, 55, 70));
     } else if (command.type === 'focus' && command.target) {
-      toTarget = new THREE.Vector3(command.target.x, 0, command.target.z);
+      toTarget = new THREE.Vector3(command.target.x, command.targetY ?? 0, command.target.z);
       const dist = command.distance ?? Math.min(offset.length(), 70);
-      const dir = offset.clone().normalize();
-      if (dir.y < 0.45) dir.y = 0.6; // never fly in flat
+      let dir: THREE.Vector3;
+      if (command.azimuth !== undefined) {
+        const el = command.elevation ?? 0.62;
+        dir = new THREE.Vector3(Math.sin(command.azimuth) * Math.cos(el), Math.sin(el), Math.cos(command.azimuth) * Math.cos(el));
+      } else {
+        dir = offset.clone().normalize();
+        if (dir.y < 0.45) dir.y = 0.6; // never fly in flat
+      }
       toPos = toTarget.clone().add(dir.normalize().multiplyScalar(dist));
     } else if (command.type === 'follow' && command.vehicleId) {
       const v = getGameState()?.vehicles[command.vehicleId];
@@ -157,10 +178,10 @@ export function CameraRig() {
       target={DEFAULT_TARGET}
       enableDamping
       dampingFactor={0.12}
-      minDistance={18}
+      minDistance={photo ? 1.5 : 5}
       maxDistance={340}
       minPolarAngle={0.2}
-      maxPolarAngle={1.22}
+      maxPolarAngle={photo ? 1.5 : 1.22}
       zoomSpeed={1.1}
       panSpeed={1.0}
       rotateSpeed={0.6}

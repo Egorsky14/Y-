@@ -1,6 +1,6 @@
-import { useMemo } from 'react';
+import { useMemo, useRef } from 'react';
+import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
-import { PALETTE } from '../assets/palette';
 import { windowTexture } from '../assets/textures';
 
 /** Gable roof: triangular prism along the x axis (ridge runs along x). */
@@ -53,38 +53,20 @@ export function Window({ position, size = [1.3, 1.1], rotation }: { position: [n
   );
 }
 
-/** Outdoor condenser unit: the heart of HVAC gameplay, so it is detailed. */
-export function Condenser({ position, running = false }: { position: [number, number, number]; running?: boolean }) {
+/** Live fan blades for a condenser whose cabinet is merged into the neighborhood mesh; spins while the unit runs. */
+export function CondenserFan({ running = false, size = 0.92, top = 0.1 + 0.86 }: { running?: boolean; size?: number; top?: number }) {
+  const hub = useRef<THREE.Group>(null);
+  useFrame((_, dt) => {
+    if (hub.current && running) hub.current.rotation.y += dt * 9;
+  });
   return (
-    <group position={position}>
-      <mesh position={[0, 0.06, 0]} receiveShadow>
-        <boxGeometry args={[1.3, 0.12, 1.3]} />
-        <meshStandardMaterial color="#9b9b9b" roughness={1} />
-      </mesh>
-      <mesh position={[0, 0.5, 0]} castShadow>
-        <boxGeometry args={[0.95, 0.85, 0.95]} />
-        <meshStandardMaterial color={PALETTE.condenser} roughness={0.6} metalness={0.3} />
-      </mesh>
-      {/* Louvered panels */}
-      {[0, 1, 2, 3].map((i) => (
-        <mesh key={i} position={[Math.sin((i * Math.PI) / 2) * 0.48, 0.5, Math.cos((i * Math.PI) / 2) * 0.48]} rotation={[0, (i * Math.PI) / 2, 0]}>
-          <planeGeometry args={[0.8, 0.7]} />
-          <meshStandardMaterial color="#8d949b" roughness={0.9} side={THREE.DoubleSide} />
+    <group ref={hub} position={[0, top - 0.055, 0]}>
+      {[0, 1, 2].map((i) => (
+        <mesh key={i} position={[Math.cos((i / 3) * 6.283) * size * 0.17, 0, Math.sin((i / 3) * 6.283) * size * 0.17]} rotation={[0.5, -(i / 3) * 6.283, 0]}>
+          <boxGeometry args={[size * 0.3, 0.01, 0.09]} />
+          <meshStandardMaterial color="#b9bec3" roughness={0.4} metalness={0.7} />
         </mesh>
       ))}
-      <mesh position={[0, 0.95, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <ringGeometry args={[0.12, 0.42, 20]} />
-        <meshStandardMaterial color="#2b2f33" roughness={0.9} side={THREE.DoubleSide} />
-      </mesh>
-      <mesh position={[0, 0.97, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <circleGeometry args={[0.1, 12]} />
-        <meshStandardMaterial color={running ? PALETTE.egoTeal : '#55595e'} emissive={running ? PALETTE.egoTeal : '#000'} emissiveIntensity={running ? 0.6 : 0} />
-      </mesh>
-      {/* Line set and disconnect box on the wall side */}
-      <mesh position={[0.5, 0.35, 0.3]}>
-        <boxGeometry args={[0.18, 0.28, 0.12]} />
-        <meshStandardMaterial color="#c7c7c7" roughness={0.7} metalness={0.3} />
-      </mesh>
     </group>
   );
 }

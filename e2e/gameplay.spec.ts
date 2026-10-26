@@ -142,6 +142,8 @@ test('full gameplay loop: dispatch, diagnose, repair, grow, train, save and relo
   await page.getByTestId('speed-1').click();
   await page.evaluate((pos) => window.__ego!.app.getState().camera({ type: 'focus', target: pos, distance: 26 }), onsite.pos);
   await page.waitForTimeout(1500);
+  // The Blender-authored service kit (bag, gauge manifold and hoses) is staged at the unit.
+  await page.waitForFunction(() => (window.__egoRender?.kits ?? 0) >= 1, null, { timeout: 20_000 });
   await page.screenshot({ path: SHOT('04-technician-diagnosing') });
 
   // 6. Diagnose the system.
@@ -187,6 +189,16 @@ test('full gameplay loop: dispatch, diagnose, repair, grow, train, save and relo
   const hiredId: string = await state(page, (s) => (Object.values(s.employees) as S[]).find((e) => !e.isOwner).id);
   expect(hiredId).toBeTruthy();
   await expect(page.getByTestId('celebration')).toContainText('Hired');
+  // The first hire also unlocks the First Hire milestone a tick later. Celebrations queue: once the
+  // milestone is waiting, the banner must still show "Hired", then the milestone after it.
+  await page.waitForFunction(() => {
+    const { celebrations } = window.__ego!.app.getState() as unknown as { celebrations: { title: string }[] };
+    return celebrations.some((t) => t.title.startsWith('Milestone'));
+  }, null, { timeout: 20_000 });
+  await expect(page.getByTestId('celebration')).toContainText('Hired');
+  await expect(page.getByTestId('celebration-waiting')).toBeVisible();
+  await page.getByTestId('celebration').click({ timeout: 5000 });
+  await expect(page.getByTestId('celebration')).toContainText('Milestone');
   await page.keyboard.press('Escape');
 
   // 10. Purchase a second vehicle (used compact van if listed, otherwise new; financed with a loan).
@@ -306,7 +318,12 @@ test('full gameplay loop: dispatch, diagnose, repair, grow, train, save and relo
         requestAnimationFrame(tick);
       }),
   );
-  console.log(`[perf] ${fps.toFixed(1)} fps (headless SwiftShader)`);
+  const renderer = await page.evaluate(() => {
+    const gl = document.querySelector('canvas')?.getContext('webgl2');
+    const info = gl?.getExtension('WEBGL_debug_renderer_info');
+    return info ? (gl!.getParameter(info.UNMASKED_RENDERER_WEBGL) as string) : 'unknown renderer';
+  });
+  console.log(`[perf] ${fps.toFixed(1)} fps (headless, ${renderer})`);
 
   const realErrors = consoleErrors.filter((e) => !e.includes('deprecated') && !e.includes('PCFSoftShadowMap'));
   expect(realErrors, realErrors.join('\n')).toEqual([]);

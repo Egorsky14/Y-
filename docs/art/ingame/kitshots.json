@@ -1,0 +1,45 @@
+{
+  "jobId": "job-6",
+  "kit": {
+    "x": -10.9,
+    "z": 21.1,
+    "yaw": 1.5707963267948966,
+    "meshes": 21,
+    "names": [
+      "bag_1",
+      "bag_2",
+      "bag_3",
+      "bag_4",
+      "bag_5",
+      "cylinder_1",
+      "cylinder_2",
+      "cylinder_3",
+      "cylinder_4",
+      "cylinder_5",
+      "manifold_1",
+      "manifold_2",
+      "manifold_3",
+      "manifold_4",
+      "manifold_5",
+      "manifold_6",
+      "manifold_7",
+      "manifold_8",
+      "manifold_9",
+      "manifold_10",
+      "manifold_11"
+    ]
+  },
+  "render": {
+    "calls": 407,
+    "triangles": 1001168,
+    "geometries": 427,
+    "textures": 53,
+    "frame": 1284,
+    "houses": 32,
+    "vehicleModels": 1,
+    "workers": 1,
+    "instanced": 20,
+    "kits": 1
+  },
+  "errors": []
+}

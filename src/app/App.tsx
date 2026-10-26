@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useApp } from './store';
 import { startGameLoop } from './gameLoop';
 import { GameScene } from '@/world/scene/GameScene';
@@ -14,9 +14,13 @@ import { MarketingPanel } from '@/ui/panels/MarketingPanel';
 import { FinancePanel } from '@/ui/panels/FinancePanel';
 import { SettingsPanel } from '@/ui/panels/SettingsPanel';
 import { Celebration, ErrorBanner, Toasts, TutorialHint } from '@/ui/overlays/Overlays';
+import { PreviewWarmup } from '@/ui/panels/VehiclePreview';
+import { AdaptiveQuality, ContextLostOverlay, LoadingScreen, TouchTutorial, UnsupportedScreen } from '@/ui/overlays/Lifecycle';
+import { deviceProfile } from './device';
 import { MainMenu } from '@/ui/menus/MainMenu';
 import { CampaignSummary } from '@/ui/menus/CampaignSummary';
 import { WorldLabels } from '@/ui/overlays/WorldLabels';
+import { PhotoMode } from '@/ui/overlays/PhotoMode';
 
 function useHotkeys() {
   useEffect(() => {
@@ -46,6 +50,10 @@ function useHotkeys() {
           break;
         case 'Home':
           app.camera({ type: 'reset' });
+          break;
+        case 'p':
+        case 'P':
+          app.setPhoto({ on: !app.photo.on });
           break;
         case 'f':
         case 'F': {
@@ -79,25 +87,41 @@ function useHotkeys() {
 export function App() {
   const screen = useApp((s) => s.screen);
   const panel = useApp((s) => s.panel);
+  const photo = useApp((s) => s.photo.on);
   useHotkeys();
   useEffect(() => startGameLoop(), []);
+  // Mount the 3D world two frames after the loading screen has painted, so the screen is up
+  // before the start-up shader work blocks the main thread.
+  const [worldMounted, setWorldMounted] = useState(false);
+  useEffect(() => {
+    if (screen === 'menu') {
+      setWorldMounted(false);
+      return;
+    }
+    let raf = requestAnimationFrame(() => (raf = requestAnimationFrame(() => setWorldMounted(true))));
+    return () => cancelAnimationFrame(raf);
+  }, [screen]);
 
+  if (!deviceProfile().webgl2) return <UnsupportedScreen />;
   if (screen === 'menu') return <MainMenu />;
   return (
     <div className="app">
-      <div className="app-world">
-        <GameScene />
-      </div>
-      <div className="app-ui">
+      <div className="app-world">{worldMounted && <GameScene />}</div>
+      {/* Desktop only: phones show static vehicle previews and never open a second WebGL context. */}
+      {!deviceProfile().touch && <PreviewWarmup />}
+      <AdaptiveQuality />
+      <div className={`app-ui ${photo ? 'photo' : ''}`}>
+        {photo ? (
+          <PhotoMode />
+        ) : (
+          <>
         <WorldLabels />
         <TopHud />
         <Toasts />
-        <Celebration />
         <Inspector />
         <ActionBar />
         <WorldControls />
         <TutorialHint />
-        <ErrorBanner />
         {panel === 'jobs' && <JobsPanel />}
         {panel === 'employees' && <EmployeesPanel />}
         {panel === 'fleet' && <FleetPanel />}
@@ -105,8 +129,16 @@ export function App() {
         {panel === 'marketing' && <MarketingPanel />}
         {panel === 'finance' && <FinancePanel />}
         {panel === 'settings' && <SettingsPanel />}
+        {/* After the panels: notifications raised from a panel ("Hired", an action error) are never hidden or blocked by it. */}
+        <Celebration />
+        <ErrorBanner />
         {screen === 'summary' && <CampaignSummary />}
+          </>
+        )}
       </div>
+      <TouchTutorial />
+      <LoadingScreen />
+      <ContextLostOverlay />
     </div>
   );
 }

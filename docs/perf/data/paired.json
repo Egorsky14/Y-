@@ -1,0 +1,380 @@
+{
+  "before-vs-after": {
+    "method": "paired, 8 alternating 3 s windows per view per build, 1920x1080",
+    "renderer": "ANGLE (Intel, Intel(R) Arc(TM) 140V GPU (8GB) (0x000064A0) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+    "views": {
+      "overview-1000": {
+        "before": {
+          "fps": 58.5,
+          "fpsMedianWindow": 59,
+          "p50ms": 6.6,
+          "p95ms": 73.9,
+          "p99ms": 125.2,
+          "low1pctFps": 7.3,
+          "gpuMs": 7.35,
+          "gpuP50": 7.08,
+          "gpuP95": 9.58,
+          "calls": 590,
+          "triangles": 1382134,
+          "frames": 1387
+        },
+        "after": {
+          "fps": 60,
+          "fpsMedianWindow": 60.3,
+          "p50ms": 6.4,
+          "p95ms": 82.5,
+          "p99ms": 102.4,
+          "low1pctFps": 8.2,
+          "gpuMs": 8.06,
+          "gpuP50": 7.93,
+          "gpuP95": 9.25,
+          "calls": 582,
+          "triangles": 995588,
+          "frames": 1400
+        }
+      },
+      "hq-1000": {
+        "before": {
+          "fps": 59.4,
+          "fpsMedianWindow": 60.4,
+          "p50ms": 7.3,
+          "p95ms": 68.2,
+          "p99ms": 94.8,
+          "low1pctFps": 7.8,
+          "gpuMs": 7.24,
+          "gpuP50": 7.07,
+          "gpuP95": 8.67,
+          "calls": 567,
+          "triangles": 1382046,
+          "frames": 1397
+        },
+        "after": {
+          "fps": 60.3,
+          "fpsMedianWindow": 60.6,
+          "p50ms": 7.8,
+          "p95ms": 65.3,
+          "p99ms": 89.6,
+          "low1pctFps": 8.9,
+          "gpuMs": 7.99,
+          "gpuP50": 7.94,
+          "gpuP95": 9.02,
+          "calls": 559,
+          "triangles": 997540,
+          "frames": 1411
+        }
+      },
+      "neighborhood-1000": {
+        "before": {
+          "fps": 71.3,
+          "fpsMedianWindow": 71.9,
+          "p50ms": 4,
+          "p95ms": 118.3,
+          "p99ms": 171.8,
+          "low1pctFps": 4.7,
+          "gpuMs": 5.97,
+          "gpuP50": 5.75,
+          "gpuP95": 7.65,
+          "calls": 365,
+          "triangles": 1335294,
+          "frames": 1708
+        },
+        "after": {
+          "fps": 71.1,
+          "fpsMedianWindow": 71,
+          "p50ms": 4.3,
+          "p95ms": 103.7,
+          "p99ms": 172.2,
+          "low1pctFps": 5.2,
+          "gpuMs": 6.96,
+          "gpuP50": 6.83,
+          "gpuP95": 8.2,
+          "calls": 357,
+          "triangles": 975268,
+          "frames": 1678
+        }
+      },
+      "overview-2100": {
+        "before": {
+          "fps": 64.5,
+          "fpsMedianWindow": 64.4,
+          "p50ms": 5.8,
+          "p95ms": 60.1,
+          "p99ms": 73.9,
+          "low1pctFps": 12.8,
+          "gpuMs": 6.9,
+          "gpuP50": 6.71,
+          "gpuP95": 8.35,
+          "calls": 584,
+          "triangles": 1382268,
+          "frames": 1521
+        },
+        "after": {
+          "fps": 64.4,
+          "fpsMedianWindow": 64.4,
+          "p50ms": 6,
+          "p95ms": 61.9,
+          "p99ms": 81.1,
+          "low1pctFps": 10,
+          "gpuMs": 7.47,
+          "gpuP50": 7.42,
+          "gpuP95": 8.39,
+          "calls": 576,
+          "triangles": 999802,
+          "frames": 1533
+        }
+      }
+    }
+  },
+  "after-vs-before": {
+    "method": "paired, 4 alternating 3 s windows per view per build, 1920x1080",
+    "renderer": "ANGLE (Intel, Intel(R) Arc(TM) 140V GPU (8GB) (0x000064A0) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+    "views": {
+      "overview-1000": {
+        "after": {
+          "fps": 57.9,
+          "fpsMedianWindow": 58.6,
+          "p50ms": 6.2,
+          "p95ms": 78,
+          "p99ms": 85.7,
+          "low1pctFps": 10.8,
+          "gpuMs": 7.09,
+          "gpuP50": 6.8,
+          "gpuP95": 9.16,
+          "calls": 582,
+          "triangles": 995588,
+          "frames": 687
+        },
+        "before": {
+          "fps": 56.3,
+          "fpsMedianWindow": 56.9,
+          "p50ms": 6.5,
+          "p95ms": 73.6,
+          "p99ms": 96.1,
+          "low1pctFps": 8.9,
+          "gpuMs": 8.66,
+          "gpuP50": 8.54,
+          "gpuP95": 9.93,
+          "calls": 590,
+          "triangles": 1382134,
+          "frames": 661
+        }
+      },
+      "hq-1000": {
+        "after": {
+          "fps": 59.2,
+          "fpsMedianWindow": 59.6,
+          "p50ms": 7,
+          "p95ms": 72.6,
+          "p99ms": 89,
+          "low1pctFps": 9.4,
+          "gpuMs": 6.97,
+          "gpuP50": 6.85,
+          "gpuP95": 8.04,
+          "calls": 560,
+          "triangles": 997550,
+          "frames": 699
+        },
+        "before": {
+          "fps": 60.2,
+          "fpsMedianWindow": 60.4,
+          "p50ms": 6.8,
+          "p95ms": 73.2,
+          "p99ms": 102,
+          "low1pctFps": 8.9,
+          "gpuMs": 8.45,
+          "gpuP50": 8.4,
+          "gpuP95": 9.28,
+          "calls": 567,
+          "triangles": 1382046,
+          "frames": 713
+        }
+      },
+      "neighborhood-1000": {
+        "after": {
+          "fps": 69.3,
+          "fpsMedianWindow": 70.1,
+          "p50ms": 4,
+          "p95ms": 133.9,
+          "p99ms": 158.7,
+          "low1pctFps": 6.2,
+          "gpuMs": 5.88,
+          "gpuP50": 5.68,
+          "gpuP95": 7.29,
+          "calls": 357,
+          "triangles": 975268,
+          "frames": 830
+        },
+        "before": {
+          "fps": 71.1,
+          "fpsMedianWindow": 72.6,
+          "p50ms": 4,
+          "p95ms": 93.3,
+          "p99ms": 196.9,
+          "low1pctFps": 5,
+          "gpuMs": 7.2,
+          "gpuP50": 7.07,
+          "gpuP95": 8.39,
+          "calls": 365,
+          "triangles": 1335294,
+          "frames": 842
+        }
+      },
+      "overview-2100": {
+        "after": {
+          "fps": 63.8,
+          "fpsMedianWindow": 64,
+          "p50ms": 6,
+          "p95ms": 62.3,
+          "p99ms": 79.8,
+          "low1pctFps": 9.8,
+          "gpuMs": 6.61,
+          "gpuP50": 6.48,
+          "gpuP95": 7.97,
+          "calls": 576,
+          "triangles": 999802,
+          "frames": 759
+        },
+        "before": {
+          "fps": 62.7,
+          "fpsMedianWindow": 62.5,
+          "p50ms": 6.1,
+          "p95ms": 63.5,
+          "p99ms": 80.7,
+          "low1pctFps": 10.5,
+          "gpuMs": 7.95,
+          "gpuP50": 7.87,
+          "gpuP95": 9.09,
+          "calls": 584,
+          "triangles": 1382268,
+          "frames": 739
+        }
+      }
+    }
+  },
+  "beforeA-vs-beforeB": {
+    "method": "paired, 4 alternating 3 s windows per view per build, 1920x1080",
+    "renderer": "ANGLE (Intel, Intel(R) Arc(TM) 140V GPU (8GB) (0x000064A0) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+    "views": {
+      "overview-1000": {
+        "beforeA": {
+          "fps": 56.9,
+          "fpsMedianWindow": 56.5,
+          "p50ms": 6.5,
+          "p95ms": 79.3,
+          "p99ms": 138.2,
+          "low1pctFps": 6.8,
+          "gpuMs": 7.74,
+          "gpuP50": 7.47,
+          "gpuP95": 9.84,
+          "calls": 590,
+          "triangles": 1382134,
+          "frames": 666
+        },
+        "beforeB": {
+          "fps": 55.7,
+          "fpsMedianWindow": 56.5,
+          "p50ms": 6.8,
+          "p95ms": 73.3,
+          "p99ms": 125.3,
+          "low1pctFps": 7.3,
+          "gpuMs": 8.54,
+          "gpuP50": 8.44,
+          "gpuP95": 9.9,
+          "calls": 590,
+          "triangles": 1382134,
+          "frames": 664
+        }
+      },
+      "hq-1000": {
+        "beforeA": {
+          "fps": 59.5,
+          "fpsMedianWindow": 59.7,
+          "p50ms": 6.7,
+          "p95ms": 73,
+          "p99ms": 94.8,
+          "low1pctFps": 8.1,
+          "gpuMs": 7.4,
+          "gpuP50": 7.32,
+          "gpuP95": 8.36,
+          "calls": 567,
+          "triangles": 1382046,
+          "frames": 708
+        },
+        "beforeB": {
+          "fps": 59.2,
+          "fpsMedianWindow": 60.2,
+          "p50ms": 6.9,
+          "p95ms": 78.3,
+          "p99ms": 103.6,
+          "low1pctFps": 9.3,
+          "gpuMs": 8.34,
+          "gpuP50": 8.27,
+          "gpuP95": 9.38,
+          "calls": 568,
+          "triangles": 1382056,
+          "frames": 687
+        }
+      },
+      "neighborhood-1000": {
+        "beforeA": {
+          "fps": 70.8,
+          "fpsMedianWindow": 73,
+          "p50ms": 4.2,
+          "p95ms": 131.5,
+          "p99ms": 160,
+          "low1pctFps": 6,
+          "gpuMs": 6.2,
+          "gpuP50": 5.99,
+          "gpuP95": 7.78,
+          "calls": 365,
+          "triangles": 1335294,
+          "frames": 857
+        },
+        "beforeB": {
+          "fps": 70.6,
+          "fpsMedianWindow": 71.4,
+          "p50ms": 4.2,
+          "p95ms": 102.2,
+          "p99ms": 189.4,
+          "low1pctFps": 5.1,
+          "gpuMs": 7.11,
+          "gpuP50": 6.96,
+          "gpuP95": 8.42,
+          "calls": 365,
+          "triangles": 1335294,
+          "frames": 842
+        }
+      },
+      "overview-2100": {
+        "beforeA": {
+          "fps": 61.7,
+          "fpsMedianWindow": 62.3,
+          "p50ms": 5.8,
+          "p95ms": 65.3,
+          "p99ms": 80.1,
+          "low1pctFps": 12.3,
+          "gpuMs": 7.08,
+          "gpuP50": 6.91,
+          "gpuP95": 8.51,
+          "calls": 584,
+          "triangles": 1382268,
+          "frames": 731
+        },
+        "beforeB": {
+          "fps": 62,
+          "fpsMedianWindow": 62.2,
+          "p50ms": 5.6,
+          "p95ms": 68.5,
+          "p99ms": 85,
+          "low1pctFps": 10.5,
+          "gpuMs": 7.82,
+          "gpuP50": 7.7,
+          "gpuP95": 8.96,
+          "calls": 584,
+          "triangles": 1382268,
+          "frames": 732
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,62 @@
+{
+  "generatedAt": "2026-10-25T16:23:13.085Z",
+  "generator": "tools/assets (three.js procedural builders → glTF 2.0 via GLTFExporter)",
+  "license": "Original project assets, MIT with the repository",
+  "assets": [
+    {
+      "id": "full-size-van",
+      "category": "vehicles",
+      "file": "models/vehicles/full-size-van.glb",
+      "bytes": 811436,
+      "meshes": 34,
+      "triangles": 17110,
+      "description": "Full-size high-roof HVAC service van",
+      "source": "procedural (tools/assets)",
+      "license": "project"
+    },
+    {
+      "id": "compact-van",
+      "category": "vehicles",
+      "file": "models/vehicles/compact-van.glb",
+      "bytes": 767640,
+      "meshes": 33,
+      "triangles": 16280,
+      "description": "Compact service van",
+      "source": "procedural (tools/assets)",
+      "license": "project"
+    },
+    {
+      "id": "pickup",
+      "category": "vehicles",
+      "file": "models/vehicles/pickup.glb",
+      "bytes": 781740,
+      "meshes": 33,
+      "triangles": 16548,
+      "description": "Crew-cab pickup with headache rack and crossbed toolbox",
+      "source": "procedural (tools/assets)",
+      "license": "project"
+    },
+    {
+      "id": "box-truck",
+      "category": "vehicles",
+      "file": "models/vehicles/box-truck.glb",
+      "bytes": 903244,
+      "meshes": 41,
+      "triangles": 20200,
+      "description": "Installation box truck with liftgate and dual rear wheels",
+      "source": "procedural (tools/assets)",
+      "license": "project"
+    },
+    {
+      "id": "jobsite-kit",
+      "category": "props",
+      "file": "models/props/jobsite-kit.glb",
+      "bytes": 422816,
+      "meshes": 3,
+      "triangles": 14096,
+      "description": "Job-site service kit: soft tool bag with EGO teal webbing, 2-valve gauge manifold with low/high dials and three coiled charging hoses, recovery cylinder (nodes bag, manifold, cylinder)",
+      "source": "blender 5.2.3 (tools/blender/jobsite_kit.py)",
+      "license": "project"
+    }
+  ]
+}

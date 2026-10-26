@@ -1,0 +1,124 @@
+{
+  "2026-10-26T04:37:29.510Z": {
+    "method": "in-page A/B, 8 alternating 2.5 s windows per state, 1920x1080 High, uncapped",
+    "setup": {
+      "timer": true,
+      "scatterLayers": 3,
+      "flatMeshes": 14
+    },
+    "views": {
+      "overview-1000": {
+        "reverted": {
+          "fps": 141,
+          "p50ms": 3.9,
+          "p99ms": 43.8,
+          "low1pctFps": 22.2,
+          "gpuMs": 6.53,
+          "gpuP50": 6.38,
+          "gpuWindowMin": 6.48,
+          "gpuWindowMax": 6.57,
+          "calls": 599,
+          "triangles": 1285894
+        },
+        "optimized": {
+          "fps": 151,
+          "p50ms": 3.5,
+          "p99ms": 47.3,
+          "low1pctFps": 20.3,
+          "gpuMs": 6.09,
+          "gpuP50": 5.95,
+          "gpuWindowMin": 6.07,
+          "gpuWindowMax": 6.12,
+          "calls": 582,
+          "triangles": 995588
+        },
+        "gpuSavedMs": 0.44,
+        "gpuSavedPct": 6.7
+      },
+      "hq-1000": {
+        "reverted": {
+          "fps": 145.3,
+          "p50ms": 5,
+          "p99ms": 42.9,
+          "low1pctFps": 19.7,
+          "gpuMs": 6.38,
+          "gpuP50": 6.25,
+          "gpuWindowMin": 6.32,
+          "gpuWindowMax": 6.45,
+          "calls": 576,
+          "triangles": 1285806
+        },
+        "optimized": {
+          "fps": 152.7,
+          "p50ms": 4.9,
+          "p99ms": 39.9,
+          "low1pctFps": 21.9,
+          "gpuMs": 6.02,
+          "gpuP50": 5.91,
+          "gpuWindowMin": 5.99,
+          "gpuWindowMax": 6.08,
+          "calls": 559,
+          "triangles": 997540
+        },
+        "gpuSavedMs": 0.36,
+        "gpuSavedPct": 5.6
+      },
+      "neighborhood-1000": {
+        "reverted": {
+          "fps": 181.8,
+          "p50ms": 1.6,
+          "p99ms": 116.9,
+          "low1pctFps": 8.2,
+          "gpuMs": 5.24,
+          "gpuP50": 5.09,
+          "gpuWindowMin": 5.22,
+          "gpuWindowMax": 5.26,
+          "calls": 374,
+          "triangles": 1239054
+        },
+        "optimized": {
+          "fps": 184.2,
+          "p50ms": 1.5,
+          "p99ms": 109.7,
+          "low1pctFps": 8.7,
+          "gpuMs": 5,
+          "gpuP50": 4.85,
+          "gpuWindowMin": 4.98,
+          "gpuWindowMax": 5.02,
+          "calls": 357,
+          "triangles": 975268
+        },
+        "gpuSavedMs": 0.24,
+        "gpuSavedPct": 4.6
+      },
+      "veg-lodband-1000": {
+        "reverted": {
+          "fps": 171.1,
+          "p50ms": 1.4,
+          "p99ms": 142.2,
+          "low1pctFps": 6.9,
+          "gpuMs": 5.47,
+          "gpuP50": 5.36,
+          "gpuWindowMin": 5.38,
+          "gpuWindowMax": 5.57,
+          "calls": 367,
+          "triangles": 1232230
+        },
+        "optimized": {
+          "fps": 180.5,
+          "p50ms": 1.5,
+          "p99ms": 130.7,
+          "low1pctFps": 7.3,
+          "gpuMs": 5.21,
+          "gpuP50": 5.09,
+          "gpuWindowMin": 5.12,
+          "gpuWindowMax": 5.3,
+          "calls": 350,
+          "triangles": 966404
+        },
+        "gpuSavedMs": 0.26,
+        "gpuSavedPct": 4.8
+      }
+    }
+  }
+}

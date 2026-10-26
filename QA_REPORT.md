@@ -16,9 +16,9 @@ Date: 2026-10-25 · Build: Vite 8 production bundle · Branch `ccr-9ef3ffbb-g9q8
 
 ## Browser test (Playwright, production build, headless Chromium + SwiftShader)
 
-`npm run build && npm run test:e2e` — **1 passed** (≈3 min at software-rendered 2–3 fps).
+`npm run build && npm run test:e2e` — **4 passed** on `v3-visual-excellence` (gameplay 10.8 min at ≈0.5 fps software-rendered; graphics 2.7 min at 1920×1080, 1.8 min at 1366×768, 1.6 min at 1024×768). On `v3-premium-graphics` the same gate was 3 passed (gameplay 7.0 min, graphics 1.6 and 1.1 min).
 
-The single spec performs the mandatory end-to-end flow through the real UI and verifies state through the `window.__ego` hook:
+Two specs run. `graphics.spec.ts` (three viewports) checks the premium renderer, and on the visual-excellence branch also the bay door opening while the van moves, the rendered technician grounded at the simulated spot, evening lowering sun and exposure, Photo Mode hiding and restoring the HUD without changing cash, and the HUD bars fitting the viewport without overlap: WebGL draw calls and triangles via the in-scene probe, the glTF van fetched and mounted with wheel/steer nodes, 32 merged houses, articulated workers, instanced vegetation layers, selection, routed driving whose rendered position follows the simulation with spinning wheels, the technician at the correct lot clear of the wall, diagnosis, payment and a clean console. `gameplay.spec.ts` performs the mandatory end-to-end flow through the real UI and verifies state through the `window.__ego` hook:
 
 1. Start a new company (seed 42, $25,000 cash).
 2. Receive a lead: pin visible over the house, inspector shows the customer.
@@ -52,24 +52,30 @@ Fixed during review:
 - Technician stood inside the wall on south-facing houses; condenser clipped the wall → per-style half-width placement.
 - Premium house roof/entry intersection; HQ wordmark not visible from the street; oversaturated sand.
 
-Known rendering issues:
-- HQ grounds are still sparse at a distance (gravel texture reads flat from the default camera height).
-- HQ bay doors roll up while a truck moves inside the lot (screenshot `14`), but vehicles still start from parking stalls rather than inside the bay, and workers teleport into the van (the van hides them while driving).
-- The Sky shader and fog give a slightly washed horizon on software GL; on a GPU with 4k shadows the scene is crisper.
-- No LOD yet: all 32 houses render full detail at any distance.
+Premium graphics branch (`v3-premium-graphics`): the rendering review above describes the base build. The overhaul replaced the box houses, HQ, vehicles, characters and lighting; see `docs/graphics/GRAPHICS_OVERHAUL_REPORT.md` and the before/after frames in `docs/graphics/before/` and `docs/graphics/after/`.
+
+Known rendering issues after the overhaul:
+- Vehicles still start from parking stalls rather than inside the bay, and workers teleport into the van (the van hides them while driving).
+- No LOD: all 32 houses render full detail at any distance; vegetation density is the only distance-cost lever.
+- Evening lacks long shadows (shadow sun elevation is clamped at 3.4° against acne).
+- Characters are procedurally articulated, not skinned.
 
 ## Performance measurements
 
-Measured on the production build via the in-scene `RenderProbe` at 1920×1080:
+Visual-excellence branch (`docs/visual-excellence/after/metrics.json`, 1920×1080 High): 586 draw calls and 1.38 M triangles at the overview, 565 calls at the HQ view, 50 textures; SwiftShader renders it at about 0.5 fps, so no real-hardware FPS is claimed. Details and the before/after table are in `docs/visual-excellence/VISUAL_QUALITY_REPORT.md`.
 
-| View | Draw calls | Triangles | Geometries | Textures |
+Measured on the production build via the in-scene `RenderProbe` at 1920×1080, High preset:
+
+| View | Build | Draw calls | Triangles | Textures |
 | --- | --- | --- | --- | --- |
-| Default overview | 1,352 | 70,678 | 1,025 | 15 |
-| HQ close-up | 997 | 65,004 | 1,027 | 15 |
+| Default overview | base (`4924436`) | 1,352 | 70,678 | 15 |
+| Default overview | premium (`v3-premium-graphics`) | 515 | 622,248 | 42 |
+| HQ close-up | base | 997 | 65,004 | 15 |
+| HQ close-up | premium | 451 | 621,880 | 42 |
 
-(Windows were merged into single textured planes after a first measurement of 1,471 / 1,052 calls.) JS heap after load: 39 MB. Frame time in the CI container (SwiftShader software rasterizer): ≈630 ms at 1080p with 4k shadows; ≈400 ms at 1600×900. This container has no GPU, so the 60 FPS target on a midrange GPU is **not measured here**. The triangle count is trivial for any discrete GPU; draw calls (~1.5k, dominated by per-mesh house parts) are the metric to reduce first (merge static house geometry, drop the per-window frame mesh) if a real machine falls short.
+Draw calls fell by 62% because every house, road and HQ part is merged into one mesh per material and vegetation is instanced. Triangles rose about 9× (glTF vehicles at 6–7.5k each, explicit roofs, displaced terrain, 12 plant species); that is well inside any discrete GPU's budget, and the Low preset cuts vegetation to 35% density and turns shadows off. Asset load is 1.3–1.5 s for the four GLB vehicles (1.7 MB total). This container has no GPU: SwiftShader renders the premium scene at about 1 fps at 1080p (the base build measured ≈630 ms per frame, about 1.6 fps), so the 60 FPS target on a midrange GPU is **not measured here** and no FPS figure is claimed for real hardware.
 
-Graphics settings (Low/Medium/High) change DPR (1 / 1.25 / 1.75) and shadow map size (none / 2k / 4k) and are persisted.
+Graphics settings (Low/Medium/High/Ultra) change DPR, shadow map size, vegetation density and rain density and are persisted.
 
 ## Known bugs and gaps
 

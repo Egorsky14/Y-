@@ -8,3 +8,6 @@ test-results
 e2e/.auth
 *.log
 .scratch
+
+# Raw before/after captures (48 MB); compact sheets live in docs/perf/compare
+docs/perf/shots/

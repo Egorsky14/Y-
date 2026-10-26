@@ -1,0 +1,885 @@
+{
+  "after-r1": {
+    "1-idle-overview-1x": {
+      "seconds": 10,
+      "frames": 601,
+      "fps": 60,
+      "low1pctFps": 59,
+      "p99ms": 16.9,
+      "maxMs": 17.3,
+      "hitches25": 0,
+      "hitches50": 0,
+      "gpuMsMean": 11.22,
+      "gpuMsP99": 14.97,
+      "gpuMsMax": 16.17,
+      "renderCallCpuMsP99": 7.1,
+      "hitchDetail": [],
+      "loaf": []
+    },
+    "2-accept-dispatch-follow-1x": {
+      "seconds": 12,
+      "frames": 720,
+      "fps": 59.9,
+      "low1pctFps": 52.7,
+      "p99ms": 16.9,
+      "maxMs": 33.4,
+      "hitches25": 1,
+      "hitches50": 0,
+      "gpuMsMean": 8.08,
+      "gpuMsP99": 12.43,
+      "gpuMsMax": 14.95,
+      "renderCallCpuMsP99": 6.1,
+      "hitchDetail": [
+        {
+          "atMs": 17366,
+          "intervalMs": 33.4,
+          "gpuMs": 7.72,
+          "renderCpuMs": 3.3
+        }
+      ],
+      "loaf": []
+    },
+    "3-driving-follow-5x": {
+      "seconds": 10,
+      "frames": 600,
+      "fps": 60,
+      "low1pctFps": 59.1,
+      "p99ms": 16.9,
+      "maxMs": 17,
+      "hitches25": 0,
+      "hitches50": 0,
+      "gpuMsMean": 7.57,
+      "gpuMsP99": 11.38,
+      "gpuMsMax": 11.84,
+      "renderCallCpuMsP99": 5.5,
+      "hitchDetail": [],
+      "loaf": []
+    },
+    "4-technician-onsite-1x": {
+      "seconds": 10,
+      "frames": 601,
+      "fps": 60,
+      "low1pctFps": 59.2,
+      "p99ms": 16.9,
+      "maxMs": 16.9,
+      "hitches25": 0,
+      "hitches50": 0,
+      "gpuMsMean": 11.16,
+      "gpuMsP99": 13.44,
+      "gpuMsMax": 15.79,
+      "renderCallCpuMsP99": 5.6,
+      "hitchDetail": [],
+      "loaf": []
+    },
+    "5-camera-transitions-1x": {
+      "seconds": 12,
+      "frames": 721,
+      "fps": 60,
+      "low1pctFps": 58.9,
+      "p99ms": 16.9,
+      "maxMs": 17.4,
+      "hitches25": 0,
+      "hitches50": 0,
+      "gpuMsMean": 10.36,
+      "gpuMsP99": 14.54,
+      "gpuMsMax": 17.16,
+      "renderCallCpuMsP99": 7.5,
+      "hitchDetail": [],
+      "loaf": []
+    },
+    "6-panels-open-close-1x": {
+      "seconds": 10,
+      "frames": 540,
+      "fps": 53.9,
+      "low1pctFps": 5.4,
+      "p99ms": 16.9,
+      "maxMs": 983.3,
+      "hitches25": 4,
+      "hitches50": 1,
+      "gpuMsMean": 10.9,
+      "gpuMsP99": 15.2,
+      "gpuMsMax": 23.34,
+      "renderCallCpuMsP99": 6.7,
+      "hitchDetail": [
+        {
+          "atMs": 94729,
+          "intervalMs": 33.2,
+          "gpuMs": 12.34,
+          "renderCpuMs": 5.5
+        },
+        {
+          "atMs": 98062,
+          "intervalMs": 983.3,
+          "gpuMs": 12.37,
+          "renderCpuMs": 9
+        },
+        {
+          "atMs": 98096,
+          "intervalMs": 33.3,
+          "gpuMs": 10.92,
+          "renderCpuMs": 6.3
+        },
+        {
+          "atMs": 98362,
+          "intervalMs": 33.5,
+          "gpuMs": 11.05,
+          "renderCpuMs": 6.5
+        }
+      ],
+      "loaf": [
+        {
+          "start": 97076,
+          "duration": 985,
+          "blocking": 932,
+          "render": 874,
+          "scripts": [
+            {
+              "d": 108,
+              "fn": "performWorkUntilDeadline",
+              "src": "r3f-QXPcyApM.js",
+              "inv": "MessagePort.onmessage"
+            },
+            {
+              "d": 873,
+              "fn": "loop",
+              "src": "r3f-QXPcyApM.js",
+              "inv": "FrameRequestCallback"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "before-r1": {
+    "1-idle-overview-1x": {
+      "seconds": 10,
+      "frames": 601,
+      "fps": 60,
+      "low1pctFps": 58.9,
+      "p99ms": 16.9,
+      "maxMs": 17.4,
+      "hitches25": 0,
+      "hitches50": 0,
+      "gpuMsMean": 12.01,
+      "gpuMsP99": 15.19,
+      "gpuMsMax": 15.64,
+      "renderCallCpuMsP99": 7.7,
+      "hitchDetail": [],
+      "loaf": []
+    },
+    "2-accept-dispatch-follow-1x": {
+      "seconds": 12,
+      "frames": 721,
+      "fps": 60,
+      "low1pctFps": 59,
+      "p99ms": 16.9,
+      "maxMs": 17.3,
+      "hitches25": 0,
+      "hitches50": 0,
+      "gpuMsMean": 8.43,
+      "gpuMsP99": 14.06,
+      "gpuMsMax": 18.73,
+      "renderCallCpuMsP99": 6.6,
+      "hitchDetail": [],
+      "loaf": []
+    },
+    "3-driving-follow-5x": {
+      "seconds": 10,
+      "frames": 600,
+      "fps": 60,
+      "low1pctFps": 58.8,
+      "p99ms": 16.9,
+      "maxMs": 17.5,
+      "hitches25": 0,
+      "hitches50": 0,
+      "gpuMsMean": 8.31,
+      "gpuMsP99": 11.67,
+      "gpuMsMax": 12.75,
+      "renderCallCpuMsP99": 5.7,
+      "hitchDetail": [],
+      "loaf": []
+    },
+    "4-technician-onsite-1x": {
+      "seconds": 10,
+      "frames": 601,
+      "fps": 60,
+      "low1pctFps": 59.1,
+      "p99ms": 16.9,
+      "maxMs": 17,
+      "hitches25": 0,
+      "hitches50": 0,
+      "gpuMsMean": 11.42,
+      "gpuMsP99": 14.26,
+      "gpuMsMax": 15.2,
+      "renderCallCpuMsP99": 5.9,
+      "hitchDetail": [],
+      "loaf": []
+    },
+    "5-camera-transitions-1x": {
+      "seconds": 12,
+      "frames": 720,
+      "fps": 60,
+      "low1pctFps": 59.2,
+      "p99ms": 16.9,
+      "maxMs": 16.9,
+      "hitches25": 0,
+      "hitches50": 0,
+      "gpuMsMean": 11.52,
+      "gpuMsP99": 15.97,
+      "gpuMsMax": 22.16,
+      "renderCallCpuMsP99": 7,
+      "hitchDetail": [],
+      "loaf": []
+    },
+    "6-panels-open-close-1x": {
+      "seconds": 10,
+      "frames": 543,
+      "fps": 54.2,
+      "low1pctFps": 5.6,
+      "p99ms": 16.9,
+      "maxMs": 949.9,
+      "hitches25": 2,
+      "hitches50": 2,
+      "gpuMsMean": 11.68,
+      "gpuMsP99": 15.81,
+      "gpuMsMax": 26.31,
+      "renderCallCpuMsP99": 6.7,
+      "hitchDetail": [
+        {
+          "atMs": 96838,
+          "intervalMs": 50.1,
+          "gpuMs": 15.76,
+          "renderCpuMs": 4.8
+        },
+        {
+          "atMs": 98338,
+          "intervalMs": 949.9,
+          "gpuMs": 13.43,
+          "renderCpuMs": 4.3
+        }
+      ],
+      "loaf": [
+        {
+          "start": 96794,
+          "duration": 55,
+          "blocking": 0,
+          "render": 6,
+          "scripts": [
+            {
+              "d": 5,
+              "fn": "",
+              "src": "index-B9Uh3ZaN.js",
+              "inv": "TimerHandler:setTimeout"
+            },
+            {
+              "d": 5,
+              "fn": "loop",
+              "src": "r3f-BLuAOEll.js",
+              "inv": "FrameRequestCallback"
+            }
+          ]
+        },
+        {
+          "start": 97386,
+          "duration": 951,
+          "blocking": 900,
+          "render": 791,
+          "scripts": [
+            {
+              "d": 159,
+              "fn": "performWorkUntilDeadline",
+              "src": "r3f-BLuAOEll.js",
+              "inv": "MessagePort.onmessage"
+            },
+            {
+              "d": 790,
+              "fn": "loop",
+              "src": "r3f-BLuAOEll.js",
+              "inv": "FrameRequestCallback"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "after-r2": {
+    "1-idle-overview-1x": {
+      "seconds": 10,
+      "frames": 601,
+      "fps": 60,
+      "low1pctFps": 59.1,
+      "p99ms": 16.9,
+      "maxMs": 17,
+      "hitches25": 0,
+      "hitches50": 0,
+      "gpuMsMean": 11.68,
+      "gpuMsP99": 14.85,
+      "gpuMsMax": 16.23,
+      "renderCallCpuMsP99": 7.4,
+      "hitchDetail": [],
+      "loaf": []
+    },
+    "2-accept-dispatch-follow-1x": {
+      "seconds": 12,
+      "frames": 720,
+      "fps": 60,
+      "low1pctFps": 59,
+      "p99ms": 16.9,
+      "maxMs": 17.2,
+      "hitches25": 0,
+      "hitches50": 0,
+      "gpuMsMean": 8.23,
+      "gpuMsP99": 12.33,
+      "gpuMsMax": 23.42,
+      "renderCallCpuMsP99": 6,
+      "hitchDetail": [],
+      "loaf": []
+    },
+    "3-driving-follow-5x": {
+      "seconds": 10,
+      "frames": 601,
+      "fps": 60,
+      "low1pctFps": 59.2,
+      "p99ms": 16.8,
+      "maxMs": 17,
+      "hitches25": 0,
+      "hitches50": 0,
+      "gpuMsMean": 8.17,
+      "gpuMsP99": 12.43,
+      "gpuMsMax": 13.13,
+      "renderCallCpuMsP99": 5.5,
+      "hitchDetail": [],
+      "loaf": []
+    },
+    "4-technician-onsite-1x": {
+      "seconds": 10,
+      "frames": 601,
+      "fps": 60,
+      "low1pctFps": 59.2,
+      "p99ms": 16.8,
+      "maxMs": 17.2,
+      "hitches25": 0,
+      "hitches50": 0,
+      "gpuMsMean": 10.72,
+      "gpuMsP99": 14.23,
+      "gpuMsMax": 14.41,
+      "renderCallCpuMsP99": 5.7,
+      "hitchDetail": [],
+      "loaf": []
+    },
+    "5-camera-transitions-1x": {
+      "seconds": 12,
+      "frames": 720,
+      "fps": 60,
+      "low1pctFps": 59.1,
+      "p99ms": 16.9,
+      "maxMs": 17,
+      "hitches25": 0,
+      "hitches50": 0,
+      "gpuMsMean": 10.47,
+      "gpuMsP99": 15.88,
+      "gpuMsMax": 16.56,
+      "renderCallCpuMsP99": 7.6,
+      "hitchDetail": [],
+      "loaf": []
+    },
+    "6-panels-open-close-1x": {
+      "seconds": 10,
+      "frames": 545,
+      "fps": 54.4,
+      "low1pctFps": 5.8,
+      "p99ms": 16.9,
+      "maxMs": 900,
+      "hitches25": 4,
+      "hitches50": 1,
+      "gpuMsMean": 10.97,
+      "gpuMsP99": 14.99,
+      "gpuMsMax": 22.61,
+      "renderCallCpuMsP99": 7,
+      "hitchDetail": [
+        {
+          "atMs": 97458,
+          "intervalMs": 33.4,
+          "gpuMs": 14.09,
+          "renderCpuMs": 2.3
+        },
+        {
+          "atMs": 98374,
+          "intervalMs": 900,
+          "gpuMs": 8.34,
+          "renderCpuMs": 8.1
+        },
+        {
+          "atMs": 98741,
+          "intervalMs": 33.5,
+          "gpuMs": 11.27,
+          "renderCpuMs": 5.9
+        },
+        {
+          "atMs": 99774,
+          "intervalMs": 33.3,
+          "gpuMs": 7.03,
+          "renderCpuMs": 5.7
+        }
+      ],
+      "loaf": [
+        {
+          "start": 97468,
+          "duration": 906,
+          "blocking": 855,
+          "render": 801,
+          "scripts": [
+            {
+              "d": 104,
+              "fn": "performWorkUntilDeadline",
+              "src": "r3f-QXPcyApM.js",
+              "inv": "MessagePort.onmessage"
+            },
+            {
+              "d": 800,
+              "fn": "loop",
+              "src": "r3f-QXPcyApM.js",
+              "inv": "FrameRequestCallback"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "before-r2": {
+    "1-idle-overview-1x": {
+      "seconds": 10,
+      "frames": 601,
+      "fps": 60,
+      "low1pctFps": 59.2,
+      "p99ms": 16.9,
+      "maxMs": 16.9,
+      "hitches25": 0,
+      "hitches50": 0,
+      "gpuMsMean": 11.75,
+      "gpuMsP99": 16.33,
+      "gpuMsMax": 17.36,
+      "renderCallCpuMsP99": 7.4,
+      "hitchDetail": [],
+      "loaf": []
+    },
+    "2-accept-dispatch-follow-1x": {
+      "seconds": 12,
+      "frames": 721,
+      "fps": 60,
+      "low1pctFps": 59,
+      "p99ms": 16.9,
+      "maxMs": 17.2,
+      "hitches25": 0,
+      "hitches50": 0,
+      "gpuMsMean": 8.87,
+      "gpuMsP99": 13.93,
+      "gpuMsMax": 18.28,
+      "renderCallCpuMsP99": 6,
+      "hitchDetail": [],
+      "loaf": []
+    },
+    "3-driving-follow-5x": {
+      "seconds": 10,
+      "frames": 601,
+      "fps": 60,
+      "low1pctFps": 59,
+      "p99ms": 16.9,
+      "maxMs": 17.2,
+      "hitches25": 0,
+      "hitches50": 0,
+      "gpuMsMean": 8.7,
+      "gpuMsP99": 13.11,
+      "gpuMsMax": 13.48,
+      "renderCallCpuMsP99": 5.1,
+      "hitchDetail": [],
+      "loaf": []
+    },
+    "4-technician-onsite-1x": {
+      "seconds": 10,
+      "frames": 601,
+      "fps": 60,
+      "low1pctFps": 59.4,
+      "p99ms": 16.8,
+      "maxMs": 16.9,
+      "hitches25": 0,
+      "hitches50": 0,
+      "gpuMsMean": 11.25,
+      "gpuMsP99": 13.71,
+      "gpuMsMax": 14.26,
+      "renderCallCpuMsP99": 5.5,
+      "hitchDetail": [],
+      "loaf": []
+    },
+    "5-camera-transitions-1x": {
+      "seconds": 12,
+      "frames": 721,
+      "fps": 60,
+      "low1pctFps": 59.1,
+      "p99ms": 16.9,
+      "maxMs": 17,
+      "hitches25": 0,
+      "hitches50": 0,
+      "gpuMsMean": 11.12,
+      "gpuMsP99": 15.14,
+      "gpuMsMax": 20.47,
+      "renderCallCpuMsP99": 6.9,
+      "hitchDetail": [],
+      "loaf": []
+    },
+    "6-panels-open-close-1x": {
+      "seconds": 10,
+      "frames": 546,
+      "fps": 54.5,
+      "low1pctFps": 5.9,
+      "p99ms": 16.9,
+      "maxMs": 883.2,
+      "hitches25": 4,
+      "hitches50": 1,
+      "gpuMsMean": 11.48,
+      "gpuMsP99": 15.06,
+      "gpuMsMax": 16.05,
+      "renderCallCpuMsP99": 7.2,
+      "hitchDetail": [
+        {
+          "atMs": 94836,
+          "intervalMs": 33.3,
+          "gpuMs": 12.01,
+          "renderCpuMs": 5.2
+        },
+        {
+          "atMs": 98035,
+          "intervalMs": 883.2,
+          "gpuMs": 14.07,
+          "renderCpuMs": 7.2
+        },
+        {
+          "atMs": 98436,
+          "intervalMs": 33.4,
+          "gpuMs": 9.68,
+          "renderCpuMs": 3
+        },
+        {
+          "atMs": 99452,
+          "intervalMs": 33.4,
+          "gpuMs": 10.41,
+          "renderCpuMs": 5.8
+        }
+      ],
+      "loaf": [
+        {
+          "start": 97151,
+          "duration": 876,
+          "blocking": 825,
+          "render": 772,
+          "scripts": [
+            {
+              "d": 103,
+              "fn": "performWorkUntilDeadline",
+              "src": "r3f-BLuAOEll.js",
+              "inv": "MessagePort.onmessage"
+            },
+            {
+              "d": 771,
+              "fn": "loop",
+              "src": "r3f-BLuAOEll.js",
+              "inv": "FrameRequestCallback"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "fixed-r1": {
+    "1-idle-overview-1x": {
+      "seconds": 10,
+      "frames": 601,
+      "fps": 60,
+      "low1pctFps": 59.2,
+      "p99ms": 16.9,
+      "maxMs": 16.9,
+      "hitches25": 0,
+      "hitches50": 0,
+      "gpuMsMean": 7.74,
+      "gpuMsP99": 9.96,
+      "gpuMsMax": 10.39,
+      "renderCallCpuMsP99": 4,
+      "hitchDetail": [],
+      "loaf": []
+    },
+    "2-accept-dispatch-follow-1x": {
+      "seconds": 12,
+      "frames": 721,
+      "fps": 60,
+      "low1pctFps": 58.8,
+      "p99ms": 17,
+      "maxMs": 17,
+      "hitches25": 0,
+      "hitches50": 0,
+      "gpuMsMean": 6.08,
+      "gpuMsP99": 7.97,
+      "gpuMsMax": 12.97,
+      "renderCallCpuMsP99": 3.3,
+      "hitchDetail": [],
+      "loaf": []
+    },
+    "3-driving-follow-5x": {
+      "seconds": 10,
+      "frames": 600,
+      "fps": 60,
+      "low1pctFps": 58.7,
+      "p99ms": 16.9,
+      "maxMs": 17.2,
+      "hitches25": 0,
+      "hitches50": 0,
+      "gpuMsMean": 8.3,
+      "gpuMsP99": 10.61,
+      "gpuMsMax": 11.51,
+      "renderCallCpuMsP99": 4.8,
+      "hitchDetail": [],
+      "loaf": []
+    },
+    "4-technician-onsite-1x": {
+      "seconds": 10,
+      "frames": 601,
+      "fps": 60,
+      "low1pctFps": 59,
+      "p99ms": 16.9,
+      "maxMs": 17.1,
+      "hitches25": 0,
+      "hitches50": 0,
+      "gpuMsMean": 9.51,
+      "gpuMsP99": 11.56,
+      "gpuMsMax": 13.76,
+      "renderCallCpuMsP99": 4.7,
+      "hitchDetail": [],
+      "loaf": []
+    },
+    "5-camera-transitions-1x": {
+      "seconds": 12,
+      "frames": 721,
+      "fps": 60,
+      "low1pctFps": 58.9,
+      "p99ms": 16.9,
+      "maxMs": 17.2,
+      "hitches25": 0,
+      "hitches50": 0,
+      "gpuMsMean": 8.76,
+      "gpuMsP99": 12.17,
+      "gpuMsMax": 15.71,
+      "renderCallCpuMsP99": 6.2,
+      "hitchDetail": [],
+      "loaf": []
+    },
+    "6-panels-open-close-1x": {
+      "seconds": 10,
+      "frames": 594,
+      "fps": 59.4,
+      "low1pctFps": 29.9,
+      "p99ms": 16.8,
+      "maxMs": 66.7,
+      "hitches25": 2,
+      "hitches50": 2,
+      "gpuMsMean": 7.37,
+      "gpuMsP99": 9.4,
+      "gpuMsMax": 13.24,
+      "renderCallCpuMsP99": 6.4,
+      "hitchDetail": [
+        {
+          "atMs": 96406,
+          "intervalMs": 66.6,
+          "gpuMs": 7.47,
+          "renderCpuMs": 2.8
+        },
+        {
+          "atMs": 96506,
+          "intervalMs": 66.7,
+          "gpuMs": 7.89,
+          "renderCpuMs": 5.1
+        }
+      ],
+      "loaf": [
+        {
+          "start": 96332,
+          "duration": 75,
+          "blocking": 24,
+          "render": 6,
+          "scripts": [
+            {
+              "d": 68,
+              "fn": "performWorkUntilDeadline",
+              "src": "r3f-QXPcyApM.js",
+              "inv": "MessagePort.onmessage"
+            },
+            {
+              "d": 6,
+              "fn": "loop",
+              "src": "r3f-QXPcyApM.js",
+              "inv": "FrameRequestCallback"
+            }
+          ]
+        },
+        {
+          "start": 96430,
+          "duration": 76,
+          "blocking": 16,
+          "render": 66,
+          "scripts": [
+            {
+              "d": 65,
+              "fn": "loop",
+              "src": "r3f-QXPcyApM.js",
+              "inv": "FrameRequestCallback"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "fixed-r2": {
+    "1-idle-overview-1x": {
+      "seconds": 10,
+      "frames": 601,
+      "fps": 60,
+      "low1pctFps": 59,
+      "p99ms": 16.9,
+      "maxMs": 17.1,
+      "hitches25": 0,
+      "hitches50": 0,
+      "gpuMsMean": 9.65,
+      "gpuMsP99": 12.27,
+      "gpuMsMax": 13.95,
+      "renderCallCpuMsP99": 9.1,
+      "hitchDetail": [],
+      "loaf": []
+    },
+    "2-accept-dispatch-follow-1x": {
+      "seconds": 12,
+      "frames": 721,
+      "fps": 60,
+      "low1pctFps": 59.1,
+      "p99ms": 16.9,
+      "maxMs": 17,
+      "hitches25": 0,
+      "hitches50": 0,
+      "gpuMsMean": 7.47,
+      "gpuMsP99": 12.67,
+      "gpuMsMax": 20.94,
+      "renderCallCpuMsP99": 6.2,
+      "hitchDetail": [],
+      "loaf": []
+    },
+    "3-driving-follow-5x": {
+      "seconds": 10,
+      "frames": 601,
+      "fps": 60,
+      "low1pctFps": 58.6,
+      "p99ms": 17,
+      "maxMs": 17.2,
+      "hitches25": 0,
+      "hitches50": 0,
+      "gpuMsMean": 7.71,
+      "gpuMsP99": 11.9,
+      "gpuMsMax": 13.06,
+      "renderCallCpuMsP99": 4.9,
+      "hitchDetail": [],
+      "loaf": []
+    },
+    "4-technician-onsite-1x": {
+      "seconds": 10,
+      "frames": 601,
+      "fps": 60,
+      "low1pctFps": 58.5,
+      "p99ms": 17,
+      "maxMs": 17.2,
+      "hitches25": 0,
+      "hitches50": 0,
+      "gpuMsMean": 9.15,
+      "gpuMsP99": 13.91,
+      "gpuMsMax": 14.6,
+      "renderCallCpuMsP99": 5,
+      "hitchDetail": [],
+      "loaf": []
+    },
+    "5-camera-transitions-1x": {
+      "seconds": 12,
+      "frames": 721,
+      "fps": 60,
+      "low1pctFps": 58.7,
+      "p99ms": 16.9,
+      "maxMs": 17.3,
+      "hitches25": 0,
+      "hitches50": 0,
+      "gpuMsMean": 7.89,
+      "gpuMsP99": 12.89,
+      "gpuMsMax": 15.97,
+      "renderCallCpuMsP99": 3.8,
+      "hitchDetail": [],
+      "loaf": []
+    },
+    "6-panels-open-close-1x": {
+      "seconds": 10,
+      "frames": 597,
+      "fps": 59.6,
+      "low1pctFps": 35.7,
+      "p99ms": 17,
+      "maxMs": 50.1,
+      "hitches25": 3,
+      "hitches50": 1,
+      "gpuMsMean": 6.79,
+      "gpuMsP99": 8.52,
+      "gpuMsMax": 9.16,
+      "renderCallCpuMsP99": 5.8,
+      "hitchDetail": [
+        {
+          "atMs": 96858,
+          "intervalMs": 33.4,
+          "gpuMs": 7.11,
+          "renderCpuMs": 1.7
+        },
+        {
+          "atMs": 96892,
+          "intervalMs": 33.4,
+          "gpuMs": 6.69,
+          "renderCpuMs": 3.1
+        },
+        {
+          "atMs": 96958,
+          "intervalMs": 50.1,
+          "gpuMs": 7.67,
+          "renderCpuMs": 6.3
+        }
+      ],
+      "loaf": [
+        {
+          "start": 96812,
+          "duration": 62,
+          "blocking": 11,
+          "render": 3,
+          "scripts": [
+            {
+              "d": 59,
+              "fn": "performWorkUntilDeadline",
+              "src": "r3f-QXPcyApM.js",
+              "inv": "MessagePort.onmessage"
+            }
+          ]
+        },
+        {
+          "start": 96901,
+          "duration": 66,
+          "blocking": 9,
+          "render": 58,
+          "scripts": [
+            {
+              "d": 58,
+              "fn": "loop",
+              "src": "r3f-QXPcyApM.js",
+              "inv": "FrameRequestCallback"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

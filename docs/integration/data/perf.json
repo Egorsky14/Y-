@@ -1,0 +1,494 @@
+{
+  "cinematic": {
+    "label": "cinematic",
+    "overview1000": {
+      "fps": 80.1,
+      "p50ms": 6,
+      "p95ms": 61.6,
+      "calls": 572,
+      "triangles": 624596,
+      "textures": 42,
+      "geometries": 416
+    },
+    "hq1000": {
+      "fps": 83.8,
+      "p50ms": 5,
+      "p95ms": 84.2,
+      "calls": 506,
+      "triangles": 624210,
+      "textures": 42,
+      "geometries": 416
+    },
+    "hq2100": {
+      "fps": 89.6,
+      "p50ms": 4.6,
+      "p95ms": 80.8,
+      "calls": 503,
+      "triangles": 624180,
+      "textures": 42,
+      "geometries": 411
+    },
+    "overview2100": {
+      "fps": 91.2,
+      "p50ms": 5.2,
+      "p95ms": 60,
+      "calls": 565,
+      "triangles": 624530,
+      "textures": 42,
+      "geometries": 411
+    },
+    "loadMs": 297,
+    "jsHeapMB": 45
+  },
+  "ve": {
+    "label": "ve",
+    "overview1000": {
+      "fps": 61.2,
+      "p50ms": 5.9,
+      "p95ms": 115.1,
+      "calls": 590,
+      "triangles": 1382134,
+      "textures": 50,
+      "geometries": 402
+    },
+    "hq1000": {
+      "fps": 64.4,
+      "p50ms": 5.8,
+      "p95ms": 123.1,
+      "calls": 567,
+      "triangles": 1382046,
+      "textures": 51,
+      "geometries": 412
+    },
+    "hq2100": {
+      "fps": 68.8,
+      "p50ms": 5.1,
+      "p95ms": 122.4,
+      "calls": 565,
+      "triangles": 1382216,
+      "textures": 52,
+      "geometries": 408
+    },
+    "overview2100": {
+      "fps": 66.6,
+      "p50ms": 5,
+      "p95ms": 120.7,
+      "calls": 584,
+      "triangles": 1382268,
+      "textures": 52,
+      "geometries": 408
+    },
+    "loadMs": 360,
+    "jsHeapMB": 61
+  },
+  "integration": {
+    "label": "integration",
+    "overview1000": {
+      "fps": 58.7,
+      "p50ms": 5.9,
+      "p95ms": 117.6,
+      "calls": 590,
+      "triangles": 1382134,
+      "textures": 50,
+      "geometries": 402
+    },
+    "hq1000": {
+      "fps": 61.3,
+      "p50ms": 5.3,
+      "p95ms": 139.2,
+      "calls": 567,
+      "triangles": 1382046,
+      "textures": 51,
+      "geometries": 412
+    },
+    "hq2100": {
+      "fps": 64.5,
+      "p50ms": 4.8,
+      "p95ms": 131.6,
+      "calls": 565,
+      "triangles": 1382216,
+      "textures": 52,
+      "geometries": 408
+    },
+    "overview2100": {
+      "fps": 66.7,
+      "p50ms": 4.8,
+      "p95ms": 120.1,
+      "calls": 584,
+      "triangles": 1382268,
+      "textures": 52,
+      "geometries": 408
+    },
+    "loadMs": 338,
+    "jsHeapMB": 59
+  },
+  "integration-r2": {
+    "label": "integration-r2",
+    "overview1000": {
+      "fps": 59.9,
+      "p50ms": 5.8,
+      "p95ms": 119.2,
+      "calls": 590,
+      "triangles": 1382134,
+      "textures": 50,
+      "geometries": 402
+    },
+    "hq1000": {
+      "fps": 61.1,
+      "p50ms": 5.6,
+      "p95ms": 137.5,
+      "calls": 567,
+      "triangles": 1382046,
+      "textures": 51,
+      "geometries": 412
+    },
+    "hq2100": {
+      "fps": 66.3,
+      "p50ms": 4.8,
+      "p95ms": 130.1,
+      "calls": 565,
+      "triangles": 1382216,
+      "textures": 52,
+      "geometries": 408
+    },
+    "overview2100": {
+      "fps": 65.7,
+      "p50ms": 4.9,
+      "p95ms": 123.7,
+      "calls": 584,
+      "triangles": 1382268,
+      "textures": 52,
+      "geometries": 408
+    },
+    "loadMs": 363,
+    "jsHeapMB": 61
+  },
+  "ve-r2": {
+    "label": "ve-r2",
+    "overview1000": {
+      "fps": 62.3,
+      "p50ms": 5.7,
+      "p95ms": 117.9,
+      "calls": 590,
+      "triangles": 1382134,
+      "textures": 50,
+      "geometries": 402
+    },
+    "hq1000": {
+      "fps": 63.2,
+      "p50ms": 5.4,
+      "p95ms": 132,
+      "calls": 567,
+      "triangles": 1382046,
+      "textures": 51,
+      "geometries": 412
+    },
+    "hq2100": {
+      "fps": 82.1,
+      "p50ms": 4.5,
+      "p95ms": 75.3,
+      "calls": 565,
+      "triangles": 1382216,
+      "textures": 52,
+      "geometries": 408
+    },
+    "overview2100": {
+      "fps": 122.7,
+      "p50ms": 4.2,
+      "p95ms": 45.7,
+      "calls": 584,
+      "triangles": 1382268,
+      "textures": 52,
+      "geometries": 408
+    },
+    "loadMs": 338,
+    "jsHeapMB": 48
+  },
+  "cinematic-r2": {
+    "label": "cinematic-r2",
+    "overview1000": {
+      "fps": 80.9,
+      "p50ms": 6,
+      "p95ms": 59.4,
+      "calls": 572,
+      "triangles": 624596,
+      "textures": 42,
+      "geometries": 416
+    },
+    "hq1000": {
+      "fps": 85.6,
+      "p50ms": 5.2,
+      "p95ms": 80.1,
+      "calls": 506,
+      "triangles": 624210,
+      "textures": 42,
+      "geometries": 416
+    },
+    "hq2100": {
+      "fps": 92.2,
+      "p50ms": 4.6,
+      "p95ms": 77.1,
+      "calls": 503,
+      "triangles": 624180,
+      "textures": 42,
+      "geometries": 411
+    },
+    "overview2100": {
+      "fps": 90.4,
+      "p50ms": 5.2,
+      "p95ms": 62.5,
+      "calls": 565,
+      "triangles": 624530,
+      "textures": 42,
+      "geometries": 411
+    },
+    "loadMs": 392,
+    "jsHeapMB": 51
+  },
+  "ab-ve-1": {
+    "label": "ab-ve-1",
+    "overview1000": {
+      "fps": 60.5,
+      "p50ms": 5.9,
+      "p95ms": 115.6,
+      "calls": 590,
+      "triangles": 1382134,
+      "textures": 50,
+      "geometries": 402
+    },
+    "hq1000": {
+      "fps": 61.8,
+      "p50ms": 5.6,
+      "p95ms": 130.8,
+      "calls": 567,
+      "triangles": 1382046,
+      "textures": 51,
+      "geometries": 412
+    },
+    "hq2100": {
+      "fps": 66.9,
+      "p50ms": 5.1,
+      "p95ms": 123.1,
+      "calls": 565,
+      "triangles": 1382216,
+      "textures": 52,
+      "geometries": 408
+    },
+    "overview2100": {
+      "fps": 66.6,
+      "p50ms": 5.2,
+      "p95ms": 113.6,
+      "calls": 584,
+      "triangles": 1382268,
+      "textures": 52,
+      "geometries": 408
+    },
+    "loadMs": 587,
+    "jsHeapMB": 67
+  },
+  "ab-int-1": {
+    "label": "ab-int-1",
+    "overview1000": {
+      "fps": 64.2,
+      "p50ms": 5.9,
+      "p95ms": 106.5,
+      "calls": 590,
+      "triangles": 1382134,
+      "textures": 50,
+      "geometries": 402
+    },
+    "hq1000": {
+      "fps": 64.6,
+      "p50ms": 5.8,
+      "p95ms": 125.1,
+      "calls": 567,
+      "triangles": 1382046,
+      "textures": 51,
+      "geometries": 412
+    },
+    "hq2100": {
+      "fps": 70,
+      "p50ms": 5.1,
+      "p95ms": 116.4,
+      "calls": 565,
+      "triangles": 1382216,
+      "textures": 52,
+      "geometries": 408
+    },
+    "overview2100": {
+      "fps": 71.9,
+      "p50ms": 5.3,
+      "p95ms": 103,
+      "calls": 584,
+      "triangles": 1382268,
+      "textures": 52,
+      "geometries": 408
+    },
+    "loadMs": 328,
+    "jsHeapMB": 55
+  },
+  "ab-ve-2": {
+    "label": "ab-ve-2",
+    "overview1000": {
+      "fps": 64.5,
+      "p50ms": 5.8,
+      "p95ms": 105.9,
+      "calls": 590,
+      "triangles": 1382134,
+      "textures": 50,
+      "geometries": 402
+    },
+    "hq1000": {
+      "fps": 66.8,
+      "p50ms": 5.5,
+      "p95ms": 124.4,
+      "calls": 567,
+      "triangles": 1382046,
+      "textures": 51,
+      "geometries": 412
+    },
+    "hq2100": {
+      "fps": 68.8,
+      "p50ms": 4.9,
+      "p95ms": 120.9,
+      "calls": 565,
+      "triangles": 1382216,
+      "textures": 52,
+      "geometries": 408
+    },
+    "overview2100": {
+      "fps": 69.1,
+      "p50ms": 5,
+      "p95ms": 113.7,
+      "calls": 584,
+      "triangles": 1382268,
+      "textures": 52,
+      "geometries": 408
+    },
+    "loadMs": 318,
+    "jsHeapMB": 65
+  },
+  "ab-int-2": {
+    "label": "ab-int-2",
+    "overview1000": {
+      "fps": 66.5,
+      "p50ms": 5.9,
+      "p95ms": 98.2,
+      "calls": 590,
+      "triangles": 1382134,
+      "textures": 50,
+      "geometries": 402
+    },
+    "hq1000": {
+      "fps": 66.8,
+      "p50ms": 5.5,
+      "p95ms": 121.8,
+      "calls": 567,
+      "triangles": 1382046,
+      "textures": 51,
+      "geometries": 412
+    },
+    "hq2100": {
+      "fps": 71.8,
+      "p50ms": 4.9,
+      "p95ms": 118.4,
+      "calls": 565,
+      "triangles": 1382216,
+      "textures": 52,
+      "geometries": 408
+    },
+    "overview2100": {
+      "fps": 69.5,
+      "p50ms": 5.2,
+      "p95ms": 109.8,
+      "calls": 584,
+      "triangles": 1382268,
+      "textures": 52,
+      "geometries": 408
+    },
+    "loadMs": 319,
+    "jsHeapMB": 71
+  },
+  "ab-cin-1": {
+    "label": "ab-cin-1",
+    "overview1000": {
+      "fps": 107.3,
+      "p50ms": 6.3,
+      "p95ms": 29.6,
+      "calls": 572,
+      "triangles": 624596,
+      "textures": 42,
+      "geometries": 416
+    },
+    "hq1000": {
+      "fps": 106.6,
+      "p50ms": 5.5,
+      "p95ms": 48.2,
+      "calls": 506,
+      "triangles": 624210,
+      "textures": 42,
+      "geometries": 416
+    },
+    "hq2100": {
+      "fps": 120.8,
+      "p50ms": 4.8,
+      "p95ms": 45.6,
+      "calls": 503,
+      "triangles": 624180,
+      "textures": 42,
+      "geometries": 411
+    },
+    "overview2100": {
+      "fps": 126.7,
+      "p50ms": 5.3,
+      "p95ms": 32.7,
+      "calls": 565,
+      "triangles": 624530,
+      "textures": 42,
+      "geometries": 411
+    },
+    "loadMs": 395,
+    "jsHeapMB": 36
+  },
+  "ab-cin-2": {
+    "label": "ab-cin-2",
+    "overview1000": {
+      "fps": 114.3,
+      "p50ms": 6,
+      "p95ms": 27.4,
+      "calls": 572,
+      "triangles": 624596,
+      "textures": 42,
+      "geometries": 416
+    },
+    "hq1000": {
+      "fps": 117.3,
+      "p50ms": 5.2,
+      "p95ms": 40,
+      "calls": 506,
+      "triangles": 624210,
+      "textures": 42,
+      "geometries": 416
+    },
+    "hq2100": {
+      "fps": 118.2,
+      "p50ms": 4.5,
+      "p95ms": 52,
+      "calls": 503,
+      "triangles": 624180,
+      "textures": 42,
+      "geometries": 411
+    },
+    "overview2100": {
+      "fps": 116.7,
+      "p50ms": 5.1,
+      "p95ms": 40.8,
+      "calls": 565,
+      "triangles": 624530,
+      "textures": 42,
+      "geometries": 411
+    },
+    "loadMs": 313,
+    "jsHeapMB": 48
+  }
+}
