@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useApp, useGame } from '@/app/store';
 import { lotById } from '@/game/world/cityLayout';
+import { deviceProfile } from '@/app/device';
 
 export function Toasts() {
   const allToasts = useApp((s) => s.toasts);
@@ -115,7 +116,7 @@ export function TutorialHint() {
     const findings = jobs.find((j) => j.status === 'awaiting-diagnosis');
     const quoted = jobs.find((j) => j.status === 'quoted');
     const install = jobs.find((j) => j.status === 'accepted' && j.kind === 'replacement');
-    if (lead) return { k: '1', text: `New service call from ${s.customers[lead.customerId].name}. Click the glowing pin or the house to accept it.` };
+    if (lead) return { k: '1', text: `New service call from ${s.customers[lead.customerId].name}. ${deviceProfile().touch ? 'Tap' : 'Click'} the glowing pin or the house to accept it.` };
     if (accepted) return { k: '2', text: `Dispatch a technician and a vehicle to ${s.customers[accepted.customerId].address}.` };
     if (findings) return { k: '3', text: `Findings are ready at ${s.customers[findings.customerId].address}. Review the measurements and choose a diagnosis.` };
     if (quoted) return { k: '4', text: 'Present a repair or replacement recommendation to the customer.' };

@@ -1,4 +1,4 @@
-import { defineConfig } from '@playwright/test';
+import { defineConfig, devices } from '@playwright/test';
 import { existsSync } from 'node:fs';
 
 // The CI container ships a SwiftShader Chromium at a fixed path. On a developer machine that
@@ -17,9 +17,15 @@ export default defineConfig({
   retries: 0,
   reporter: [['list']],
   projects: [
-    { name: 'desktop-1080p', use: { viewport: { width: 1920, height: 1080 } } },
+    { name: 'desktop-1080p', use: { viewport: { width: 1920, height: 1080 } }, testIgnore: /mobile\.spec\.ts/ },
     { name: 'laptop-768p', use: { viewport: { width: 1366, height: 768 } }, testMatch: /graphics\.spec\.ts/ },
     { name: 'small-1024', use: { viewport: { width: 1024, height: 768 } }, testMatch: /graphics\.spec\.ts/ },
+    // Phones and a tablet, emulated in Chromium (touch, coarse pointer, mobile viewport and DPR).
+    { name: 'iphone-portrait', use: { ...devices['iPhone 14'], browserName: 'chromium' }, testMatch: /mobile\.spec\.ts/ },
+    { name: 'iphone-landscape', use: { ...devices['iPhone 14 landscape'], browserName: 'chromium' }, testMatch: /mobile\.spec\.ts/ },
+    { name: 'android-portrait', use: { ...devices['Pixel 7'], browserName: 'chromium' }, testMatch: /mobile\.spec\.ts/ },
+    { name: 'android-landscape', use: { ...devices['Pixel 7 landscape'], browserName: 'chromium' }, testMatch: /mobile\.spec\.ts/ },
+    { name: 'tablet-portrait', use: { ...devices['iPad (gen 7)'], browserName: 'chromium' }, testMatch: /mobile\.spec\.ts/ },
   ],
   use: {
     baseURL: 'http://127.0.0.1:4173',

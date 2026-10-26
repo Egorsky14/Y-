@@ -32,6 +32,20 @@ export function CameraRig() {
   const controls = useRef<MapControlsImpl>(null);
   const photo = useApp((s) => s.photo.on);
   const { camera } = useThree();
+  const size = useThree((s) => s.size);
+
+  // Portrait screens (phones held upright): a fixed 38° vertical field of view leaves only ~18° of
+  // city across. Widen the vertical angle (to at most 75°) so the horizontal view stays close to a
+  // landscape screen's; landscape and desktop keep 38°.
+  useEffect(() => {
+    if (!(camera instanceof THREE.PerspectiveCamera) || size.height === 0) return;
+    const aspect = size.width / size.height;
+    const fov = aspect >= 1 ? 38 : Math.min(75, THREE.MathUtils.radToDeg(2 * Math.atan((Math.tan(THREE.MathUtils.degToRad(19)) * 1.6) / aspect)));
+    if (Math.abs(camera.fov - fov) > 0.01) {
+      camera.fov = fov;
+      camera.updateProjectionMatrix();
+    }
+  }, [camera, size.width, size.height]);
   const command = useApp((s) => s.cameraCommand);
   const flight = useRef<Flight | null>(null);
   const keys = useRef<Set<string>>(new Set());

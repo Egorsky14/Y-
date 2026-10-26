@@ -46,15 +46,25 @@ export function GameScene() {
   const select = useApp((s) => s.select);
   const quality = useApp((s) => s.settings.quality);
   const initial = DEFAULT_TARGET.clone().add(DEFAULT_OFFSET);
+  // MSAA is fixed when the WebGL context is created; the Battery Saver (low) preset drops it, and
+  // the key remounts the canvas when that changes.
+  const antialias = quality !== 'low';
   return (
     <Canvas
+      key={antialias ? 'msaa' : 'no-msaa'}
       shadows={quality !== 'low'}
       dpr={quality === 'ultra' ? [1, 2] : quality === 'high' ? [1, 1.5] : quality === 'medium' ? [1, 1.25] : 1}
       camera={{ position: [initial.x, initial.y, initial.z], fov: 38, near: 1, far: 3000 }}
-      gl={{ antialias: true, powerPreference: 'high-performance', toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.05, preserveDrawingBuffer: true }}
+      gl={{ antialias, powerPreference: 'high-performance', toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.05, preserveDrawingBuffer: true }}
       onCreated={({ gl }) => {
         // Synchronous shader-log reads stall startup on slow drivers; errors still surface via the console.
         gl.debug.checkShaderErrors = import.meta.env.DEV;
+        // Phones drop the GPU context under memory pressure or after long backgrounding.
+        gl.domElement.addEventListener('webglcontextlost', (e) => {
+          e.preventDefault();
+          useApp.getState().setContextLost(true);
+        });
+        gl.domElement.addEventListener('webglcontextrestored', () => useApp.getState().setContextLost(false));
       }}
       onPointerMissed={(e) => {
         if (e.button === 0) select(null);
