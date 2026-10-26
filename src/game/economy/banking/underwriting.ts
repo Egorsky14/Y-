@@ -110,7 +110,15 @@ export function creditRating(state: GameState, snap = businessSnapshot(state)): 
     if (pts !== 0) factors.push({ label: `30-day profit margin ${Math.round(margin * 100)}%`, points: pts });
   }
   if (snap.cash < 0) factors.push({ label: 'Negative cash balance', points: -8 });
-  else if (snap.monthlyObligations > 0 && snap.cash >= snap.monthlyObligations * 3 && snap.cash >= 5000) factors.push({ label: 'Cash covers 3+ months of debt payments', points: 4 });
+  else {
+    // Liquidity: reserves against a month of operating costs (credit for debt-free companies too).
+    if (snap.daysInBusiness >= 10 && snap.costs30 > 0) {
+      const cover = snap.cash / snap.costs30;
+      const pts = cover >= 1 ? 6 : cover >= 0.5 ? 3 : cover < 0.15 ? -3 : 0;
+      if (pts !== 0) factors.push({ label: `Cash reserves (${cover.toFixed(1)} months of costs)`, points: pts });
+    }
+    if (snap.monthlyObligations > 0 && snap.cash >= snap.monthlyObligations * 3 && snap.cash >= 5000) factors.push({ label: 'Cash covers 3+ months of debt payments', points: 4 });
+  }
   const score = Math.round(Math.max(0, Math.min(100, factors.reduce((s, f) => s + f.points, 0))));
   return { score, factors: factors.map((f) => ({ ...f, points: Math.round(f.points * 10) / 10 })) };
 }
