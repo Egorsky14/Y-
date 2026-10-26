@@ -16,9 +16,11 @@ APIs, payment processors or credit bureaus, and all names and rates are fictiona
 | `src/game/economy/banking/underwriting.ts` | Business snapshot (30-day operating revenue and costs, debt, obligations, collateral), credit rating, offers |
 | `src/game/economy/banking/banking.ts` | Player actions and the daily cycle (`processBankingDay`, called once per day from `endOfDay`) |
 | `src/ui/panels/BankingTab.tsx` | Finances › Banking & Credit |
-| `src/tests/banking.test.ts` | 24 unit tests |
+| `src/game/economy/balanceSheet.ts` | Book-value balance sheet and cash-flow groups used to compare strategies |
+| `src/tests/banking.test.ts` | 28 unit tests |
 | `src/tests/bankingScenarios.test.ts` | Balance scenarios (opt-in, see below) |
 | `e2e/banking.spec.ts` | Browser test of the whole borrow → spend → repay → save/load → payoff flow |
+| `e2e/banking-layout.spec.ts` | Banking tab layout at 390×844 and 390×664 (touch), 1024×768 and 1920×1080 |
 
 Player actions are ordinary `GameAction`s: `bank-accept-loan`, `bank-loan-extra-payment`,
 `bank-loan-payoff`, `bank-open-credit-line`, `bank-credit-draw`, `bank-credit-repay` and
@@ -72,6 +74,10 @@ seeded weekly variation of ±0.4, clamped to each product's range.
   - Reopening the panel or reloading never re-rolls a quote, and reading offers never changes
     state.
   - An offer id includes its window (`microloan@7`), so accepting an expired quote is refused.
+- **Amount:** an offer is the most the lender approves. The player borrows any amount from the
+  product minimum up to the approval, in $100 steps, and the review step recomputes the fee,
+  payment and total interest live. Before this change, accepting always took the whole
+  approval, so financed growth over-borrowed: $128k of debt to cover a few van-sized shortfalls.
 - **Payments:**
   - The installment is P·r / (1 − (1+r)^−n), with an exact P/n when the rate is zero.
   - Each installment pays interest on the balance first, then principal.
@@ -137,23 +143,47 @@ recoverable:
 ## Credit rating
 
 The credit rating is an internal 0–100 score that this game's lenders use. It is a game mechanic,
-not a consumer credit score, and it starts at 52. The Banking tab shows every factor:
+not a consumer credit score, and it starts at 52. The Banking tab shows every factor.
+
+**The rule: taking on debt can only lower the rating.** The one way borrowing builds the rating
+is months of on-time payments, which take time and cost interest. Idle borrowed cash earns
+nothing. A unit test checks six borrowing patterns against the same company without debt: two
+microloan sizes, an online loan, a line drawn 10%, a line drawn fully, and everything at once. In
+every pattern the rating stays the same or drops. Under the earlier rules, holding the microloan
+raised it from 73 to 77.
 
 | Factor | Points |
 |---|---|
 | New business baseline | +52 |
 | Operating history | +1.5 per week, up to +12 |
-| On-time payments | +2 each, up to +15 |
+| On-time payment history | +3 per 30-day period with an on-time payment, up to +15 (more accounts do not speed it up) |
 | Missed payments, by age (≤30, ≤60, ≤90, older days) | −12, −7, −3, −1 each; total capped at −36; forgotten after 120 days |
 | Account status | past due −8, delinquent −18, default −30 |
-| Credit line use | >90% −8, >70% −5, >50% −2, 1–30% +3 |
-| Debt vs. 30-day revenue (after the 14-day grace) | >4× −10, >2.5× −6, >1.5× −2, <0.5× +2 |
+| Credit line use | >90% −8, >70% −5, >50% −2 (no bonus) |
+| Debt vs. 30-day revenue (after the 14-day grace) | >4× −10, >2.5× −6, >1.5× −2 (no bonus) |
+| Debt service coverage: (profit + interest) ÷ monthly debt payments, after the grace | <1× −6, <1.25× −3 (no bonus) |
 | 30-day profit margin | margin × 40, capped at ±10 |
-| Cash reserves vs. 30-day costs | ≥1 month +6, ≥0.5 +3, <0.15 −3 |
-| Cash covers 3+ months of debt payments | +4 |
+| Cash reserves net of debt, vs. 30-day costs | ≥1 month +6, ≥0.5 month +3 |
+| Thin cash buffer (gross cash under 0.15 month of costs) | −3 |
 | Negative cash | −8 |
 
 **Bands:** Excellent ≥ 80, Good ≥ 65, Fair ≥ 50, Weak ≥ 35, Poor below that.
+
+**What changed in this refinement, and why:**
+
+- **Reserves:** reserves used to count gross cash, so borrowed cash sitting in the bank looked
+  like a reserve. They now count cash minus debt.
+- **Debt service coverage:** "Cash covers 3+ months of debt payments" (+4) was replaced by debt
+  service coverage. Coverage is earned by operations, so idle cash can't inflate it. Like
+  utilization and leverage, it only penalizes; profitability is already rewarded by the margin
+  factor.
+- **No small-borrowing bonuses:** the +2 for debt under half a month of revenue and the +3 for
+  using 1–30% of a line are gone. Both let a company raise its rating by borrowing a little and
+  holding it.
+- **Payment history by month:** history counted each payment (+2), so three accounts built it
+  three times as fast. It now counts months with an on-time payment (+3 each).
+- **Existing saves:** `onTimeMonths` and `lastOnTimeMonth` are optional fields. Schema-2 saves
+  made before this change start their monthly history at 0.
 
 ## Save and load
 
@@ -167,52 +197,149 @@ not a consumer credit score, and it starts at 52. The Banking tab shows every fa
 - **Round trip:** a save and reload is byte-identical, and the loaded game continues exactly like
   the original. Unit tests and the browser test both check this.
 
+## Valuation: book equity, not cash
+
+`src/game/economy/balanceSheet.ts` gives every comparison one definition, and it is unit tested.
+
+- **Assets:**
+  - Cash and open receivables.
+  - Owned vans at resale value (what the Fleet panel offers). Leased vans are excluded.
+  - HQ improvements at cost, depreciated straight-line over 10 years. They have no resale
+    market in the game.
+- **Liabilities:** everything owed today without a prepayment fee. For loans: principal,
+  past-due interest and fees, and interest accrued since the last installment. For the line:
+  principal, billed and accrued interest, and fees.
+- **Equity:** assets minus liabilities. The scenarios compare equity change over the campaign.
+  Borrowed cash is matched by its liability, so it is never income.
+- **Cash flows:**
+  - Operating includes interest and fees, as under US GAAP. They are also reported separately
+    as financing cost.
+  - Investing covers vans, upgrades and HQ improvements.
+  - Financing covers proceeds, principal, draws and repayments.
+  - Owner draws and opening capital are kept separate.
+- **Controlled test:** two identical companies, one of which takes a loan and a line and holds
+  the cash. After 75 days, their equity differs by exactly the interest and fees paid plus the
+  interest accrued.
+
+The earlier "net position" (cash + receivables − debt) left out the vans. A strategy that turned
+cash into vans looked poorer than one sitting on cash, and a loan spent on a van looked like pure
+loss.
+
 ## Balance scenarios
 
-To reproduce: `BANKING_SCENARIOS=1 npx vitest run src/tests/bankingScenarios.test.ts`. The run
-takes about a minute.
+To reproduce:
 
-Every scenario plays the full 90-day campaign with seed 2026 and the same autopilot owner. The
-owner accepts every lead, dispatches idle technicians, and hires when three or more accepted jobs
-are waiting (at most once every 10 days). The owner buys a van when there are more technicians
-than vans and cash allows. Ten days in, local-services ads go on.
+```
+BANKING_SCENARIOS=1 npx vitest run src/tests/bankingScenarios.test.ts --reporter=verbose
+```
 
-| Scenario | Revenue | Ending cash | Debt left | Net position† | Interest + fees | Misses | Status | Rating |
+The run takes about 11 minutes and prints a `SCENARIO_JSON` line with every run.
+
+**Method.** Every scenario plays the 90-day campaign on five world seeds (2026, 7, 42, 1234 and
+99) with the same autopilot owner:
+
+- **Accepting work:** the owner accepts a lead only when a crew (a technician plus a van) is free
+  for it, so unserved demand shows up as expired leads. Accepted jobs never expire in the game,
+  so the old autopilot, which accepted everything, hid capacity limits.
+- **Fatigue:** a technician over 50 fatigue rests, because overwork destroys morale and
+  technicians quit.
+- **Growth:** when 4 or more leads expired in the last 5 days, the owner adds one step at a
+  time: a van for a technician without one, otherwise a technician, and the parking upgrade when
+  HQ is full. A hire is only made when the van that goes with it is affordable as well, after
+  keeping an $8k reserve.
+  - **Self-funded:** the owner waits until cash covers the step.
+  - **Financed:** the owner borrows the shortfall, using the cheapest approved loan for just the
+    amount needed, then the line.
+- **Markets:**
+
+  | Market | Reputation | Brand | Ads |
+  |---|---|---|---|
+  | Normal | 4.2 | 8 | $120/day |
+  | High demand | 4.8 | 45 | $260/day |
+  | Low demand | 3.3 | 0 | none |
+
+- **Why five seeds:** one seed is not enough. A few hundred dollars of difference flips a hiring
+  decision and the runs diverge, so results are means over seeds, with the number of seeds where
+  a strategy beat its baseline.
+
+### Results (means over five seeds, current rules)
+
+| Scenario | Revenue | Jobs | Expired leads | Crew T/V | Operating CF | Investing CF | Financing CF | Financing cost | Liabilities | Δ Equity | Rating |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| Conservative: self-funded growth | $91,979 | 267 | 143 | 2/2 | $10,857 | −$10,000 | $0 | $0 | $0 | +$28,616 | 68 |
+| Microloan on day 1, held as cash | $94,083 | 271 | 145 | 2/2 | $13,279 | −$10,000 | $5,089 | $216 | $5,139 | +$29,705 | 78 |
+| Seasonal line use | $91,979 | 267 | 143 | 2/2 | $10,836 | −$10,000 | $1,985 | $21 | $2,022 | +$28,558 | 69 |
+| Every offer on day 1, held as cash | $92,187 | 268 | 149 | 1/1 | $14,205 | −$3,460 | $14,707 | $889 | $14,950 | +$28,132 | 81 |
+| Struggling: loan, owner draws $1,500/day | $84,574 | 254 | 133 | 1/1 | $23,615 | $0 | $8,000 | $240 | $9,823 | −$93,740 | 3 |
+| Online loan held as cash, paid off day 45 | $92,750 | 268 | 147 | 2/1 | $14,094 | −$6,800 | $0 | $617 | $0 | +$30,531 | 78 |
+| Normal demand: financed growth | $112,519 | 369 | 91 | 2/2 | $49 | −$29,400 | $33,182 | $997 | $33,476 | +$21,059 | 54 |
+| High demand: self-funded growth | $161,230 | 384 | 270 | 2/2 | $42,734 | −$21,500 | $0 | $0 | $0 | +$60,614 | 74 |
+| High demand: financed growth | $216,151 | 547 | 152 | 2/4 | $41,527 | −$51,080 | $33,269 | $997 | $33,539 | +$66,657 | 73 |
+| Low demand: self-funded growth | $57,810 | 223 | 79 | 2/1 | $7,182 | −$3,160 | $0 | $0 | $0 | +$20,618 | 76 |
+| Low demand: financed growth | $60,111 | 257 | 52 | 1/2 | −$3,274 | −$16,940 | $13,519 | $720 | $14,069 | +$9,466 | 42 |
+| Low demand: borrow to expand on plan | $69,210 | 270 | 45 | 1/2 | −$10,870 | −$20,020 | $9,957 | $465 | $10,964 | +$2,895 | 30 |
+
+"Struggling" was delinquent on 5 of 5 seeds; "low demand: borrow on plan" on 3 of 5; "low demand:
+financed" on 1 of 5. Operating cash flow excludes owner draws, which is why the struggling run
+shows a positive figure.
+
+### Financed against self-funded growth (same seed, then averaged)
+
+| Pair | Δ Revenue | Δ Jobs | Δ Expired leads | Δ Operating CF | Financing cost | Δ Crew (T/V) | Δ Equity (mean, range) | Seeds better |
 |---|---|---|---|---|---|---|---|---|
-| Conservative: no credit | $106,512 | $8,414 | $0 | $52,652 | $0 | 0 | current | 62 |
-| Modest: microloan on day 1 | $106,512 | $13,286 | $5,090 | $52,434 | $218 | 0 | current | 72 |
-| Seasonal line use (draw below $5k, repay above $12k) | $106,512 | $8,308 | $0 | $52,546 | $106 | 1 | current | 57 |
-| Multiple loans: every approved offer plus a full line on day 1 | $117,834 | $26,803 | $16,449 | $48,572 | $1,006 | 0 | current | 98 |
-| Struggling: online loan, owner draws $1,500/day from day 5 | $114,350 | −$82,860 | $8,000 | −$46,987 | $240 | 2 | delinquent | 11 |
-| Early payoff: online loan repaid on day 45 | $106,512 | $7,739 | $0 | $51,977 | $675 | 0 | current | 64 |
+| High demand | +$54,921 | +163 | −118 | −$1,207 | $997 | 0 / +1.6 | **+$6,043** (−$2,129 … +$16,270) | 4 of 5 |
+| Normal demand | +$20,540 | +102 | −53 | −$10,807 | $997 | +0.8 / +0.8 | −$7,558 (−$18,722 … +$1,173) | 1 of 5 |
+| Low demand | +$2,301 | +35 | −27 | −$10,457 | $720 | −0.4 / +0.8 | −$11,152 (−$22,988 … −$3,900) | 0 of 5 |
+| Low demand, borrow on plan | +$11,400 | +47 | −35 | −$18,052 | $465 | −0.4 / +0.8 | **−$17,723** (−$43,444 … −$103) | 0 of 5 |
 
-†Net position is cash + receivables − debt.
+What this shows:
 
-What the table shows:
+- **Financing pays where demand goes unmet.** In the high-demand market, borrowing to add vans
+  as soon as leads expire served 163 more jobs and $55k more revenue. Equity rose $6k more than
+  waiting for cash, on 4 of 5 seeds. The extra vans earn more than their price, depreciation and
+  about $1k of interest and fees.
+- **It is not a free win.** In a normal market, financed growth brings more jobs (+102) but less
+  equity (−$7.6k on average, better on 1 of 5 seeds). The extra crew's wages and the vans'
+  depreciation eat the margin, because demand only partly fills the new capacity.
+- **In a weak market, borrowing to grow loses on every seed.** Demand-led financed growth lost
+  $11k of equity on average. An owner who expanded on a plan rather than on demand lost $18k on
+  average and up to $43k, and ended delinquent on 3 of 5 seeds with a rating of 30 (Weak).
+- **Holding borrowed cash: equity effect within noise, rating gain only from payment history.**
+  - Borrowing without using the money changes equity by −$0.5k to +$1.9k on average. That is
+    inside the ±$7k seed noise; with the cash held, the different runs come from tiny decision
+    differences.
+  - The controlled unit test isolates the real effect: equity falls by exactly the interest and
+    fees.
+  - Ratings are 78–81 against 68. Like-for-like on the same seed, the microloan rates 4–6 points
+    higher, which matches its two on-time installments (+3 each). That is the intended way to
+    build credit, and it costs interest.
+- **Distress still escalates as designed.** The overdrawing owner reached delinquent on every
+  seed, and the rating collapsed to 3.
 
-- **Borrowing never creates value by itself.** Every borrowing scenario ends with a net position
-  at or below the conservative run. The difference is the interest and fees paid. A unit test
-  enforces this: taking every offer and maxing the line lowers cash minus debt.
-- **The early economy doesn't need credit.** With $25k of starting cash, the autopilot's growth
-  was never cash-constrained, so a modest loan changes nothing operationally. It costs $218 and
-  builds 10 rating points. Loans pay off when growth is limited by cash: a second van and
-  technician before the cash exists, or covering payroll while warranty receivables (net 35) are
-  outstanding. This is a reasonable baseline: credit is a tool, not free money.
-- **Using the line without reserves causes a miss.** The seasonal strategy drew only when cash
-  fell below $5k. One statement came due when cash was below the minimum, so one late fee and a
-  rating 5 points lower than the conservative run.
-- **Leverage is rated well while it is serviced.** "Multiple loans" keeps $16k of debt but pays
-  on time with borrowed cash in the bank, so it rates 98. On day 1 the rating-scaled offer sizes
-  limit how much it can borrow: about $16.5k in total, well under the $30k debt cap. Weakness:
-  idle borrowed cash counts toward the reserves factor. Lenders would normally net it out. Watch
-  this when the economy gets harder.
-- **Distress escalates as designed.** The overdrawing owner missed both installments, reached
-  delinquent, and the rating collapsed to 11 (Poor). After day 91 the account would reach
-  default, and no lender will extend more credit at that point.
-- **Early payoff stops the interest.** The online loan's total cost was $675: the 3% origination
-  fee, one installment of interest, interest up to the payoff, and the 2% prepayment fee.
-  Holding an $8k, 12-month loan at about 24% to term costs about $1,080 in interest on top of
-  the origination fee. The prepayment fee softens the saving but does not erase it.
+### Before and after this refinement
+
+The same harness, seeds and valuation were run against the previous rules (commit `6983358`):
+no amount choice, so loans took the full approval, and the old rating factors.
+
+| | Liabilities, day 90 | Financing cost | Δ Equity vs. self-funded | Seeds better | Rating |
+|---|---|---|---|---|---|
+| High demand, financed: before | $127,755 | $3,205 | +$460 | 3 of 5 | 89 |
+| High demand, financed: after | $33,539 | $997 | **+$6,043** | 4 of 5 | 73 |
+| Normal demand, financed: before | $91,973 | $2,491 | −$22,380 | 0 of 5 | 74 |
+| Normal demand, financed: after | $33,476 | $997 | −$7,558 | 1 of 5 | 54 |
+| Low demand, financed: before | $57,877 | $1,491 | −$16,612 | 0 of 5 | 41 |
+| Low demand, financed: after | $14,069 | $720 | −$11,152 | 0 of 5 | 42 |
+| Every offer held as cash: before | $16,723 | $1,003 | −$277 | 2 of 5 | **99** |
+| Every offer held as cash: after | $14,950 | $889 | −$485 | 1 of 5 | 81 |
+| Microloan held as cash: before | $5,139 | $216 | +$1,088 | 1 of 5 | 82 |
+| Microloan held as cash: after | $5,139 | $216 | +$1,088 | 1 of 5 | 78 |
+
+What changed:
+
+- **Choosing the amount:** this turned financed expansion from roughly break-even in a hot
+  market (+$0.5k) into a real advantage (+$6k), and cut needless debt by about 75%.
+- **Rating incentives:** holding every offer as cash no longer reaches 99. Its remaining edge
+  over the conservative run is payment history.
 
 ## Tuning notes and assumptions
 
@@ -220,10 +347,11 @@ What the table shows:
   market data.
 - **Starter line on day 1:** the starter line is approved on day 1 with a $3k limit. Its startup
   limit was raised from $5k to $6k so that the rating-52 scaling (×0.55) still clears the $3k
-  product minimum. A product described as "for young companies" should be usable on day 1.
-- **Leverage grace period:** the debt-to-revenue factor waits out the 14-day startup grace.
-  Without it, accepting any loan on day 1 divided debt by $0 revenue, cost 10 points, and locked
-  the player out of the line.
-- **Reviewing the economy:** if the economy gets harder, for example with seasonal demand, start
-  with `revenueMultiple`, `debtCapRevenueMonths`, `maxPaymentToRevenue` and `aprPerScorePoint`
-  in `config.ts`.
+  product minimum.
+- **Leverage grace period:** the debt-to-revenue and coverage factors wait out the 14-day
+  startup grace. Without it, any loan on day 1 divided debt by $0 revenue.
+- **Normal market ads:** advertising at $120/day lowers equity in the normal market when crews
+  are already full; the low-demand runs save that spend. This is a property of the marketing
+  economy, not of banking, and is worth its own balance pass.
+- **Where to tune lending:** `revenueMultiple`, `debtCapRevenueMonths`, `maxPaymentToRevenue` and
+  `aprPerScorePoint` in `config.ts`.
