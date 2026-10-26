@@ -17,6 +17,7 @@ import { Celebration, ErrorBanner, Toasts, TutorialHint } from '@/ui/overlays/Ov
 import { MainMenu } from '@/ui/menus/MainMenu';
 import { CampaignSummary } from '@/ui/menus/CampaignSummary';
 import { WorldLabels } from '@/ui/overlays/WorldLabels';
+import { PhotoMode } from '@/ui/overlays/PhotoMode';
 
 function useHotkeys() {
   useEffect(() => {
@@ -46,6 +47,10 @@ function useHotkeys() {
           break;
         case 'Home':
           app.camera({ type: 'reset' });
+          break;
+        case 'p':
+        case 'P':
+          app.setPhoto({ on: !app.photo.on });
           break;
         case 'f':
         case 'F': {
@@ -79,6 +84,7 @@ function useHotkeys() {
 export function App() {
   const screen = useApp((s) => s.screen);
   const panel = useApp((s) => s.panel);
+  const photo = useApp((s) => s.photo.on);
   useHotkeys();
   useEffect(() => startGameLoop(), []);
 
@@ -88,7 +94,11 @@ export function App() {
       <div className="app-world">
         <GameScene />
       </div>
-      <div className="app-ui">
+      <div className={`app-ui ${photo ? 'photo' : ''}`}>
+        {photo ? (
+          <PhotoMode />
+        ) : (
+          <>
         <WorldLabels />
         <TopHud />
         <Toasts />
@@ -106,6 +116,8 @@ export function App() {
         {panel === 'finance' && <FinancePanel />}
         {panel === 'settings' && <SettingsPanel />}
         {screen === 'summary' && <CampaignSummary />}
+          </>
+        )}
       </div>
     </div>
   );

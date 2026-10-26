@@ -16,9 +16,9 @@ Date: 2026-10-25 · Build: Vite 8 production bundle · Branch `ccr-9ef3ffbb-g9q8
 
 ## Browser test (Playwright, production build, headless Chromium + SwiftShader)
 
-`npm run build && npm run test:e2e` — **3 passed** (gameplay 7.0 min at ≈1 fps software-rendered; graphics 1.6 min at 1920×1080 and 1.1 min at 1366×768).
+`npm run build && npm run test:e2e` — **4 passed** on `v3-visual-excellence` (gameplay 10.8 min at ≈0.5 fps software-rendered; graphics 2.7 min at 1920×1080, 1.8 min at 1366×768, 1.6 min at 1024×768). On `v3-premium-graphics` the same gate was 3 passed (gameplay 7.0 min, graphics 1.6 and 1.1 min).
 
-Two specs run. `graphics.spec.ts` (both viewports) checks the premium renderer: WebGL draw calls and triangles via the in-scene probe, the glTF van fetched and mounted with wheel/steer nodes, 32 merged houses, articulated workers, instanced vegetation layers, selection, routed driving whose rendered position follows the simulation with spinning wheels, the technician at the correct lot clear of the wall, diagnosis, payment and a clean console. `gameplay.spec.ts` performs the mandatory end-to-end flow through the real UI and verifies state through the `window.__ego` hook:
+Two specs run. `graphics.spec.ts` (three viewports) checks the premium renderer, and on the visual-excellence branch also the bay door opening while the van moves, the rendered technician grounded at the simulated spot, evening lowering sun and exposure, Photo Mode hiding and restoring the HUD without changing cash, and the HUD bars fitting the viewport without overlap: WebGL draw calls and triangles via the in-scene probe, the glTF van fetched and mounted with wheel/steer nodes, 32 merged houses, articulated workers, instanced vegetation layers, selection, routed driving whose rendered position follows the simulation with spinning wheels, the technician at the correct lot clear of the wall, diagnosis, payment and a clean console. `gameplay.spec.ts` performs the mandatory end-to-end flow through the real UI and verifies state through the `window.__ego` hook:
 
 1. Start a new company (seed 42, $25,000 cash).
 2. Receive a lead: pin visible over the house, inspector shows the customer.
@@ -61,6 +61,8 @@ Known rendering issues after the overhaul:
 - Characters are procedurally articulated, not skinned.
 
 ## Performance measurements
+
+Visual-excellence branch (`docs/visual-excellence/after/metrics.json`, 1920×1080 High): 586 draw calls and 1.38 M triangles at the overview, 565 calls at the HQ view, 50 textures; SwiftShader renders it at about 0.5 fps, so no real-hardware FPS is claimed. Details and the before/after table are in `docs/visual-excellence/VISUAL_QUALITY_REPORT.md`.
 
 Measured on the production build via the in-scene `RenderProbe` at 1920×1080, High preset:
 

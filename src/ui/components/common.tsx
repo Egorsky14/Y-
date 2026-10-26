@@ -51,7 +51,7 @@ export function KV({ items }: { items: [string, ReactNode][] }) {
   );
 }
 
-export function Icon({ name }: { name: 'jobs' | 'employees' | 'fleet' | 'hq' | 'marketing' | 'finance' | 'camera' | 'home' | 'follow' | 'save' | 'menu' | 'settings' | 'close' | 'pause' | 'play' }) {
+export function Icon({ name }: { name: 'jobs' | 'employees' | 'fleet' | 'hq' | 'marketing' | 'finance' | 'camera' | 'home' | 'follow' | 'save' | 'menu' | 'settings' | 'close' | 'pause' | 'play' | 'photo' }) {
   const paths: Record<string, ReactNode> = {
     jobs: <path d="M4 7h16v12H4zM8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M4 12h16" />,
     employees: <path d="M16 11a4 4 0 1 0-8 0 4 4 0 0 0 8 0zM4 21a8 8 0 0 1 16 0" />,
@@ -68,6 +68,7 @@ export function Icon({ name }: { name: 'jobs' | 'employees' | 'fleet' | 'hq' | '
     close: <path d="M6 6l12 12M18 6L6 18" />,
     pause: <path d="M8 5v14M16 5v14" />,
     play: <path d="M7 4l12 8-12 8z" />,
+    photo: <path d="M4 8h3l2-3h6l2 3h3v11H4zM12 17a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7z" />,
   };
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden>

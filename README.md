@@ -19,6 +19,14 @@ after evidence lives in `docs/graphics/` with `GRAPHICS_OVERHAUL_REPORT.md`.
 
 Regenerate the vehicle models: `node tools/assets/build.mjs` (writes `public/models/`).
 
+## Visual excellence (v3-visual-excellence)
+
+The second art pass rebuilt the headquarters campus and parking lot, the four vehicle bodies,
+palms, house detail, condensers and job-site tools, the worker rig, the lighting day cycle with
+night light pools, and added a Photo Mode. Before and after captures at three viewports and the
+per-comparison write-up live in `docs/visual-excellence/` (`BEFORE_AUDIT.md`,
+`VISUAL_QUALITY_REPORT.md`).
+
 | Preset | Shadows | Pixel ratio | Vegetation | Rain |
 | --- | --- | --- | --- | --- |
 | Low | off | 1× | sparse desert | off |
@@ -78,6 +86,7 @@ cloud CI container. On a Windows PC remove `launchOptions` from `playwright.conf
 | Reset camera | `Home` |
 | Jobs / Team / Fleet panels | `J` / `T` / `V` |
 | Close panel or deselect | `Esc` |
+| Photo Mode (HUD off, free camera, time and weather preview, PNG save) | `P` or the Photo button |
 
 ## How a service call plays
 

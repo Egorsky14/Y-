@@ -1,6 +1,6 @@
 import { condenserPosition, type Lot } from '@/game/world/cityLayout';
 import { PALETTE } from '../assets/palette';
-import { Condenser } from './parts';
+import { CondenserFan } from './parts';
 import { Selectable } from '../interactions/Selectable';
 import { useApp } from '@/app/store';
 
@@ -25,7 +25,7 @@ export function House({ lot, hasActiveJob }: { lot: Lot; hasActiveJob: boolean }
         </group>
       </Selectable>
       <group position={[condenser.x - lot.center.x, 0, condenser.z - lot.center.z]}>
-        <Condenser position={[0, 0, 0]} running={!hasActiveJob} />
+        <CondenserFan running={!hasActiveJob} />
         {(hasActiveJob || isSelected) && (
           <mesh position={[0, 0.03, 0]} rotation={[-Math.PI / 2, 0, 0]}>
             <ringGeometry args={[1.0, 1.25, 32]} />

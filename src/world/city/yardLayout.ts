@@ -6,7 +6,7 @@ import { makeDecoRng } from '../assets/random';
  * Deterministic per-lot landscaping plan. Houses and the instanced vegetation layer both read
  * this so planting never collides with driveways, walkways or the condenser.
  */
-export type Species = 'palm' | 'mesquite' | 'olive' | 'shrub-sage' | 'shrub-green' | 'shrub-red' | 'agave' | 'flower-pink' | 'flower-yellow' | 'rock' | 'boulder' | 'barrel-cactus';
+export type Species = 'palm' | 'date-palm' | 'mesquite' | 'olive' | 'shrub-sage' | 'shrub-green' | 'shrub-red' | 'agave' | 'flower-pink' | 'flower-yellow' | 'rock' | 'boulder' | 'barrel-cactus';
 
 export interface PlantInstance {
   species: Species;

@@ -8,7 +8,13 @@ import { WORKDAY_END } from '@/game/simulation/time';
 import { Worker, type WorkerAnim } from '../characters/Worker';
 import { Selectable } from '../interactions/Selectable';
 import { PALETTE } from '../assets/palette';
-import { condenserPosition, lotById, workPosition } from '@/game/world/cityLayout';
+import { condenserPosition, condenserSideDir, inwardDir, lotById, workPosition } from '@/game/world/cityLayout';
+
+declare global {
+  interface Window {
+    __egoWorkers?: Record<string, { x: number; z: number; y: number; status: string }>;
+  }
+}
 
 /** Vehicles read their live position from the simulation every frame and smooth toward it. */
 export function Vehicles() {
@@ -85,6 +91,11 @@ function VehicleView({ id }: { id: string }) {
     const night = minute > WORKDAY_END + 30 || minute < 6 * 60 + 30;
     const headlightIntensity = night ? 2.4 : 0.35;
     for (const m of r.headlights) if (Math.abs(m.emissiveIntensity - headlightIntensity) > 0.01) m.emissiveIntensity += (headlightIntensity - m.emissiveIntensity) * Math.min(1, dt * 3);
+    // Tail lamps: running lights at night, brake lights while slowing or stopped with the engine on (en route or returning).
+    const moving = v.status === 'enroute' || v.status === 'returning';
+    const braking = moving && (accel < -0.8 || speed < 0.3);
+    const tailIntensity = (night ? 1.2 : 0.4) + (braking ? 2.2 : 0);
+    for (const m of r.taillights) if (Math.abs(m.emissiveIntensity - tailIntensity) > 0.01) m.emissiveIntensity += (tailIntensity - m.emissiveIntensity) * Math.min(1, dt * 6);
   });
 
   if (!vehicle) return null;
@@ -149,9 +160,16 @@ function WorkerView({ id }: { id: string }) {
     const prev = g.position.clone();
     g.position.lerp(target, k);
     const delta = g.position.clone().sub(prev);
-    if (face !== null) g.rotation.y = face;
-    else if (delta.lengthSq() > 1e-6) g.rotation.y = Math.atan2(delta.x, delta.z);
-    else if (e.status === 'idle') g.rotation.y = -Math.PI / 2;
+    let wanted: number | null = null;
+    if (face !== null) wanted = face;
+    else if (delta.lengthSq() > 1e-6) wanted = Math.atan2(delta.x, delta.z);
+    else if (e.status === 'idle') wanted = -Math.PI / 2;
+    if (wanted !== null) {
+      // Turn smoothly toward the heading instead of snapping.
+      const d = Math.atan2(Math.sin(wanted - g.rotation.y), Math.cos(wanted - g.rotation.y));
+      g.rotation.y += d * Math.min(1, dt * 7);
+    }
+    (window.__egoWorkers ??= {})[id] = { x: g.position.x, z: g.position.z, y: g.position.y, status: e.status };
   });
 
   if (!info) return null;
@@ -172,13 +190,77 @@ function WorkerView({ id }: { id: string }) {
   return (
     <group ref={group} name={`employee:${id}`}>
       <Selectable selection={{ kind: 'employee', id }} ringRadius={1.1} ringOffset={[0, 0.07, 0]}>
-        <Worker role={info.role} look={info.look} anim={anim} />
-        <mesh position={[0, 0.9, 0]} visible={false}>
-          <boxGeometry args={[1, 1.9, 1]} />
+        <Worker role={info.role} look={info.look} anim={anim} scale={1.12} />
+        <mesh position={[0, 1.0, 0]} visible={false}>
+          <boxGeometry args={[1, 2.1, 1]} />
           <meshBasicMaterial />
         </mesh>
       </Selectable>
     </group>
+  );
+}
+
+/** Tools staged beside the condenser while a technician is on site: open bag, gauge manifold with hoses, a cylinder. */
+export function JobSiteProps() {
+  const sites = useGame((s) =>
+    Object.values(s.jobs)
+      .filter((j) => ['diagnosing', 'awaiting-diagnosis', 'quoted', 'awaiting-authorization', 'repairing', 'installing'].includes(j.status))
+      .map((j) => `${j.id}:${s.customers[j.customerId].lotId}:${j.status === 'installing' ? 'i' : 'r'}`)
+      .join('|'),
+  );
+  if (!sites) return null;
+  return (
+    <>
+      {sites.split('|').map((entry) => {
+        const [id, lotId, kind] = entry.split(':');
+        const lot = lotById(lotId);
+        if (!lot) return null;
+        const c = condenserPosition(lot);
+        const side = condenserSideDir(lot);
+        const inward = inwardDir(lot.facing);
+        // Stage the kit outward from the unit, offset along the house so it does not sit under the technician.
+        const px = c.x + side.x * 1.2 - inward.x * 0.9;
+        const pz = c.z + side.z * 1.2 - inward.z * 0.9;
+        const yaw = Math.atan2(side.x, side.z);
+        return (
+          <group key={id} position={[px, 0, pz]} rotation={[0, yaw, 0]}>
+            <mesh position={[0, 0.14, 0]} castShadow>
+              <boxGeometry args={[0.46, 0.28, 0.3]} />
+              <meshStandardMaterial color="#1d1f22" roughness={0.8} />
+            </mesh>
+            <mesh position={[0, 0.29, 0]}>
+              <boxGeometry args={[0.4, 0.02, 0.26]} />
+              <meshStandardMaterial color="#19d3c5" roughness={0.7} />
+            </mesh>
+            {/* Gauge manifold: body, two dials, three hoses to the ground */}
+            <group position={[0.55, 0, 0.1]}>
+              <mesh position={[0, 0.12, 0]} castShadow>
+                <boxGeometry args={[0.2, 0.08, 0.06]} />
+                <meshStandardMaterial color="#b9bfc5" roughness={0.4} metalness={0.7} />
+              </mesh>
+              {[-0.06, 0.06].map((x, i) => (
+                <mesh key={x} position={[x, 0.2, 0]} rotation={[Math.PI / 2, 0, 0]}>
+                  <cylinderGeometry args={[0.045, 0.045, 0.025, 14]} />
+                  <meshStandardMaterial color={i === 0 ? '#2c6fd1' : '#d13b3b'} roughness={0.5} />
+                </mesh>
+              ))}
+              {[[-0.07, '#2c6fd1'], [0, '#e2c23a'], [0.07, '#d13b3b']].map(([x, col]) => (
+                <mesh key={String(x)} position={[Number(x), 0.05, 0.1]} rotation={[0.9, 0, 0]}>
+                  <cylinderGeometry args={[0.008, 0.008, 0.3, 6]} />
+                  <meshStandardMaterial color={String(col)} roughness={0.8} />
+                </mesh>
+              ))}
+            </group>
+            {kind === 'i' && (
+              <mesh position={[-0.5, 0.25, 0.1]} castShadow>
+                <cylinderGeometry args={[0.15, 0.15, 0.5, 12]} />
+                <meshStandardMaterial color="#8fa3b8" roughness={0.4} metalness={0.6} />
+              </mesh>
+            )}
+          </group>
+        );
+      })}
+    </>
   );
 }
 

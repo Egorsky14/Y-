@@ -23,13 +23,14 @@ export interface VehicleRig {
   wheels: THREE.Object3D[];
   steer: THREE.Object3D[];
   headlights: THREE.MeshStandardMaterial[];
+  taillights: THREE.MeshStandardMaterial[];
 }
 
 let decalTextures: { light: THREE.Texture; dark: THREE.Texture } | null = null;
 function decalTexture(darkPaint: boolean): THREE.Texture {
   if (!decalTextures) {
-    const light = wordmarkTexture('light').clone();
-    const dark = wordmarkTexture('dark').clone();
+    const light = wordmarkTexture('light', false).clone();
+    const dark = wordmarkTexture('dark', false).clone();
     for (const t of [light, dark]) {
       // The exporter already rewrote V for glTF, so a canvas texture keeps three's default flipY.
       t.flipY = true;
@@ -53,6 +54,7 @@ export function buildVehicleRig(source: THREE.Group, classId: VehicleClass, pain
   const wheels: THREE.Object3D[] = [];
   const steer: THREE.Object3D[] = [];
   const headlights: THREE.MeshStandardMaterial[] = [];
+  const taillights: THREE.MeshStandardMaterial[] = [];
   const paintHex = VEHICLE_PAINT[paint] ?? VEHICLE_PAINT['ego-black'];
   const darkPaint = paint === 'ego-black' || paint === 'graphite';
   const wrapped = upgrades.includes('full-wrap');
@@ -123,13 +125,19 @@ export function buildVehicleRig(source: THREE.Group, classId: VehicleClass, pain
         headlights.push(m);
         break;
       }
+      case 'taillight': {
+        const m = mat.clone();
+        mesh.material = m;
+        taillights.push(m);
+        break;
+      }
       case 'glass':
         mesh.castShadow = false;
         break;
     }
   });
   for (const w of wheels) w.traverse((o) => ((o as THREE.Mesh).isMesh ? ((o.castShadow = true), (o.receiveShadow = true)) : null));
-  return { root, chassis, wheels, steer, headlights };
+  return { root, chassis, wheels, steer, headlights, taillights };
 }
 
 interface VehicleGltfProps {

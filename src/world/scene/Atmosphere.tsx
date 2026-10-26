@@ -2,7 +2,7 @@ import { useMemo, useRef } from 'react';
 import * as THREE from 'three';
 import { useFrame, useThree } from '@react-three/fiber';
 import { getGameState, useApp } from '@/app/store';
-import { SUNRISE_MINUTE, SUNSET_MINUTE, sunAngles, weatherForDay, type WeatherKind } from '@/game/simulation/weather';
+import { sunAngles, weatherForDay, type WeatherKind } from '@/game/simulation/weather';
 import { STATIC_MATERIALS } from '../buildings/materials';
 
 /**
@@ -27,68 +27,86 @@ interface Look {
 }
 
 
-const { clamp } = THREE.MathUtils;
-
-/**
- * 0 by day, rising to 1 over the 45 minutes after sunset and falling over the 45 minutes before
- * sunrise. Minute based so twilight is a band, not the instant the sun crosses the horizon.
- */
-export function nightFactor(minute: number): number {
-  if (minute >= SUNSET_MINUTE) return clamp((minute - SUNSET_MINUTE) / 45, 0, 1);
-  if (minute <= SUNRISE_MINUTE) return clamp((SUNRISE_MINUTE - minute) / 45, 0, 1);
-  return 0;
-}
-
 function lookFor(minute: number, weather: WeatherKind): Look {
   const { elevation } = sunAngles(minute);
-  // Daylight follows the sun's height with atmospheric fall-off: noon 1, a 16° sun ≈ 0.45,
-  // the horizon 0. The old curve saturated at 20°, which made 6:30 PM look like noon.
-  const daylight = Math.pow(clamp(elevation / 1.22, 0, 1), 0.55);
-  // Low-sun warmth: 0 at noon, ≈0.45 at 6:30 PM, 1 at the horizon.
-  const warm = clamp(1 - elevation / 0.5, 0, 1);
-  const night = nightFactor(minute);
-  // Horizon afterglow / pre-dawn glow centred on the sunset and sunrise minutes.
-  const glow = Math.max(clamp(1 - Math.abs(minute - SUNSET_MINUTE) / 50, 0, 1), clamp(1 - Math.abs(minute - SUNRISE_MINUTE) / 50, 0, 1));
+  const day = THREE.MathUtils.clamp(elevation / 0.32, 0, 1); // 0 night → 1 full day
+  // Sun strength also falls with sun height (atmospheric path length), so late afternoon reads
+  // as evening instead of noon: noon 1, 08:00 ≈ 0.79, 18:30 ≈ 0.55 of full sun.
+  const sunHeight = Math.pow(THREE.MathUtils.clamp(elevation / 1.22, 0, 1), 0.55);
+  const daylight = day * (0.35 + 0.65 * sunHeight);
+  const golden = THREE.MathUtils.clamp(1 - Math.abs(elevation - 0.14) / 0.3, 0, 1) * THREE.MathUtils.clamp(elevation / 0.08, 0, 1); // low-sun warmth
+  const twilight = THREE.MathUtils.clamp(1 - Math.abs(elevation + 0.08) / 0.16, 0, 1); // just below the horizon: magenta sky
+  const night = 1 - THREE.MathUtils.clamp((elevation + 0.12) / 0.26, 0, 1);
 
-  const sunColor = new THREE.Color('#fff1dc').lerp(new THREE.Color('#ffb66e'), warm).lerp(new THREE.Color('#ff7f45'), warm * warm * 0.6);
-  const zenithDay = new THREE.Color('#5f9fd8');
-  const zenithDusk = new THREE.Color('#2f4f80');
-  const zenithNight = new THREE.Color('#0b1626');
-  const horizonDay = new THREE.Color('#d8e6ee');
-  const horizonGolden = new THREE.Color('#f2b27a');
-  const horizonAfterglow = new THREE.Color('#f08a58');
-  const horizonNight = new THREE.Color('#1d2a3d');
-  const groundDay = new THREE.Color('#c9a97a');
-  const groundWarm = new THREE.Color('#b58a5c');
-  const groundNight = new THREE.Color('#2a2d36');
+  const sunDay = new THREE.Color('#fff3df').lerp(new THREE.Color('#ffa857'), golden * 0.9);
+  const zenithDay = new THREE.Color('#4f93d6');
+  const horizonDay = new THREE.Color('#dbe8f0');
+  const zenithNight = new THREE.Color('#0a1424');
+  const horizonNight = new THREE.Color('#1b2838');
+  const horizonGolden = new THREE.Color('#f3a96a');
+  const horizonTwilight = new THREE.Color('#c86a7e');
 
   let look: Look = {
-    sunIntensity: 2.6 * daylight,
-    sunColor,
-    skyZenith: zenithDay.clone().lerp(zenithDusk, (1 - daylight) * 0.85).lerp(zenithNight, night),
-    skyHorizon: horizonDay.clone().lerp(horizonGolden, warm * 0.8).lerp(horizonAfterglow, glow * 0.6).lerp(horizonNight, night * (1 - glow * 0.35)),
-    ground: groundDay.clone().lerp(groundWarm, warm * 0.5).lerp(groundNight, night),
-    hemi: 0.85 * (0.28 + 0.72 * daylight),
-    ambient: 0.25 * (0.35 + 0.65 * daylight),
-    fogNear: 420,
-    fogFar: 1400,
-    exposure: 1.0 - (1 - daylight) * 0.12 - night * 0.3,
+    // Night keeps a faint blue moon so forms stay readable; day is a strong warm sun.
+    sunIntensity: 2.7 * daylight + 0.14 * night,
+    sunColor: sunDay.clone().lerp(new THREE.Color('#9fb4e0'), night),
+    skyZenith: zenithDay.clone().lerp(new THREE.Color('#3b5f8e'), twilight * 0.6).lerp(zenithNight, night),
+    skyHorizon: horizonDay.clone().lerp(horizonGolden, golden * 0.75).lerp(horizonTwilight, twilight * 0.7).lerp(horizonNight, night),
+    ground: new THREE.Color('#c9a97a').lerp(new THREE.Color('#b58a5c'), golden * 0.4).lerp(new THREE.Color('#1f2430'), night),
+    hemi: 0.9 * (0.18 + 0.82 * day) * (0.75 + 0.25 * sunHeight) + 0.12 * twilight,
+    ambient: 0.22 * (0.25 + 0.75 * day),
+    fogNear: 380,
+    fogFar: 1500,
+    exposure: 0.98 - night * 0.3 + golden * 0.04 - (1 - sunHeight) * day * 0.06,
     rain: 0,
-    envIntensity: 0.45 * (0.3 + 0.7 * daylight),
+    envIntensity: 0.5 * (0.2 + 0.8 * day),
   };
-  const day = daylight; // weather branches below scale by daylight
   switch (weather) {
     case 'heat-wave':
-      look = { ...look, sunIntensity: look.sunIntensity * 1.08, sunColor: look.sunColor.clone().lerp(new THREE.Color('#ffd9a8'), 0.4), skyHorizon: look.skyHorizon.clone().lerp(new THREE.Color('#e9d6b8'), 0.5 * day), fogNear: 260, fogFar: 1000, exposure: look.exposure * 1.04 };
+      look = { ...look, sunIntensity: look.sunIntensity * 1.06, sunColor: look.sunColor.clone().lerp(new THREE.Color('#ffd9a8'), 0.4), skyZenith: look.skyZenith.clone().lerp(new THREE.Color('#9fb6c8'), 0.3 * day), skyHorizon: look.skyHorizon.clone().lerp(new THREE.Color('#e9d6b8'), 0.55 * day), fogNear: 220, fogFar: 900, exposure: look.exposure * 1.03 };
       break;
     case 'overcast':
-      look = { ...look, sunIntensity: look.sunIntensity * 0.45, sunColor: new THREE.Color('#e6e9ee'), skyZenith: look.skyZenith.clone().lerp(new THREE.Color('#7d8894'), 0.85 * day), skyHorizon: look.skyHorizon.clone().lerp(new THREE.Color('#aab3bc'), 0.85 * day), hemi: look.hemi * 1.25, ambient: look.ambient * 1.3, fogNear: 300, fogFar: 1100, exposure: look.exposure * 0.95 };
+      look = { ...look, sunIntensity: look.sunIntensity * 0.42, sunColor: new THREE.Color('#e6e9ee'), skyZenith: look.skyZenith.clone().lerp(new THREE.Color('#7d8894'), 0.85 * day), skyHorizon: look.skyHorizon.clone().lerp(new THREE.Color('#aab3bc'), 0.85 * day), hemi: look.hemi * 1.3, ambient: look.ambient * 1.35, fogNear: 280, fogFar: 1100, exposure: look.exposure * 0.94 };
       break;
     case 'monsoon':
-      look = { ...look, sunIntensity: look.sunIntensity * 0.18, sunColor: new THREE.Color('#cfd5df'), skyZenith: look.skyZenith.clone().lerp(new THREE.Color('#3f4953'), 0.92 * day), skyHorizon: look.skyHorizon.clone().lerp(new THREE.Color('#6f7a85'), 0.92 * day), ground: look.ground.clone().lerp(new THREE.Color('#4e4c48'), 0.6), hemi: look.hemi * 0.9, ambient: look.ambient * 1.0, fogNear: 150, fogFar: 700, exposure: look.exposure * 0.78, rain: day > 0.2 ? 1 : 0.6, envIntensity: look.envIntensity * 1.2 };
+      look = { ...look, sunIntensity: look.sunIntensity * 0.16, sunColor: new THREE.Color('#cfd5df'), skyZenith: look.skyZenith.clone().lerp(new THREE.Color('#3a434d'), 0.92 * day), skyHorizon: look.skyHorizon.clone().lerp(new THREE.Color('#6a747f'), 0.92 * day), ground: look.ground.clone().lerp(new THREE.Color('#4e4c48'), 0.6), hemi: look.hemi * 0.95, ambient: look.ambient * 1.1, fogNear: 140, fogFar: 650, exposure: look.exposure * 0.76, rain: day > 0.2 ? 1 : 0.6, envIntensity: look.envIntensity * 1.3 };
       break;
   }
   return look;
+}
+
+/** Soft cumulus layer: a few hundred overlapping discs on an alpha canvas, tiled over the valley. */
+function cloudTexture(): THREE.Texture {
+  const size = 512;
+  const c = document.createElement('canvas');
+  c.width = c.height = size;
+  const ctx = c.getContext('2d')!;
+  ctx.clearRect(0, 0, size, size);
+  let seed = 7;
+  const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+  for (let k = 0; k < 9; k++) {
+    const cx = rnd() * size;
+    const cy = rnd() * size;
+    const n = 14 + Math.floor(rnd() * 12);
+    for (let i = 0; i < n; i++) {
+      const r = 18 + rnd() * 34;
+      const x = cx + (rnd() - 0.5) * 120;
+      const y = cy + (rnd() - 0.5) * 50;
+      for (const dx of [-size, 0, size]) for (const dy of [-size, 0, size]) {
+        const g = ctx.createRadialGradient(x + dx, y + dy, 0, x + dx, y + dy, r);
+        g.addColorStop(0, 'rgba(255,255,255,0.55)');
+        g.addColorStop(0.7, 'rgba(255,255,255,0.22)');
+        g.addColorStop(1, 'rgba(255,255,255,0)');
+        ctx.fillStyle = g;
+        ctx.fillRect(x + dx - r, y + dy - r, r * 2, r * 2);
+      }
+    }
+  }
+  const t = new THREE.CanvasTexture(c);
+  t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  t.repeat.set(4, 4);
+  t.colorSpace = THREE.SRGBColorSpace;
+  return t;
 }
 
 const SKY_VERT = `varying vec3 vWorld; void main(){ vec4 w = modelMatrix * vec4(position,1.0); vWorld = w.xyz; gl_Position = projectionMatrix * viewMatrix * w; }`;
@@ -114,6 +132,9 @@ export function Atmosphere() {
   const ambient = useRef<THREE.AmbientLight>(null);
   const sky = useRef<THREE.Mesh>(null);
   const current = useRef<Look | null>(null);
+  const lastMinute = useRef<number | null>(null);
+  const clouds = useRef<THREE.Mesh>(null);
+  const cloudMaterial = useMemo(() => new THREE.MeshBasicMaterial({ map: cloudTexture(), transparent: true, depthWrite: false, opacity: 0.4, color: '#ffffff', fog: false }), []);
   const mapSize = quality === 'ultra' ? 4096 : quality === 'high' ? 4096 : quality === 'medium' ? 2048 : 1024;
   const shadowRadius = quality === 'ultra' ? 180 : quality === 'high' ? 230 : 260;
   const skyMaterial = useMemo(
@@ -132,10 +153,15 @@ export function Atmosphere() {
 
   useFrame((_, dt) => {
     const state = getGameState();
-    const minute = state?.clock.minute ?? 10 * 60;
-    const weather = state ? weatherForDay(state.seed, state.clock.day).kind : 'clear';
+    const photo = useApp.getState().photo;
+    const minute = photo.on && photo.minute !== null ? photo.minute : (state?.clock.minute ?? 10 * 60);
+    const weather = photo.on && photo.weather ? photo.weather : state ? weatherForDay(state.seed, state.clock.day).kind : 'clear';
     const target = lookFor(minute, weather);
-    const k = Math.min(1, dt * 1.5);
+    // Ease between frames, but snap when the clock jumps (fast-forward, load) so captures and
+    // day changes never show a half-blended sky.
+    const jumped = lastMinute.current !== null && Math.abs(minute - lastMinute.current) > 20;
+    lastMinute.current = minute;
+    const k = jumped ? 1 : Math.min(1, dt * 1.5);
     if (!current.current) current.current = target;
     const c = current.current;
     c.sunIntensity += (target.sunIntensity - c.sunIntensity) * k;
@@ -152,8 +178,8 @@ export function Atmosphere() {
     c.ground.lerp(target.ground, k);
 
     const { elevation, azimuth } = sunAngles(minute);
-    // Floor the shadow sun just above the horizon: long evening shadows without acne.
-    const el = Math.max(elevation, 0.05);
+    const day = THREE.MathUtils.clamp(elevation / 0.32, 0, 1);
+    const el = Math.max(elevation, 0.07);
     const dir = new THREE.Vector3(Math.cos(azimuth) * Math.cos(el), Math.sin(el), Math.sin(azimuth) * Math.cos(el));
     if (sun.current) {
       sun.current.position.copy(dir.clone().multiplyScalar(320));
@@ -179,15 +205,28 @@ export function Atmosphere() {
     if (scene.fog !== fog) scene.fog = fog;
     gl.toneMappingExposure = c.exposure;
     scene.environmentIntensity = c.envIntensity;
-    // Exterior lamps, interior window glow and the teal signage come on through dusk. Lamps lead
-    // (they switch on while the sun is still low), windows and signage follow the night factor.
-    const dusk = clamp(1 - elevation / 0.3, 0, 1);
-    const night = nightFactor(minute);
-    const lit = Math.max(dusk * 0.6, night);
-    (STATIC_MATERIALS.lamp() as THREE.MeshStandardMaterial).emissiveIntensity = 0.3 + lit * 3.2;
-    (STATIC_MATERIALS.storefront() as THREE.MeshStandardMaterial).emissive.setRGB(0.9 * lit, 0.75 * lit, 0.45 * lit);
-    (STATIC_MATERIALS.glass() as THREE.MeshStandardMaterial).emissive.setRGB(0.95 * lit, 0.7 * lit, 0.38 * lit);
-    (STATIC_MATERIALS.teal() as THREE.MeshStandardMaterial).emissiveIntensity = 0.18 + lit * 1.1;
+    // Exterior lamps come on as the sun drops.
+    const night = 1 - THREE.MathUtils.clamp((elevation + 0.05) / 0.3, 0, 1);
+    (STATIC_MATERIALS.lamp() as THREE.MeshStandardMaterial).emissiveIntensity = 0.3 + night * 3.2;
+    (STATIC_MATERIALS.storefront() as THREE.MeshStandardMaterial).emissive.setRGB(0.9 * night, 0.75 * night, 0.45 * night);
+    (STATIC_MATERIALS.interiorLight() as THREE.MeshStandardMaterial).emissiveIntensity = 1.2 + night * 2.5;
+    (STATIC_MATERIALS.glass() as THREE.MeshStandardMaterial).emissive.setRGB(0.55 * night, 0.42 * night, 0.2 * night);
+    // EGO teal trim and sign bands glow after dusk.
+    (STATIC_MATERIALS.teal() as THREE.MeshStandardMaterial).emissiveIntensity = 0.18 + night * 0.9;
+    // Wet pavement during monsoon: asphalt turns glossy and reflects the sky.
+    const asphalt = STATIC_MATERIALS.asphalt() as THREE.MeshStandardMaterial;
+    const wet = c.rain;
+    asphalt.roughness = 0.95 - wet * 0.55;
+    asphalt.envMapIntensity = 1 + wet * 1.5;
+    // Clouds: sparse and bright on clear days, a dense gray deck in overcast and monsoon weather.
+    const cover = weather === 'clear' ? 0.35 : weather === 'heat-wave' ? 0.12 : weather === 'overcast' ? 0.85 : 0.95;
+    cloudMaterial.opacity += (cover - cloudMaterial.opacity) * k;
+    const shade = weather === 'monsoon' ? 0.35 : weather === 'overcast' ? 0.6 : 1;
+    cloudMaterial.color.setRGB(shade * (0.55 + 0.45 * day), shade * (0.55 + 0.45 * day), shade * (0.6 + 0.4 * day));
+    if (clouds.current) {
+      clouds.current.position.set(camera.position.x, 420, camera.position.z);
+      cloudMaterial.map!.offset.x += dt * 0.0012;
+    }
     window.__egoAtmo = { minute, weather, elevation, sunIntensity: c.sunIntensity, exposure: c.exposure, fogNear: c.fogNear, rain: c.rain };
     if (sky.current) sky.current.position.copy(camera.position);
   });
@@ -196,6 +235,9 @@ export function Atmosphere() {
     <>
       <mesh ref={sky} material={skyMaterial} renderOrder={-1} frustumCulled={false}>
         <sphereGeometry args={[2000, 32, 16]} />
+      </mesh>
+      <mesh ref={clouds} material={cloudMaterial} rotation={[-Math.PI / 2, 0, 0]} frustumCulled={false} renderOrder={-1}>
+        <planeGeometry args={[4200, 4200]} />
       </mesh>
       <hemisphereLight ref={hemi} args={['#dff1ff', '#c9a97a', 0.8]} />
       <ambientLight ref={ambient} intensity={0.22} />
@@ -230,7 +272,8 @@ function Rain() {
   const m = useMemo(() => new THREE.Matrix4(), []);
   useFrame(({ clock }) => {
     const state = getGameState();
-    const weather = state ? weatherForDay(state.seed, state.clock.day).kind : 'clear';
+    const photo = useApp.getState().photo;
+    const weather = photo.on && photo.weather ? photo.weather : state ? weatherForDay(state.seed, state.clock.day).kind : 'clear';
     const active = weather === 'monsoon';
     const im = mesh.current;
     if (!im) return;

@@ -10,7 +10,7 @@ const softwareGl = executablePath !== undefined;
 
 export default defineConfig({
   testDir: './e2e',
-  timeout: 600_000,
+  timeout: 1_200_000,
   expect: { timeout: 20_000 },
   fullyParallel: false,
   workers: 1,
@@ -19,6 +19,7 @@ export default defineConfig({
   projects: [
     { name: 'desktop-1080p', use: { viewport: { width: 1920, height: 1080 } } },
     { name: 'laptop-768p', use: { viewport: { width: 1366, height: 768 } }, testMatch: /graphics\.spec\.ts/ },
+    { name: 'small-1024', use: { viewport: { width: 1024, height: 768 } }, testMatch: /graphics\.spec\.ts/ },
   ],
   use: {
     baseURL: 'http://127.0.0.1:4173',

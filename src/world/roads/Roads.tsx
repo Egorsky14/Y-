@@ -14,6 +14,7 @@ import { signTexture } from '../assets/textures';
 const CURB_H = 0.15;
 
 function buildRoads(): THREE.Group {
+  const t0 = performance.now();
   const mats: Record<string, THREE.Material> = {
     asphalt: STATIC_MATERIALS.asphalt(),
     concrete: STATIC_MATERIALS.concrete(),
@@ -24,8 +25,13 @@ function buildRoads(): THREE.Group {
     pole: new THREE.MeshStandardMaterial({ color: '#8d9399', roughness: 0.45, metalness: 0.7 }),
     stop: new THREE.MeshStandardMaterial({ color: '#c4262e', roughness: 0.5 }),
     stopText: new THREE.MeshStandardMaterial({ color: '#ffffff', roughness: 0.5 }),
+    wear: STATIC_MATERIALS.wear(),
+    lamp: STATIC_MATERIALS.lamp(),
+    darkMetal: STATIC_MATERIALS.darkMetal(),
+    hydrant: new THREE.MeshStandardMaterial({ color: '#e0b020', roughness: 0.5, metalness: 0.2 }),
+    grate: new THREE.MeshStandardMaterial({ color: '#45484c', roughness: 0.7, metalness: 0.5 }),
   };
-  const b = new MeshBuilder(mats, UV_SCALES);
+  const b = new MeshBuilder(mats, { ...UV_SCALES, wear: 0 });
   const half = ROAD_WIDTH / 2;
   const walk = SIDEWALK_WIDTH;
 
@@ -53,6 +59,30 @@ function buildRoads(): THREE.Group {
     for (const side of [-1, 1]) b.box('white', size(length - 8, 0.12, 0.012), pos(center, side * (half - 0.35), 0.05));
     // Manholes
     for (let a = s.from + 37; a < s.to; a += 61) b.add('manhole', new THREE.CylinderGeometry(0.45, 0.45, 0.012, 16), pos(a, 1.4, 0.046));
+    // Tire-polished wheel paths in each lane, broken at intersections
+    for (let a = s.from + 12; a < s.to - 12; a += 40) {
+      const len = Math.min(34, s.to - 12 - a);
+      for (const across of [-half * 0.62, -half * 0.28, half * 0.28, half * 0.62]) b.add('wear', new THREE.PlaneGeometry(len, 1.6), pos(a + len / 2, across, 0.047), isX ? [-Math.PI / 2, 0, 0] : [-Math.PI / 2, 0, Math.PI / 2]);
+    }
+    // Street lights: cobra-head luminaires on tapered poles behind the sidewalk, staggered by side
+    for (let a = s.from + 20, i = 0; a < s.to - 10; a += 44, i++) {
+      if (Math.abs(a) < 9 || Math.abs(Math.abs(a) - (isX ? 130 : 100)) < 9) continue;
+      const side = i % 2 === 0 ? 1 : -1;
+      const base = pos(a, side * (half + 0.55 + walk + 0.6), 0);
+      const arm = (len: number): [number, number, number] => (isX ? [0.14, 0.14, len] : [len, 0.14, 0.14]);
+      b.add('pole', new THREE.CylinderGeometry(0.08, 0.14, 9, 10), [base[0], 4.5, base[2]]);
+      b.add('concrete', new THREE.CylinderGeometry(0.3, 0.34, 0.5, 10), [base[0], 0.25, base[2]]);
+      const armC = pos(a, side * (half + 0.55 + walk + 0.6 - 1.4), 8.9);
+      b.add('pole', new THREE.BoxGeometry(...arm(2.8)), armC);
+      const head = pos(a, side * (half + 0.55 + walk + 0.6 - 2.6), 8.85);
+      b.add('darkMetal', new THREE.BoxGeometry(...(isX ? [0.34, 0.16, 0.8] : [0.8, 0.16, 0.34])), head);
+      b.add('lamp', new THREE.BoxGeometry(...(isX ? [0.28, 0.04, 0.6] : [0.6, 0.04, 0.28])), [head[0], 8.75, head[2]]);
+    }
+    // Storm-drain inlets at the gutter line every block
+    for (let a = s.from + 30; a < s.to - 10; a += 100) for (const side of [-1, 1]) {
+      b.add('grate', new THREE.BoxGeometry(...size(1.2, 0.5, 0.02)), pos(a, side * (half + 0.05), 0.06));
+      for (let k = 0; k < 5; k++) b.add('curb', new THREE.BoxGeometry(...size(1.2, 0.04, 0.012)), pos(a, side * (half + 0.05) + (k - 2) * 0.1 * side, 0.075));
+    }
   }
 
   // Intersections: asphalt patch, crosswalk bars, stop lines, stop signs and street blades.
@@ -90,6 +120,14 @@ function buildRoads(): THREE.Group {
         b.box('stopText', [0.5, 0.1, 0.01], [px, 2.45, pz + (dx * dz > 0 ? 0.02 : 0)], [0, dx * dz > 0 ? 0 : Math.PI / 2, 0]);
       }
       b.add('pole', new THREE.CylinderGeometry(0.035, 0.04, 3.3, 8), [cx + half + 1.1, 1.65, cz - half - 1.1]);
+      // Fire hydrant on the opposite corner
+      const hx = cx - half - 1.6;
+      const hz = cz + half + 1.6;
+      b.add('hydrant', new THREE.CylinderGeometry(0.14, 0.16, 0.7, 10), [hx, 0.35, hz]);
+      b.add('hydrant', new THREE.SphereGeometry(0.15, 10, 8), [hx, 0.74, hz]);
+      b.add('hydrant', new THREE.CylinderGeometry(0.07, 0.07, 0.44, 8), [hx, 0.45, hz], [0, 0, Math.PI / 2]);
+      b.add('hydrant', new THREE.CylinderGeometry(0.06, 0.06, 0.2, 8), [hx, 0.45, hz + 0.16], [Math.PI / 2, 0, 0]);
+      b.add('darkMetal', new THREE.CylinderGeometry(0.04, 0.04, 0.1, 6), [hx, 0.9, hz]);
     }
   }
 
@@ -106,7 +144,9 @@ function buildRoads(): THREE.Group {
     // Apron replaces the curb: a sloped concrete wedge from the gutter up to sidewalk level
     b.box('concrete', horizontal ? [wide, CURB_H + 0.02, walk + 0.9] : [walk + 0.9, CURB_H + 0.02, wide], [ax, CURB_H / 2 + 0.005, az]);
   }
-  return b.build('roads');
+  const g = b.build('roads');
+  if (import.meta.env.DEV) console.debug(`[build] roads ${(performance.now() - t0).toFixed(0)} ms`);
+  return g;
 }
 
 export function Roads() {

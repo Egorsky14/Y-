@@ -23,6 +23,10 @@ export interface CameraCommand {
   distance?: number;
   /** Optional view direction (radians around +y) for cinematic focus; default keeps the current heading. */
   azimuth?: number;
+  /** Camera elevation above the target in radians (default 0.62); only with azimuth. */
+  elevation?: number;
+  /** Height of the look-at point above the ground (default 0). */
+  targetY?: number;
 }
 
 export type Quality = 'low' | 'medium' | 'high' | 'ultra';
@@ -53,6 +57,8 @@ interface AppState {
   panel: PanelId;
   cameraCommand: CameraCommand | null;
   followVehicleId: string | null;
+  /** Photo mode: HUD hidden, free camera, optional preview time of day (minutes) and weather; never touches the simulation. */
+  photo: { on: boolean; minute: number | null; weather: 'clear' | 'heat-wave' | 'overcast' | 'monsoon' | null };
   settings: Settings;
   toasts: Toast[];
   lastError: string | null;
@@ -70,6 +76,7 @@ interface AppState {
   openPanel: (panel: PanelId) => void;
   togglePanel: (panel: Exclude<PanelId, null>) => void;
   camera: (cmd: Omit<CameraCommand, 'id'>) => void;
+  setPhoto: (patch: Partial<AppState['photo']>) => void;
   setFollow: (vehicleId: string | null) => void;
   setSettings: (patch: Partial<Settings>) => void;
   dismissToast: (id: number) => void;
@@ -99,6 +106,7 @@ export const useApp = create<AppState>((set, get) => ({
   panel: null,
   cameraCommand: null,
   followVehicleId: null,
+  photo: { on: false, minute: null, weather: null },
   settings: loadSettings(),
   toasts: [],
   lastError: null,
@@ -147,6 +155,7 @@ export const useApp = create<AppState>((set, get) => ({
   openPanel: (panel) => set({ panel }),
   togglePanel: (panel) => set((s) => ({ panel: s.panel === panel ? null : panel })),
   camera: (cmd) => set({ cameraCommand: { ...cmd, id: cameraCommandId++ }, followVehicleId: cmd.type === 'follow' ? (cmd.vehicleId ?? null) : null }),
+  setPhoto: (patch) => set((st) => ({ photo: { ...st.photo, ...patch } })),
   setFollow: (vehicleId) => set({ followVehicleId: vehicleId }),
   setSettings: (patch) => {
     const settings = { ...get().settings, ...patch };

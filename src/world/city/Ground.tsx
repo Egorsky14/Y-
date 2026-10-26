@@ -78,20 +78,40 @@ function mountainRing(radius: number, width: number, height: number, seed: numbe
   }
   const g = new THREE.BufferGeometry();
   g.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  // Altitude-banded vertex colors: alluvial fans at the base, red-brown rock, pale limestone caps.
+  const colors = new Float32Array(positions.length);
+  const low = new THREE.Color('#b89a7b');
+  const mid = new THREE.Color('#9a6f55');
+  const high = new THREE.Color('#c9b7a4');
+  const tmp = new THREE.Color();
+  for (let i = 0; i < positions.length; i += 3) {
+    const y = positions[i + 1];
+    const t = THREE.MathUtils.clamp(y / (height * 0.9), 0, 1);
+    if (t < 0.45) tmp.copy(low).lerp(mid, t / 0.45);
+    else tmp.copy(mid).lerp(high, (t - 0.45) / 0.55);
+    colors[i] = tmp.r;
+    colors[i + 1] = tmp.g;
+    colors[i + 2] = tmp.b;
+  }
+  g.setAttribute('color', new THREE.BufferAttribute(colors, 3));
   g.computeVertexNormals();
   return g;
 }
 
 function Mountains() {
-  const near = useMemo(() => mountainRing(560, 260, 110, 77, 160), []);
-  const far = useMemo(() => mountainRing(800, 420, 190, 99, 140), []);
+  const near = useMemo(() => mountainRing(560, 260, 120, 77, 180), []);
+  const far = useMemo(() => mountainRing(800, 420, 200, 99, 150), []);
+  const distant = useMemo(() => mountainRing(1150, 500, 280, 123, 120), []);
   return (
     <group>
-      <mesh geometry={near} frustumCulled={false}>
-        <meshStandardMaterial color="#a98871" roughness={1} flatShading />
+      <mesh geometry={near} frustumCulled={false} receiveShadow>
+        <meshStandardMaterial vertexColors roughness={1} flatShading />
       </mesh>
       <mesh geometry={far} frustumCulled={false}>
-        <meshStandardMaterial color="#bfa58f" roughness={1} flatShading />
+        <meshStandardMaterial vertexColors roughness={1} flatShading />
+      </mesh>
+      <mesh geometry={distant} frustumCulled={false}>
+        <meshStandardMaterial vertexColors roughness={1} flatShading color="#d8cfc6" />
       </mesh>
     </group>
   );

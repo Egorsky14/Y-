@@ -31,38 +31,83 @@ function toTexture(canvas: HTMLCanvasElement, srgb: boolean): THREE.Texture {
   return t;
 }
 
-/** Converts a grayscale height canvas into a tangent-space normal map (Sobel). */
+/** Converts a grayscale height canvas into a tangent-space normal map (Sobel), typed-array fast path. */
 export function heightToNormal(height: HTMLCanvasElement, strength = 2): HTMLCanvasElement {
   const size = height.width;
   const src = height.getContext('2d')!.getImageData(0, 0, size, size).data;
+  const hs = new Float32Array(size * size);
+  for (let i = 0, j = 0; i < hs.length; i++, j += 4) hs[i] = src[j] / 255;
   const [out, ctx] = makeCanvas(size);
   const img = ctx.createImageData(size, size);
-  const h = (x: number, y: number) => src[(((y + size) % size) * size + ((x + size) % size)) * 4] / 255;
+  const d = img.data;
+  const last = size - 1;
   for (let y = 0; y < size; y++) {
+    const ym = (y === 0 ? last : y - 1) * size;
+    const y0 = y * size;
+    const yp = (y === last ? 0 : y + 1) * size;
     for (let x = 0; x < size; x++) {
-      const dx = (h(x + 1, y - 1) + 2 * h(x + 1, y) + h(x + 1, y + 1) - h(x - 1, y - 1) - 2 * h(x - 1, y) - h(x - 1, y + 1)) * strength;
-      const dy = (h(x - 1, y + 1) + 2 * h(x, y + 1) + h(x + 1, y + 1) - h(x - 1, y - 1) - 2 * h(x, y - 1) - h(x + 1, y - 1)) * strength;
-      const len = Math.hypot(dx, dy, 1);
-      const i = (y * size + x) * 4;
-      img.data[i] = ((-dx / len) * 0.5 + 0.5) * 255;
-      img.data[i + 1] = ((-dy / len) * 0.5 + 0.5) * 255;
-      img.data[i + 2] = (1 / len) * 0.5 * 255 + 127;
-      img.data[i + 3] = 255;
+      const xm = x === 0 ? last : x - 1;
+      const xp = x === last ? 0 : x + 1;
+      const dx = (hs[ym + xp] + 2 * hs[y0 + xp] + hs[yp + xp] - hs[ym + xm] - 2 * hs[y0 + xm] - hs[yp + xm]) * strength;
+      const dy = (hs[yp + xm] + 2 * hs[yp + x] + hs[yp + xp] - hs[ym + xm] - 2 * hs[ym + x] - hs[ym + xp]) * strength;
+      const inv = 1 / Math.sqrt(dx * dx + dy * dy + 1);
+      const i = (y0 + x) * 4;
+      d[i] = (-dx * inv * 0.5 + 0.5) * 255;
+      d[i + 1] = (-dy * inv * 0.5 + 0.5) * 255;
+      d[i + 2] = inv * 0.5 * 255 + 127;
+      d[i + 3] = 255;
     }
   }
   ctx.putImageData(img, 0, 0);
   return out;
 }
 
+/** Fills a height canvas with per-pixel noise around `base` (typed-array write, then an optional blur for coarser grain). */
 function noiseFill(ctx: CanvasRenderingContext2D, size: number, seed: number, base: number, amp: number, count: number, dotSize: number) {
+  void count;
   const rnd = makeDecoRng(seed);
-  ctx.fillStyle = `rgb(${base},${base},${base})`;
-  ctx.fillRect(0, 0, size, size);
-  for (let i = 0; i < count; i++) {
-    const v = Math.round(base + (rnd() - 0.5) * amp * 2);
-    ctx.fillStyle = `rgba(${v},${v},${v},0.7)`;
-    const s = dotSize * (0.5 + rnd());
-    ctx.fillRect(rnd() * size, rnd() * size, s, s);
+  const img = ctx.createImageData(size, size);
+  const d = img.data;
+  for (let i = 0; i < d.length; i += 4) {
+    const v = base + (rnd() - 0.5) * amp * 1.6;
+    d[i] = d[i + 1] = d[i + 2] = v;
+    d[i + 3] = 255;
+  }
+  ctx.putImageData(img, 0, 0);
+  if (dotSize > 1.4) {
+    const blurred = blurCanvas(ctx.canvas, dotSize * 0.45);
+    ctx.drawImage(blurred, 0, 0);
+  }
+}
+
+/** Modifies `count` random pixels of a canvas in one ImageData pass (replaces per-pixel fillRect speckle). */
+function speckle(canvas: HTMLCanvasElement, count: number, rnd: () => number, pick: (rnd: () => number) => [number, number, number, number]) {
+  const ctx = canvas.getContext('2d')!;
+  const size = canvas.width;
+  const img = ctx.getImageData(0, 0, size, size);
+  const d = img.data;
+  for (let n = 0; n < count; n++) {
+    const i = ((Math.floor(rnd() * size) * size) + Math.floor(rnd() * size)) * 4;
+    const [r, g, b, a] = pick(rnd);
+    d[i] = d[i] * (1 - a) + r * a;
+    d[i + 1] = d[i + 1] * (1 - a) + g * a;
+    d[i + 2] = d[i + 2] * (1 - a) + b * a;
+  }
+  ctx.putImageData(img, 0, 0);
+}
+
+/** Fills an axis-aligned rectangle directly in an ImageData buffer. */
+function rectData(d: Uint8ClampedArray, size: number, x: number, y: number, w: number, h: number, r: number, g: number, b: number) {
+  const x0 = Math.max(0, Math.floor(x));
+  const y0 = Math.max(0, Math.floor(y));
+  const x1 = Math.min(size, Math.ceil(x + w));
+  const y1 = Math.min(size, Math.ceil(y + h));
+  for (let yy = y0; yy < y1; yy++) for (let xx = x0; xx < x1; xx++) {
+    const i = (yy * size + xx) * 4;
+    d[i] = r;
+    d[i + 1] = g;
+    d[i + 2] = b;
+    d[i + 3] = 255;
   }
 }
 
@@ -75,35 +120,50 @@ function blurCanvas(c: HTMLCanvasElement, radius: number): HTMLCanvasElement {
   return out;
 }
 
+/** Base color with per-pixel tonal grain (typed-array write, optional blur for coarser grain). */
 function tintedColor(size: number, seed: number, rgb: [number, number, number], variance: number, grain: number, grainSize = 2): HTMLCanvasElement {
+  void grain;
   const [c, ctx] = makeCanvas(size);
   const rnd = makeDecoRng(seed);
-  ctx.fillStyle = `rgb(${rgb[0]},${rgb[1]},${rgb[2]})`;
-  ctx.fillRect(0, 0, size, size);
-  for (let i = 0; i < grain; i++) {
-    const d = (rnd() - 0.5) * variance * 2;
-    ctx.fillStyle = `rgba(${Math.round(rgb[0] + d)},${Math.round(rgb[1] + d)},${Math.round(rgb[2] + d)},0.55)`;
-    const s = grainSize * (0.5 + rnd());
-    ctx.fillRect(rnd() * size, rnd() * size, s, s);
+  const img = ctx.createImageData(size, size);
+  const d = img.data;
+  for (let i = 0; i < d.length; i += 4) {
+    const dv = (rnd() - 0.5) * variance * 1.3;
+    d[i] = rgb[0] + dv;
+    d[i + 1] = rgb[1] + dv;
+    d[i + 2] = rgb[2] + dv;
+    d[i + 3] = 255;
   }
+  ctx.putImageData(img, 0, 0);
+  if (grainSize > 1.5) ctx.drawImage(blurCanvas(c, (grainSize - 1) * 0.5), 0, 0);
   return c;
 }
 
 function getOrMake(key: string, make: () => PbrSet): PbrSet {
   const hit = cache.get(key);
   if (hit) return hit;
+  const t0 = performance.now();
   const set = make();
   cache.set(key, set);
+  if (import.meta.env.DEV || (window as unknown as { __egoTiming?: boolean }).__egoTiming) console.debug(`[pbr] ${key} ${(performance.now() - t0).toFixed(0)} ms`);
   return set;
 }
 
 export function stuccoPbr(): PbrSet {
   return getOrMake('stucco', () => {
-    const size = 256;
-    const color = tintedColor(size, 21, [236, 232, 224], 10, 3500, 2);
+    const size = 384;
+    const color = tintedColor(size, 21, [236, 232, 224], 12, 14000, 1.6);
+    const cctx = color.getContext('2d')!;
+    const rnd = makeDecoRng(23);
+    for (let i = 0; i < 30; i++) {
+      cctx.fillStyle = `rgba(${150 + rnd() * 40},${140 + rnd() * 40},${120 + rnd() * 40},0.06)`;
+      cctx.beginPath();
+      cctx.ellipse(rnd() * size, rnd() * size, 40 + rnd() * 120, 30 + rnd() * 90, rnd() * 3, 0, Math.PI * 2);
+      cctx.fill();
+    }
     const [h, hctx] = makeCanvas(size);
-    noiseFill(hctx, size, 22, 128, 40, 5000, 2);
-    const normal = heightToNormal(blurCanvas(h, 0.8), 1.2);
+    noiseFill(hctx, size, 22, 128, 46, 16000, 1.4);
+    const normal = heightToNormal(blurCanvas(h, 0.6), 1.6);
     return { map: toTexture(color, true), normalMap: toTexture(normal, false), metersPerRepeat: 2.5 };
   });
 }
@@ -111,7 +171,7 @@ export function stuccoPbr(): PbrSet {
 /** Spanish barrel tiles: rows of half-cylinders with per-tile tone variation. */
 export function tileRoofPbr(): PbrSet {
   return getOrMake('tile-roof', () => {
-    const size = 512;
+    const size = 384;
     const [c, ctx] = makeCanvas(size);
     const [h, hctx] = makeCanvas(size);
     const rnd = makeDecoRng(31);
@@ -151,15 +211,16 @@ export function tileRoofPbr(): PbrSet {
 }
 
 /** Architectural asphalt shingles in offset courses. */
+let shingleNormal: THREE.Texture | null = null;
 export function shinglePbr(color: [number, number, number] = [92, 98, 106]): PbrSet {
   return getOrMake(`shingle-${color.join()}`, () => {
-    const size = 512;
+    const size = 384;
     const [c, ctx] = makeCanvas(size);
     const [h, hctx] = makeCanvas(size);
     const rnd = makeDecoRng(41);
-    const rows = 16;
+    const rows = 22;
     const rh = size / rows;
-    const tw = size / 8;
+    const tw = size / 11;
     ctx.fillStyle = `rgb(${color.join(',')})`;
     ctx.fillRect(0, 0, size, size);
     hctx.fillStyle = '#808080';
@@ -179,44 +240,49 @@ export function shinglePbr(color: [number, number, number] = [92, 98, 106]): Pbr
       hctx.fillStyle = '#202020';
       hctx.fillRect(0, r * rh + rh - 3, size, 3);
     }
-    const normal = heightToNormal(blurCanvas(h, 0.6), 1.6);
-    return { map: toTexture(c, true), normalMap: toTexture(normal, false), metersPerRepeat: 3.0 };
+    speckle(c, 20000, rnd, (r) => { const d = (r() - 0.5) * 70; return [color[0] + d, color[1] + d, color[2] + d, 0.5]; });
+    // The course layout is identical for every color (same seed), so one normal map serves all three.
+    if (!shingleNormal) shingleNormal = toTexture(heightToNormal(blurCanvas(h, 0.6), 1.6), false);
+    return { map: toTexture(c, true), normalMap: shingleNormal, metersPerRepeat: 3.0 };
   });
 }
 
 export function asphaltPbr(): PbrSet {
   return getOrMake('asphalt', () => {
     const size = 512;
-    const color = tintedColor(size, 51, [78, 80, 84], 14, 16000, 1.6);
+    // Base: dark binder with fine light aggregate speckle and slow mottling.
+    const color = tintedColor(size, 51, [64, 66, 70], 6, 34000, 1.2);
     const cctx = color.getContext('2d')!;
     const rnd = makeDecoRng(52);
-    // Patches and faint cracks
-    for (let i = 0; i < 14; i++) {
-      cctx.fillStyle = `rgba(${66 + rnd() * 16},${66 + rnd() * 16},${68 + rnd() * 16},0.12)`;
+    speckle(color, 22000, rnd, (r) => { const v = 96 + r() * 70; return [v, v, v - 4, 0.35 + r() * 0.4]; });
+    for (let i = 0; i < 40; i++) {
+      const g = 56 + rnd() * 26;
+      cctx.fillStyle = `rgba(${g},${g},${g + 2},0.16)`;
       cctx.beginPath();
-      cctx.ellipse(rnd() * size, rnd() * size, 30 + rnd() * 80, 20 + rnd() * 50, rnd() * 3, 0, Math.PI * 2);
+      cctx.ellipse(rnd() * size, rnd() * size, 60 + rnd() * 200, 40 + rnd() * 120, rnd() * 3, 0, Math.PI * 2);
       cctx.fill();
     }
-    cctx.strokeStyle = 'rgba(30,30,32,0.16)';
-    cctx.lineWidth = 1.0;
-    for (let i = 0; i < 2; i++) {
-      cctx.beginPath();
+    // Sealed cracks: dark meandering lines with a lighter edge
+    for (let i = 0; i < 5; i++) {
       let x = rnd() * size;
       let y = rnd() * size;
+      cctx.lineWidth = 1.4 + rnd();
+      cctx.strokeStyle = 'rgba(22,22,24,0.55)';
+      cctx.beginPath();
       cctx.moveTo(x, y);
-      for (let k = 0; k < 8; k++) {
-        x += (rnd() - 0.5) * 60;
-        y += rnd() * 40;
+      for (let k = 0; k < 14; k++) {
+        x += (rnd() - 0.5) * 70;
+        y += (rnd() - 0.2) * 50;
         cctx.lineTo(x, y);
       }
       cctx.stroke();
     }
     const [h, hctx] = makeCanvas(size);
-    noiseFill(hctx, size, 53, 128, 60, 20000, 1.5);
-    const normal = heightToNormal(h, 0.9);
+    noiseFill(hctx, size, 53, 128, 64, 30000, 1.2);
+    const normal = heightToNormal(h, 0.7);
     const [r, rctx] = makeCanvas(size);
-    noiseFill(rctx, size, 54, 215, 25, 6000, 3);
-    return { map: toTexture(color, true), normalMap: toTexture(normal, false), roughnessMap: toTexture(r, false), metersPerRepeat: 6 };
+    noiseFill(rctx, size, 54, 218, 22, 17000, 2.5);
+    return { map: toTexture(color, true), normalMap: toTexture(normal, false), roughnessMap: toTexture(r, false), metersPerRepeat: 7 };
   });
 }
 
@@ -241,40 +307,37 @@ export function concretePbr(): PbrSet {
 
 export function gravelPbr(): PbrSet {
   return getOrMake('gravel', () => {
-    const size = 256;
+    const size = 384;
     const [c, ctx] = makeCanvas(size);
     const [h, hctx] = makeCanvas(size);
     const rnd = makeDecoRng(71);
-    ctx.fillStyle = '#b89d74';
+    ctx.fillStyle = '#b39a74';
     ctx.fillRect(0, 0, size, size);
-    hctx.fillStyle = '#505050';
+    hctx.fillStyle = '#606060';
     hctx.fillRect(0, 0, size, size);
-    for (let i = 0; i < 2600; i++) {
+    const cimg = ctx.getImageData(0, 0, size, size);
+    const himg = hctx.getImageData(0, 0, size, size);
+    for (let i = 0; i < 6000; i++) {
       const x = rnd() * size;
       const y = rnd() * size;
-      const r = 1.5 + rnd() * 3;
+      const r = 0.8 + rnd() * 2.0;
       const t = 150 + rnd() * 90;
-      ctx.fillStyle = `rgb(${t},${Math.round(t * 0.86)},${Math.round(t * 0.66)})`;
-      ctx.beginPath();
-      ctx.arc(x, y, r, 0, Math.PI * 2);
-      ctx.fill();
-      const hg = hctx.createRadialGradient(x - r * 0.3, y - r * 0.3, 0, x, y, r);
-      hg.addColorStop(0, '#e8e8e8');
-      hg.addColorStop(1, '#505050');
-      hctx.fillStyle = hg;
-      hctx.beginPath();
-      hctx.arc(x, y, r, 0, Math.PI * 2);
-      hctx.fill();
+      rectData(cimg.data, size, x - r, y - r, r * 2, r * 1.6, t, t * 0.86, t * 0.66);
+      const hv = 150 + rnd() * 80;
+      rectData(himg.data, size, x - r, y - r, r * 2, r * 1.6, hv, hv, hv);
+      rectData(himg.data, size, x - r * 0.5, y - r * 0.5, r, r * 0.6, hv + 40, hv + 40, hv + 40);
     }
-    const normal = heightToNormal(h, 1.3);
+    ctx.putImageData(cimg, 0, 0);
+    hctx.putImageData(himg, 0, 0);
+    const normal = heightToNormal(blurCanvas(h, 0.4), 1.0);
     return { map: toTexture(c, true), normalMap: toTexture(normal, false), metersPerRepeat: 1.6 };
   });
 }
 
 export function sandPbr(): PbrSet {
   return getOrMake('sand', () => {
-    const size = 512;
-    const color = tintedColor(size, 81, [214, 190, 150], 14, 14000, 2.5);
+    const size = 384;
+    const color = tintedColor(size, 81, [205, 181, 141], 12, 22000, 1.4);
     const cctx = color.getContext('2d')!;
     const rnd = makeDecoRng(82);
     for (let i = 0; i < 40; i++) {
@@ -283,9 +346,15 @@ export function sandPbr(): PbrSet {
       cctx.ellipse(rnd() * size, rnd() * size, 40 + rnd() * 120, 20 + rnd() * 60, rnd() * 3, 0, Math.PI * 2);
       cctx.fill();
     }
+    for (let i = 0; i < 160; i++) {
+      cctx.fillStyle = `rgba(${120 + rnd() * 50},${100 + rnd() * 40},${70 + rnd() * 30},0.5)`;
+      cctx.beginPath();
+      cctx.arc(rnd() * size, rnd() * size, 0.8 + rnd() * 1.6, 0, Math.PI * 2);
+      cctx.fill();
+    }
     const [h, hctx] = makeCanvas(size);
-    noiseFill(hctx, size, 83, 128, 30, 9000, 3);
-    const normal = heightToNormal(blurCanvas(h, 1.5), 0.8);
+    noiseFill(hctx, size, 83, 128, 24, 26000, 1.2);
+    const normal = heightToNormal(blurCanvas(h, 0.7), 0.5);
     return { map: toTexture(color, true), normalMap: toTexture(normal, false), metersPerRepeat: 10 };
   });
 }
@@ -297,11 +366,7 @@ export function lawnPbr(): PbrSet {
     const rnd = makeDecoRng(91);
     ctx.fillStyle = '#5f8f3c';
     ctx.fillRect(0, 0, size, size);
-    for (let i = 0; i < 9000; i++) {
-      const g = 120 + rnd() * 60;
-      ctx.fillStyle = `rgba(${Math.round(g * 0.6)},${Math.round(g)},${Math.round(g * 0.35)},0.6)`;
-      ctx.fillRect(rnd() * size, rnd() * size, 1.5, 3 + rnd() * 3);
-    }
+    speckle(c, 20000, rnd, (r) => { const g = 120 + r() * 60; return [g * 0.6, g, g * 0.35, 0.6]; });
     const [h, hctx] = makeCanvas(size);
     noiseFill(hctx, size, 92, 128, 40, 6000, 1.5);
     const normal = heightToNormal(h, 0.8);
@@ -372,25 +437,91 @@ export function garageDoorPbr(): PbrSet {
   });
 }
 
-/** Vertical standing-seam metal siding. */
+/** Vertical ribbed architectural metal panel (PBR-style wall panel, 0.3 m rib pitch). */
 export function sidingPbr(): PbrSet {
   return getOrMake('siding', () => {
-    const size = 256;
-    const color = tintedColor(size, 111, [52, 56, 61], 5, 2500, 2);
+    const size = 384;
+    const color = tintedColor(size, 111, [74, 79, 85], 4, 4000, 2);
     const cctx = color.getContext('2d')!;
     const [h, hctx] = makeCanvas(size);
     hctx.fillStyle = '#808080';
     hctx.fillRect(0, 0, size, size);
-    for (let x = 0; x < size; x += 32) {
-      hctx.fillStyle = '#c0c0c0';
-      hctx.fillRect(x, 0, 6, size);
-      cctx.fillStyle = 'rgba(255,255,255,0.05)';
-      cctx.fillRect(x, 0, 6, size);
-      cctx.fillStyle = 'rgba(0,0,0,0.18)';
-      cctx.fillRect(x + 6, 0, 3, size);
+    const pitch = size / 7; // 7 ribs per 2 m repeat
+    for (let x = 0; x < size; x += pitch) {
+      // Trapezoid rib: ramp up, flat crown, ramp down
+      const hg = hctx.createLinearGradient(x, 0, x + pitch * 0.42, 0);
+      hg.addColorStop(0, '#808080');
+      hg.addColorStop(0.3, '#d8d8d8');
+      hg.addColorStop(0.7, '#d8d8d8');
+      hg.addColorStop(1, '#808080');
+      hctx.fillStyle = hg;
+      hctx.fillRect(x, 0, pitch * 0.42, size);
+      const cg = cctx.createLinearGradient(x, 0, x + pitch * 0.42, 0);
+      cg.addColorStop(0, 'rgba(0,0,0,0.22)');
+      cg.addColorStop(0.3, 'rgba(255,255,255,0.10)');
+      cg.addColorStop(0.7, 'rgba(255,255,255,0.06)');
+      cg.addColorStop(1, 'rgba(0,0,0,0.26)');
+      cctx.fillStyle = cg;
+      cctx.fillRect(x, 0, pitch * 0.42, size);
     }
-    const normal = heightToNormal(blurCanvas(h, 0.8), 2.0);
+    // Horizontal panel joint every repeat
+    cctx.fillStyle = 'rgba(0,0,0,0.3)';
+    cctx.fillRect(0, 0, size, 3);
+    hctx.fillStyle = '#404040';
+    hctx.fillRect(0, 0, size, 4);
+    const normal = heightToNormal(blurCanvas(h, 0.8), 2.2);
     return { map: toTexture(color, true), normalMap: toTexture(normal, false), metersPerRepeat: 2.0 };
+  });
+}
+
+/** Smooth composite (ACM) panel in charcoal with reveal joints: entry towers and sign backers. */
+export function darkPanelPbr(): PbrSet {
+  return getOrMake('dark-panel', () => {
+    const size = 256;
+    const color = tintedColor(size, 121, [38, 41, 46], 3, 2000, 2);
+    const cctx = color.getContext('2d')!;
+    const [h, hctx] = makeCanvas(size);
+    hctx.fillStyle = '#a0a0a0';
+    hctx.fillRect(0, 0, size, size);
+    for (const v of [0, size / 2]) {
+      cctx.fillStyle = 'rgba(0,0,0,0.5)';
+      cctx.fillRect(v, 0, 4, size);
+      cctx.fillRect(0, v, size, 4);
+      hctx.fillStyle = '#303030';
+      hctx.fillRect(v, 0, 4, size);
+      hctx.fillRect(0, v, size, 4);
+    }
+    const normal = heightToNormal(blurCanvas(h, 0.6), 1.6);
+    return { map: toTexture(color, true), normalMap: toTexture(normal, false), metersPerRepeat: 2.4 };
+  });
+}
+
+/** Corrugated shipping-container steel with a horizontal rib pattern. */
+export function corrugatedPbr(rgb: [number, number, number]): PbrSet {
+  return getOrMake(`corrugated-${rgb.join()}`, () => {
+    const size = 256;
+    const color = tintedColor(size, 131, rgb, 6, 3000, 2);
+    const cctx = color.getContext('2d')!;
+    const [h, hctx] = makeCanvas(size);
+    hctx.fillStyle = '#808080';
+    hctx.fillRect(0, 0, size, size);
+    const pitch = size / 8;
+    for (let x = 0; x < size; x += pitch) {
+      const hg = hctx.createLinearGradient(x, 0, x + pitch, 0);
+      hg.addColorStop(0, '#606060');
+      hg.addColorStop(0.5, '#d0d0d0');
+      hg.addColorStop(1, '#606060');
+      hctx.fillStyle = hg;
+      hctx.fillRect(x, 0, pitch, size);
+      const cg = cctx.createLinearGradient(x, 0, x + pitch, 0);
+      cg.addColorStop(0, 'rgba(0,0,0,0.25)');
+      cg.addColorStop(0.5, 'rgba(255,255,255,0.08)');
+      cg.addColorStop(1, 'rgba(0,0,0,0.25)');
+      cctx.fillStyle = cg;
+      cctx.fillRect(x, 0, pitch, size);
+    }
+    const normal = heightToNormal(blurCanvas(h, 1.0), 2.0);
+    return { map: toTexture(color, true), normalMap: toTexture(normal, false), metersPerRepeat: 2.4 };
   });
 }
 

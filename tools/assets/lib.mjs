@@ -10,7 +10,7 @@ export const MATERIALS = {
   'plastic-dark': () => new THREE.MeshStandardMaterial({ name: 'plastic-dark', color: 0x1c1e21, roughness: 0.75, metalness: 0.05 }),
   chrome: () => new THREE.MeshStandardMaterial({ name: 'chrome', color: 0xd9dde2, roughness: 0.18, metalness: 0.95 }),
   rubber: () => new THREE.MeshStandardMaterial({ name: 'rubber', color: 0x16171a, roughness: 0.95, metalness: 0 }),
-  rim: () => new THREE.MeshStandardMaterial({ name: 'rim', color: 0xaeb4ba, roughness: 0.3, metalness: 0.85 }),
+  rim: () => new THREE.MeshStandardMaterial({ name: 'rim', color: 0xcfd4d8, roughness: 0.28, metalness: 0.85 }),
   headlight: () => new THREE.MeshStandardMaterial({ name: 'headlight', color: 0xf3f6ff, roughness: 0.1, metalness: 0.2, emissive: 0xfff6dd, emissiveIntensity: 0.4 }),
   taillight: () => new THREE.MeshStandardMaterial({ name: 'taillight', color: 0xc9262b, roughness: 0.2, metalness: 0.1, emissive: 0xd92d2d, emissiveIntensity: 0.5 }),
   amber: () => new THREE.MeshStandardMaterial({ name: 'amber', color: 0xf0a030, roughness: 0.25, metalness: 0.1, emissive: 0xd98010, emissiveIntensity: 0.3 }),
@@ -128,30 +128,30 @@ export function roundedBox(w, h, d, r = 0.05) {
   return g;
 }
 
-/** A wheel: tire with tread blocks, sidewall and a spoked rim. Axis along x. Returns a group named `name`. */
-export function wheel(name, radius = 0.38, width = 0.26, { spokes = 6, rimRatio = 0.6 } = {}) {
+/** A wheel: tire with tread blocks and shoulder, a dished steel rim with lug holes and a chrome cap. Axis along x. */
+export function wheel(name, radius = 0.38, width = 0.26, { spokes = 5, rimRatio = 0.64 } = {}) {
   const b = new Builder();
-  b.add('rubber', new THREE.CylinderGeometry(radius, radius, width, 28), { rotation: [0, 0, Math.PI / 2] });
-  // Tread blocks
-  const blocks = 26;
+  b.add('rubber', new THREE.CylinderGeometry(radius, radius, width, 32), { rotation: [0, 0, Math.PI / 2] });
+  // Rounded shoulders: a slightly smaller torus-ish ring at each sidewall edge
+  for (const side of [-1, 1]) b.add('rubber', new THREE.TorusGeometry(radius - 0.03, 0.035, 8, 32), { position: [side * (width / 2 - 0.01), 0, 0], rotation: [0, Math.PI / 2, 0] });
+  const blocks = 30;
   for (let i = 0; i < blocks; i++) {
     const a = (i / blocks) * Math.PI * 2;
-    b.add('rubber', new THREE.BoxGeometry(width * 0.9, 0.016, (2 * Math.PI * radius) / blocks * 0.62), { position: [0, Math.cos(a) * (radius + 0.004), Math.sin(a) * (radius + 0.004)], rotation: [-a, 0, 0] });
+    b.add('rubber', new THREE.BoxGeometry(width * 0.86, 0.014, ((2 * Math.PI * radius) / blocks) * 0.58), { position: [0, Math.cos(a) * (radius + 0.004), Math.sin(a) * (radius + 0.004)], rotation: [-a, 0, 0] });
   }
   const rimR = radius * rimRatio;
-  b.add('rim', new THREE.CylinderGeometry(rimR, rimR, width * 0.98, 24), { rotation: [0, 0, Math.PI / 2] });
-  b.add('plastic-dark', new THREE.CylinderGeometry(rimR * 0.92, rimR * 0.92, width * 1.0, 24), { rotation: [0, 0, Math.PI / 2] });
-  for (let i = 0; i < spokes; i++) {
-    const a = (i / spokes) * Math.PI * 2;
-    for (const side of [-1, 1]) {
-      b.add('rim', new THREE.BoxGeometry(0.03, rimR * 0.78, rimR * 0.26), { position: [side * (width / 2 + 0.005), Math.cos(a) * rimR * 0.45, Math.sin(a) * rimR * 0.45], rotation: [-a, 0, 0] });
-    }
-  }
+  // Rim barrel (dark) and the dished face on each side
+  b.add('plastic-dark', new THREE.CylinderGeometry(rimR * 0.96, rimR * 0.96, width * 1.0, 28), { rotation: [0, 0, Math.PI / 2] });
   for (const side of [-1, 1]) {
-    b.add('chrome', new THREE.CylinderGeometry(rimR * 0.22, rimR * 0.22, 0.05, 12), { position: [side * (width / 2 + 0.02), 0, 0], rotation: [0, 0, Math.PI / 2] });
+    b.add('rim', new THREE.CylinderGeometry(rimR, rimR * 0.9, 0.03, 28), { position: [side * (width / 2 - 0.02), 0, 0], rotation: [0, 0, side * Math.PI / 2] });
+    b.add('rim', new THREE.CylinderGeometry(rimR * 0.62, rimR * 0.5, 0.05, 24), { position: [side * (width / 2 + 0.005), 0, 0], rotation: [0, 0, side * Math.PI / 2] });
+    for (let i = 0; i < spokes; i++) {
+      const a = (i / spokes) * Math.PI * 2;
+      b.add('plastic-dark', new THREE.CylinderGeometry(rimR * 0.1, rimR * 0.1, 0.02, 10), { position: [side * (width / 2 + 0.01), Math.cos(a) * rimR * 0.76, Math.sin(a) * rimR * 0.76], rotation: [0, 0, Math.PI / 2] });
+    }
+    b.add('chrome', new THREE.CylinderGeometry(rimR * 0.26, rimR * 0.26, 0.05, 16), { position: [side * (width / 2 + 0.03), 0, 0], rotation: [0, 0, Math.PI / 2] });
   }
-  const g = b.build(name);
-  return g;
+  return b.build(name);
 }
 
 export function cylinder(materialName, b, rTop, rBottom, h, segs, opts) {
@@ -169,4 +169,81 @@ export function describe(group) {
     }
   });
   return { meshes, triangles: Math.round(tris) };
+}
+
+/**
+ * Cross-section for lofted body shells: a trapezoid from the beltline up to a rounded-top roof.
+ * Returns points in the (x, y) plane, counter-clockwise from bottom-right, with a fixed count so
+ * sections can be lofted pairwise. `hwB` half-width at the beltline, `hwT` at the roof edge.
+ */
+export function shellSection({ yBottom, yTop, hwB, hwT, r, cornerSegs = 6 }) {
+  const pts = [];
+  pts.push([hwB, yBottom]);
+  pts.push([hwT, yTop - r]);
+  for (let i = 1; i <= cornerSegs; i++) {
+    const a = (i / cornerSegs) * (Math.PI / 2);
+    pts.push([hwT - r + Math.cos(a) * r, yTop - r + Math.sin(a) * r]);
+  }
+  for (let i = 0; i <= cornerSegs; i++) {
+    const a = Math.PI / 2 + (i / cornerSegs) * (Math.PI / 2);
+    pts.push([-hwT + r + Math.cos(a) * r, yTop - r + Math.sin(a) * r]);
+  }
+  pts.push([-hwB, yBottom]);
+  return pts;
+}
+
+/**
+ * Lofts a list of {z, section} stations into a smooth-shaded shell, optionally capping the ends.
+ * Stations are ordered from the rear (smallest z) to the front. Side normals are smoothed, caps are flat.
+ */
+export function loftShell(stations, { capFront = true, capRear = true } = {}) {
+  const n = stations[0].section.length;
+  const positions = [];
+  const indices = [];
+  for (const st of stations) for (const [x, y] of st.section) positions.push(x, y, st.z);
+  for (let s = 0; s < stations.length - 1; s++) {
+    for (let j = 0; j < n - 1; j++) {
+      const a = s * n + j;
+      const b = s * n + j + 1;
+      const c = (s + 1) * n + j + 1;
+      const d = (s + 1) * n + j;
+      // Winding so normals face outward (+x side first, going over the roof to -x).
+      indices.push(a, b, c, a, c, d);
+    }
+  }
+  const side = new THREE.BufferGeometry();
+  side.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  side.setIndex(indices);
+  side.computeVertexNormals();
+  const parts = [side.toNonIndexed()];
+  const cap = (st, facing) => {
+    const pos = [];
+    const sec = st.section;
+    for (let j = 1; j < n - 1; j++) {
+      const tri = facing > 0 ? [sec[0], sec[j], sec[j + 1]] : [sec[0], sec[j + 1], sec[j]];
+      for (const [x, y] of tri) pos.push(x, y, st.z);
+    }
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+    g.computeVertexNormals();
+    return g;
+  };
+  if (capFront) parts.push(cap(stations[stations.length - 1], 1));
+  if (capRear) parts.push(cap(stations[0], -1));
+  for (const p of parts) if (!p.attributes.uv) p.setAttribute('uv', new THREE.BufferAttribute(new Float32Array(p.attributes.position.count * 2), 2));
+  return BGU.mergeGeometries(parts, false);
+}
+
+/** Flat polygon in the (z, y) plane placed on a vehicle side at x; normal faces ±x. */
+export function sidePolygon(points, x, facing) {
+  const shape = new THREE.Shape();
+  // rotateY(+90°) maps shape-x to world -z, so the right side is drawn mirrored to keep z consistent.
+  const k = facing > 0 ? -1 : 1;
+  points.forEach(([z, y], i) => (i === 0 ? shape.moveTo(k * z, y) : shape.lineTo(k * z, y)));
+  shape.closePath();
+  const g = new THREE.ShapeGeometry(shape);
+  // ShapeGeometry lies in (x,y) with +z normal; map shape-x → world-z and rotate the normal to ±x.
+  g.rotateY(facing > 0 ? Math.PI / 2 : -Math.PI / 2);
+  g.translate(x, 0, 0);
+  return g;
 }

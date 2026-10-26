@@ -4,6 +4,8 @@ import { gableEndGeometry, gableRoofGeometry, hipRoofGeometry, MeshBuilder } fro
 import { makeDecoRng } from '../assets/random';
 import { DOOR_COLORS, roofMaterial, STATIC_MATERIALS, UV_SCALES, WALL_TINTS, wallMaterial, type RoofKind } from './materials';
 import { hashLot, yardPlan } from '../city/yardLayout';
+import { addCondenser } from '../props/hvac';
+import { condenserPosition, condenserSideDir, HOUSE_HALF_WIDTH } from '@/game/world/cityLayout';
 
 /**
  * Builds a complete house lot (architecture, hardscape, walls, ground) in local space with the
@@ -166,6 +168,18 @@ export function houseMaterialResolver(key: string): THREE.Material {
     case 'wood': return STATIC_MATERIALS.wood();
     case 'white': return STATIC_MATERIALS.white();
     case 'dark': return STATIC_MATERIALS.dark();
+    case 'garageTint': return STATIC_MATERIALS.garageTint(arg);
+    case 'unitCabinet': return STATIC_MATERIALS.unitCabinet();
+    case 'grille': return STATIC_MATERIALS.grille();
+    case 'insulation': return STATIC_MATERIALS.insulation();
+    case 'galvanized': return STATIC_MATERIALS.galvanized();
+    case 'copper': return STATIC_MATERIALS.copper();
+    case 'solar': return STATIC_MATERIALS.solar();
+    case 'bin': return STATIC_MATERIALS.bin();
+    case 'rubber': return STATIC_MATERIALS.rubber();
+    case 'planter': return STATIC_MATERIALS.doorColor('#8a8580');
+    case 'umbrella': return STATIC_MATERIALS.doorColor(arg);
+    case 'safetyOrange': return STATIC_MATERIALS.safetyOrange();
     default:
       throw new Error(`Unknown house material ${key}`);
   }
@@ -175,6 +189,7 @@ const FACING_ROTATION: Record<Lot['facing'], number> = { north: 0, south: Math.P
 
 /** Builds every house lot into one shared builder so the whole neighborhood is a handful of draw calls. */
 export function buildNeighborhood(lots: Lot[]): THREE.Group {
+  const t0 = performance.now();
   const shared = new MeshBuilder(houseMaterialResolver, UV_SCALES);
   for (const lot of lots) {
     const m = new THREE.Matrix4().compose(new THREE.Vector3(lot.center.x, 0, lot.center.z), new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), FACING_ROTATION[lot.facing]), new THREE.Vector3(1, 1, 1));
@@ -182,7 +197,9 @@ export function buildNeighborhood(lots: Lot[]): THREE.Group {
     addHouse(shared, lot);
   }
   shared.setFrame(null);
-  return shared.build('houses');
+  const g = shared.build('houses');
+  if (import.meta.env.DEV) console.debug(`[build] neighborhood ${(performance.now() - t0).toFixed(0)} ms`);
+  return g;
 }
 
 /** Single-lot build (used by tests and previews). */
@@ -197,7 +214,8 @@ export function addHouse(shared: MeshBuilder, lot: Lot): void {
   const variant = houseVariant(lot);
   const plan = yardPlan(lot);
   // Alias generic keys to this house's variant materials; everything else is shared.
-  const alias: Record<string, string> = { wall: `wall:${variant.wall}`, roof: `roof:${variant.roof}`, roofCap: `roofCap:${variant.roof}`, door: `door:${variant.door}` };
+  const garageTint = ['#e9e6de', '#d9d2c4', '#c9bfae', '#3a3d41'][hashLot(lot.id + 'g') % 4];
+  const alias: Record<string, string> = { wall: `wall:${variant.wall}`, roof: `roof:${variant.roof}`, roofCap: `roofCap:${variant.roof}`, door: `door:${variant.door}`, garage: `garageTint:${garageTint}` };
   const b = {
     add: (k: string, g: THREE.BufferGeometry, p?: [number, number, number], r?: [number, number, number], s?: [number, number, number]) => shared.add(alias[k] ?? k, g, p, r, s),
     box: (k: string, size: [number, number, number], p: [number, number, number], r?: [number, number, number]) => shared.box(alias[k] ?? k, size, p, r),
@@ -369,6 +387,69 @@ export function addHouse(shared: MeshBuilder, lot: Lot): void {
     driveX = -11;
     driveW = 8.5;
     walkX = 1;
+  }
+
+  // ---- Outdoor condensing unit against the side wall with the disconnect, whip and line set to the wall.
+  {
+    const cp = condenserPosition(lot);
+    const sd = condenserSideDir(lot);
+    // Local frame: the lot's facing rotation maps local +x to the condenser side, so the unit sits at local (half + 0.9, -3).
+    void cp; void sd;
+    const half = HOUSE_HALF_WIDTH[style];
+    const ux = half + 0.9;
+    const uz = -3;
+    addCondenser(b as unknown as MeshBuilder, [ux, 0, uz], -Math.PI / 2, { pad: true, lineSet: true, fan: false, size: style === 'premium' ? 1.08 : 0.92, height: style === 'premium' ? 1.0 : 0.86 });
+    b.box('galvanized', [0.06, 0.32, 0.22], [half + 0.03, 1.45, uz - 0.3]); // disconnect box
+    b.box('galvanized', [0.02, 0.08, 0.1], [half + 0.05, 1.3, uz - 0.3]);
+    b.box('galvanized', [0.04, 1.3, 0.04], [half + 0.03, 0.65, uz - 0.3]); // conduit down the wall
+    b.box('insulation', [half + 0.9 - 0.5 - half, 0.07, 0.07], [half + 0.25, 0.35, uz + 0.1]); // suction line to the wall
+    b.box('copper', [0.4, 0.025, 0.025], [half + 0.25, 0.3, uz + 0.2]);
+    b.box('unitCabinet', [0.12, 0.5, 0.5], [half + 0.06, 0.9, uz + 0.1]); // line-set wall cover
+  }
+  // ---- Solar array on about half the roofs, trash bins by the garage, a patio set behind the house
+  const seed = hashLot(lot.id + 'p');
+  if (seed % 2 === 0 && style !== 'modern') {
+    const roofInfo = { ranch: { w: 16, d: 11, h: 2.4, y: 3.3, over: 0.7, z: 0 }, 'two-story': { w: 14, d: 11, h: 2.8, y: 6.4, over: 0.6, z: 0 }, spanish: { w: 17, d: 12, h: 2.0, y: 3.6, over: 0.8, z: 0 }, premium: { w: 19, d: 13, h: 2.4, y: 6.6, over: 0.8, z: 0.5 }, modern: { w: 10, d: 11, h: 0, y: 3.4, over: 0, z: 0 } }[style];
+    const c = roofInfo.d / 2 + roofInfo.over;
+    const theta = Math.atan(roofInfo.h / c);
+    const back = seed % 4 === 0 ? 1 : -1; // which slope
+    const t = 0.5;
+    const cz = roofInfo.z + back * c * t;
+    const cy = roofInfo.y + roofInfo.h * (1 - t) + 0.12;
+    const cols = style === 'premium' ? 8 : 5;
+    for (let i = 0; i < cols; i++) {
+      const px = (i - (cols - 1) / 2) * 1.08;
+      b.box('solar', [1.02, 0.05, 1.7], [px, cy, cz], [back * theta, 0, 0]);
+      b.box('galvanized', [1.06, 0.03, 1.74], [px, cy - 0.03, cz], [back * theta, 0, 0]);
+    }
+  }
+  for (const [i, col] of (['bin', 'dark'] as const).entries()) {
+    b.box(col, [0.62, 1.05, 0.7], [driveX + driveW / 2 + 0.6 + i * 0.75, 0.52, frontZ + 1.3]);
+    b.box('dark', [0.66, 0.08, 0.74], [driveX + driveW / 2 + 0.6 + i * 0.75, 1.08, frontZ + 1.3]);
+  }
+  {
+    const backZ = { ranch: 5.5, 'two-story': 5.5, spanish: 6, modern: 5.5, premium: 7 }[style] + 3.2;
+    const px = style === 'premium' ? -6 : 1.5;
+    b.box('concrete', [5.5, 0.1, 4.5], [px, 0.05, backZ]);
+    b.add('wood', new THREE.CylinderGeometry(0.7, 0.7, 0.06, 16), [px, 0.74, backZ]);
+    b.box('darkMetal', [0.06, 0.72, 0.06], [px, 0.37, backZ]);
+    for (let k = 0; k < 4; k++) {
+      const a = (k / 4) * Math.PI * 2 + 0.4;
+      b.box('darkMetal', [0.45, 0.06, 0.45], [px + Math.cos(a) * 1.1, 0.45, backZ + Math.sin(a) * 1.1], [0, -a, 0]);
+      b.box('darkMetal', [0.45, 0.5, 0.05], [px + Math.cos(a) * 1.32, 0.72, backZ + Math.sin(a) * 1.32], [0, -a - Math.PI / 2, 0]);
+    }
+    const umbrella = ['#b7442e', '#2f5d8a', '#c9a24a', '#4a7a52'][seed % 4];
+    b.box('darkMetal', [0.05, 2.4, 0.05], [px, 1.2, backZ]);
+    b.add(`umbrella:${umbrella}`, new THREE.ConeGeometry(1.5, 0.45, 8), [px, 2.45, backZ]);
+    b.box('dark', [0.6, 0.9, 0.5], [px + 2.8, 0.75, backZ - 1.2]); // grill
+    b.box('darkMetal', [0.7, 0.05, 0.6], [px + 2.8, 1.22, backZ - 1.2]);
+    for (const [gx, gz] of [[-0.25, -0.2], [0.25, 0.2]]) b.add('darkMetal', new THREE.CylinderGeometry(0.1, 0.1, 0.05, 10), [px + 2.8 + gx, 0.05, backZ - 1.2 + gz], [0, 0, Math.PI / 2]);
+  }
+  if (seed % 3 === 0) {
+    // Basketball hoop at the driveway
+    b.box('darkMetal', [0.08, 3.2, 0.08], [driveX - driveW / 2 - 0.4, 1.6, frontZ - 3]);
+    b.box('white', [1.4, 0.9, 0.05], [driveX - driveW / 2 + 0.1, 3.2, frontZ - 3]);
+    b.add('safetyOrange', new THREE.TorusGeometry(0.23, 0.02, 6, 16), [driveX - driveW / 2 + 0.1, 2.9, frontZ - 3.3], [Math.PI / 2, 0, 0]);
   }
 
   // Driveway from the garage down to the sidewalk; walkway from the door.

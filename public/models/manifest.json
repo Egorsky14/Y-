@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-25T06:42:52.992Z",
+  "generatedAt": "2026-10-25T16:23:13.085Z",
   "generator": "tools/assets (three.js procedural builders → glTF 2.0 via GLTFExporter)",
   "license": "Original project assets, MIT with the repository",
   "assets": [
@@ -7,9 +7,9 @@
       "id": "full-size-van",
       "category": "vehicles",
       "file": "models/vehicles/full-size-van.glb",
-      "bytes": 432756,
-      "meshes": 32,
-      "triangles": 6798,
+      "bytes": 811436,
+      "meshes": 34,
+      "triangles": 17110,
       "description": "Full-size high-roof HVAC service van",
       "source": "procedural (tools/assets)",
       "license": "project"
@@ -18,9 +18,9 @@
       "id": "compact-van",
       "category": "vehicles",
       "file": "models/vehicles/compact-van.glb",
-      "bytes": 399172,
-      "meshes": 31,
-      "triangles": 6242,
+      "bytes": 767640,
+      "meshes": 33,
+      "triangles": 16280,
       "description": "Compact service van",
       "source": "procedural (tools/assets)",
       "license": "project"
@@ -29,9 +29,9 @@
       "id": "pickup",
       "category": "vehicles",
       "file": "models/vehicles/pickup.glb",
-      "bytes": 418836,
-      "meshes": 31,
-      "triangles": 6586,
+      "bytes": 781740,
+      "meshes": 33,
+      "triangles": 16548,
       "description": "Crew-cab pickup with headache rack and crossbed toolbox",
       "source": "procedural (tools/assets)",
       "license": "project"
@@ -40,9 +40,9 @@
       "id": "box-truck",
       "category": "vehicles",
       "file": "models/vehicles/box-truck.glb",
-      "bytes": 479260,
+      "bytes": 903244,
       "meshes": 41,
-      "triangles": 7566,
+      "triangles": 20200,
       "description": "Installation box truck with liftgate and dual rear wheels",
       "source": "procedural (tools/assets)",
       "license": "project"
