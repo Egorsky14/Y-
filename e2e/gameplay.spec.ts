@@ -186,7 +186,14 @@ test('full gameplay loop: dispatch, diagnose, repair, grow, train, save and relo
   await page.getByTestId(`hire-${candidateId}`).click();
   const hiredId: string = await state(page, (s) => (Object.values(s.employees) as S[]).find((e) => !e.isOwner).id);
   expect(hiredId).toBeTruthy();
-  await expect(page.getByTestId('celebration')).toContainText('Hired');
+  // The hire raises a "Hired" celebration. The banner shows only the newest celebration, and the
+  // first hire also unlocks a milestone and Company Level 2 within a tick or two, so on a fast
+  // renderer the banner may already show one of those: check the raised toast, then the banner.
+  await page.waitForFunction(() => {
+    const { toasts } = window.__ego!.app.getState() as unknown as { toasts: { type: string; title: string; body?: string }[] };
+    return toasts.some((t) => t.type === 'celebration' && /Hired/.test(`${t.title} ${t.body ?? ''}`));
+  }, null, { timeout: 20_000 });
+  await expect(page.getByTestId('celebration')).toBeVisible();
   await page.keyboard.press('Escape');
 
   // 10. Purchase a second vehicle (used compact van if listed, otherwise new; financed with a loan).
@@ -306,7 +313,12 @@ test('full gameplay loop: dispatch, diagnose, repair, grow, train, save and relo
         requestAnimationFrame(tick);
       }),
   );
-  console.log(`[perf] ${fps.toFixed(1)} fps (headless SwiftShader)`);
+  const renderer = await page.evaluate(() => {
+    const gl = document.querySelector('canvas')?.getContext('webgl2');
+    const info = gl?.getExtension('WEBGL_debug_renderer_info');
+    return info ? (gl!.getParameter(info.UNMASKED_RENDERER_WEBGL) as string) : 'unknown renderer';
+  });
+  console.log(`[perf] ${fps.toFixed(1)} fps (headless, ${renderer})`);
 
   const realErrors = consoleErrors.filter((e) => !e.includes('deprecated') && !e.includes('PCFSoftShadowMap'));
   expect(realErrors, realErrors.join('\n')).toEqual([]);
