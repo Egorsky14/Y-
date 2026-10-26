@@ -5,6 +5,8 @@ declare global {
   interface Window {
     __egoRender?: { calls: number; triangles: number; geometries: number; textures: number; frame: number; houses: number; vehicleModels: number; workers: number; instanced: number };
     __egoVehicles?: Record<string, { x: number; z: number; heading: number; wheelSpin: number; steer: number; roll: number; pitch: number }>;
+    /** Live renderer, scene and camera for profiling tools. */
+    __egoThree?: { gl: THREE.WebGLRenderer; scene: THREE.Scene; camera: THREE.Camera };
   }
 }
 
@@ -12,6 +14,9 @@ declare global {
 export function RenderProbe() {
   const gl = useThree((s) => s.gl);
   const scene = useThree((s) => s.scene);
+  const camera = useThree((s) => s.camera);
+  // Profiling handle: dev server, or a build made with VITE_PROFILE=1. Never in a normal production build.
+  if (import.meta.env.DEV || import.meta.env.VITE_PROFILE === '1') window.__egoThree = { gl, scene, camera };
   let tick = 0;
   useFrame(() => {
     const i = gl.info;
