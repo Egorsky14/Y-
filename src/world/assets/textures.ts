@@ -305,8 +305,8 @@ export function wearTexture(): THREE.Texture {
     ctx.clearRect(0, 0, 256, 64);
     const g = ctx.createLinearGradient(0, 0, 0, 64);
     g.addColorStop(0, 'rgba(20,20,22,0)');
-    g.addColorStop(0.35, 'rgba(20,20,22,0.28)');
-    g.addColorStop(0.65, 'rgba(20,20,22,0.28)');
+    g.addColorStop(0.35, 'rgba(20,20,22,0.16)');
+    g.addColorStop(0.65, 'rgba(20,20,22,0.16)');
     g.addColorStop(1, 'rgba(20,20,22,0)');
     ctx.fillStyle = g;
     ctx.fillRect(0, 0, 256, 64);

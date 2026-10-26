@@ -262,12 +262,13 @@ export function asphaltPbr(): PbrSet {
       cctx.ellipse(rnd() * size, rnd() * size, 60 + rnd() * 200, 40 + rnd() * 120, rnd() * 3, 0, Math.PI * 2);
       cctx.fill();
     }
-    // Sealed cracks: dark meandering lines with a lighter edge
+    // Sealed cracks: dark meandering lines with a lighter edge. Kept faint: at full strength they
+    // read as scribbles at the close camera and tile visibly along long streets.
     for (let i = 0; i < 5; i++) {
       let x = rnd() * size;
       let y = rnd() * size;
-      cctx.lineWidth = 1.4 + rnd();
-      cctx.strokeStyle = 'rgba(22,22,24,0.55)';
+      cctx.lineWidth = 1.0 + rnd() * 0.6;
+      cctx.strokeStyle = 'rgba(22,22,24,0.3)';
       cctx.beginPath();
       cctx.moveTo(x, y);
       for (let k = 0; k < 14; k++) {
