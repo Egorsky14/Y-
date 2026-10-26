@@ -111,7 +111,18 @@ test('renders the premium world and drives the branded van with animated wheels'
   expect(tech.status).toBe('working');
   expect(tech.vehicle).toBe('onsite');
   // The rendered technician stands on the ground at the simulated spot (no sinking, no floating).
-  const techRender = await page.evaluate((id) => window.__egoWorkers?.[id], (await state(page, (s, id) => s.jobs[id].technicianId, leadId)) as string);
+  // The view eases toward the simulation, so wait for it to settle: on a GPU at 60 fps the walk is
+  // still converging when the job flips to diagnosing; the software renderer snapped in one frame.
+  const techId = (await state(page, (s, id) => s.jobs[id].technicianId, leadId)) as string;
+  await page.waitForFunction(
+    ([id, p]) => {
+      const w = window.__egoWorkers?.[id];
+      return !!w && Math.hypot(w.x - p.x, w.z - p.z) < 1.5;
+    },
+    [techId, tech.pos] as const,
+    { timeout: 10_000 },
+  );
+  const techRender = await page.evaluate((id) => window.__egoWorkers?.[id], techId);
   expect(techRender).toBeTruthy();
   expect(Math.abs(techRender!.y)).toBeLessThan(0.12);
   expect(Math.hypot(techRender!.x - tech.pos.x, techRender!.z - tech.pos.z)).toBeLessThan(1.5);
