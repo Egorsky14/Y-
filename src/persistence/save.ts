@@ -1,4 +1,5 @@
 import { SAVE_SCHEMA_VERSION, type GameState } from '@/game/simulation/types';
+import { emptyBanking, upgradeLoan } from '@/game/economy/banking/loans';
 
 export const SAVE_KEY = 'ego-hvac-v3:save';
 export const AUTOSAVE_KEY = 'ego-hvac-v3:autosave';
@@ -24,8 +25,13 @@ export function serialize(state: GameState): string {
 /** Applies forward migrations for older save schemas. */
 export function migrate(envelope: SaveEnvelope): GameState {
   const state = envelope.state;
-  // Schema 1 is the first public schema. Future versions add cases here.
   if (envelope.schemaVersion > SAVE_SCHEMA_VERSION) throw new Error(`Save is from a newer version (${envelope.schemaVersion}).`);
+  // Schema 1 → 2: business banking. Vehicle loans gain lender/term/payment-record fields; the
+  // banking state (credit line, rating, history) starts empty. Ledger history is kept as is.
+  if (envelope.schemaVersion < 2) {
+    state.finance.banking ??= emptyBanking();
+    for (const loan of state.finance.loans) upgradeLoan(loan, state.clock.day);
+  }
   state.schemaVersion = SAVE_SCHEMA_VERSION;
   return state;
 }

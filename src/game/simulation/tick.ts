@@ -1,4 +1,5 @@
 import type { GameState, Vehicle } from './types';
+import { processBankingDay } from '../economy/banking/banking';
 import { MINUTES_PER_DAY, CAMPAIGN_DAYS } from './time';
 import { advanceJobPhase, isActiveJob, onVehicleArrived, parkVehicle } from '../jobs/workflow';
 import { expireLeads, processLeadSchedule, scheduleLeadsForDay, spawnLead } from '../jobs/leads';
@@ -104,17 +105,7 @@ function endOfDay(state: GameState): void {
     v.condition = Math.max(10, v.condition - 0.12 * (state.company.hqUpgrades.includes('fleet-maintenance') ? 0.5 : 1));
   }
 
-  // Financing
-  for (const loan of state.finance.loans) {
-    if (day >= loan.nextPaymentDay) {
-      const interest = Math.round(loan.balance * (loan.aprPercent / 100 / 12) * 100) / 100;
-      const payment = Math.min(loan.monthlyPayment, loan.balance + interest);
-      postTransaction(state, { amount: -payment, category: 'loan-payment', memo: `Loan payment — ${loan.purpose}` });
-      loan.balance = Math.max(0, Math.round((loan.balance + interest - payment) * 100) / 100);
-      loan.nextPaymentDay += 30;
-    }
-  }
-  state.finance.loans = state.finance.loans.filter((l) => l.balance > 0.005);
+  // Leases (loans and the credit line settle at the end of the day, after collections)
   for (const lease of state.finance.leases) {
     if (day >= lease.nextPaymentDay) {
       const v = state.vehicles[lease.vehicleId];
@@ -138,6 +129,8 @@ function endOfDay(state: GameState): void {
   runDailyMarketing(state);
   updateCompetition(state);
   progressTraining(state);
+  // Banking: installments, credit-line interest and statements, delinquency, credit rating.
+  processBankingDay(state);
 
   // Rest, morale, turnover
   for (const e of Object.values(state.employees)) {

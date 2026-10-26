@@ -1,4 +1,5 @@
 import type { GameState } from './types';
+import { acceptLoanOffer, closeCreditLine, drawCredit, extraLoanPayment, openCreditLine, payoffLoan, repayCredit } from '../economy/banking/banking';
 import { acceptLead, chooseDiagnosis, declineLead, dispatchInstall, dispatchJob, submitQuote, type ActionResult, type QuoteRequest } from '../jobs/workflow';
 import { fireEmployee, hireCandidate, startTraining } from '../employees/hr';
 import { installUpgrade, purchaseVehicle, sellVehicle, type PurchaseRequest } from '../fleet/fleet';
@@ -29,7 +30,15 @@ export type GameAction =
   | { type: 'hq-upgrade'; upgradeId: HqUpgradeId }
   | { type: 'set-marketing'; channel: MarketingChannelId; dailyBudget: number }
   | { type: 'set-diagnostic-fee'; fee: number }
-  | { type: 'dismiss-event'; eventId: number };
+  | { type: 'dismiss-event'; eventId: number }
+  // Business banking
+  | { type: 'bank-accept-loan'; offerId: string }
+  | { type: 'bank-loan-extra-payment'; loanId: string; amount: number }
+  | { type: 'bank-loan-payoff'; loanId: string }
+  | { type: 'bank-open-credit-line'; offerId: string }
+  | { type: 'bank-credit-draw'; amount: number }
+  | { type: 'bank-credit-repay'; amount: number }
+  | { type: 'bank-close-credit-line' };
 
 export function applyAction(state: GameState, action: GameAction): ActionResult {
   switch (action.type) {
@@ -95,6 +104,20 @@ export function applyAction(state: GameState, action: GameAction): ActionResult 
       return purchaseHqUpgrade(state, action.upgradeId);
     case 'set-marketing':
       return setMarketingBudget(state, action.channel, action.dailyBudget);
+    case 'bank-accept-loan':
+      return acceptLoanOffer(state, action.offerId);
+    case 'bank-loan-extra-payment':
+      return extraLoanPayment(state, action.loanId, action.amount);
+    case 'bank-loan-payoff':
+      return payoffLoan(state, action.loanId);
+    case 'bank-open-credit-line':
+      return openCreditLine(state, action.offerId);
+    case 'bank-credit-draw':
+      return drawCredit(state, action.amount);
+    case 'bank-credit-repay':
+      return repayCredit(state, action.amount);
+    case 'bank-close-credit-line':
+      return closeCreditLine(state);
     case 'set-diagnostic-fee': {
       const fee = Math.max(49, Math.min(199, Math.round(action.fee)));
       state.company.diagnosticFee = fee;

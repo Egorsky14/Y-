@@ -1,4 +1,5 @@
 import { VEHICLE_SPECS, type VehicleClass, type VehicleUpgradeId, upgradeById, type PaintId } from './vehicleCatalog';
+import { createLoan, settleLoan } from '../economy/banking/loans';
 import type { GameState, Vehicle, RouteState } from '../simulation/types';
 import { nextInt, nextRange, pick } from '../simulation/rng';
 import { HQ_APRON, hqParkingStalls, lotById } from '../world/cityLayout';
@@ -104,17 +105,9 @@ export function purchaseVehicle(state: GameState, req: PurchaseRequest): { ok: t
     if (state.finance.cash < down) return { ok: false, reason: `Need $${down.toLocaleString()} for the 15% down payment.` };
     postTransaction(state, { amount: -down, category: 'vehicle-purchase', memo: `${spec.name} down payment` });
     const principal = price - down;
-    const loanId = `loan-${state.nextId++}`;
-    state.finance.loans.push({
-      id: loanId,
-      principal,
-      balance: principal,
-      monthlyPayment: monthlyLoanPayment(principal, 8.9, 60),
-      aprPercent: 8.9,
-      nextPaymentDay: state.clock.day + 30,
-      purpose: `${spec.name} ${vehicle.nickname}`,
-    });
-    vehicle.financing = { loanId };
+    // Dealer financing: the lender pays the seller, so no proceeds reach company cash.
+    const loan = createLoan(state, { principal, aprPercent: 8.9, termMonths: 60, purpose: `${spec.name} ${vehicle.nickname}`, lender: 'Dealer financing', kind: 'vehicle', prepaymentFeePercent: 0, lateFee: 50 });
+    vehicle.financing = { loanId: loan.id };
   } else {
     if (isUsed) return { ok: false, reason: 'Leases are only available on new vehicles.' };
     const monthly = Math.round(price * 0.021);
@@ -150,10 +143,8 @@ export function sellVehicle(state: GameState, vehicleId: string): { ok: boolean;
   if (vehicle.financing && 'loanId' in vehicle.financing) {
     const loanId = vehicle.financing.loanId;
     const loan = state.finance.loans.find((l) => l.id === loanId);
-    if (loan) {
-      postTransaction(state, { amount: -loan.balance, category: 'loan-payment', memo: `Loan payoff for ${vehicle.nickname}` });
-      state.finance.loans = state.finance.loans.filter((l) => l.id !== loan.id);
-    }
+    // The lien is released at sale: past due, interest to date and principal (no prepayment fee).
+    if (loan) settleLoan(state, loan, `Loan payoff for ${vehicle.nickname}`, true);
   }
   for (const e of Object.values(state.employees)) if (e.vehicleId === vehicleId) e.vehicleId = undefined;
   delete state.vehicles[vehicleId];

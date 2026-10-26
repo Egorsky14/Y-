@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { newEngine } from './helpers';
-import { reconcileCash, openReceivablesTotal } from '@/game/economy/ledger';
+import { FINANCING_CATEGORIES, reconcileCash, openReceivablesTotal } from '@/game/economy/ledger';
 import type { GameEngine } from '@/game/simulation/engine';
 
 /** A simple autopilot that plays like a reasonable owner. */
@@ -56,9 +56,11 @@ describe('90-day campaign', () => {
     expect(s.finance.history.length).toBe(90);
     expect(s.stats.jobsCompleted).toBeGreaterThan(20);
     expect(s.stats.totalRevenue).toBeGreaterThan(10000);
-    // Revenue and expenses tie out to the ledger.
-    const revenue = s.finance.ledger.filter((e) => e.amount > 0 && e.category !== 'opening-balance').reduce((a, e) => a + e.amount, 0);
-    const expenses = s.finance.ledger.filter((e) => e.amount < 0).reduce((a, e) => a - e.amount, 0);
+    // Revenue and expenses tie out to the ledger. Financing (borrowed money in, principal repaid
+    // out) moves cash but is neither revenue nor expense.
+    const operating = s.finance.ledger.filter((e) => !FINANCING_CATEGORIES.has(e.category));
+    const revenue = operating.filter((e) => e.amount > 0 && e.category !== 'opening-balance').reduce((a, e) => a + e.amount, 0);
+    const expenses = operating.filter((e) => e.amount < 0).reduce((a, e) => a - e.amount, 0);
     expect(Math.abs(revenue - s.stats.totalRevenue)).toBeLessThan(0.01);
     expect(Math.abs(expenses - s.stats.totalExpenses)).toBeLessThan(0.01);
     expect(openReceivablesTotal(s)).toBeGreaterThanOrEqual(0);

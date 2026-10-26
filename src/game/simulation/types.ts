@@ -7,7 +7,7 @@ import type { Vec2 } from '../world/geometry';
 import type { RngState } from './rng';
 import type { GameClock } from './time';
 
-export const SAVE_SCHEMA_VERSION = 1;
+export const SAVE_SCHEMA_VERSION = 2;
 
 export type CustomerChannel = 'warranty' | 'direct';
 
@@ -200,8 +200,25 @@ export interface LedgerEntry {
     | 'vehicle-purchase'
     | 'vehicle-sale'
     | 'vehicle-upgrade'
+    /** Legacy (schema 1): a whole installment booked as one expense. New entries split it. */
     | 'loan-payment'
     | 'lease-payment'
+    /** Financing: cash in from a term loan (not revenue). */
+    | 'loan-proceeds'
+    /** Financing: principal repaid on a term loan (not an expense). */
+    | 'loan-principal'
+    /** Expense: interest on a term loan. */
+    | 'loan-interest'
+    /** Expense: origination or prepayment fee. */
+    | 'loan-fee'
+    /** Expense: late fee on a loan or the credit line. */
+    | 'late-fee'
+    /** Financing: cash drawn on the line of credit (not revenue). */
+    | 'credit-draw'
+    /** Financing: credit-line principal repaid (not an expense). */
+    | 'credit-repayment'
+    /** Expense: interest charged on the credit line. */
+    | 'credit-interest'
     | 'training'
     | 'marketing'
     | 'facility'
@@ -223,15 +240,91 @@ export interface Receivable {
   status: 'open' | 'paid' | 'disputed';
 }
 
+export type DebtStatus = 'current' | 'past-due' | 'delinquent' | 'default';
+
+/** A fixed-payment term loan (business bank loan or vehicle financing). */
 export interface Loan {
   id: string;
   principal: number;
+  /** Outstanding principal. */
   balance: number;
   monthlyPayment: number;
   aprPercent: number;
   /** Day numbers on which payments post. */
   nextPaymentDay: number;
   purpose: string;
+  /** Schema 2 fields (filled in by the save migration for older vehicle loans). */
+  lender?: string;
+  kind?: 'bank' | 'vehicle';
+  termMonths?: number;
+  originationDay?: number;
+  /** Day the last installment was settled (interest for an early payoff accrues from here). */
+  lastPaymentDay?: number;
+  paymentsMade?: number;
+  /** Missed installments still owed (principal + interest + late fees), collected before anything else. */
+  pastDue?: number;
+  /** Interest and late-fee parts of pastDue (the rest is principal). */
+  pastDueInterest?: number;
+  pastDueFees?: number;
+  /** Day the oldest unpaid installment fell due, or undefined when current. */
+  pastDueSince?: number;
+  status?: DebtStatus;
+  /** Percent of the remaining principal charged to pay off early (0 = no penalty). */
+  prepaymentFeePercent?: number;
+  lateFee?: number;
+}
+
+/** Revolving business line of credit. Interest accrues daily on the drawn principal only. */
+export interface CreditLine {
+  id: string;
+  lender: string;
+  limit: number;
+  aprPercent: number;
+  /** Drawn and not yet repaid. */
+  principal: number;
+  /** Interest accrued since the last statement (not yet billed). */
+  accruedInterest: number;
+  /** Billed interest not yet paid. */
+  interestDue: number;
+  /** Minimum payment still owed for the current statement. */
+  minimumDue: number;
+  /** Unpaid late fees. */
+  feesDue: number;
+  /** Missed minimums not yet paid (a portion of fees, interest due and principal; delinquency tracking). */
+  pastDue: number;
+  pastDueSince?: number;
+  openedDay: number;
+  nextStatementDay: number;
+  /** Day the current statement's minimum is due (0 = nothing due). */
+  paymentDueDay: number;
+  status: 'active' | 'suspended' | 'closed';
+  lateFee: number;
+  lastReviewDay: number;
+}
+
+export type BankingEventType = 'application' | 'approval' | 'decline' | 'disbursement' | 'payment' | 'payoff' | 'draw' | 'repayment' | 'interest' | 'statement' | 'late' | 'status' | 'rating' | 'limit';
+
+export interface BankingEvent {
+  day: number;
+  type: BankingEventType;
+  text: string;
+  amount?: number;
+}
+
+export interface CreditRatingFactor {
+  label: string;
+  points: number;
+}
+
+export interface BankingState {
+  creditLine?: CreditLine;
+  /** Internal business credit score, 0-100 (a game mechanic, not a consumer credit score). */
+  creditScore: number;
+  creditFactors: CreditRatingFactor[];
+  onTimePayments: number;
+  /** Days on which a payment was missed; older misses weigh less. */
+  missedPaymentDays: number[];
+  history: BankingEvent[];
 }
 
 export interface Lease {
@@ -279,6 +372,8 @@ export interface FinanceState {
   receivables: Receivable[];
   loans: Loan[];
   leases: Lease[];
+  /** Business banking: credit line, credit rating, application history (schema 2). */
+  banking: BankingState;
   /** Running totals for the current day (reset at midnight). */
   today: { revenue: number; expenses: number };
   /** Daily history for charts. */

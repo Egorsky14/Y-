@@ -1,4 +1,5 @@
 import { createRng, nextInt } from './rng';
+import { emptyBanking } from '../economy/banking/loans';
 import type { Employee, GameState, Vehicle, Competitor } from './types';
 import { SAVE_SCHEMA_VERSION } from './types';
 import { generateCustomers } from '../customers/generate';
@@ -124,6 +125,7 @@ export function createNewGame(options: NewGameOptions = {}): GameState {
       receivables: [],
       loans: [],
       leases: [],
+      banking: emptyBanking(),
       today: { revenue: 0, expenses: 0 },
       history: [],
     },
