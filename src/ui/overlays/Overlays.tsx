@@ -4,7 +4,7 @@ import { lotById } from '@/game/world/cityLayout';
 
 export function Toasts() {
   const allToasts = useApp((s) => s.toasts);
-  const toasts = allToasts.filter((t) => t.type !== 'celebration');
+  const toasts = allToasts; // celebrations have their own queue (Celebration)
   const dismiss = useApp((s) => s.dismissToast);
   const select = useApp((s) => s.select);
   const camera = useApp((s) => s.camera);
@@ -57,23 +57,31 @@ export function Toasts() {
   );
 }
 
+/** Celebration banner: shows the queue head for its full time (from when it appears), then the next. */
 export function Celebration() {
-  const allToasts = useApp((s) => s.toasts);
-  const toast = allToasts.filter((t) => t.type === 'celebration').slice(-1)[0];
-  const dismiss = useApp((s) => s.dismissToast);
+  const queue = useApp((s) => s.celebrations);
+  const toast = queue[0];
+  const waiting = queue.length - 1;
+  const dismiss = useApp((s) => s.dismissCelebration);
+  const id = toast?.id;
   useEffect(() => {
-    if (!toast) return;
-    const id = setTimeout(() => dismiss(toast.id), 5200);
-    return () => clearTimeout(id);
-  }, [toast, dismiss]);
+    if (id === undefined) return;
+    const timer = setTimeout(() => dismiss(id), 5200);
+    return () => clearTimeout(timer);
+  }, [id, dismiss]);
   if (!toast) return null;
   return (
-    <div className="celebration" onClick={() => dismiss(toast.id)} data-testid="celebration">
+    <div className="celebration" key={toast.id} onClick={() => dismiss(toast.id)} data-testid="celebration">
       <div className="icon">🏆</div>
       <div>
         <div className="t">{toast.title}</div>
         {toast.body && <div className="b">{toast.body}</div>}
       </div>
+      {waiting > 0 && (
+        <div className="more" data-testid="celebration-waiting">
+          +{waiting} more
+        </div>
+      )}
     </div>
   );
 }

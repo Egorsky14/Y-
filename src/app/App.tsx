@@ -102,12 +102,10 @@ export function App() {
         <WorldLabels />
         <TopHud />
         <Toasts />
-        <Celebration />
         <Inspector />
         <ActionBar />
         <WorldControls />
         <TutorialHint />
-        <ErrorBanner />
         {panel === 'jobs' && <JobsPanel />}
         {panel === 'employees' && <EmployeesPanel />}
         {panel === 'fleet' && <FleetPanel />}
@@ -115,6 +113,9 @@ export function App() {
         {panel === 'marketing' && <MarketingPanel />}
         {panel === 'finance' && <FinancePanel />}
         {panel === 'settings' && <SettingsPanel />}
+        {/* After the panels: notifications raised from a panel ("Hired", an action error) are never hidden or blocked by it. */}
+        <Celebration />
+        <ErrorBanner />
         {screen === 'summary' && <CampaignSummary />}
           </>
         )}

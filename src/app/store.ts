@@ -61,6 +61,8 @@ interface AppState {
   photo: { on: boolean; minute: number | null; weather: 'clear' | 'heat-wave' | 'overcast' | 'monsoon' | null };
   settings: Settings;
   toasts: Toast[];
+  /** Celebration banners, first in first out: the head is on screen, the rest wait their turn. */
+  celebrations: Toast[];
   lastError: string | null;
   lastSavedAt: number | null;
   /** Last processed game event id for toast generation. */
@@ -80,6 +82,7 @@ interface AppState {
   setFollow: (vehicleId: string | null) => void;
   setSettings: (patch: Partial<Settings>) => void;
   dismissToast: (id: number) => void;
+  dismissCelebration: (id: number) => void;
   clearError: () => void;
   bump: () => void;
 }
@@ -98,6 +101,19 @@ function loadSettings(): Settings {
 let cameraCommandId = 1;
 let toastId = 1;
 
+/** Most celebrations kept waiting; beyond this the oldest waiting ones (never the one on screen) are dropped. */
+export const CELEBRATION_QUEUE_LIMIT = 8;
+
+/**
+ * Appends celebrations in the order they happened. The banner on screen (the head) is never
+ * replaced by a newer one; if the queue overflows, the oldest waiting entries make room.
+ */
+export function enqueueCelebrations(queue: Toast[], incoming: Toast[], limit = CELEBRATION_QUEUE_LIMIT): Toast[] {
+  const next = [...queue, ...incoming];
+  if (next.length <= limit) return next;
+  return [next[0], ...next.slice(next.length - (limit - 1))];
+}
+
 export const useApp = create<AppState>((set, get) => ({
   engine: null,
   version: 0,
@@ -109,6 +125,7 @@ export const useApp = create<AppState>((set, get) => ({
   photo: { on: false, minute: null, weather: null },
   settings: loadSettings(),
   toasts: [],
+  celebrations: [],
   lastError: null,
   lastSavedAt: null,
   lastEventId: 0,
@@ -116,7 +133,7 @@ export const useApp = create<AppState>((set, get) => ({
   newGame: (seed) => {
     const engine = GameEngine.newGame({ seed: seed ?? Math.floor(Math.random() * 1_000_000) });
     attachEngine(engine);
-    set({ engine, screen: 'game', selection: null, panel: null, toasts: [], lastEventId: 0, followVehicleId: null, version: 0 });
+    set({ engine, screen: 'game', selection: null, panel: null, toasts: [], celebrations: [], lastEventId: 0, followVehicleId: null, version: 0 });
     saveToStorage(engine.state, SAVE_KEY);
     get().camera({ type: 'reset' });
   },
@@ -127,7 +144,7 @@ export const useApp = create<AppState>((set, get) => ({
     const engine = new GameEngine(state);
     attachEngine(engine);
     const lastEventId = state.events.length ? state.events[state.events.length - 1].id : 0;
-    set({ engine, screen: state.campaignComplete ? 'summary' : 'game', selection: null, panel: null, toasts: [], lastEventId, followVehicleId: null, version: 0 });
+    set({ engine, screen: state.campaignComplete ? 'summary' : 'game', selection: null, panel: null, toasts: [], celebrations: [], lastEventId, followVehicleId: null, version: 0 });
     get().camera({ type: 'reset' });
     return true;
   },
@@ -167,6 +184,7 @@ export const useApp = create<AppState>((set, get) => ({
     set({ settings });
   },
   dismissToast: (id) => set((s) => ({ toasts: s.toasts.filter((t) => t.id !== id) })),
+  dismissCelebration: (id) => set((s) => ({ celebrations: s.celebrations.filter((t) => t.id !== id) })),
   clearError: () => set({ lastError: null }),
   bump: () => {
     const { engine, lastEventId } = get();
@@ -178,7 +196,8 @@ export const useApp = create<AppState>((set, get) => ({
     set((s) => ({
       version: s.version + 1,
       lastEventId: fresh.length ? fresh[fresh.length - 1].id : lastEventId,
-      toasts: [...s.toasts, ...toasts].slice(-6),
+      toasts: [...s.toasts, ...toasts.filter((t) => t.type !== 'celebration')].slice(-6),
+      celebrations: enqueueCelebrations(s.celebrations, toasts.filter((t) => t.type === 'celebration')),
       screen: state.campaignComplete && s.screen === 'game' ? 'summary' : s.screen,
     }));
   },

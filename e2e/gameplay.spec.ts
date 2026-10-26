@@ -188,14 +188,17 @@ test('full gameplay loop: dispatch, diagnose, repair, grow, train, save and relo
   await page.getByTestId(`hire-${candidateId}`).click();
   const hiredId: string = await state(page, (s) => (Object.values(s.employees) as S[]).find((e) => !e.isOwner).id);
   expect(hiredId).toBeTruthy();
-  // The hire raises a "Hired" celebration. The banner shows only the newest celebration, and the
-  // first hire also unlocks a milestone and Company Level 2 within a tick or two, so on a fast
-  // renderer the banner may already show one of those: check the raised toast, then the banner.
+  await expect(page.getByTestId('celebration')).toContainText('Hired');
+  // The first hire also unlocks the First Hire milestone a tick later. Celebrations queue: once the
+  // milestone is waiting, the banner must still show "Hired", then the milestone after it.
   await page.waitForFunction(() => {
-    const { toasts } = window.__ego!.app.getState() as unknown as { toasts: { type: string; title: string; body?: string }[] };
-    return toasts.some((t) => t.type === 'celebration' && /Hired/.test(`${t.title} ${t.body ?? ''}`));
+    const { celebrations } = window.__ego!.app.getState() as unknown as { celebrations: { title: string }[] };
+    return celebrations.some((t) => t.title.startsWith('Milestone'));
   }, null, { timeout: 20_000 });
-  await expect(page.getByTestId('celebration')).toBeVisible();
+  await expect(page.getByTestId('celebration')).toContainText('Hired');
+  await expect(page.getByTestId('celebration-waiting')).toBeVisible();
+  await page.getByTestId('celebration').click({ timeout: 5000 });
+  await expect(page.getByTestId('celebration')).toContainText('Milestone');
   await page.keyboard.press('Escape');
 
   // 10. Purchase a second vehicle (used compact van if listed, otherwise new; financed with a loan).
