@@ -1,4 +1,12 @@
 import { defineConfig } from '@playwright/test';
+import { existsSync } from 'node:fs';
+
+// The CI container ships a SwiftShader Chromium at a fixed path. On a developer machine that
+// path does not exist, so fall back to the installed Google Chrome through Playwright's
+// `channel` (no browser download). Set PW_CHROMIUM to point at any other Chromium executable.
+const containerChromium = '/opt/pw-browsers/chromium';
+const executablePath = process.env.PW_CHROMIUM ?? (existsSync(containerChromium) ? containerChromium : undefined);
+const softwareGl = executablePath !== undefined;
 
 export default defineConfig({
   testDir: './e2e',
@@ -15,9 +23,10 @@ export default defineConfig({
   use: {
     baseURL: 'http://127.0.0.1:4173',
     trace: 'retain-on-failure',
+    ...(executablePath ? {} : { channel: 'chrome' }),
     launchOptions: {
-      executablePath: '/opt/pw-browsers/chromium',
-      args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'],
+      ...(executablePath ? { executablePath } : {}),
+      args: softwareGl ? ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] : ['--ignore-gpu-blocklist'],
     },
   },
   webServer: {
