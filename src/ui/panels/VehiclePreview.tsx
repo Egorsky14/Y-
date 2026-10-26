@@ -4,6 +4,8 @@ import * as THREE from 'three';
 import type { PaintId, VehicleClass, VehicleUpgradeId } from '@/game/fleet/vehicleCatalog';
 import { VehicleGltf } from '@/world/vehicles/VehicleGltf';
 import { StudioEnvironment } from '@/world/scene/StudioEnvironment';
+import { deviceProfile } from '@/app/device';
+import { VEHICLE_PAINT } from '@/world/assets/palette';
 
 function Turntable({ children }: { children: React.ReactNode }) {
   const ref = useRef<THREE.Group>(null);
@@ -36,8 +38,26 @@ function Warmup({ onReady }: { onReady: () => void }) {
   return null;
 }
 
-/** Small turntable render used in the fleet marketplace and garage. */
-export function VehiclePreview({ classId, paint, upgrades, onReady: notify }: { classId: VehicleClass; paint: PaintId; upgrades: VehicleUpgradeId[]; onReady?: () => void }) {
+/**
+ * Phones and tablets: a pre-rendered image per vehicle class (public/previews, rendered from this
+ * same preview on desktop by docs/art/scripts/previews.cjs) instead of a second WebGL context.
+ */
+function StaticPreview({ classId, paint }: { classId: VehicleClass; paint: PaintId }) {
+  return (
+    <div className="vehicle-preview static" data-testid="vehicle-preview-static">
+      <img src={`${import.meta.env.BASE_URL}previews/${classId}.webp`} alt={`${classId.replace('-', ' ')} preview`} loading="lazy" decoding="async" />
+      <span className="paint-swatch" style={{ background: VEHICLE_PAINT[paint] }} title={paint} />
+    </div>
+  );
+}
+
+/** Small turntable render used in the fleet marketplace and garage (static image on touch devices). */
+export function VehiclePreview(props: { classId: VehicleClass; paint: PaintId; upgrades: VehicleUpgradeId[]; onReady?: () => void }) {
+  if (deviceProfile().touch && !props.onReady) return <StaticPreview classId={props.classId} paint={props.paint} />;
+  return <TurntablePreview {...props} />;
+}
+
+function TurntablePreview({ classId, paint, upgrades, onReady: notify }: { classId: VehicleClass; paint: PaintId; upgrades: VehicleUpgradeId[]; onReady?: () => void }) {
   const size = classId === 'box-truck' ? 15 : classId === 'compact-van' ? 8 : 9.5;
   const [ready, setReady] = useState(false);
   const notifyRef = useRef(notify);

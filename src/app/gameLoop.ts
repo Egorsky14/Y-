@@ -37,5 +37,22 @@ export function startGameLoop(): () => void {
     raf = requestAnimationFrame(frame);
   };
   raf = requestAnimationFrame(frame);
-  return () => cancelAnimationFrame(raf);
+  // Phones suspend or kill background tabs without warning (app switch, phone call, closing the
+  // tab): autosave whenever the page is hidden. requestAnimationFrame pauses while hidden, so the
+  // simulation waits too, and catch-up on return is capped at one second by the clamp above.
+  const persist = () => {
+    const { engine, screen, settings } = useApp.getState();
+    if (engine && screen === 'game' && settings.autosave) saveToStorage(engine.state, AUTOSAVE_KEY);
+  };
+  const onVisibility = () => {
+    if (document.visibilityState === 'hidden') persist();
+    last = performance.now();
+  };
+  document.addEventListener('visibilitychange', onVisibility);
+  window.addEventListener('pagehide', persist);
+  return () => {
+    cancelAnimationFrame(raf);
+    document.removeEventListener('visibilitychange', onVisibility);
+    window.removeEventListener('pagehide', persist);
+  };
 }

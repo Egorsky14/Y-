@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { defaultQuality } from './device';
 import { create } from 'zustand';
 import { GameEngine } from '@/game/simulation/engine';
 import type { GameAction } from '@/game/simulation/actions';
@@ -37,6 +38,8 @@ export interface Settings {
   autosave: boolean;
   sound: boolean;
   showLabels: boolean;
+  /** True until the player picks a preset: the game may then step quality down once if frames are slow. */
+  qualityAuto: boolean;
 }
 
 export interface Toast {
@@ -64,6 +67,10 @@ interface AppState {
   /** Celebration banners, first in first out: the head is on screen, the rest wait their turn. */
   celebrations: Toast[];
   lastError: string | null;
+  /** The world has drawn its first frames (start-up shader work is done); hides the loading screen. */
+  sceneReady: boolean;
+  /** The browser dropped the WebGL context (GPU reset, memory pressure, long background). */
+  contextLost: boolean;
   lastSavedAt: number | null;
   /** Last processed game event id for toast generation. */
   lastEventId: number;
@@ -84,10 +91,15 @@ interface AppState {
   dismissToast: (id: number) => void;
   dismissCelebration: (id: number) => void;
   clearError: () => void;
+  setSceneReady: (ready: boolean) => void;
+  /** A UI-originated toast (not from the simulation), e.g. an automatic graphics change. */
+  notify: (title: string, body?: string) => void;
+  setContextLost: (lost: boolean) => void;
   bump: () => void;
 }
 
-const DEFAULT_SETTINGS: Settings = { quality: 'high', shadows: true, autosave: true, sound: false, showLabels: true };
+const DEFAULT_QUALITY = defaultQuality();
+const DEFAULT_SETTINGS: Settings = { quality: DEFAULT_QUALITY, shadows: DEFAULT_QUALITY !== 'low', autosave: true, sound: false, showLabels: true, qualityAuto: true };
 
 function loadSettings(): Settings {
   try {
@@ -127,13 +139,15 @@ export const useApp = create<AppState>((set, get) => ({
   toasts: [],
   celebrations: [],
   lastError: null,
+  sceneReady: false,
+  contextLost: false,
   lastSavedAt: null,
   lastEventId: 0,
 
   newGame: (seed) => {
     const engine = GameEngine.newGame({ seed: seed ?? Math.floor(Math.random() * 1_000_000) });
     attachEngine(engine);
-    set({ engine, screen: 'game', selection: null, panel: null, toasts: [], celebrations: [], lastEventId: 0, followVehicleId: null, version: 0 });
+    set({ engine, screen: 'game', selection: null, panel: null, toasts: [], celebrations: [], sceneReady: false, lastEventId: 0, followVehicleId: null, version: 0 });
     saveToStorage(engine.state, SAVE_KEY);
     get().camera({ type: 'reset' });
   },
@@ -144,7 +158,7 @@ export const useApp = create<AppState>((set, get) => ({
     const engine = new GameEngine(state);
     attachEngine(engine);
     const lastEventId = state.events.length ? state.events[state.events.length - 1].id : 0;
-    set({ engine, screen: state.campaignComplete ? 'summary' : 'game', selection: null, panel: null, toasts: [], celebrations: [], lastEventId, followVehicleId: null, version: 0 });
+    set({ engine, screen: state.campaignComplete ? 'summary' : 'game', selection: null, panel: null, toasts: [], celebrations: [], sceneReady: false, lastEventId, followVehicleId: null, version: 0 });
     get().camera({ type: 'reset' });
     return true;
   },
@@ -186,6 +200,9 @@ export const useApp = create<AppState>((set, get) => ({
   dismissToast: (id) => set((s) => ({ toasts: s.toasts.filter((t) => t.id !== id) })),
   dismissCelebration: (id) => set((s) => ({ celebrations: s.celebrations.filter((t) => t.id !== id) })),
   clearError: () => set({ lastError: null }),
+  setSceneReady: (sceneReady) => set({ sceneReady }),
+  notify: (title, body) => set((s) => ({ toasts: [...s.toasts, { id: toastId++, type: 'info' as const, title, body, createdAt: Date.now() }].slice(-6) })),
+  setContextLost: (contextLost) => set({ contextLost }),
   bump: () => {
     const { engine, lastEventId } = get();
     if (!engine) return;

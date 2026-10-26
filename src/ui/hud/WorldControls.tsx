@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useApp, useGame } from '@/app/store';
 import { Icon } from '../components/common';
+import { deviceProfile } from '@/app/device';
 
 export function WorldControls() {
   const camera = useApp((s) => s.camera);
@@ -33,6 +34,8 @@ export function WorldControls() {
         onClick={() => {
           if (save()) {
             setSaved(true);
+            // Compact layouts hide the button label, so confirm with a toast on touch devices.
+            if (deviceProfile().touch) useApp.getState().notify('Game saved', 'Stored in this browser on this device.');
             setTimeout(() => setSaved(false), 1500);
           }
         }}

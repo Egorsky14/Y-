@@ -1,7 +1,7 @@
 {
   "name": "hvac-company-owner-v3",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.3.0-beta",
   "type": "module",
   "description": "HVAC Company Owner V3: EGO HVAC Empire - a 3D HVAC business tycoon game",
   "scripts": {

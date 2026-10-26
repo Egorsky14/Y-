@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useApp } from './store';
 import { startGameLoop } from './gameLoop';
 import { GameScene } from '@/world/scene/GameScene';
@@ -15,6 +15,8 @@ import { FinancePanel } from '@/ui/panels/FinancePanel';
 import { SettingsPanel } from '@/ui/panels/SettingsPanel';
 import { Celebration, ErrorBanner, Toasts, TutorialHint } from '@/ui/overlays/Overlays';
 import { PreviewWarmup } from '@/ui/panels/VehiclePreview';
+import { AdaptiveQuality, ContextLostOverlay, LoadingScreen, TouchTutorial, UnsupportedScreen } from '@/ui/overlays/Lifecycle';
+import { deviceProfile } from './device';
 import { MainMenu } from '@/ui/menus/MainMenu';
 import { CampaignSummary } from '@/ui/menus/CampaignSummary';
 import { WorldLabels } from '@/ui/overlays/WorldLabels';
@@ -88,14 +90,26 @@ export function App() {
   const photo = useApp((s) => s.photo.on);
   useHotkeys();
   useEffect(() => startGameLoop(), []);
+  // Mount the 3D world two frames after the loading screen has painted, so the screen is up
+  // before the start-up shader work blocks the main thread.
+  const [worldMounted, setWorldMounted] = useState(false);
+  useEffect(() => {
+    if (screen === 'menu') {
+      setWorldMounted(false);
+      return;
+    }
+    let raf = requestAnimationFrame(() => (raf = requestAnimationFrame(() => setWorldMounted(true))));
+    return () => cancelAnimationFrame(raf);
+  }, [screen]);
 
+  if (!deviceProfile().webgl2) return <UnsupportedScreen />;
   if (screen === 'menu') return <MainMenu />;
   return (
     <div className="app">
-      <div className="app-world">
-        <GameScene />
-      </div>
-      <PreviewWarmup />
+      <div className="app-world">{worldMounted && <GameScene />}</div>
+      {/* Desktop only: phones show static vehicle previews and never open a second WebGL context. */}
+      {!deviceProfile().touch && <PreviewWarmup />}
+      <AdaptiveQuality />
       <div className={`app-ui ${photo ? 'photo' : ''}`}>
         {photo ? (
           <PhotoMode />
@@ -122,6 +136,9 @@ export function App() {
           </>
         )}
       </div>
+      <TouchTutorial />
+      <LoadingScreen />
+      <ContextLostOverlay />
     </div>
   );
 }
