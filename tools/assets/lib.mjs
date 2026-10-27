@@ -4,13 +4,13 @@ import * as BGU from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 
 /** Named materials shared by all generated assets; the runtime maps names to PBR textures/colors. */
 export const MATERIALS = {
-  paint: () => new THREE.MeshPhysicalMaterial({ name: 'paint', color: 0x15181d, roughness: 0.32, metalness: 0.35, clearcoat: 0.9, clearcoatRoughness: 0.12 }),
+  paint: () => new THREE.MeshPhysicalMaterial({ name: 'paint', color: 0x1a1e24, roughness: 0.34, metalness: 0.45, clearcoat: 1, clearcoatRoughness: 0.08 }),
   accent: () => new THREE.MeshStandardMaterial({ name: 'accent', color: 0x19d3c5, roughness: 0.4, metalness: 0.2, emissive: 0x19d3c5, emissiveIntensity: 0.15 }),
-  glass: () => new THREE.MeshPhysicalMaterial({ name: 'glass', color: 0x27394a, roughness: 0.08, metalness: 0.2, transparent: true, opacity: 0.9, envMapIntensity: 0.9 }),
+  glass: () => new THREE.MeshPhysicalMaterial({ name: 'glass', color: 0x10171e, roughness: 0.06, metalness: 0.1, transparent: true, opacity: 0.93, envMapIntensity: 0.55 }),
   'plastic-dark': () => new THREE.MeshStandardMaterial({ name: 'plastic-dark', color: 0x1c1e21, roughness: 0.75, metalness: 0.05 }),
   chrome: () => new THREE.MeshStandardMaterial({ name: 'chrome', color: 0xd9dde2, roughness: 0.18, metalness: 0.95 }),
-  rubber: () => new THREE.MeshStandardMaterial({ name: 'rubber', color: 0x16171a, roughness: 0.95, metalness: 0 }),
-  rim: () => new THREE.MeshStandardMaterial({ name: 'rim', color: 0xcfd4d8, roughness: 0.28, metalness: 0.85 }),
+  rubber: () => new THREE.MeshStandardMaterial({ name: 'rubber', color: 0x1b1c1f, roughness: 0.92, metalness: 0 }),
+  rim: () => new THREE.MeshStandardMaterial({ name: 'rim', color: 0xb9bfc5, roughness: 0.32, metalness: 0.85 }),
   headlight: () => new THREE.MeshStandardMaterial({ name: 'headlight', color: 0xf3f6ff, roughness: 0.1, metalness: 0.2, emissive: 0xfff6dd, emissiveIntensity: 0.4 }),
   taillight: () => new THREE.MeshStandardMaterial({ name: 'taillight', color: 0xc9262b, roughness: 0.2, metalness: 0.1, emissive: 0xd92d2d, emissiveIntensity: 0.5 }),
   amber: () => new THREE.MeshStandardMaterial({ name: 'amber', color: 0xf0a030, roughness: 0.25, metalness: 0.1, emissive: 0xd98010, emissiveIntensity: 0.3 }),
@@ -128,30 +128,60 @@ export function roundedBox(w, h, d, r = 0.05) {
   return g;
 }
 
-/** A wheel: tire with tread blocks and shoulder, a dished steel rim with lug holes and a chrome cap. Axis along x. */
-export function wheel(name, radius = 0.38, width = 0.26, { spokes = 5, rimRatio = 0.64 } = {}) {
+/**
+ * A wheel: a lathed tire (rounded shoulders, bulged sidewall, tread grooves), a machined six-spoke
+ * alloy with dark spoke pockets, a lug circle and a centre cap. Axis along x.
+ */
+export function wheel(name, radius = 0.38, width = 0.26, { spokes = 6, rimRatio = 0.62 } = {}) {
   const b = new Builder();
-  b.add('rubber', new THREE.CylinderGeometry(radius, radius, width, 32), { rotation: [0, 0, Math.PI / 2] });
-  // Rounded shoulders: a slightly smaller torus-ish ring at each sidewall edge
-  for (const side of [-1, 1]) b.add('rubber', new THREE.TorusGeometry(radius - 0.03, 0.035, 8, 32), { position: [side * (width / 2 - 0.01), 0, 0], rotation: [0, Math.PI / 2, 0] });
-  const blocks = 30;
+  const hw = width / 2;
+  const rimR = radius * rimRatio;
+  // Tire cross-section (r, x) from the inner bead over the shoulder and tread to the outer bead.
+  const prof = [];
+  const sh = Math.min(0.06, width * 0.22);
+  prof.push([rimR * 0.98, -hw * 0.86]);
+  prof.push([rimR + (radius - rimR) * 0.45, -hw * 1.0]);
+  prof.push([radius - sh * 0.9, -hw * 0.98]);
+  for (let i = 0; i <= 4; i++) { const a = (i / 4) * (Math.PI / 2); prof.push([radius - sh + Math.sin(a) * sh, -hw + sh - Math.cos(a) * sh]); }
+  for (let i = 0; i <= 4; i++) { const a = (i / 4) * (Math.PI / 2); prof.push([radius - sh + Math.cos(a) * sh, hw - sh + Math.sin(a) * sh]); }
+  prof.push([radius - sh * 0.9, hw * 0.98]);
+  prof.push([rimR + (radius - rimR) * 0.45, hw * 1.0]);
+  prof.push([rimR * 0.98, hw * 0.86]);
+  const tire = new THREE.LatheGeometry(prof.map(([r, x]) => new THREE.Vector2(r, x)), 40);
+  b.add('rubber', tire, { rotation: [0, 0, -Math.PI / 2] });
+  // Circumferential tread grooves read as dark bands; lateral sipes as blocks.
+  const blocks = 36;
   for (let i = 0; i < blocks; i++) {
     const a = (i / blocks) * Math.PI * 2;
-    b.add('rubber', new THREE.BoxGeometry(width * 0.86, 0.014, ((2 * Math.PI * radius) / blocks) * 0.58), { position: [0, Math.cos(a) * (radius + 0.004), Math.sin(a) * (radius + 0.004)], rotation: [-a, 0, 0] });
+    for (const s of [-1, 1]) b.add('rubber', new THREE.BoxGeometry(width * 0.34, 0.012, ((2 * Math.PI * radius) / blocks) * 0.55), { position: [s * width * 0.22, Math.cos(a) * (radius + 0.003), Math.sin(a) * (radius + 0.003)], rotation: [-a, 0, 0] });
   }
-  const rimR = radius * rimRatio;
-  // Rim barrel (dark) and the dished face on each side
-  b.add('plastic-dark', new THREE.CylinderGeometry(rimR * 0.96, rimR * 0.96, width * 1.0, 28), { rotation: [0, 0, Math.PI / 2] });
+  // Rim barrel, then the outer face: a shallow dish, six spokes, lug circle, centre cap.
+  b.add('plastic-dark', new THREE.CylinderGeometry(rimR * 0.97, rimR * 0.97, width * 0.9, 32, 1, true), { rotation: [0, 0, Math.PI / 2] });
   for (const side of [-1, 1]) {
-    b.add('rim', new THREE.CylinderGeometry(rimR, rimR * 0.9, 0.03, 28), { position: [side * (width / 2 - 0.02), 0, 0], rotation: [0, 0, side * Math.PI / 2] });
-    b.add('rim', new THREE.CylinderGeometry(rimR * 0.62, rimR * 0.5, 0.05, 24), { position: [side * (width / 2 + 0.005), 0, 0], rotation: [0, 0, side * Math.PI / 2] });
+    const face = side * (hw * 0.86);
+    b.add('rim', new THREE.TorusGeometry(rimR * 0.97, rimR * 0.06, 6, 36), { position: [face, 0, 0], rotation: [0, Math.PI / 2, 0] });
+    b.add('plastic-dark', new THREE.CylinderGeometry(rimR * 0.93, rimR * 0.93, 0.012, 32), { position: [face - side * 0.02, 0, 0], rotation: [0, 0, Math.PI / 2] });
     for (let i = 0; i < spokes; i++) {
-      const a = (i / spokes) * Math.PI * 2;
-      b.add('plastic-dark', new THREE.CylinderGeometry(rimR * 0.1, rimR * 0.1, 0.02, 10), { position: [side * (width / 2 + 0.01), Math.cos(a) * rimR * 0.76, Math.sin(a) * rimR * 0.76], rotation: [0, 0, Math.PI / 2] });
+      const a = (i / spokes) * Math.PI * 2 + 0.26;
+      const len = rimR * 0.66;
+      const mid = rimR * 0.27 + len / 2;
+      b.add('rim', roundedBox(0.03, len, rimR * 0.2, 0.012), { position: [face + side * 0.004, Math.cos(a) * mid, Math.sin(a) * mid], rotation: [a, 0, 0] });
     }
-    b.add('chrome', new THREE.CylinderGeometry(rimR * 0.26, rimR * 0.26, 0.05, 16), { position: [side * (width / 2 + 0.03), 0, 0], rotation: [0, 0, Math.PI / 2] });
+    b.add('rim', new THREE.CylinderGeometry(rimR * 0.33, rimR * 0.36, 0.05, 24), { position: [face, 0, 0], rotation: [0, 0, side * Math.PI / 2] });
+    for (let i = 0; i < 6; i++) {
+      const a = (i / 6) * Math.PI * 2;
+      b.add('chrome', new THREE.CylinderGeometry(0.012, 0.012, 0.02, 6), { position: [face + side * 0.028, Math.cos(a) * rimR * 0.24, Math.sin(a) * rimR * 0.24], rotation: [0, 0, Math.PI / 2] });
+    }
+    b.add('plastic-dark', new THREE.CylinderGeometry(rimR * 0.13, rimR * 0.13, 0.02, 16), { position: [face + side * 0.032, 0, 0], rotation: [0, 0, Math.PI / 2] });
+    b.add('accent', new THREE.CylinderGeometry(rimR * 0.06, rimR * 0.06, 0.012, 12), { position: [face + side * 0.042, 0, 0], rotation: [0, 0, Math.PI / 2] });
   }
   return b.build(name);
+}
+
+/** A molded wheel-arch flare: a half ring of trim following an arch of radius r, standing proud of the body side. */
+export function archFlare(b, side, x, z, yCenter, r, { thickness = 0.07, depth = 0.06 } = {}) {
+  const g = new THREE.TorusGeometry(r + thickness * 0.4, thickness / 2, 6, 20, Math.PI);
+  b.add('plastic-dark', g, { position: [side * (x + depth / 2 - 0.01), yCenter, z], rotation: [0, Math.PI / 2, 0], scale: [1, 1, depth / thickness] });
 }
 
 export function cylinder(materialName, b, rTop, rBottom, h, segs, opts) {

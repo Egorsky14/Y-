@@ -34,32 +34,34 @@ function lookFor(minute: number, weather: WeatherKind): Look {
   // as evening instead of noon: noon 1, 08:00 ≈ 0.79, 18:30 ≈ 0.55 of full sun.
   const sunHeight = Math.pow(THREE.MathUtils.clamp(elevation / 1.22, 0, 1), 0.55);
   const daylight = day * (0.35 + 0.65 * sunHeight);
-  const golden = THREE.MathUtils.clamp(1 - Math.abs(elevation - 0.14) / 0.3, 0, 1) * THREE.MathUtils.clamp(elevation / 0.08, 0, 1); // low-sun warmth
+  // Low-sun warmth builds through the late afternoon (about 16:30 in summer) and peaks just
+  // before sunset, so the hours before dusk read as golden hour rather than noon.
+  const golden = Math.pow(THREE.MathUtils.clamp((0.78 - elevation) / 0.66, 0, 1), 1.15) * THREE.MathUtils.clamp(elevation / 0.05, 0, 1);
   const twilight = THREE.MathUtils.clamp(1 - Math.abs(elevation + 0.08) / 0.16, 0, 1); // just below the horizon: magenta sky
   const night = 1 - THREE.MathUtils.clamp((elevation + 0.12) / 0.26, 0, 1);
 
-  const sunDay = new THREE.Color('#fff3df').lerp(new THREE.Color('#ffa857'), golden * 0.9);
-  const zenithDay = new THREE.Color('#4f93d6');
-  const horizonDay = new THREE.Color('#dbe8f0');
-  const zenithNight = new THREE.Color('#0a1424');
-  const horizonNight = new THREE.Color('#1b2838');
-  const horizonGolden = new THREE.Color('#f3a96a');
-  const horizonTwilight = new THREE.Color('#c86a7e');
+  const sunDay = new THREE.Color('#fff4e2').lerp(new THREE.Color('#ffb066'), golden * 0.85);
+  const zenithDay = new THREE.Color('#3f86d0');
+  const horizonDay = new THREE.Color('#d7e4ec');
+  const zenithNight = new THREE.Color('#0b1730');
+  const horizonNight = new THREE.Color('#1f3049');
+  const horizonGolden = new THREE.Color('#f1b07a');
+  const horizonTwilight = new THREE.Color('#c97482');
 
   let look: Look = {
-    // Night keeps a faint blue moon so forms stay readable; day is a strong warm sun.
-    sunIntensity: 2.7 * daylight + 0.14 * night,
-    sunColor: sunDay.clone().lerp(new THREE.Color('#9fb4e0'), night),
-    skyZenith: zenithDay.clone().lerp(new THREE.Color('#3b5f8e'), twilight * 0.6).lerp(zenithNight, night),
-    skyHorizon: horizonDay.clone().lerp(horizonGolden, golden * 0.75).lerp(horizonTwilight, twilight * 0.7).lerp(horizonNight, night),
-    ground: new THREE.Color('#c9a97a').lerp(new THREE.Color('#b58a5c'), golden * 0.4).lerp(new THREE.Color('#1f2430'), night),
-    hemi: 0.9 * (0.18 + 0.82 * day) * (0.75 + 0.25 * sunHeight) + 0.12 * twilight,
-    ambient: 0.22 * (0.25 + 0.75 * day),
-    fogNear: 380,
-    fogFar: 1500,
-    exposure: 0.98 - night * 0.3 + golden * 0.04 - (1 - sunHeight) * day * 0.06,
+    // Night keeps a cool moon so forms stay readable; day is a strong warm sun with real contrast.
+    sunIntensity: 3.0 * daylight + 0.32 * night,
+    sunColor: sunDay.clone().lerp(new THREE.Color('#8fa9dc'), night),
+    skyZenith: zenithDay.clone().lerp(new THREE.Color('#4a74a8'), golden * 0.35).lerp(new THREE.Color('#3b5f8e'), twilight * 0.6).lerp(zenithNight, night),
+    skyHorizon: horizonDay.clone().lerp(horizonGolden, golden * 0.8).lerp(horizonTwilight, twilight * 0.7).lerp(horizonNight, night),
+    ground: new THREE.Color('#c4a47a').lerp(new THREE.Color('#b0805a'), golden * 0.45).lerp(new THREE.Color('#1c2433'), night),
+    hemi: 0.74 * (0.22 + 0.78 * day) * (0.78 + 0.22 * sunHeight) + 0.12 * twilight + 0.1 * night,
+    ambient: 0.16 * (0.3 + 0.7 * day) + 0.05 * night,
+    fogNear: 240,
+    fogFar: 1650,
+    exposure: 0.98 - night * 0.22 + golden * 0.05 - (1 - sunHeight) * day * 0.05,
     rain: 0,
-    envIntensity: 0.5 * (0.2 + 0.8 * day),
+    envIntensity: 0.55 * (0.2 + 0.8 * day),
   };
   switch (weather) {
     case 'heat-wave':
@@ -190,7 +192,7 @@ export function Atmosphere() {
     }
     if (hemi.current) {
       hemi.current.intensity = c.hemi;
-      hemi.current.color.copy(c.skyHorizon);
+      hemi.current.color.copy(c.skyHorizon).lerp(c.skyZenith, 0.35);
       hemi.current.groundColor.copy(c.ground);
     }
     if (ambient.current) ambient.current.intensity = c.ambient;

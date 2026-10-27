@@ -210,6 +210,37 @@ export function wordmarkTexture(variant: 'light' | 'dark' = 'light', tagline = t
   });
 }
 
+/**
+ * Vehicle side livery: bolt, EGO wordmark and HVAC, then the legal name under a teal rule, sized to
+ * stay legible on a van side at street distance. Transparent background; drawn flat (the decal
+ * planes sit on flat body panels, so the lettering is never bent across curved geometry).
+ */
+export function vehicleLiveryTexture(variant: 'light' | 'dark' = 'light'): THREE.Texture {
+  return canvasTexture(`livery-${variant}`, 1024, 256, (ctx) => {
+    ctx.clearRect(0, 0, 1024, 256);
+    ctx.textBaseline = 'middle';
+    ctx.textAlign = 'left';
+    const ink = variant === 'light' ? '#ffffff' : '#0b0f14';
+    drawBolt(ctx, 30, 22, 160);
+    ctx.font = '900 150px Inter, Arial Black, Arial, sans-serif';
+    ctx.fillStyle = ink;
+    ctx.fillText('EGO', 140, 100);
+    const egoW = ctx.measureText('EGO').width;
+    ctx.fillStyle = '#19d3c5';
+    ctx.font = '800 104px Inter, Arial Black, Arial, sans-serif';
+    ctx.fillText('HVAC', 140 + egoW + 26, 104);
+    ctx.fillStyle = '#19d3c5';
+    ctx.fillRect(142, 182, 840, 5);
+    ctx.fillStyle = variant === 'light' ? 'rgba(255,255,255,0.92)' : 'rgba(11,15,20,0.9)';
+    const legal = 'EGO HVAC SERVICES LLC  ·  HEATING & COOLING';
+    let size = 46;
+    ctx.font = `700 ${size}px Inter, Arial, sans-serif`;
+    while (ctx.measureText(legal).width > 840 && size > 24) ctx.font = `700 ${--size}px Inter, Arial, sans-serif`;
+    ctx.fillText(legal, 142, 222);
+  });
+}
+
+
 /** Monument sign face: wordmark, legal name and the tagline on a charcoal panel. */
 export function monumentTexture(): THREE.Texture {
   return canvasTexture('monument', 1024, 512, (ctx) => {
@@ -333,17 +364,22 @@ export function stainTexture(): THREE.Texture {
   });
 }
 
-export function signTexture(text: string, color = '#19d3c5', bg = '#0f1318'): THREE.Texture {
-  return canvasTexture(`sign-${text}-${color}-${bg}`, 1024, 256, (ctx) => {
+/** Painted sign panel; `aspect` is the panel's width / height so lettering keeps its proportions. */
+export function signTexture(text: string, color = '#19d3c5', bg = '#0f1318', aspect = 4): THREE.Texture {
+  const w = Math.round(256 * aspect);
+  return canvasTexture(`sign-${text}-${color}-${bg}-${w}`, w, 256, (ctx) => {
     ctx.fillStyle = bg;
-    ctx.fillRect(0, 0, 1024, 256);
+    ctx.fillRect(0, 0, w, 256);
     ctx.fillStyle = color;
-    ctx.fillRect(0, 230, 1024, 26);
+    ctx.fillRect(0, 230, w, 26);
     ctx.textBaseline = 'middle';
     ctx.textAlign = 'center';
     ctx.fillStyle = '#ffffff';
-    ctx.font = '900 110px Inter, Arial Black, Arial, sans-serif';
-    ctx.fillText(text, 512, 118);
+    // Shrink long names to fit the panel instead of clipping them at the edges.
+    let size = 110;
+    ctx.font = `900 ${size}px Inter, Arial Black, Arial, sans-serif`;
+    while (ctx.measureText(text).width > w * 0.9 && size > 40) ctx.font = `900 ${--size}px Inter, Arial Black, Arial, sans-serif`;
+    ctx.fillText(text, w / 2, 118);
   });
 }
 

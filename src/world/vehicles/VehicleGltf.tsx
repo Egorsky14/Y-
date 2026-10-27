@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import { useGLTF } from '@react-three/drei';
 import type { PaintId, VehicleClass, VehicleUpgradeId } from '@/game/fleet/vehicleCatalog';
 import { VEHICLE_PAINT } from '../assets/palette';
-import { wordmarkTexture } from '../assets/textures';
+import { vehicleLiveryTexture } from '../assets/textures';
 
 export const VEHICLE_CLASSES: VehicleClass[] = ['compact-van', 'full-size-van', 'pickup', 'box-truck'];
 export const WHEEL_RADIUS: Record<VehicleClass, number> = { 'compact-van': 0.34, 'full-size-van': 0.39, pickup: 0.42, 'box-truck': 0.47 };
@@ -29,8 +29,8 @@ export interface VehicleRig {
 let decalTextures: { light: THREE.Texture; dark: THREE.Texture } | null = null;
 function decalTexture(darkPaint: boolean): THREE.Texture {
   if (!decalTextures) {
-    const light = wordmarkTexture('light', false).clone();
-    const dark = wordmarkTexture('dark', false).clone();
+    const light = vehicleLiveryTexture('light').clone();
+    const dark = vehicleLiveryTexture('dark').clone();
     for (const t of [light, dark]) {
       // The exporter already rewrote V for glTF, so a canvas texture keeps three's default flipY.
       t.flipY = true;

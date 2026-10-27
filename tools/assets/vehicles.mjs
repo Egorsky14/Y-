@@ -2,7 +2,12 @@
 // Bodies are a beveled lower tub (with real wheel arches) plus a lofted upper shell with rounded
 // roof edges, tumblehome and a curved hood, so silhouettes read as automotive rather than boxy.
 import * as THREE from 'three';
-import { Builder, loftShell, profileWithArches, roundedBox, shellSection, sidePolygon, wheel } from './lib.mjs';
+import { archFlare, Builder, loftShell, profileWithArches, roundedBox, shellSection, sidePolygon, wheel } from './lib.mjs';
+
+/** Arch flares on both sides for each arch. */
+function flares(b, w, floor, arches) {
+  for (const a of arches) for (const s of [-1, 1]) archFlare(b, s, w / 2, a.z, floor, a.r, { thickness: 0.08, depth: 0.07 });
+}
 
 function glassPanel(b, w, h, position, rotation, inset = 0.012) {
   // Black seal/frame slightly larger than the glass, then the glass proud of it.
@@ -68,30 +73,42 @@ function ladderRack(b, width, length, zCenter, yTop, ladders = 2, conduit = true
   }
 }
 
-/** Front fascia: headlamp pockets with lenses wrapping the corner, DRL strips, grille, air dam, fog lamps, plate, tow hooks. */
+/**
+ * Front fascia: swept headlamp units (dark housing wrapping onto the fender, projector, LED light
+ * guide and amber corner), a framed grille with slats and the EGO badge bar, a two-tone bumper with
+ * a lower intake, skid plate, fog lamps, plate and tow points.
+ */
 function frontFascia(b, { w, zFront, yLamp, yGrille, grilleW, grilleH, floor, lampW = 0.5, lampH = 0.24 }) {
   for (const s of [-1, 1]) {
-    const x = s * (w / 2 - lampW / 2 - 0.08);
-    b.add('plastic-dark', roundedBox(lampW + 0.05, lampH + 0.05, 0.04, 0.05), { position: [x, yLamp, zFront - 0.01] });
-    b.add('headlight', roundedBox(lampW, lampH, 0.04, 0.05), { position: [x, yLamp, zFront + 0.01] });
-    b.add('chrome', new THREE.CylinderGeometry(0.075, 0.075, 0.02, 16), { position: [x - s * 0.1, yLamp, zFront + 0.03], rotation: [Math.PI / 2, 0, 0] }); // projector
-    b.add('white', new THREE.BoxGeometry(lampW - 0.05, 0.02, 0.02), { position: [x, yLamp + lampH / 2 - 0.04, zFront + 0.035] }); // DRL
-    // Corner return of the lamp onto the fender
-    b.add('headlight', new THREE.BoxGeometry(0.03, lampH * 0.8, 0.22), { position: [s * (w / 2 - 0.0), yLamp, zFront - 0.14] });
-    b.add('amber', new THREE.BoxGeometry(0.03, 0.05, 0.14), { position: [s * (w / 2 + 0.005), yLamp - lampH / 2 + 0.03, zFront - 0.15] });
-    b.add('plastic-dark', new THREE.CylinderGeometry(0.07, 0.07, 0.03, 14), { position: [s * (w / 2 - 0.35), floor + 0.22, zFront + 0.02], rotation: [Math.PI / 2, 0, 0] }); // fog pocket
-    b.add('amber', new THREE.CylinderGeometry(0.05, 0.05, 0.02, 14), { position: [s * (w / 2 - 0.35), floor + 0.22, zFront + 0.045], rotation: [Math.PI / 2, 0, 0] });
-    b.add('steel', new THREE.BoxGeometry(0.05, 0.08, 0.1), { position: [s * (w / 2 - 0.62), floor + 0.08, zFront + 0.02] }); // tow hook
+    const x = s * (w / 2 - lampW / 2 - 0.05);
+    // Housing, lens and inner detail; the housing wraps the corner so the lamp reads from the side.
+    b.add('plastic-dark', roundedBox(lampW + 0.06, lampH + 0.06, 0.06, 0.06), { position: [x, yLamp, zFront - 0.02] });
+    b.add('plastic-dark', new THREE.BoxGeometry(0.05, lampH + 0.04, 0.34), { position: [s * (w / 2 - 0.005), yLamp, zFront - 0.17] });
+    b.add('headlight', roundedBox(lampW * 0.42, lampH * 0.62, 0.03, 0.04), { position: [x - s * lampW * 0.2, yLamp - lampH * 0.04, zFront + 0.015] });
+    b.add('chrome', new THREE.CylinderGeometry(lampH * 0.24, lampH * 0.24, 0.03, 18), { position: [x + s * lampW * 0.18, yLamp - lampH * 0.04, zFront + 0.012], rotation: [Math.PI / 2, 0, 0] });
+    b.add('glass', new THREE.CylinderGeometry(lampH * 0.18, lampH * 0.18, 0.02, 18), { position: [x + s * lampW * 0.18, yLamp - lampH * 0.04, zFront + 0.03], rotation: [Math.PI / 2, 0, 0] });
+    b.add('headlight', new THREE.BoxGeometry(lampW * 0.95, 0.028, 0.02), { position: [x, yLamp + lampH / 2 - 0.035, zFront + 0.025] }); // LED light guide
+    b.add('headlight', new THREE.BoxGeometry(0.02, 0.028, 0.26), { position: [s * (w / 2 + 0.022), yLamp + lampH / 2 - 0.035, zFront - 0.15] }); // wraps onto the fender
+    b.add('amber', new THREE.BoxGeometry(0.03, 0.05, 0.16), { position: [s * (w / 2 + 0.022), yLamp - lampH / 2 + 0.05, zFront - 0.17] });
+    // Fog lamp pod in the bumper, and tow points.
+    b.add('plastic-dark', roundedBox(0.2, 0.11, 0.05, 0.04), { position: [s * (w / 2 - 0.3), floor + 0.24, zFront + 0.045] });
+    b.add('headlight', roundedBox(0.13, 0.05, 0.02, 0.02), { position: [s * (w / 2 - 0.3), floor + 0.24, zFront + 0.07] });
+    b.add('steel', roundedBox(0.06, 0.06, 0.08, 0.02), { position: [s * (w / 2 - 0.62), floor + 0.07, zFront + 0.04] });
   }
-  // Grille: dark mesh plate, horizontal bars, teal bolt badge bar
+  // Grille: gloss-black surround, dark mesh, four slats, badge bar
+  b.add('chrome', roundedBox(grilleW + 0.06, grilleH + 0.06, 0.04, 0.07), { position: [0, yGrille, zFront - 0.005] });
   b.add('plastic-dark', roundedBox(grilleW, grilleH, 0.05, 0.06), { position: [0, yGrille, zFront + 0.005] });
   const bars = 4;
-  for (let i = 0; i < bars; i++) b.add('chrome', new THREE.BoxGeometry(grilleW - 0.1, 0.022, 0.025), { position: [0, yGrille - grilleH / 2 + 0.07 + i * ((grilleH - 0.14) / (bars - 1)), zFront + 0.04] });
-  b.add('accent', roundedBox(0.3, 0.07, 0.03, 0.02), { position: [0, yGrille, zFront + 0.055] });
-  // Lower air dam with mesh and the license plate above it
-  b.add('plastic-dark', roundedBox(grilleW + 0.3, 0.2, 0.05, 0.05), { position: [0, floor + 0.2, zFront + 0.005] });
-  b.add('white', roundedBox(0.31, 0.16, 0.012, 0.01), { position: [0, floor + 0.42, zFront + 0.04] });
-  b.add('plastic-dark', roundedBox(0.34, 0.19, 0.01, 0.01), { position: [0, floor + 0.42, zFront + 0.03] });
+  for (let i = 0; i < bars; i++) b.add('underbody', roundedBox(grilleW - 0.08, 0.035, 0.03, 0.012), { position: [0, yGrille - grilleH / 2 + 0.07 + i * ((grilleH - 0.14) / (bars - 1)), zFront + 0.04] });
+  b.add('accent', roundedBox(grilleW * 0.94, 0.03, 0.03, 0.012), { position: [0, yGrille - 0.02, zFront + 0.055] });
+  b.add('chrome', roundedBox(0.22, 0.12, 0.03, 0.05), { position: [0, yGrille + 0.03, zFront + 0.06] }); // badge
+  // Two-tone bumper: paint-matched upper bar over a textured lower with intake and skid plate.
+  b.add('paint', roundedBox(w + 0.02, 0.14, 0.2, 0.06), { position: [0, floor + 0.42, zFront - 0.06] });
+  b.add('plastic-dark', roundedBox(w + 0.04, 0.3, 0.26, 0.1), { position: [0, floor + 0.2, zFront - 0.07] });
+  b.add('underbody', roundedBox(grilleW + 0.1, 0.11, 0.04, 0.04), { position: [0, floor + 0.2, zFront + 0.06] });
+  b.add('aluminum', roundedBox(grilleW * 0.8, 0.05, 0.16, 0.02), { position: [0, floor + 0.04, zFront - 0.02] });
+  b.add('plastic-dark', roundedBox(0.36, 0.2, 0.012, 0.01), { position: [0, floor + 0.44, zFront + 0.045] });
+  b.add('white', roundedBox(0.32, 0.16, 0.012, 0.01), { position: [0, floor + 0.44, zFront + 0.053] });
 }
 
 function rearLamps(b, { w, zRear, y, h = 0.5 }) {
@@ -113,14 +130,36 @@ function roofDetails(b, w, zFrom, zTo, yRoof) {
   b.add('taillight', new THREE.BoxGeometry(0.3, 0.04, 0.03), { position: [0, yRoof - 0.1, zFrom - 0.01] });
 }
 
-/** The side wrap graphic: a tapered teal sweep rising from the rear rocker to the front-door beltline, plus the beltline line. */
+/**
+ * The side wrap graphic: a curved teal sweep rising from the rear rocker toward the front-door
+ * beltline, a fine white pinstripe that follows it, and the beltline accent line.
+ */
 function wrapGraphics(b, side, x, L, belt, floor) {
-  const z0 = -L / 2 + 0.3;
-  const sweep = [[z0, floor + 0.3], [z0, floor + 0.62], [z0 + 1.6, belt - 0.22], [z0 + 3.1, belt - 0.05], [z0 + 3.1, belt - 0.12], [z0 + 1.7, belt - 0.36], [z0 + 0.6, floor + 0.34]];
-  b.add('accent', sidePolygon(sweep, side * x, side));
-  const thin = [[z0 + 0.2, floor + 0.2], [z0 + 0.2, floor + 0.26], [z0 + 2.4, belt - 0.4], [z0 + 2.4, belt - 0.46]];
-  b.add('white', sidePolygon(thin, side * x, side));
-  b.add('accent', new THREE.BoxGeometry(0.008, 0.05, L - 1.0), { position: [side * x, belt, -0.3] });
+  const z0 = -L / 2 + 0.25;
+  const span = Math.min(3.4, L * 0.6);
+  // Drawn in (z, y); the right side mirrors z so the triangulated faces still face outward after rotation.
+  const k = side > 0 ? -1 : 1;
+  const P = (z, y) => [k * z, y];
+  const sweep = new THREE.Shape();
+  sweep.moveTo(...P(z0, floor + 0.24));
+  sweep.lineTo(...P(z0, floor + 0.7));
+  sweep.bezierCurveTo(...P(z0 + span * 0.35, floor + 0.7), ...P(z0 + span * 0.6, belt - 0.05), ...P(z0 + span, belt - 0.02));
+  sweep.lineTo(...P(z0 + span, belt - 0.12));
+  sweep.bezierCurveTo(...P(z0 + span * 0.62, belt - 0.16), ...P(z0 + span * 0.36, floor + 0.3), ...P(z0 + 0.5, floor + 0.24));
+  sweep.closePath();
+  const pin = new THREE.Shape();
+  pin.moveTo(...P(z0 + 0.15, floor + 0.17));
+  pin.bezierCurveTo(...P(z0 + span * 0.4, floor + 0.2), ...P(z0 + span * 0.72, belt - 0.24), ...P(z0 + span + 0.4, belt - 0.2));
+  pin.lineTo(...P(z0 + span + 0.4, belt - 0.24));
+  pin.bezierCurveTo(...P(z0 + span * 0.72, belt - 0.28), ...P(z0 + span * 0.4, floor + 0.24), ...P(z0 + 0.15, floor + 0.21));
+  pin.closePath();
+  for (const [shape, mat, off] of [[sweep, 'accent', 0], [pin, 'white', 0.002]]) {
+    const g = new THREE.ShapeGeometry(shape, 24);
+    g.rotateY(side > 0 ? Math.PI / 2 : -Math.PI / 2);
+    g.translate(side * (x + off), 0, 0);
+    b.add(mat, g);
+  }
+  b.add('accent', new THREE.BoxGeometry(0.008, 0.035, L - 1.0), { position: [side * x, belt + 0.02, -0.3] });
 }
 
 export function fullSizeVan() {
@@ -133,7 +172,9 @@ export function fullSizeVan() {
   const roof = 2.52;
   // Lower tub: beveled, with the wheel arches, up to the beltline
   const tub = [[-L / 2, floor], [-L / 2, belt], [L / 2 - 0.05, belt], [L / 2, belt - 0.15], [L / 2, floor]];
-  b.add('paint', profileWithArches(tub, [{ z: 1.85, r: 0.53 }, { z: -1.75, r: 0.53 }], w, { bevel: 0.035 }));
+  const arches = [{ z: 1.85, r: 0.44 }, { z: -1.75, r: 0.44 }];
+  b.add('paint', profileWithArches(tub, arches, w, { bevel: 0.035 }));
+  flares(b, w, floor, arches);
   // Upper shell: rear doors → cargo roof → windshield → hood → nose
   const S = (z, yTop, hwT, r, hwB = w / 2) => ({ z, section: shellSection({ yBottom: belt - 0.02, yTop, hwB, hwT, r }) });
   const shell = loftShell([
@@ -151,7 +192,7 @@ export function fullSizeVan() {
   b.add('paint', new THREE.BoxGeometry(0.08, 0.015, 0.75), { position: [0, 1.46, 2.5], rotation: [-0.12, 0, 0] });
   b.add('plastic-dark', new THREE.BoxGeometry(w * 0.7, 0.03, 0.08), { position: [0, 1.58, 2.08] });
   // Rocker cladding, bumpers, rear step
-  b.box('plastic-dark', [w + 0.02, 0.16, L - 2.1], { position: [0, floor + 0.05, 0.05] });
+  b.box('plastic-dark', [w + 0.04, 0.16, 2.6], { position: [0, floor + 0.06, 0.05] });
   b.add('plastic-dark', roundedBox(w + 0.04, 0.36, 0.34, 0.1), { position: [0, floor + 0.16, L / 2 - 0.04] });
   b.add('plastic-dark', roundedBox(w + 0.04, 0.3, 0.28, 0.1), { position: [0, floor + 0.14, -L / 2 + 0.04] });
   b.add('plastic-dark', new THREE.BoxGeometry(w * 0.8, 0.05, 0.3), { position: [0, floor + 0.32, -L / 2 - 0.1] });
@@ -241,7 +282,9 @@ export function compactVan() {
   const belt = 1.05;
   const roof = 1.98;
   const tub = [[-L / 2, floor], [-L / 2, belt], [L / 2 - 0.05, belt], [L / 2, belt - 0.12], [L / 2, floor]];
-  b.add('paint', profileWithArches(tub, [{ z: 1.5, r: 0.46 }, { z: -1.4, r: 0.46 }], w, { bevel: 0.03 }));
+  const arches = [{ z: 1.5, r: 0.4 }, { z: -1.4, r: 0.4 }];
+  b.add('paint', profileWithArches(tub, arches, w, { bevel: 0.03 }));
+  flares(b, w, floor, arches);
   const S = (z, yTop, hwT, r) => ({ z, section: shellSection({ yBottom: belt - 0.02, yTop, hwB: w / 2, hwT, r }) });
   b.add('paint', loftShell([
     S(-L / 2 + 0.02, roof - 0.06, w / 2 - 0.06, 0.2),
@@ -253,7 +296,7 @@ export function compactVan() {
     S(L / 2 - 0.02, 1.08, w / 2 - 0.06, 0.1),
   ]));
   b.add('plastic-dark', new THREE.BoxGeometry(w * 0.7, 0.03, 0.08), { position: [0, 1.32, 1.72] });
-  b.box('plastic-dark', [w + 0.02, 0.14, L - 1.8], { position: [0, floor + 0.04, 0.05] });
+  b.box('plastic-dark', [w + 0.04, 0.14, 2.05], { position: [0, floor + 0.05, 0.05] });
   b.add('plastic-dark', roundedBox(w + 0.04, 0.32, 0.3, 0.1), { position: [0, floor + 0.14, L / 2 - 0.03] });
   b.add('plastic-dark', roundedBox(w + 0.04, 0.26, 0.24, 0.1), { position: [0, floor + 0.12, -L / 2 + 0.03] });
   frontFascia(b, { w, zFront: L / 2 + 0.08, yLamp: 0.95, yGrille: 0.82, grilleW: 0.9, grilleH: 0.32, floor, lampW: 0.42, lampH: 0.2 });
@@ -300,7 +343,9 @@ export function pickup() {
   const bedStart = -0.35;
   // One tub for cab and bed with both arches; the cab shell is lofted above it; the bed stays open.
   const tub = [[-L / 2, floor], [-L / 2, belt], [L / 2 - 0.05, belt], [L / 2, belt - 0.14], [L / 2, floor]];
-  b.add('paint', profileWithArches(tub, [{ z: 1.95, r: 0.57 }, { z: -1.75, r: 0.57 }], w, { bevel: 0.03 }));
+  const arches = [{ z: 1.95, r: 0.45 }, { z: -1.75, r: 0.45 }];
+  b.add('paint', profileWithArches(tub, arches, w, { bevel: 0.03 }));
+  flares(b, w, floor, arches);
   const S = (z, yTop, hwT, r) => ({ z, section: shellSection({ yBottom: belt - 0.02, yTop, hwB: w / 2, hwT, r }) });
   b.add('paint', loftShell([
     S(bedStart - 0.02, 1.9, w / 2 - 0.07, 0.2),
@@ -374,7 +419,8 @@ export function boxTruck() {
   const cw = w * 0.96;
   // Cab tub with the front arch, lofted conventional cab shell above
   const tub = [[cabBack, floor], [cabBack, belt], [cabFront - 0.06, belt], [cabFront, belt - 0.2], [cabFront, floor]];
-  b.add('paint', profileWithArches(tub, [{ z: 2.55, r: 0.63 }], cw, { bevel: 0.03 }));
+  b.add('paint', profileWithArches(tub, [{ z: 2.55, r: 0.5 }], cw, { bevel: 0.03 }));
+  flares(b, cw, floor, [{ z: 2.55, r: 0.5 }]);
   const S = (z, yTop, hwT, r) => ({ z, section: shellSection({ yBottom: belt - 0.02, yTop, hwB: cw / 2, hwT, r }) });
   b.add('paint', loftShell([
     S(cabBack + 0.02, 2.65, cw / 2 - 0.08, 0.22),

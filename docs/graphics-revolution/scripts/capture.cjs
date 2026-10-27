@@ -13,6 +13,7 @@ const [label, baseUrl, outRoot, size = '1920x1080'] = args.filter((a) => !a.star
 const [W, H] = size.split('x').map(Number);
 const mobile = W < 600;
 const perf = flags.has('--perf');
+const only = (args.find((a) => a.startsWith('--only=')) ?? '').slice(7).split(',').filter(Boolean);
 const out = path.join(outRoot, label);
 fs.mkdirSync(out, { recursive: true });
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -69,6 +70,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
   const metrics = { label, size, shots: {}, errors };
   const median = (a) => { const s = [...a].sort((x, y) => x - y); return s.length ? s[Math.floor(s.length / 2)] : null; };
   const shot = async (name, cmd, opts = {}) => {
+    if (only.length && !only.some((o) => name.startsWith(o))) return;
     if (cmd) await cam(cmd);
     await sleep(opts.wait ?? 2400);
     await page.screenshot({ path: path.join(out, `${name}.jpg`), type: 'jpeg', quality: 82 });
@@ -134,6 +136,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
   await shot('11-tech-unit-close-b-1000', { type: 'focus', target: tech, distance: 6.5, azimuth: az - 0.75, elevation: 0.38, targetY: 0.7 }, { perf: false });
   metrics.serviceGeo = geo;
 
+  if (only.length && !only.some((o) => +o >= 12)) { fs.writeFileSync(path.join(out, 'metrics.json'), JSON.stringify(metrics, null, 2)); await browser.close(); return; }
   await advanceTo(17 * 60 + 30);
   await shot('12-overview-1730', { type: 'reset' });
   await shot('13-neighborhood-1730', { type: 'focus', target: { x: -21, z: 25 }, distance: 48, azimuth: 0.9 }, { perf: false });

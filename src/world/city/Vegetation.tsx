@@ -48,6 +48,41 @@ function jittered(geo: THREE.BufferGeometry, amount: number, rnd: () => number):
   return g;
 }
 
+/**
+ * A smooth, lumpy mass (leaf cluster, shrub or boulder): a subdivided icosphere displaced by
+ * low-frequency noise along its normals, welded so normals are smooth, and vertex-shaded darker
+ * underneath and toward the core so it reads as volume under the sun rather than faceted plastic.
+ */
+function mass(rnd: () => number, radius: number, position: [number, number, number], scale: [number, number, number], color: THREE.Color, { detail = 2, lumps = 0.22, shade = 0.42, jitter = 0.07 } = {}): THREE.BufferGeometry {
+  let g: THREE.BufferGeometry = new THREE.IcosahedronGeometry(1, detail);
+  g.deleteAttribute('normal');
+  g.deleteAttribute('uv');
+  g = BGU.mergeVertices(g, 1e-4);
+  const p = g.attributes.position;
+  const f = [1.6 + rnd() * 1.2, 1.4 + rnd() * 1.4, 1.5 + rnd() * 1.3];
+  const ph = [rnd() * 6.28, rnd() * 6.28, rnd() * 6.28];
+  const v = new THREE.Vector3();
+  for (let i = 0; i < p.count; i++) {
+    v.fromBufferAttribute(p, i);
+    const n = Math.sin(v.x * f[0] * 2.1 + ph[0]) * Math.sin(v.y * f[1] * 2.3 + ph[1]) * Math.sin(v.z * f[2] * 1.9 + ph[2]) + 0.5 * Math.sin((v.x + v.z) * 5.1 + ph[1]) * Math.sin(v.y * 4.3 + ph[2]);
+    v.multiplyScalar(radius * (1 + n * lumps));
+    v.set(v.x * scale[0], v.y * scale[1], v.z * scale[2]);
+    p.setXYZ(i, v.x, v.y, v.z);
+  }
+  g.computeVertexNormals();
+  const colors = new Float32Array(p.count * 3);
+  for (let i = 0; i < p.count; i++) {
+    const up = p.getY(i) / (radius * scale[1]); // -1 underside → 1 crown
+    const k = (1 - shade) + shade * (0.5 + 0.5 * up) + (rnd() - 0.5) * jitter * 2;
+    colors[i * 3] = color.r * k;
+    colors[i * 3 + 1] = color.g * k;
+    colors[i * 3 + 2] = color.b * k;
+  }
+  g.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+  g.translate(...position);
+  return g.toNonIndexed();
+}
+
 function transformed(geo: THREE.BufferGeometry, position: [number, number, number], rotation: [number, number, number] = [0, 0, 0], scale: [number, number, number] = [1, 1, 1]): THREE.BufferGeometry {
   const m = new THREE.Matrix4().compose(new THREE.Vector3(...position), new THREE.Quaternion().setFromEuler(new THREE.Euler(...rotation)), new THREE.Vector3(...scale));
   geo.applyMatrix4(m);
@@ -196,7 +231,7 @@ function fanPalm(lod: Lod): THREE.BufferGeometry {
     // Same crown as the near mesh (placements recorded there), coarser fronds and trunk.
     if (!fanCrown) fanPalm('near');
     for (const f of fanCrown!) {
-      const color = new THREE.Color(f.dead ? '#a08650' : f.ring === 2 ? '#5c8a39' : '#6ea046');
+      const color = new THREE.Color(f.dead ? '#a08650' : f.ring === 2 ? '#557c3a' : '#6a9046');
       parts.push(transformed(fanFrond(rnd, color, f.dead, 'far'), [top.x, top.y + (f.dead ? -0.35 : 0.15), top.z], [f.pitch, f.yaw, 0]));
     }
     parts.push(colored(transformed(new THREE.SphereGeometry(0.4, 6, 4), [top.x, top.y, top.z]), new THREE.Color('#6b5a3e'), 0.1, rnd));
@@ -208,7 +243,7 @@ function fanPalm(lod: Lod): THREE.BufferGeometry {
     const a = (i / fronds) * Math.PI * 2 + rnd() * 0.25;
     const ring = i % 3; // inner fronds stand up, outer droop
     const pitch = ring === 0 ? -0.55 + rnd() * 0.2 : ring === 1 ? -0.05 + rnd() * 0.25 : 0.5 + rnd() * 0.35;
-    const f = fanFrond(rnd, new THREE.Color(ring === 2 ? '#5c8a39' : '#6ea046'));
+    const f = fanFrond(rnd, new THREE.Color(ring === 2 ? '#557c3a' : '#6a9046'));
     parts.push(transformed(f, [top.x, top.y + 0.15, top.z], [pitch, a, 0]));
     crown.push({ pitch, yaw: a, ring, dead: false });
   }
@@ -244,7 +279,7 @@ function buildSpecies(species: Species): THREE.BufferGeometry {
         const a = (i / fronds) * Math.PI * 2 + rnd() * 0.2;
         const ring = i % 3;
         const pitch = ring === 0 ? -0.7 + rnd() * 0.2 : ring === 1 ? -0.2 + rnd() * 0.25 : 0.35 + rnd() * 0.3;
-        const f = pinnateFrond(rnd, 3.4 + rnd() * 0.6, new THREE.Color(ring === 2 ? '#4f7f36' : '#5f9241'));
+        const f = pinnateFrond(rnd, 3.4 + rnd() * 0.6, new THREE.Color(ring === 2 ? '#4c7536' : '#5c8840'));
         parts.push(transformed(f, [top.x, top.y + 0.2, top.z], [pitch, a, 0]));
       }
       parts.push(colored(transformed(new THREE.SphereGeometry(0.55, 8, 6), [top.x, top.y + 0.1, top.z]), new THREE.Color('#5e4d35'), 0.1, rnd));
@@ -253,7 +288,7 @@ function buildSpecies(species: Species): THREE.BufferGeometry {
     case 'mesquite':
     case 'olive': {
       const parts: THREE.BufferGeometry[] = [];
-      const leaf = species === 'olive' ? new THREE.Color('#7f9a6a') : new THREE.Color('#5d8a3f');
+      const leaf = species === 'olive' ? new THREE.Color('#8a9a70') : new THREE.Color('#6a8743');
       const trunkColor = new THREE.Color(species === 'olive' ? '#7a6652' : '#6d5438');
       parts.push(colored(transformed(new THREE.CylinderGeometry(0.16, 0.26, 2.2, 8), [0, 1.1, 0], [0, 0, 0.08]), trunkColor, 0.1, rnd));
       for (let i = 0; i < 3; i++) {
@@ -261,15 +296,15 @@ function buildSpecies(species: Species): THREE.BufferGeometry {
         parts.push(colored(transformed(new THREE.CylinderGeometry(0.07, 0.12, 1.6, 6), [Math.cos(a) * 0.5, 2.7, Math.sin(a) * 0.5], [Math.sin(a) * 0.5, 0, -Math.cos(a) * 0.5]), trunkColor, 0.1, rnd));
       }
       const blobs: [number, number, number, number][] = [[0, 3.8, 0, 1.6], [1.1, 3.4, 0.4, 1.2], [-1.0, 3.5, -0.5, 1.1], [0.3, 3.2, 1.1, 1.0], [-0.3, 3.3, -1.1, 0.95], [0.6, 4.4, -0.3, 1.0]];
-      for (const [x, y, z, r] of blobs) parts.push(colored(jittered(transformed(new THREE.IcosahedronGeometry(r, 1), [x, y, z]), 0.18, rnd), leaf, 0.14, rnd));
+      for (const [x, y, z, r] of blobs) parts.push(mass(rnd, r, [x, y, z], [1, 0.82, 1], leaf.clone().offsetHSL((rnd() - 0.5) * 0.03, 0, (rnd() - 0.5) * 0.04), { detail: 2, lumps: 0.2, shade: 0.5, jitter: 0.06 }));
       return merge(parts);
     }
     case 'shrub-sage':
     case 'shrub-green':
     case 'shrub-red': {
-      const color = species === 'shrub-sage' ? new THREE.Color('#9aa88a') : species === 'shrub-red' ? new THREE.Color('#6f7f49') : new THREE.Color('#5f8c3f');
-      const parts = [colored(jittered(transformed(new THREE.IcosahedronGeometry(0.6, 1), [0, 0.5, 0], [0, 0, 0], [1, 0.8, 1]), 0.14, rnd), color, 0.16, rnd)];
-      parts.push(colored(jittered(transformed(new THREE.IcosahedronGeometry(0.4, 1), [0.35, 0.4, 0.2]), 0.1, rnd), color, 0.16, rnd));
+      const color = species === 'shrub-sage' ? new THREE.Color('#a0aa8c') : species === 'shrub-red' ? new THREE.Color('#717d4a') : new THREE.Color('#62803f');
+      const parts = [mass(rnd, 0.6, [0, 0.46, 0], [1, 0.8, 1], color, { detail: 2, lumps: 0.18, shade: 0.5 })];
+      parts.push(mass(rnd, 0.4, [0.35, 0.38, 0.2], [1, 0.85, 1], color, { detail: 1, lumps: 0.15, shade: 0.5 }));
       if (species === 'shrub-red') for (let i = 0; i < 6; i++) parts.push(colored(transformed(new THREE.ConeGeometry(0.03, 0.9, 4), [(rnd() - 0.5) * 0.6, 0.9, (rnd() - 0.5) * 0.6], [(rnd() - 0.5) * 0.5, 0, (rnd() - 0.5) * 0.5]), new THREE.Color('#c84b3a'), 0.1, rnd));
       return merge(parts);
     }
@@ -290,7 +325,7 @@ function buildSpecies(species: Species): THREE.BufferGeometry {
     case 'flower-pink':
     case 'flower-yellow': {
       const bloom = species === 'flower-pink' ? new THREE.Color('#e46aa7') : new THREE.Color('#f2c230');
-      const parts = [colored(jittered(transformed(new THREE.IcosahedronGeometry(0.45, 1), [0, 0.4, 0], [0, 0, 0], [1, 0.75, 1]), 0.1, rnd), new THREE.Color('#4f7f36'), 0.14, rnd)];
+      const parts = [mass(rnd, 0.45, [0, 0.36, 0], [1, 0.75, 1], new THREE.Color('#567a3a'), { detail: 2, lumps: 0.15, shade: 0.45 })];
       for (let i = 0; i < 9; i++) parts.push(colored(transformed(new THREE.SphereGeometry(0.07, 5, 4), [(rnd() - 0.5) * 0.7, 0.55 + rnd() * 0.25, (rnd() - 0.5) * 0.7]), bloom, 0.08, rnd));
       return merge(parts);
     }
@@ -300,10 +335,10 @@ function buildSpecies(species: Species): THREE.BufferGeometry {
       return merge(parts);
     }
     case 'rock':
-      return colored(jittered(transformed(new THREE.DodecahedronGeometry(0.45, 0), [0, 0.3, 0], [0, 0, 0], [1.2, 0.8, 1]), 0.12, rnd), new THREE.Color('#a89272'), 0.1, rnd);
+      return mass(rnd, 0.45, [0, 0.24, 0], [1.2, 0.72, 1], new THREE.Color('#ad9576'), { detail: 1, lumps: 0.16, shade: 0.35, jitter: 0.05 });
     case 'boulder': {
-      const parts = [colored(jittered(transformed(new THREE.DodecahedronGeometry(0.9, 1), [0, 0.6, 0], [0, 0, 0], [1.3, 0.85, 1]), 0.2, rnd), new THREE.Color('#9c8468'), 0.1, rnd)];
-      parts.push(colored(jittered(transformed(new THREE.DodecahedronGeometry(0.5, 0), [0.9, 0.35, 0.3]), 0.12, rnd), new THREE.Color('#a89272'), 0.1, rnd));
+      const parts = [mass(rnd, 0.9, [0, 0.5, 0], [1.3, 0.8, 1], new THREE.Color('#a08870'), { detail: 2, lumps: 0.2, shade: 0.38, jitter: 0.05 })];
+      parts.push(mass(rnd, 0.5, [0.95, 0.28, 0.3], [1.1, 0.75, 1], new THREE.Color('#ad9576'), { detail: 1, lumps: 0.16, shade: 0.38, jitter: 0.05 }));
       return merge(parts);
     }
   }

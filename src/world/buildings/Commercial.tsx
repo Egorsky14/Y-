@@ -30,7 +30,7 @@ export function SupplyWarehouse() {
           ))}
           <mesh position={[0, 8.2, 22.4]}>
             <planeGeometry args={[30, 3.2]} />
-            <meshStandardMaterial map={signTexture('MOJAVE HVAC SUPPLY', '#e0862e', '#2a2d31')} />
+            <meshStandardMaterial map={signTexture('MOJAVE HVAC SUPPLY', '#e0862e', '#2a2d31', 30 / 3.2)} />
           </mesh>
           <ProStorefront />
         </group>

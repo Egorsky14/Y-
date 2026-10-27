@@ -45,15 +45,21 @@ export function Ground() {
 
 function mountainRing(radius: number, width: number, height: number, seed: number, segments: number): THREE.BufferGeometry {
   // A ring of terrain: angular segments × radial rows, displaced by layered sine noise.
-  const rows = 6;
+  const rows = 12;
   const positions: number[] = [];
   const rnd = makeDecoRng(seed);
   const bumps = Array.from({ length: 14 }, () => [rnd() * Math.PI * 2, 0.5 + rnd() * 0.5, 2 + Math.floor(rnd() * 7)]);
+  // Ridged detail (folded ranges, spurs and gullies) on top of the broad massifs, so the skyline
+  // reads as eroded desert ranges instead of smooth domes.
+  const ridges = Array.from({ length: 5 }, (_, i) => [rnd() * Math.PI * 2, 14 + i * 13 + rnd() * 8, 0.5 / (i + 1), rnd() * 6]);
   const heightAt = (a: number, t: number) => {
     let h = 0;
     for (const [phase, amp, freq] of bumps) h += amp * Math.max(0, Math.sin(a * freq + phase));
-    const profile = Math.sin(t * Math.PI); // zero at inner and outer edge, peak in the middle
-    return h * height * 0.3 * profile + rnd() * 0.8 * profile;
+    let r = 0;
+    for (const [phase, freq, amp, tw] of ridges) r += amp * Math.pow(1 - Math.abs(Math.sin(a * freq + phase + t * tw)), 2);
+    const profile = Math.pow(Math.sin(t * Math.PI), 0.8); // zero at inner and outer edge, peak in the middle
+    const crest = h * height * 0.26 * profile;
+    return crest * (0.72 + 0.55 * r) + r * height * 0.07 * profile + rnd() * 1.2 * profile;
   };
   const grid: THREE.Vector3[][] = [];
   for (let i = 0; i <= segments; i++) {
@@ -80,9 +86,9 @@ function mountainRing(radius: number, width: number, height: number, seed: numbe
   g.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
   // Altitude-banded vertex colors: alluvial fans at the base, red-brown rock, pale limestone caps.
   const colors = new Float32Array(positions.length);
-  const low = new THREE.Color('#b89a7b');
-  const mid = new THREE.Color('#9a6f55');
-  const high = new THREE.Color('#c9b7a4');
+  const low = new THREE.Color('#b8987a');
+  const mid = new THREE.Color('#8f6550');
+  const high = new THREE.Color('#a8806a');
   const tmp = new THREE.Color();
   for (let i = 0; i < positions.length; i += 3) {
     const y = positions[i + 1];
@@ -99,9 +105,9 @@ function mountainRing(radius: number, width: number, height: number, seed: numbe
 }
 
 function Mountains() {
-  const near = useMemo(() => mountainRing(560, 260, 120, 77, 180), []);
-  const far = useMemo(() => mountainRing(800, 420, 200, 99, 150), []);
-  const distant = useMemo(() => mountainRing(1150, 500, 280, 123, 120), []);
+  const near = useMemo(() => mountainRing(560, 260, 85, 77, 360), []);
+  const far = useMemo(() => mountainRing(800, 420, 150, 99, 300), []);
+  const distant = useMemo(() => mountainRing(1150, 500, 230, 123, 240), []);
   return (
     <group>
       <mesh geometry={near} frustumCulled={false} receiveShadow>
@@ -111,7 +117,7 @@ function Mountains() {
         <meshStandardMaterial vertexColors roughness={1} flatShading />
       </mesh>
       <mesh geometry={distant} frustumCulled={false}>
-        <meshStandardMaterial vertexColors roughness={1} flatShading color="#d8cfc6" />
+        <meshStandardMaterial vertexColors roughness={1} flatShading color="#c7b9b4" />
       </mesh>
     </group>
   );
