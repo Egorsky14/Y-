@@ -11,6 +11,7 @@ import { postTransaction } from '../economy/ledger';
 import { assignTool, purchaseTool, sellTool } from '../equipment/inventory';
 import type { ToolId } from '../equipment/catalog';
 import type { ToolHolder } from './types';
+import { acknowledgeAttention, setAutomation } from '../operations/automation';
 
 /** Every player decision is an explicit, serializable action. */
 export type GameAction =
@@ -45,7 +46,10 @@ export type GameAction =
   // Pro Supply Depot and equipment
   | { type: 'buy-tool'; toolId: ToolId; assignTo?: ToolHolder }
   | { type: 'assign-tool'; itemId: string; to: ToolHolder }
-  | { type: 'sell-tool'; itemId: string };
+  | { type: 'sell-tool'; itemId: string }
+  // Automated Operations Center
+  | { type: 'set-automation'; diagnostics?: boolean; closing?: boolean }
+  | { type: 'ack-attention'; jobId: string };
 
 export function applyAction(state: GameState, action: GameAction): ActionResult {
   switch (action.type) {
@@ -133,6 +137,10 @@ export function applyAction(state: GameState, action: GameAction): ActionResult 
       return assignTool(state, action.itemId, action.to);
     case 'sell-tool':
       return sellTool(state, action.itemId);
+    case 'set-automation':
+      return setAutomation(state, { diagnostics: action.diagnostics, closing: action.closing });
+    case 'ack-attention':
+      return acknowledgeAttention(state, action.jobId);
     case 'set-diagnostic-fee': {
       const fee = Math.max(49, Math.min(199, Math.round(action.fee)));
       state.company.diagnosticFee = fee;

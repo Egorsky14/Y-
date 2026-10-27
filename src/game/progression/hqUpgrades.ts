@@ -6,7 +6,8 @@ export type HqUpgradeId =
   | 'parts-warehouse'
   | 'staging-area'
   | 'sales-office'
-  | 'fleet-maintenance';
+  | 'fleet-maintenance'
+  | 'operations-center';
 
 export interface HqUpgrade {
   id: HqUpgradeId;
@@ -17,6 +18,8 @@ export interface HqUpgrade {
   requires?: HqUpgradeId[];
   /** Minimum company level. */
   level: number;
+  /** Minimum technicians on staff (owner included: the owner works as a technician). */
+  minTechnicians?: number;
 }
 
 export const HQ_UPGRADES: HqUpgrade[] = [
@@ -27,6 +30,7 @@ export const HQ_UPGRADES: HqUpgrade[] = [
   { id: 'parts-warehouse', name: 'Parts Warehouse', cost: 22000, description: 'Racking and stocked common parts.', effect: 'Parts cost -12%. First-visit completion +10%.', level: 2 },
   { id: 'staging-area', name: 'Installation Staging Area', cost: 16000, description: 'Covered yard for staging equipment.', effect: 'Replacement install time -15%. Enables a second install crew.', requires: ['expanded-garage'], level: 3 },
   { id: 'sales-office', name: 'Sales Office', cost: 15000, description: 'Comfort advisor offices and showroom.', effect: 'Replacement close rate +8%.', level: 3 },
+  { id: 'operations-center', name: 'Automated Operations Center', cost: 1000, description: 'Dispatch software and procedures that let technicians run routine calls on their own.', effect: 'Unlocks automatic diagnostics and automatic estimates (Settings › Operations Automation). Owner decisions go to the Owner Attention queue.', level: 1, minTechnicians: 3 },
   { id: 'fleet-maintenance', name: 'Fleet Maintenance Bay', cost: 26000, description: 'Lift and tire service.', effect: 'Vehicle upkeep -30%, breakdowns -50%.', requires: ['expanded-garage'], level: 4 },
 ];
 

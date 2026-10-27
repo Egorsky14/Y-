@@ -9,6 +9,10 @@ export function purchaseHqUpgrade(state: GameState, upgradeId: HqUpgradeId): Act
   if (!upgrade) return { ok: false, reason: 'Unknown upgrade.' };
   if (state.company.hqUpgrades.includes(upgradeId)) return { ok: false, reason: 'Already built.' };
   if (state.company.level < upgrade.level) return { ok: false, reason: `Requires company level ${upgrade.level}.` };
+  if (upgrade.minTechnicians) {
+    const techs = Object.values(state.employees).filter((e) => e.role === 'technician').length;
+    if (techs < upgrade.minTechnicians) return { ok: false, reason: `Requires ${upgrade.minTechnicians} technicians (you have ${techs}, owner included).` };
+  }
   for (const req of upgrade.requires ?? []) {
     if (!state.company.hqUpgrades.includes(req)) return { ok: false, reason: `Requires ${HQ_UPGRADES.find((u) => u.id === req)!.name} first.` };
   }

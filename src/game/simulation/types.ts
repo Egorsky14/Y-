@@ -8,7 +8,7 @@ import type { Vec2 } from '../world/geometry';
 import type { RngState } from './rng';
 import type { GameClock } from './time';
 
-export const SAVE_SCHEMA_VERSION = 3;
+export const SAVE_SCHEMA_VERSION = 4;
 
 export type CustomerChannel = 'warranty' | 'direct';
 
@@ -86,6 +86,21 @@ export interface JobFinancials {
   receivableId?: string;
 }
 
+/** Why a job is in the Owner Attention queue. */
+export type AttentionKind = 'replacement-approval' | 'uncertain-diagnosis' | 'automation-blocked' | 'warranty-denied';
+
+/** An item for the owner (schema 4). Blocking items hold the job in waitStatus until the owner decides. */
+export interface JobAttention {
+  kind: AttentionKind;
+  text: string;
+  blocking: boolean;
+  day: number;
+  minute: number;
+  /** The status the job waits in (blocking items); a different status means the owner decided. */
+  waitStatus?: JobStatus;
+  resolved?: { day: number; minute: number };
+}
+
 export interface Job {
   id: string;
   kind: JobKind;
@@ -123,6 +138,10 @@ export interface Job {
   reviewStars?: number;
   /** Equipment used on this job (schema 3). */
   toolReport?: JobToolReport;
+  /** Steps the Operations Center performed on this job (schema 4). */
+  auto?: { diagnosis?: boolean; estimate?: boolean };
+  /** Owner Attention item, open or resolved (schema 4). */
+  attention?: JobAttention;
 }
 
 export type EmployeeStatus = 'idle' | 'driving' | 'walking' | 'working' | 'training' | 'returning' | 'off-duty';
@@ -437,6 +456,8 @@ export interface CompanyState {
   /** Count of jobs completed by kind. */
   completedJobs: number;
   replacementsCompleted: number;
+  /** Operations Center settings (schema 4); both off until the owner turns them on. */
+  automation?: { diagnostics: boolean; closing: boolean };
 }
 
 export interface GameEvent {
@@ -468,6 +489,8 @@ export interface GameState {
   vehicles: Record<string, Vehicle>;
   /** Company-owned tools and equipment (schema 3). */
   tools: Record<string, ToolItem>;
+  /** Operations Center counters for the periodic digest (schema 4). */
+  operations?: { digestAt: number; diagnosed: number; estimates: number };
   /** Used vehicles currently for sale. */
   usedListings: { id: string; classId: VehicleClass; price: number; condition: number; mileage: number }[];
   competitors: Competitor[];

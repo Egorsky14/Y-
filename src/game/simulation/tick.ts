@@ -9,6 +9,7 @@ import { postTransaction } from '../economy/ledger';
 import { pushEvent } from './events';
 import { progressTraining, refreshCandidates } from '../employees/hr';
 import { releaseTools } from '../equipment/inventory';
+import { runOperations } from '../operations/automation';
 import { runDailyMarketing, updateCompetition } from '../marketing/marketing';
 import { checkMilestones } from '../progression/milestones';
 import { chance, nextInt } from './rng';
@@ -37,6 +38,8 @@ function step(state: GameState, dt: number): void {
 
   for (const vehicle of Object.values(state.vehicles)) moveVehicle(state, vehicle, dt);
   for (const job of Object.values(state.jobs)) if (isActiveJob(job)) advanceJobPhase(state, job, dt);
+  // Operations Center: act on findings and quotes in the same step they appear.
+  runOperations(state);
 
   processLeadSchedule(state);
   processCallbacks(state);

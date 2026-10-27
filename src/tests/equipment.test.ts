@@ -422,7 +422,7 @@ describe('save and load', () => {
     const legacy = JSON.parse(JSON.stringify(s));
     delete legacy.tools;
     const loaded = deserialize(JSON.stringify({ schemaVersion: 2, savedAt: '', appVersion: '0.1.0', state: legacy }));
-    expect(loaded.schemaVersion).toBe(3);
+    expect(loaded.schemaVersion).toBe(4);
     expect(toolsHeldBy(loaded, { kind: 'employee', id: OWNER }).map((t) => t.defId).sort()).toEqual([...STARTER_KIT].sort());
     expect(balanceSheet(loaded).equity).toBe(balanceSheet(s).equity);
     expect(loaded.finance.ledger).toEqual(s.finance.ledger);

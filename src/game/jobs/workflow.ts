@@ -18,6 +18,7 @@ import { levelForXp } from '../employees/roles';
 import { routeFromHqToLot, routeFromLotToHq, vehicleSpeed, effectiveToolCapacity } from '../fleet/fleet';
 import { VEHICLE_SPECS } from '../fleet/vehicleCatalog';
 import { lotById, workPosition } from '../world/cityLayout';
+import { raiseAttention } from '../operations/automation';
 import { diagMultiplier, effectiveAccuracy, jobTools, qualityStars, readGain, readTools, repairMultiplier, toolsOnSite, vehicleAtJob, workmanship } from '../equipment/performance';
 
 export type ActionResult = { ok: true } | { ok: false; reason: string };
@@ -197,7 +198,11 @@ function completeDiagnostic(state: GameState, job: Job): void {
   const customer = state.customers[job.customerId];
   job.log.push('Measurements complete. Review the findings and choose a diagnosis.');
   if (tech) addFatigue(tech, job.phaseTotal);
-  pushEvent(state, { type: 'success', title: `Findings ready: ${customer.name}`, body: 'Review the measurements and pick a diagnosis.', focus: { kind: 'job', id: job.id } });
+  // With automatic diagnostics on, the technician decides in this same step; no toast per call.
+  const auto = state.company.automation;
+  if (!(auto?.diagnostics && state.company.hqUpgrades.includes('operations-center'))) {
+    pushEvent(state, { type: 'success', title: `Findings ready: ${customer.name}`, body: 'Review the measurements and pick a diagnosis.', focus: { kind: 'job', id: job.id } });
+  }
 }
 
 export function chooseDiagnosis(state: GameState, jobId: string, faultId: string): ActionResult {
@@ -282,7 +287,10 @@ export function submitQuote(state: GameState, jobId: string, req: QuoteRequest):
 function resolveAuthorization(state: GameState, job: Job): void {
   const customer = state.customers[job.customerId];
   const approveChance = job.recommendation === 'replace' ? 0.4 : 0.86;
-  resolveApproval(state, job, chance(state.rng, approveChance), customer.warrantyCompany ?? 'Warranty company');
+  const approved = chance(state.rng, approveChance);
+  resolveApproval(state, job, approved, customer.warrantyCompany ?? 'Warranty company');
+  // A denial on an automated job is worth the owner's eye (the visit closes on the diagnostic fee).
+  if (!approved && job.auto?.estimate) raiseAttention(state, job, 'warranty-denied', `${customer.warrantyCompany ?? 'The warranty company'} denied the ${job.recommendation === 'replace' ? 'replacement' : 'repair'}. The visit closed on the diagnostic fee.`, false);
 }
 
 function resolveApproval(state: GameState, job: Job, approved: boolean, approver: string): void {

@@ -119,6 +119,7 @@ export function createNewGame(options: NewGameOptions = {}): GameState {
       diagnosticFee: BALANCE.diagnosticFee,
       completedJobs: 0,
       replacementsCompleted: 0,
+      automation: { diagnostics: false, closing: false },
     },
     finance: {
       cash: 0,

@@ -41,6 +41,8 @@ export function migrate(envelope: SaveEnvelope): GameState {
     if (owner && Object.keys(state.tools).length === 0) grantStarterKit(state, owner.id);
   }
   returnOrphanTools(state);
+  // Schema 3 → 4: Operations Center. Automation starts off; jobs have no attention items.
+  state.company.automation ??= { diagnostics: false, closing: false };
   state.schemaVersion = SAVE_SCHEMA_VERSION;
   return state;
 }
