@@ -1,5 +1,6 @@
 import { SAVE_SCHEMA_VERSION, type GameState } from '@/game/simulation/types';
 import { emptyBanking, upgradeLoan } from '@/game/economy/banking/loans';
+import { grantStarterKit, returnOrphanTools } from '@/game/equipment/inventory';
 
 export const SAVE_KEY = 'ego-hvac-v3:save';
 export const AUTOSAVE_KEY = 'ego-hvac-v3:autosave';
@@ -32,6 +33,14 @@ export function migrate(envelope: SaveEnvelope): GameState {
     state.finance.banking ??= emptyBanking();
     for (const loan of state.finance.loans) upgradeLoan(loan, state.clock.day);
   }
+  // Schema 2 → 3: company equipment. Older companies get the same starter kit a new company
+  // starts with (the owner's hand tools and meter; expensed, so no book value appears).
+  if (envelope.schemaVersion < 3 || !state.tools) {
+    state.tools ??= {};
+    const owner = Object.values(state.employees).find((e) => e.isOwner);
+    if (owner && Object.keys(state.tools).length === 0) grantStarterKit(state, owner.id);
+  }
+  returnOrphanTools(state);
   state.schemaVersion = SAVE_SCHEMA_VERSION;
   return state;
 }

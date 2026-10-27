@@ -2,12 +2,13 @@ import type { Attributes } from '../employees/attributes';
 import type { EmployeeRole } from '../employees/roles';
 import type { PaintId, VehicleClass, VehicleUpgradeId } from '../fleet/vehicleCatalog';
 import type { EquipmentType } from '../jobs/faults';
+import type { ToolId } from '../equipment/catalog';
 import type { HqUpgradeId } from '../progression/hqUpgrades';
 import type { Vec2 } from '../world/geometry';
 import type { RngState } from './rng';
 import type { GameClock } from './time';
 
-export const SAVE_SCHEMA_VERSION = 2;
+export const SAVE_SCHEMA_VERSION = 3;
 
 export type CustomerChannel = 'warranty' | 'direct';
 
@@ -59,6 +60,19 @@ export interface Evidence {
   value: string;
   /** True when the technician read it correctly. Hidden from the player until job completion. */
   accurate: boolean;
+  /** Tools that sharpened this reading (names), when any applied. */
+  tools?: string[];
+}
+
+/** What the crew's equipment did on a job (recorded as it happens; shown on the job card). */
+export interface JobToolReport {
+  /** Tool item ids the technician had on site (personal kit and the van's rack). */
+  toolIds: string[];
+  diagMinutesSaved: number;
+  repairMinutesSaved: number;
+  /** Workmanship 0..1 on refrigerant-circuit work, with the technician's own (tool-free) score. */
+  quality?: number;
+  qualityBase?: number;
 }
 
 export type JobKind = 'service' | 'callback' | 'replacement';
@@ -107,6 +121,8 @@ export interface Job {
   /** Linked original job for callbacks. */
   originJobId?: string;
   reviewStars?: number;
+  /** Equipment used on this job (schema 3). */
+  toolReport?: JobToolReport;
 }
 
 export type EmployeeStatus = 'idle' | 'driving' | 'walking' | 'working' | 'training' | 'returning' | 'off-duty';
@@ -219,6 +235,12 @@ export interface LedgerEntry {
     | 'credit-repayment'
     /** Expense: interest charged on the credit line. */
     | 'credit-interest'
+    /** Expense: small tools below the capitalization threshold. */
+    | 'tools'
+    /** Investing: capital equipment (vacuum pump, recovery machine, thermal camera). */
+    | 'equipment-purchase'
+    /** Investing: surplus equipment sold back. */
+    | 'equipment-sale'
     | 'training'
     | 'marketing'
     | 'facility'
@@ -227,6 +249,26 @@ export interface LedgerEntry {
     | 'opening-balance';
   memo: string;
   jobId?: string;
+}
+
+/** Where a physical tool is: in the HQ tool crib, with a technician, or on a vehicle's rack. */
+export type ToolHolder = { kind: 'inventory' } | { kind: 'employee'; id: string } | { kind: 'vehicle'; id: string };
+
+/** One physical tool the company owns. It is always in exactly one place (holder). */
+export interface ToolItem {
+  id: string;
+  defId: ToolId;
+  purchaseDay: number;
+  /** Cost paid (0 for the starter kit, which came with the business). */
+  purchasePrice: number;
+  holder: ToolHolder;
+  /** 0..100. Reserved for wear and replacement (not simulated in this version). */
+  condition: number;
+  /** Reserved for calibration of meters and gauges (not simulated in this version). */
+  calibrationDueDay?: number;
+  jobsUsed: number;
+  /** Purchase, assignment and transfer record, most recent last (capped). */
+  history: { day: number; text: string }[];
 }
 
 export interface Receivable {
@@ -424,6 +466,8 @@ export interface GameState {
   employees: Record<string, Employee>;
   candidates: Candidate[];
   vehicles: Record<string, Vehicle>;
+  /** Company-owned tools and equipment (schema 3). */
+  tools: Record<string, ToolItem>;
   /** Used vehicles currently for sale. */
   usedListings: { id: string; classId: VehicleClass; price: number; condition: number; mileage: number }[];
   competitors: Competitor[];

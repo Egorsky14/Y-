@@ -7,6 +7,7 @@ import { programById } from './training';
 import { generateCandidate } from './candidates';
 import { ROLE_LABELS, type EmployeeRole } from './roles';
 import { nextInt, pick } from '../simulation/rng';
+import { releaseTools } from '../equipment/inventory';
 
 export function hireCandidate(state: GameState, candidateId: string): ActionResult {
   const candidate = state.candidates.find((c) => c.id === candidateId);
@@ -47,9 +48,11 @@ export function fireEmployee(state: GameState, employeeId: string): ActionResult
   if (e.status !== 'idle' && e.status !== 'training') return { ok: false, reason: `${e.name} is in the field. Wait until they return.` };
   const severance = Math.round(e.hourlyWage * 8 * 3);
   postTransaction(state, { amount: -severance, category: 'payroll', memo: `Severance — ${e.name}` });
+  // Company tools stay with the company.
+  const returned = releaseTools(state, { kind: 'employee', id: employeeId }, `${e.name} left`);
   delete state.employees[employeeId];
   for (const other of Object.values(state.employees)) other.morale = Math.max(0, other.morale - 4);
-  pushEvent(state, { type: 'warning', title: `${e.name} let go`, body: `Severance $${severance.toLocaleString()}. Team morale dipped.` });
+  pushEvent(state, { type: 'warning', title: `${e.name} let go`, body: `Severance ${severance.toLocaleString()}. Team morale dipped.${returned ? ` ${returned} tool${returned === 1 ? '' : 's'} returned to the tool crib.` : ''}` });
   return { ok: true };
 }
 

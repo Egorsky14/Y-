@@ -4,6 +4,7 @@ import { openReceivablesTotal } from './ledger';
 import { creditLineOwed } from './banking/banking';
 import { banking, payoffQuote } from './banking/loans';
 import { cents } from './banking/amortization';
+import { equipmentBookValue } from '../equipment/inventory';
 
 /**
  * A book-value balance sheet built only from what the game tracks. Used by the balance
@@ -14,6 +15,9 @@ import { cents } from './banking/amortization';
  *   vehicles are not owned and are excluded; lease payments are treated as operating costs.
  * - HQ upgrades are carried at cost less straight-line depreciation over FACILITY_LIFE_DAYS
  *   (they have no resale market in the game).
+ * - Capital equipment (vacuum pump, recovery machine, thermal camera: price at or above the
+ *   capitalization threshold) is carried at cost less straight-line depreciation over its life.
+ *   Small tools are expensed when bought and carry no book value, like any consumable cost.
  * - Liabilities are everything owed today without a prepayment fee: loan principal, past-due
  *   interest and fees, interest accrued since the last installment, and the line's principal,
  *   billed and accrued interest and fees.
@@ -26,6 +30,7 @@ export interface BalanceSheet {
   receivables: number;
   vehicles: number;
   facility: number;
+  equipment: number;
   totalAssets: number;
   loans: number;
   creditLine: number;
@@ -50,13 +55,15 @@ export function balanceSheet(state: GameState): BalanceSheet {
   }, 0);
   const line = banking(state).creditLine;
   const creditLine = line && line.status !== 'closed' ? creditLineOwed(line).payoff : 0;
-  const totalAssets = state.finance.cash + receivables + vehicles + facility;
+  const equipment = equipmentBookValue(state);
+  const totalAssets = state.finance.cash + receivables + vehicles + facility + equipment;
   const totalLiabilities = loans + creditLine;
   return {
     cash: cents(state.finance.cash),
     receivables: cents(receivables),
     vehicles: cents(vehicles),
     facility: cents(facility),
+    equipment: cents(equipment),
     totalAssets: cents(totalAssets),
     loans: cents(loans),
     creditLine: cents(creditLine),
@@ -79,6 +86,7 @@ const GROUP: Record<LedgerEntry['category'], CashFlowGroup> = {
   'lease-payment': 'operating',
   training: 'operating',
   marketing: 'operating',
+  tools: 'operating',
   refund: 'operating',
   // Interest and fees are operating cash flows (US GAAP); they are also reported as financing cost.
   'loan-interest': 'operating',
@@ -89,6 +97,8 @@ const GROUP: Record<LedgerEntry['category'], CashFlowGroup> = {
   'vehicle-sale': 'investing',
   'vehicle-upgrade': 'investing',
   facility: 'investing',
+  'equipment-purchase': 'investing',
+  'equipment-sale': 'investing',
   'loan-proceeds': 'financing',
   'loan-principal': 'financing',
   'credit-draw': 'financing',

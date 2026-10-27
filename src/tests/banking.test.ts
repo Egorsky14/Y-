@@ -469,7 +469,8 @@ describe('save and load', () => {
     delete legacy.finance.banking;
     legacy.finance.loans = [{ id: 'loan-old', principal: 30000, balance: 29000, monthlyPayment: 621.13, aprPercent: 8.9, nextPaymentDay: 41, purpose: 'Full-size van Unit 2' }];
     const state = migrate({ schemaVersion: 1, savedAt: '', appVersion: '0.1.0', state: legacy } as SaveEnvelope);
-    expect(state.schemaVersion).toBe(2);
+    // Migrations run forward to the current schema (3 = equipment).
+    expect(state.schemaVersion).toBe(3);
     expect(state.finance.banking.creditScore).toBe(52);
     const loan = state.finance.loans[0];
     expect(loan.kind).toBe('vehicle');

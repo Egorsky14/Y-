@@ -18,6 +18,7 @@ import { levelForXp } from '../employees/roles';
 import { routeFromHqToLot, routeFromLotToHq, vehicleSpeed, effectiveToolCapacity } from '../fleet/fleet';
 import { VEHICLE_SPECS } from '../fleet/vehicleCatalog';
 import { lotById, workPosition } from '../world/cityLayout';
+import { diagMultiplier, effectiveAccuracy, jobTools, qualityStars, readGain, readTools, repairMultiplier, toolsOnSite, vehicleAtJob, workmanship } from '../equipment/performance';
 
 export type ActionResult = { ok: true } | { ok: false; reason: string };
 
@@ -148,11 +149,16 @@ export function advanceJobPhase(state: GameState, job: Job, dt: number): void {
         job.phaseRemaining = minutes;
         job.log.push(`Installation started. Estimated ${Math.round(minutes)} minutes.`);
       } else {
-        const minutes = BALANCE.diagnosticBaseMinutes * (tech ? durationMultiplier(tech.attributes, tech.fatigue) : 1);
+        // Equipment on site: the technician's kit plus the van's rack (the van is parked at the curb).
+        const onSite = toolsOnSite(state, tech, vehicleAtJob(state, job));
+        for (const t of onSite) t.jobsUsed++;
+        const base = BALANCE.diagnosticBaseMinutes * (tech ? durationMultiplier(tech.attributes, tech.fatigue) : 1);
+        const minutes = base * diagMultiplier(faultById(job.faultId), jobTools(state, job));
+        job.toolReport = { toolIds: onSite.map((t) => t.id), diagMinutesSaved: base - minutes, repairMinutesSaved: 0 };
         job.status = 'diagnosing';
         job.phaseTotal = minutes;
         job.phaseRemaining = minutes;
-        job.log.push(`Diagnostic started. ${tech?.name ?? 'Technician'} is taking measurements.`);
+        job.log.push(`Diagnostic started. ${tech?.name ?? 'Technician'} is taking measurements${onSite.length ? ` with ${onSite.length} tool${onSite.length === 1 ? '' : 's'} on hand` : ''}.`);
       }
     }
     return;
@@ -179,9 +185,12 @@ function completeDiagnostic(state: GameState, job: Job): void {
   const tech = techFor(state, job);
   const fault = faultById(job.faultId);
   const accuracy = tech ? measurementAccuracy(tech.attributes, tech.fatigue) : 0.6;
+  const defs = jobTools(state, job);
+  // One draw per reading, as before: tools change the odds, never the number of draws (determinism).
   job.evidence = fault.evidence.map((ev) => {
-    const accurate = chance(state.rng, accuracy);
-    return { label: ev.label, value: accurate ? ev.value : ev.noisyValue, accurate };
+    const accurate = chance(state.rng, effectiveAccuracy(accuracy, readGain(defs, ev.measure)));
+    const used = readTools(defs, ev.measure).map((d) => d.name);
+    return { label: ev.label, value: accurate ? ev.value : ev.noisyValue, accurate, ...(used.length ? { tools: used } : {}) };
   });
   job.status = 'awaiting-diagnosis';
   job.phaseRemaining = 0;
@@ -297,6 +306,10 @@ function resolveApproval(state: GameState, job: Job, approved: boolean, approver
   let minutes = chosen.laborMinutes * (tech ? durationMultiplier(tech.attributes, tech.fatigue) : 1);
   if (vehicle) minutes *= toolCapacityPenalty(vehicle);
   if (vehicle?.upgrades.includes('shelving')) minutes *= 0.95;
+  // The repair the player chose is the one performed: its steps decide which tools help.
+  const withTools = minutes * repairMultiplier(chosen, jobTools(state, job));
+  if (job.toolReport) job.toolReport.repairMinutesSaved = minutes - withTools;
+  minutes = withTools;
   job.status = 'repairing';
   job.phaseTotal = minutes;
   job.phaseRemaining = minutes;
@@ -394,9 +407,15 @@ function completeRepair(state: GameState, job: Job): void {
     }
   }
 
+  const quality = tech ? workmanship(chosen, tech.attributes, jobTools(state, job)) : undefined;
+  if (quality && job.toolReport) {
+    job.toolReport.quality = quality.quality;
+    job.toolReport.qualityBase = quality.base;
+  }
   job.status = 'completed';
   job.completedAt = absoluteMinutes(state.clock);
   job.log.push(job.diagnosisCorrect ? 'Repair complete. System verified: measured, verified, done right.' : 'Repair complete. The technician noted readings that still look off.');
+  if (quality) job.log.push(`Workmanship ${Math.round(quality.quality * 100)}%${quality.quality > quality.base + 0.005 ? ` (the tools added ${Math.round((quality.quality - quality.base) * 100)} points: ${workmanshipNotes(state, job).join(', ')})` : ' (no evacuation or charging instruments on site)'}.`);
   if (tech) {
     addFatigue(tech, job.phaseTotal);
     grantXp(state, tech, job.diagnosisCorrect ? 60 : 30);
@@ -426,7 +445,9 @@ function afterCompletion(state: GameState, job: Job, forcedStars?: number): void
   customer.history.push(job.id);
   const waited = (job.arrivedAt ?? 0) - (job.acceptedAt ?? job.arrivedAt ?? 0);
   const correct = job.diagnosisCorrect !== false;
-  const stars = forcedStars ?? (tech ? expectedStars(tech.attributes, correct, waited) : 3.5);
+  let stars = forcedStars ?? (tech ? expectedStars(tech.attributes, correct, waited) : 3.5);
+  // Verified evacuation and a weighed-in charge show: the customer sees the readings.
+  if (forcedStars === undefined && correct && job.toolReport?.quality !== undefined) stars = Math.min(5, stars + qualityStars({ base: job.toolReport.qualityBase ?? job.toolReport.quality, quality: job.toolReport.quality }));
   const trustDelta = correct ? 10 : -15;
   customer.trust = Math.max(0, Math.min(100, customer.trust + trustDelta));
   const reviewChance = customer.channel === 'direct' ? 0.6 : 0.2;
@@ -600,6 +621,17 @@ function completeInstall(state: GameState, job: Job): void {
   afterCompletion(state, job, 4.6);
   returnCrewToHq(state, job);
   pushEvent(state, { type: 'celebration', title: `Replacement installed: ${customer.name}`, body: `${tier.name} — $${tier.price.toLocaleString()} ${customer.channel === 'direct' ? 'collected' : 'billed'}`, focus: { kind: 'job', id: job.id } });
+}
+
+const WORKMANSHIP_NOTES: Partial<Record<string, string>> = {
+  'micron-gauge': 'evacuation proven on the micron gauge',
+  'vacuum-pump': 'deep vacuum on the pump',
+  'charging-scale': 'charge weighed in to the nameplate',
+  'nitrogen-kit': 'standing nitrogen test held',
+};
+
+function workmanshipNotes(state: GameState, job: Job): string[] {
+  return jobTools(state, job).flatMap((d) => (d.quality ? [WORKMANSHIP_NOTES[d.id] ?? d.name] : []));
 }
 
 /** Tool capacity gates how often a tech can finish on the first visit; low capacity extends repair time (parts run). */

@@ -8,6 +8,9 @@ import { purchaseHqUpgrade } from '../progression/facility';
 import type { HqUpgradeId } from '../progression/hqUpgrades';
 import { setMarketingBudget, type MarketingChannelId } from '../marketing/marketing';
 import { postTransaction } from '../economy/ledger';
+import { assignTool, purchaseTool, sellTool } from '../equipment/inventory';
+import type { ToolId } from '../equipment/catalog';
+import type { ToolHolder } from './types';
 
 /** Every player decision is an explicit, serializable action. */
 export type GameAction =
@@ -38,7 +41,11 @@ export type GameAction =
   | { type: 'bank-open-credit-line'; offerId: string }
   | { type: 'bank-credit-draw'; amount: number }
   | { type: 'bank-credit-repay'; amount: number }
-  | { type: 'bank-close-credit-line' };
+  | { type: 'bank-close-credit-line' }
+  // Pro Supply Depot and equipment
+  | { type: 'buy-tool'; toolId: ToolId; assignTo?: ToolHolder }
+  | { type: 'assign-tool'; itemId: string; to: ToolHolder }
+  | { type: 'sell-tool'; itemId: string };
 
 export function applyAction(state: GameState, action: GameAction): ActionResult {
   switch (action.type) {
@@ -118,6 +125,14 @@ export function applyAction(state: GameState, action: GameAction): ActionResult 
       return repayCredit(state, action.amount);
     case 'bank-close-credit-line':
       return closeCreditLine(state);
+    case 'buy-tool': {
+      const r = purchaseTool(state, action.toolId, action.assignTo);
+      return r.ok ? { ok: true } : r;
+    }
+    case 'assign-tool':
+      return assignTool(state, action.itemId, action.to);
+    case 'sell-tool':
+      return sellTool(state, action.itemId);
     case 'set-diagnostic-fee': {
       const fee = Math.max(49, Math.min(199, Math.round(action.fee)));
       state.company.diagnosticFee = fee;

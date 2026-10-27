@@ -12,6 +12,7 @@ import { scheduleLeadsForDay, spawnLead } from '../jobs/leads';
 import { nameSeed } from '../customers/names';
 import { WORKDAY_START } from './time';
 import { refreshUsedListings } from '../fleet/fleet';
+import { grantStarterKit } from '../equipment/inventory';
 
 export interface NewGameOptions {
   seed?: number;
@@ -134,6 +135,7 @@ export function createNewGame(options: NewGameOptions = {}): GameState {
     employees: { [owner.id]: owner },
     candidates: [],
     vehicles: { [van.id]: van },
+    tools: {},
     usedListings: [],
     competitors,
     marketing: { localServicesAds: 0, searchAds: 0, neighborhoodFlyers: 0, brandRecognition: 8 },
@@ -163,6 +165,9 @@ export function createNewGame(options: NewGameOptions = {}): GameState {
   // Opening balance is capital, not revenue.
   state.stats.totalRevenue = 0;
   state.finance.today.revenue = 0;
+
+  // The owner's own kit: hand tools and a meter, enough for the tutorial and entry-level calls.
+  grantStarterKit(state, owner.id);
 
   // Hiring market and used-vehicle market.
   const roles = ['technician', 'technician', 'installer', 'dispatcher', 'comfort-advisor'] as const;

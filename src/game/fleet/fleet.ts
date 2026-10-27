@@ -9,6 +9,7 @@ import { LANE_OFFSET } from '../world/cityLayout';
 import { postTransaction } from '../economy/ledger';
 import { pushEvent } from '../simulation/events';
 import { BALANCE } from '../simulation/newGame';
+import { releaseTools } from '../equipment/inventory';
 
 export function vehicleCapacity(state: GameState): number {
   let cap = BALANCE.baseVehicleCapacity;
@@ -147,6 +148,8 @@ export function sellVehicle(state: GameState, vehicleId: string): { ok: boolean;
     if (loan) settleLoan(state, loan, `Loan payoff for ${vehicle.nickname}`, true);
   }
   for (const e of Object.values(state.employees)) if (e.vehicleId === vehicleId) e.vehicleId = undefined;
+  // Unload the equipment rack before the van leaves.
+  releaseTools(state, { kind: 'vehicle', id: vehicleId }, `${vehicle.nickname} sold`);
   delete state.vehicles[vehicleId];
   pushEvent(state, { type: 'money', title: `Sold ${vehicle.nickname} for $${proceeds.toLocaleString()}` });
   return { ok: true };

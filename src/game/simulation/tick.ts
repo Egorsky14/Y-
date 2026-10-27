@@ -8,6 +8,7 @@ import { VEHICLE_SPECS } from '../fleet/vehicleCatalog';
 import { postTransaction } from '../economy/ledger';
 import { pushEvent } from './events';
 import { progressTraining, refreshCandidates } from '../employees/hr';
+import { releaseTools } from '../equipment/inventory';
 import { runDailyMarketing, updateCompetition } from '../marketing/marketing';
 import { checkMilestones } from '../progression/milestones';
 import { chance, nextInt } from './rng';
@@ -140,6 +141,7 @@ function endOfDay(state: GameState): void {
     e.morale = Math.max(0, Math.min(100, e.morale + (overworked ? -2 - (100 - e.attributes.stressTolerance) / 50 : 0.6)));
     if (!e.isOwner && e.morale < 20 && chance(state.rng, 0.15) && e.status === 'idle') {
       pushEvent(state, { type: 'warning', title: `${e.name} quit`, body: 'Low morale from overwork. Watch fatigue and give raises.' });
+      releaseTools(state, { kind: 'employee', id: e.id }, `${e.name} quit`);
       delete state.employees[e.id];
     }
   }
