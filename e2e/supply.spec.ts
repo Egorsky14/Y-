@@ -171,6 +171,20 @@ test('supply depot: shop, equip, compare loadouts, tools on a call, save and rel
   else await close.click();
   await expect(panel).toBeHidden();
 
+  // 6b. Fleet garage: Unit 1's equipment rack shows what it carries and the space used.
+  await press(page, 'nav-fleet', touch);
+  const rack = page.getByTestId('vehicle-rack-veh-1');
+  await rack.scrollIntoViewIfNeeded();
+  await expect(rack).toContainText('5 / 6 space');
+  await expect(rack).toContainText('Vacuum pump · Recovery machine');
+  await noSidewaysOverflow(page, 'vehicle-rack-veh-1');
+  if (touch) await fingerSized(page, 'vehicle-rack-veh-1');
+  await shot(page, 'rack');
+  const closeFleet = page.getByTestId('panel-fleet').getByRole('button', { name: 'Close panel' });
+  if (touch) await closeFleet.tap();
+  else await closeFleet.click();
+  await expect(page.getByTestId('panel-fleet')).toBeHidden();
+
   // 7. The depot in the world: selecting the store opens the same shop.
   await page.evaluate(() => (window.__ego!.app.getState() as S).select({ kind: 'lot', id: 'warehouse' }));
   await press(page, 'open-supply', touch);
