@@ -114,18 +114,20 @@ function pinnateFrond(rnd: () => number, length: number, color: THREE.Color): TH
     push(a.clone().add(new THREE.Vector3(-r, 0, 0))); push(a.clone().add(new THREE.Vector3(r, 0, 0))); push(b.clone().add(new THREE.Vector3(r, 0, 0)));
     push(a.clone().add(new THREE.Vector3(-r, 0, 0))); push(b.clone().add(new THREE.Vector3(r, 0, 0))); push(b.clone().add(new THREE.Vector3(-r, 0, 0)));
   }
-  const pairs = 19;
+  // Many narrow leaflets, longest mid-frond, alternately lifted and dropped so the frond reads as
+  // a feathery V in section rather than a sawtooth blade.
+  const pairs = 34;
   for (let i = 1; i <= pairs; i++) {
-    const t = 0.12 + (i / pairs) * 0.86;
+    const t = 0.1 + (i / pairs) * 0.88;
     const base = spine(t);
     const dir = spine(Math.min(1, t + 0.02)).sub(spine(t)).normalize();
-    const len = 0.55 * (1 - Math.abs(t - 0.55) * 0.9) + 0.12;
+    const len = 0.68 * (1 - Math.abs(t - 0.5) * 1.1) + 0.14;
+    const lift = i % 2 === 0 ? 0.62 : 0.3;
     for (const side of [-1, 1]) {
-      // Leaflet: narrow triangle swept forward along the rachis and raised into a V
-      const out = new THREE.Vector3(side, 0.55, 0).normalize().multiplyScalar(len);
-      const fwd = dir.clone().multiplyScalar(len * 0.55);
-      const tip = base.clone().add(out).add(fwd).add(new THREE.Vector3(0, -0.12 * len, 0));
-      const w = 0.075;
+      const out = new THREE.Vector3(side, lift, 0).normalize().multiplyScalar(len);
+      const fwd = dir.clone().multiplyScalar(len * 0.62);
+      const tip = base.clone().add(out).add(fwd).add(new THREE.Vector3(0, -0.22 * len, 0));
+      const w = 0.032;
       const b0 = base.clone().add(dir.clone().multiplyScalar(-w));
       const b1 = base.clone().add(dir.clone().multiplyScalar(w));
       if (side > 0) { push(b0); push(b1); push(tip); } else { push(b1); push(b0); push(tip); }
