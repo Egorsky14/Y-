@@ -56,10 +56,10 @@ function mountainRing(radius: number, width: number, height: number, seed: numbe
     let h = 0;
     for (const [phase, amp, freq] of bumps) h += amp * Math.max(0, Math.sin(a * freq + phase));
     let r = 0;
-    for (const [phase, freq, amp, tw] of ridges) r += amp * Math.pow(1 - Math.abs(Math.sin(a * freq + phase + t * tw)), 2);
+    for (const [phase, freq, amp, tw] of ridges) r += amp * Math.pow(1 - Math.abs(Math.sin(a * freq + phase + t * tw)), 1.5);
     const profile = Math.pow(Math.sin(t * Math.PI), 0.8); // zero at inner and outer edge, peak in the middle
     const crest = h * height * 0.26 * profile;
-    return crest * (0.72 + 0.55 * r) + r * height * 0.07 * profile + rnd() * 1.2 * profile;
+    return crest * (0.82 + 0.3 * r) + r * height * 0.05 * profile + rnd() * 1.2 * profile;
   };
   const grid: THREE.Vector3[][] = [];
   for (let i = 0; i <= segments; i++) {
@@ -106,8 +106,8 @@ function mountainRing(radius: number, width: number, height: number, seed: numbe
 
 function Mountains() {
   const near = useMemo(() => mountainRing(560, 260, 85, 77, 360), []);
-  const far = useMemo(() => mountainRing(800, 420, 150, 99, 300), []);
-  const distant = useMemo(() => mountainRing(1150, 500, 230, 123, 240), []);
+  const far = useMemo(() => mountainRing(800, 420, 120, 99, 300), []);
+  const distant = useMemo(() => mountainRing(1150, 500, 165, 123, 240), []);
   return (
     <group>
       <mesh geometry={near} frustumCulled={false} receiveShadow>
@@ -117,7 +117,7 @@ function Mountains() {
         <meshStandardMaterial vertexColors roughness={1} flatShading />
       </mesh>
       <mesh geometry={distant} frustumCulled={false}>
-        <meshStandardMaterial vertexColors roughness={1} flatShading color="#c7b9b4" />
+        <meshStandardMaterial vertexColors roughness={1} flatShading color="#a49690" />
       </mesh>
     </group>
   );

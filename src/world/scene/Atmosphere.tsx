@@ -58,7 +58,7 @@ function lookFor(minute: number, weather: WeatherKind): Look {
     hemi: 0.74 * (0.22 + 0.78 * day) * (0.78 + 0.22 * sunHeight) + 0.12 * twilight + 0.1 * night,
     ambient: 0.16 * (0.3 + 0.7 * day) + 0.05 * night,
     fogNear: 240,
-    fogFar: 1650,
+    fogFar: 2100,
     exposure: 0.98 - night * 0.22 + golden * 0.05 - (1 - sunHeight) * day * 0.05,
     rain: 0,
     envIntensity: 0.55 * (0.2 + 0.8 * day),
