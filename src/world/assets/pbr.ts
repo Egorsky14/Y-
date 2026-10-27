@@ -390,6 +390,47 @@ export function lawnPbr(): PbrSet {
   });
 }
 
+/**
+ * Single-ply roof membrane (TPO): a light warm gray with heat-welded roll seams every few metres,
+ * faint foot-traffic paths and dust settling at the low spots, so flat commercial roofs read as a
+ * surface instead of a glaring white slab from the overview camera.
+ */
+export function membranePbr(): PbrSet {
+  return getOrMake('membrane', () => {
+    const size = 256;
+    const [c, ctx] = makeCanvas(size);
+    const rnd = makeDecoRng(131);
+    ctx.fillStyle = '#b9b8b2';
+    ctx.fillRect(0, 0, size, size);
+    for (let i = 0; i < 10; i++) {
+      const x = rnd() * size;
+      const y = rnd() * size;
+      const r = 30 + rnd() * 60;
+      for (const dx of [-size, 0, size]) for (const dy of [-size, 0, size]) {
+        const g = ctx.createRadialGradient(x + dx, y + dy, 0, x + dx, y + dy, r);
+        g.addColorStop(0, rnd() < 0.5 ? 'rgba(120,105,85,0.16)' : 'rgba(255,255,250,0.14)');
+        g.addColorStop(1, 'rgba(0,0,0,0)');
+        ctx.fillStyle = g;
+        ctx.fillRect(x + dx - r, y + dy - r, r * 2, r * 2);
+      }
+    }
+    // Roll seams (two per tile) with their welded lap
+    for (const y of [0, size / 2]) {
+      ctx.fillStyle = 'rgba(90,88,82,0.35)';
+      ctx.fillRect(0, y, size, 2);
+      ctx.fillStyle = 'rgba(255,255,255,0.18)';
+      ctx.fillRect(0, y + 2, size, 3);
+    }
+    speckle(c, 5000, rnd, (r) => { const g = 150 + r() * 70; return [g, g * 0.98, g * 0.93, 0.35]; });
+    const [h, hctx] = makeCanvas(size);
+    noiseFill(hctx, size, 132, 128, 14, 3000, 1.2);
+    hctx.fillStyle = 'rgb(150,150,150)';
+    for (const y of [0, size / 2]) hctx.fillRect(0, y, size, 4);
+    const normal = heightToNormal(h, 0.6);
+    return { map: toTexture(c, true), normalMap: toTexture(normal, false), metersPerRepeat: 6 };
+  });
+}
+
 /** Split-face concrete block (CMU) wall, the Las Vegas backyard standard. */
 export function blockWallPbr(): PbrSet {
   return getOrMake('block', () => {

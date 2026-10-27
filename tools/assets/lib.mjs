@@ -132,8 +132,9 @@ export function roundedBox(w, h, d, r = 0.05) {
  * A wheel: a lathed tire (rounded shoulders, bulged sidewall, tread grooves), a machined six-spoke
  * alloy with dark spoke pockets, a lug circle and a centre cap. Axis along x.
  */
-export function wheel(name, radius = 0.38, width = 0.26, { spokes = 6, rimRatio = 0.62 } = {}) {
+export function wheel(name, radius = 0.38, width = 0.26, { spokes = 6, rimRatio = 0.62, lite = false } = {}) {
   const b = new Builder();
+  if (lite) return liteWheel(b, name, radius, width, rimRatio);
   const hw = width / 2;
   const rimR = radius * rimRatio;
   // Tire cross-section (r, x) from the inner bead over the shoulder and tread to the outer bead.
@@ -174,6 +175,23 @@ export function wheel(name, radius = 0.38, width = 0.26, { spokes = 6, rimRatio 
     }
     b.add('plastic-dark', new THREE.CylinderGeometry(rimR * 0.13, rimR * 0.13, 0.02, 16), { position: [face + side * 0.032, 0, 0], rotation: [0, 0, Math.PI / 2] });
     b.add('accent', new THREE.CylinderGeometry(rimR * 0.06, rimR * 0.06, 0.012, 12), { position: [face + side * 0.042, 0, 0], rotation: [0, 0, Math.PI / 2] });
+  }
+  return b.build(name);
+}
+
+/** Parked-car wheel: a short lathed tire and a flat five-spoke face, about 300 triangles. */
+function liteWheel(b, name, radius, width, rimRatio) {
+  const hw = width / 2;
+  const rimR = radius * rimRatio;
+  const prof = [[rimR, -hw * 0.9], [radius - 0.04, -hw], [radius, -hw + 0.04], [radius, hw - 0.04], [radius - 0.04, hw], [rimR, hw * 0.9]];
+  b.add('rubber', new THREE.LatheGeometry(prof.map(([r, x]) => new THREE.Vector2(r, x)), 20), { rotation: [0, 0, -Math.PI / 2] });
+  for (const side of [-1, 1]) {
+    b.add('plastic-dark', new THREE.CylinderGeometry(rimR, rimR, 0.01, 18), { position: [side * hw * 0.85, 0, 0], rotation: [0, 0, Math.PI / 2] });
+    for (let i = 0; i < 5; i++) {
+      const a = (i / 5) * Math.PI * 2;
+      b.add('rim', new THREE.BoxGeometry(0.02, rimR * 0.8, rimR * 0.22), { position: [side * (hw * 0.85 + 0.008), Math.cos(a) * rimR * 0.45, Math.sin(a) * rimR * 0.45], rotation: [a, 0, 0] });
+    }
+    b.add('rim', new THREE.CylinderGeometry(rimR * 0.25, rimR * 0.25, 0.03, 12), { position: [side * hw * 0.88, 0, 0], rotation: [0, 0, Math.PI / 2] });
   }
   return b.build(name);
 }

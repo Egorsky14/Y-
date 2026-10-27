@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import type { HqUpgradeId } from '@/game/progression/hqUpgrades';
-import { MeshBuilder } from '../assets/pbr';
+import { MeshBuilder, membranePbr, pbrMaterial } from '../assets/pbr';
 import { STATIC_MATERIALS, UV_SCALES } from './materials';
 import { HQ_LOT, hqParkingStalls } from '@/game/world/cityLayout';
 import { addAirHandler, addCargoTrailer, addChainLinkFence, addCondenser, addContainer, addCylinder, addDolly, addDuctStack, addDumpster, addLadder, addPackageUnit, addPalletUnit, addServiceMachine, addToolCart } from '../props/hvac';
@@ -52,12 +52,12 @@ export function buildHeadquarters(upgrades: HqUpgradeId[]): THREE.Group {
     paintBlack: new THREE.MeshStandardMaterial({ color: '#121417', roughness: 0.35, metalness: 0.4, envMapIntensity: 1.2 }),
     darkGreen: new THREE.MeshStandardMaterial({ color: '#2f4a3a', roughness: 0.7, metalness: 0.3 }),
     transformer: new THREE.MeshStandardMaterial({ color: '#5f7a5a', roughness: 0.6, metalness: 0.3 }),
-    roofMembrane: new THREE.MeshStandardMaterial({ color: '#b9bcbf', roughness: 0.95 }),
+    roofMembrane: pbrMaterial(membranePbr(), { roughness: 0.92 }),
     shadeFabric: new THREE.MeshStandardMaterial({ color: '#2c3238', roughness: 0.9, side: THREE.DoubleSide }),
     planter: new THREE.MeshStandardMaterial({ color: '#8a8580', roughness: 0.9 }),
     apron: S.apron(),
   };
-  const b = new MeshBuilder(mats, { ...UV_SCALES, wear: 0, stain: 0, apron: 3.6 });
+  const b = new MeshBuilder(mats, { ...UV_SCALES, wear: 0, stain: 0, apron: 3.6, roofMembrane: 6 });
   const W = HQ_LOT.width;
   const D = HQ_LOT.depth;
   const o = HQ.office;

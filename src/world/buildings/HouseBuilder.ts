@@ -203,6 +203,9 @@ export function buildNeighborhood(lots: Lot[]): THREE.Group {
 }
 
 /** Single-lot build (used by tests and previews). */
+/** Driveway of every built house in its local frame (garage-door line at frontZ), for parked cars. */
+export const DRIVEWAYS = new Map<string, { x: number; w: number; frontZ: number }>();
+
 export function buildHouse(lot: Lot): THREE.Group {
   const b = new MeshBuilder(houseMaterialResolver, UV_SCALES);
   addHouse(b, lot);
@@ -461,6 +464,7 @@ export function addHouse(shared: MeshBuilder, lot: Lot): void {
     b.add('safetyOrange', new THREE.TorusGeometry(0.23, 0.02, 6, 16), [driveX - driveW / 2 + 0.1, 2.9, frontZ - 3.3], [Math.PI / 2, 0, 0]);
   }
 
+  DRIVEWAYS.set(lot.id, { x: driveX, w: driveW, frontZ });
   // Driveway from the garage down to the sidewalk; walkway from the door.
   const driveLen = frontZ - lotFront + 0.6;
   b.add('concrete', new THREE.PlaneGeometry(driveW, driveLen), [driveX, 0.04, frontZ - driveLen / 2 + 0.6], [-Math.PI / 2, 0, 0]);

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-27T15:27:13.944Z",
+  "generatedAt": "2026-10-27T15:38:27.656Z",
   "generator": "tools/assets (three.js procedural builders → glTF 2.0 via GLTFExporter)",
   "license": "Original project assets, MIT with the repository",
   "assets": [
@@ -44,6 +44,28 @@
       "meshes": 47,
       "triangles": 38268,
       "description": "Installation box truck with liftgate and dual rear wheels",
+      "source": "procedural (tools/assets)",
+      "license": "project"
+    },
+    {
+      "id": "civilian-sedan",
+      "category": "vehicles",
+      "file": "models/vehicles/civilian-sedan.glb",
+      "bytes": 243248,
+      "meshes": 19,
+      "triangles": 4424,
+      "description": "Unbranded parked sedan (residents, visitors and staff); instanced and tinted at runtime",
+      "source": "procedural (tools/assets)",
+      "license": "project"
+    },
+    {
+      "id": "civilian-suv",
+      "category": "vehicles",
+      "file": "models/vehicles/civilian-suv.glb",
+      "bytes": 253716,
+      "meshes": 20,
+      "triangles": 4582,
+      "description": "Unbranded parked SUV with roof rails; instanced and tinted at runtime",
       "source": "procedural (tools/assets)",
       "license": "project"
     },

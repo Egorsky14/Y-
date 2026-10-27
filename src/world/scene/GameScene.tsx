@@ -19,6 +19,7 @@ import { LabelProjector } from '../interactions/LabelProjector';
 import { RenderProbe } from './RenderProbe';
 import { StudioEnvironment } from './StudioEnvironment';
 import { preloadVehicleModels } from '../vehicles/VehicleGltf';
+import { ParkedCars } from '../vehicles/ParkedCars';
 
 preloadVehicleModels();
 
@@ -79,6 +80,7 @@ export function GameScene() {
         <Roads />
         <Vegetation />
         <Houses />
+        <ParkedCars />
         <Headquarters />
         <SupplyWarehouse />
         <CompetitorBuilding />

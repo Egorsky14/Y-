@@ -480,3 +480,80 @@ export function boxTruck() {
   addWheels(root, { w, wheelR, front: 2.55, rear: -2.1, width: 0.3, dualRear: true });
   return root;
 }
+
+// ---------------------------------------------------------------- civilian traffic (parked cars)
+// Light models for the static parked cars at houses and the HQ visitor and staff rows: no livery,
+// lite wheels, a glass greenhouse under a painted roof, about 5k triangles. The runtime instances
+// them per material and tints the paint per car.
+
+/** Section helper that keeps the corner radius within the section height. */
+function sec(belt, z, yTop, hwB, hwT, r) {
+  const rr = Math.min(r, (yTop - belt) * 0.8);
+  return { z, section: shellSection({ yBottom: belt, yTop, hwB, hwT, r: Math.max(0.01, rr), cornerSegs: 4 }) };
+}
+
+function civilianWheels(root, { w, wheelR, front, rear, width }) {
+  for (const [tag, side, z] of [['fl', -1, front], ['fr', 1, front], ['rl', -1, rear], ['rr', 1, rear]]) {
+    const wh = wheel(`wheel_${tag}`, wheelR, width, { lite: true });
+    wh.position.set(side * (w / 2 - width / 2 - 0.02), wheelR, z);
+    root.add(wh);
+  }
+}
+
+function civilianCar({ name, L, w, wheelR, floor, belt, front, rear, hood, trunk, cabin, roofY, glassInset = 0.17, rails = false }) {
+  const b = new Builder();
+  const arches = [{ z: front, r: wheelR + 0.08 }, { z: rear, r: wheelR + 0.08 }];
+  const tub = [[-L / 2, floor], [-L / 2 + 0.05, belt], [L / 2 - 0.12, belt], [L / 2, belt - 0.18], [L / 2, floor + 0.05]];
+  b.add('paint', profileWithArches(tub, arches, w, { bevel: 0.03 }));
+  const hw = w / 2;
+  // Hood and trunk/hatch decks just above the beltline
+  b.add('paint', loftShell(hood.map(([z, y]) => sec(belt - 0.02, z, y, hw, hw - 0.04, 0.08))));
+  if (trunk.length > 1) b.add('paint', loftShell(trunk.map(([z, y]) => sec(belt - 0.02, z, y, hw, hw - 0.04, 0.08))));
+  // Greenhouse in glass with a painted roof skin and pillars
+  b.add('glass', loftShell(cabin.map(([z, y]) => sec(belt - 0.02, z, y, hw - 0.03, hw - glassInset, 0.14))));
+  const roofZ0 = cabin[1][0] + 0.05;
+  const roofZ1 = cabin[cabin.length - 2][0] - 0.05;
+  b.add('paint', roundedBox(w - glassInset * 2 + 0.05, 0.05, roofZ1 - roofZ0, 0.025), { position: [0, roofY + 0.005, (roofZ0 + roofZ1) / 2] });
+  for (const s of [-1, 1]) {
+    const pz = (roofZ0 + roofZ1) / 2 - 0.1;
+    b.add('paint', new THREE.BoxGeometry(0.05, roofY - belt, 0.1), { position: [s * (hw - (glassInset + 0.03) / 2 - 0.01), (roofY + belt) / 2, pz], rotation: [0, 0, s * Math.atan((glassInset - 0.03) / (roofY - belt))] });
+    b.add('plastic-dark', roundedBox(0.1, 0.09, 0.16, 0.03), { position: [s * (hw + 0.05), belt + 0.08, cabin[cabin.length - 1][0] - 0.25] }); // mirror
+    b.add('plastic-dark', new THREE.BoxGeometry(0.01, 0.012, L * 0.45), { position: [s * (hw + 0.003), belt - 0.25, 0] }); // door crease
+  }
+  if (rails) for (const s of [-1, 1]) b.add('aluminum', roundedBox(0.04, 0.05, roofZ1 - roofZ0, 0.02), { position: [s * (w / 2 - glassInset - 0.02), roofY + 0.06, (roofZ0 + roofZ1) / 2] });
+  // Bumpers, lamps, grille
+  b.add('plastic-dark', roundedBox(w + 0.02, 0.2, 0.16, 0.07), { position: [0, floor + 0.12, L / 2 - 0.04] });
+  b.add('plastic-dark', roundedBox(w + 0.02, 0.2, 0.16, 0.07), { position: [0, floor + 0.12, -L / 2 + 0.04] });
+  b.add('plastic-dark', roundedBox(w * 0.45, 0.14, 0.03, 0.04), { position: [0, belt - 0.22, L / 2 + 0.005] });
+  for (const s of [-1, 1]) {
+    b.add('headlight', roundedBox(0.36, 0.1, 0.04, 0.03), { position: [s * (hw - 0.26), belt - 0.1, L / 2 - 0.01] });
+    b.add('taillight', roundedBox(0.34, 0.1, 0.04, 0.03), { position: [s * (hw - 0.24), belt - 0.06, -L / 2 + 0.03] });
+  }
+  b.add('white', roundedBox(0.36, 0.11, 0.012, 0.01), { position: [0, floor + 0.3, -L / 2 - 0.0] });
+  b.box('underbody', [w * 0.8, 0.15, L - 0.8], { position: [0, floor - 0.04, 0] });
+  const root = new THREE.Group();
+  root.name = name;
+  root.add(b.build('body'));
+  civilianWheels(root, { w, wheelR, front, rear, width: 0.22 });
+  return root;
+}
+
+export function sedan() {
+  return civilianCar({
+    name: 'civilian-sedan', L: 4.75, w: 1.84, wheelR: 0.33, floor: 0.3, belt: 0.9, front: 1.48, rear: -1.38,
+    hood: [[1.0, 1.02], [1.7, 0.99], [2.36, 0.93]],
+    trunk: [[-2.36, 0.98], [-1.55, 1.02]],
+    cabin: [[-1.6, 1.0], [-0.95, 1.38], [0.35, 1.42], [1.05, 1.0]],
+    roofY: 1.42,
+  });
+}
+
+export function suv() {
+  return civilianCar({
+    name: 'civilian-suv', L: 4.7, w: 1.92, wheelR: 0.37, floor: 0.4, belt: 1.08, front: 1.45, rear: -1.42,
+    hood: [[1.15, 1.22], [1.8, 1.18], [2.33, 1.12]],
+    trunk: [],
+    cabin: [[-2.33, 1.12], [-2.2, 1.72], [0.6, 1.76], [1.2, 1.2]],
+    roofY: 1.76, glassInset: 0.14, rails: true,
+  });
+}

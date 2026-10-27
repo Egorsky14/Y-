@@ -2,13 +2,15 @@
 import { readFile, writeFile } from 'node:fs/promises';
 import { exportGlb } from './export.mjs';
 import { describe } from './lib.mjs';
-import { fullSizeVan, compactVan, pickup, boxTruck } from './vehicles.mjs';
+import { fullSizeVan, compactVan, pickup, boxTruck, sedan, suv } from './vehicles.mjs';
 
 const ASSETS = [
   { id: 'full-size-van', category: 'vehicles', build: fullSizeVan, description: 'Full-size high-roof HVAC service van' },
   { id: 'compact-van', category: 'vehicles', build: compactVan, description: 'Compact service van' },
   { id: 'pickup', category: 'vehicles', build: pickup, description: 'Crew-cab pickup with headache rack and crossbed toolbox' },
   { id: 'box-truck', category: 'vehicles', build: boxTruck, description: 'Installation box truck with liftgate and dual rear wheels' },
+  { id: 'civilian-sedan', category: 'vehicles', build: sedan, description: 'Unbranded parked sedan (residents, visitors and staff); instanced and tinted at runtime' },
+  { id: 'civilian-suv', category: 'vehicles', build: suv, description: 'Unbranded parked SUV with roof rails; instanced and tinted at runtime' },
 ];
 
 const manifest = { generatedAt: new Date().toISOString(), generator: 'tools/assets (three.js procedural builders → glTF 2.0 via GLTFExporter)', license: 'Original project assets, MIT with the repository', assets: [] };
