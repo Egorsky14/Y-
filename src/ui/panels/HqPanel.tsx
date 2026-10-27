@@ -13,6 +13,7 @@ export function HqPanel() {
   const eCap = useGame((s) => employeeCapacity(s));
   const milestones = useGame((s) => s.milestones);
   const dispatch = useApp((s) => s.dispatch);
+  const techs = useGame((s) => Object.values(s.employees).filter((e) => e.role === 'technician').length);
   return (
     <PanelShell title="Headquarters" subtitle={`Company level ${level} · ${vCap} vehicle stalls · ${eCap} staff seats`} testId="panel-hq">
       <div className="panel-body split">
@@ -20,15 +21,16 @@ export function HqPanel() {
           <h4>Facility upgrades</h4>
           {HQ_UPGRADES.map((u) => {
             const has = owned.includes(u.id);
-            const locked = level < u.level || (u.requires ?? []).some((r) => !owned.includes(r));
+            const short = (u.minTechnicians ?? 0) > techs;
+            const locked = level < u.level || (u.requires ?? []).some((r) => !owned.includes(r)) || short;
             return (
               <div key={u.id} className={`card row between ${has ? 'selected' : ''}`} data-testid={`hq-upgrade-${u.id}`}>
                 <div>
-                  <div style={{ fontWeight: 800 }}>{u.name} {has && <span className="tag teal" style={{ marginLeft: 6 }}>Built</span>}{!has && locked && <span className="tag" style={{ marginLeft: 6 }}>Level {u.level}{u.requires ? ` · needs ${u.requires.map((r) => HQ_UPGRADES.find((x) => x.id === r)?.name).join(', ')}` : ''}</span>}</div>
+                  <div style={{ fontWeight: 800 }}>{u.name} {has && <span className="tag teal" style={{ marginLeft: 6 }}>Built</span>}{!has && locked && <span className="tag" style={{ marginLeft: 6 }} data-testid={`hq-lock-${u.id}`}>{short ? `Needs ${u.minTechnicians} technicians · you have ${techs}` : `Level ${u.level}${u.requires ? ` · needs ${u.requires.map((r) => HQ_UPGRADES.find((x) => x.id === r)?.name).join(', ')}` : ''}`}</span>}</div>
                   <div className="muted" style={{ fontSize: 12.5, marginTop: 2 }}>{u.description}</div>
                   <div style={{ fontSize: 12.5, marginTop: 4, color: 'var(--teal)' }}>{u.effect}</div>
                 </div>
-                <button className="btn small primary" disabled={has || locked || cash < u.cost} onClick={() => dispatch({ type: 'hq-upgrade', upgradeId: u.id })}>
+                <button className="btn small primary" disabled={has || locked || cash < u.cost} onClick={() => dispatch({ type: 'hq-upgrade', upgradeId: u.id })} data-testid={`hq-buy-${u.id}`}>
                   {has ? 'Owned' : <Money value={u.cost} />}
                 </button>
               </div>

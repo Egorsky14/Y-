@@ -472,3 +472,13 @@ h4 { font-size: 13px; color: var(--muted); text-transform: uppercase; letter-spa
   .perf-line { grid-template-columns: minmax(0, 1fr) 70px 40px; }
   .perf-line > span.muted { grid-column: 1 / -1; margin-top: -4px; }
 }
+
+/* ---------- Operations Center: owner attention ---------- */
+.attention-card { border-left: 3px solid var(--teal); }
+.attention-card.blocking { border-left-color: var(--amber); background: rgba(255,179,71,0.08); }
+.attention-text { color: var(--amber); }
+.automation-row.locked { opacity: 0.55; }
+.automation-row input[type='checkbox'] { width: 20px; height: 20px; accent-color: var(--teal); }
+@media (max-width: 900px), (max-height: 560px) {
+  .automation-row input[type='checkbox'] { width: 24px; height: 24px; }
+}

@@ -1,5 +1,6 @@
 import { useApp, useGame, type PanelId } from '@/app/store';
 import { Icon } from '../components/common';
+import { attentionQueue } from '@/game/operations/automation';
 
 const ITEMS: { id: Exclude<PanelId, null | 'settings'>; label: string; icon: 'jobs' | 'employees' | 'fleet' | 'supply' | 'hq' | 'marketing' | 'finance' }[] = [
   { id: 'jobs', label: 'Jobs', icon: 'jobs' },
@@ -14,7 +15,7 @@ const ITEMS: { id: Exclude<PanelId, null | 'settings'>; label: string; icon: 'jo
 export function ActionBar() {
   const panel = useApp((s) => s.panel);
   const toggle = useApp((s) => s.togglePanel);
-  const pendingJobs = useGame((s) => Object.values(s.jobs).filter((j) => ['lead', 'accepted', 'awaiting-diagnosis', 'quoted'].includes(j.status)).length);
+  const pendingJobs = useGame((s) => Object.values(s.jobs).filter((j) => ['lead', 'accepted', 'awaiting-diagnosis', 'quoted'].includes(j.status)).length + attentionQueue(s).filter((j) => !j.attention!.blocking).length);
   const idleStaff = useGame((s) => Object.values(s.employees).filter((e) => e.status === 'idle').length);
   return (
     <nav className="glass action-bar" aria-label="Management">

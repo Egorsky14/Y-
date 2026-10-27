@@ -15,6 +15,43 @@ import { toolDef } from '@/game/equipment/catalog';
 export function JobFlow({ jobId }: { jobId: string }) {
   const job = useGame((s) => s.jobs[jobId]);
   if (!job) return null;
+  return (
+    <>
+      <AutomationStatus job={job} />
+      <JobStep job={job} />
+    </>
+  );
+}
+
+/** Operations Center: what automation did on this job, and what it needs from the owner. */
+function AutomationStatus({ job }: { job: Job }) {
+  const dispatch = useApp((s) => s.dispatch);
+  const att = job.attention && !job.attention.resolved ? job.attention : undefined;
+  if (!att && !job.auto) return null;
+  return (
+    <div className="col" style={{ gap: 6 }}>
+      {job.auto && (
+        <div className="row" style={{ gap: 6 }}>
+          <span className="tag teal" data-testid="auto-tag">Auto</span>
+          <span className="muted" style={{ fontSize: 12 }}>{[job.auto.diagnosis && 'diagnosed by the technician', job.auto.estimate && 'estimate presented by the technician'].filter(Boolean).join(' · ')}</span>
+        </div>
+      )}
+      {att && (
+        <div className={`card col attention-card ${att.blocking ? 'blocking' : ''}`} style={{ gap: 6 }} data-testid="attention-card" role="status">
+          <b>{att.blocking ? 'Needs your decision' : 'For your information'}</b>
+          <span style={{ fontSize: 13 }}>{att.text}</span>
+          {att.blocking ? (
+            <span className="muted" style={{ fontSize: 12 }}>Make the decision below; automation picks the job up again afterwards.</span>
+          ) : (
+            <button className="btn small" onClick={() => dispatch({ type: 'ack-attention', jobId: job.id })} data-testid="attention-ack">Got it</button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function JobStep({ job }: { job: Job }) {
   switch (job.status) {
     case 'lead':
       return <LeadStep job={job} />;

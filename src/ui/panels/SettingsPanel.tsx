@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { useApp, type Quality } from '@/app/store';
+import { useApp, useGame, type Quality } from '@/app/store';
+import { OPERATIONS_MIN_TECHNICIANS, hasOperationsCenter, technicianCount } from '@/game/operations/automation';
 import { deviceProfile, MOBILE_PRESETS } from '@/app/device';
 import { PanelShell } from './PanelShell';
 
@@ -64,6 +65,7 @@ export function SettingsPanel() {
           <div className="muted" style={{ fontSize: 12, lineHeight: 1.5 }}>Saves live in this browser on this device only. They do not sync between devices and are lost if you clear this site's data.</div>
         </div>
         <div className="col">
+          <OperationsAutomation />
           <h4>Controls</h4>
           {touch ? (
             <div className="card col" style={{ gap: 6, fontSize: 13 }}>
@@ -93,5 +95,48 @@ export function SettingsPanel() {
         </div>
       </div>
     </PanelShell>
+  );
+}
+
+/** Settings › Operations Automation: two independent switches, locked until the HQ upgrade is built. */
+function OperationsAutomation() {
+  const owned = useGame((s) => hasOperationsCenter(s));
+  const techs = useGame((s) => technicianCount(s));
+  const auto = useGame((s) => s.company.automation ?? { diagnostics: false, closing: false });
+  const dispatch = useApp((s) => s.dispatch);
+  const rows: { key: 'diagnostics' | 'closing'; title: string; detail: string }[] = [
+    { key: 'diagnostics', title: 'Automatic diagnostics', detail: 'Technicians commit to a diagnosis from their own readings (skill, training and tools). Not always right: misreads still cause callbacks. Conflicting readings come to you.' },
+    { key: 'closing', title: 'Automatic estimates & deal closing', detail: 'Technicians quote repairs at the standard price, no discounts. Customers accept or decline as usual; warranty work waits for authorization. Replacements always come to you.' },
+  ];
+  return (
+    <>
+      <h4>Operations automation</h4>
+      {!owned ? (
+        <div className="card col" style={{ gap: 8 }} data-testid="automation-locked">
+          <b>Locked</b>
+          <span className="muted" style={{ fontSize: 12.5, lineHeight: 1.5 }}>
+            Build the Automated Operations Center at headquarters: a one-time $1,000, available with {OPERATIONS_MIN_TECHNICIANS} or more technicians (the owner counts). You have {techs}.
+          </span>
+          {rows.map((r) => (
+            <label key={r.key} className="row card automation-row locked"><input type="checkbox" disabled checked={false} readOnly /> {r.title}</label>
+          ))}
+          <button className="btn small" onClick={() => useApp.getState().openPanel('hq')} data-testid="automation-open-hq">Open Headquarters</button>
+        </div>
+      ) : (
+        <div className="col" style={{ gap: 8 }}>
+          {rows.map((r) => (
+            <label key={r.key} className="card col automation-row" style={{ gap: 4 }}>
+              <span className="row" style={{ gap: 8 }}>
+                <input type="checkbox" checked={auto[r.key]} onChange={(e) => dispatch({ type: 'set-automation', [r.key]: e.target.checked })} data-testid={`automation-${r.key}`} />
+                <b>{r.title}</b>
+                <span className={`tag ${auto[r.key] ? 'green' : ''}`} style={{ marginLeft: 'auto' }}>{auto[r.key] ? 'On' : 'Off'}</span>
+              </span>
+              <span className="muted" style={{ fontSize: 12, lineHeight: 1.45 }}>{r.detail}</span>
+            </label>
+          ))}
+          <span className="muted" style={{ fontSize: 12 }}>Decisions that stay yours collect in Jobs › Owner attention.</span>
+        </div>
+      )}
+    </>
   );
 }

@@ -47,7 +47,7 @@ export function WorldControls() {
       <button onClick={() => setPhoto({ on: true })} title="Photo mode (P): hide the HUD, free camera, time-of-day preview, save a PNG" data-testid="photo-mode-toggle">
         <Icon name="photo" /> <span className="lbl">Photo</span>
       </button>
-      <button className={panel === 'settings' ? 'active' : ''} onClick={() => openPanel(panel === 'settings' ? null : 'settings')} title="Settings and menu">
+      <button className={panel === 'settings' ? 'active' : ''} onClick={() => openPanel(panel === 'settings' ? null : 'settings')} title="Settings and menu" aria-label="Settings" data-testid="world-settings">
         <Icon name="settings" />
       </button>
     </div>
