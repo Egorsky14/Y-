@@ -48,3 +48,14 @@ Intel Arc 140V, Chrome headless (ANGLE D3D11), High preset, vsync off.
 ## Log
 
 - Baseline captured (16 views at 1080p, 7 at 1366×768 and 390×844), 0 console errors.
+- 632ae70 Vehicles (wheels, arches, fascia, livery with legal name), outdoor IBL, golden hour, mountains, smooth foliage, sign fixes.
+- 1d35066 Technician body and uniform, desert turf, faceted stone, stronger golden hour, moonlight.
+- ebbbe16 Parked civilian cars (instanced), HQ roof membrane.
+- 95e805c Service-site camera framing, stucco palette, foliage triangle reduction.
+- e754d9e Supply Depot warehouse rebuild.
+
+Mid-sprint paired GPU measurement (alternating base/new builds, same session, 1080p, High):
+overview +2.1–2.9%, neighborhood +1.0–1.8%, technician close-up +2.7–3.4%. Unit tests 87 passed.
+
+Next: date-palm fronds, fleet preview check, browser test matrix (one process at a time), final
+captures at 1080p / 1366×768 / 390×844, final paired performance, report.
