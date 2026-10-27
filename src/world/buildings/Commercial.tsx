@@ -1,9 +1,10 @@
-import { useMemo } from 'react';
+import { Suspense, useMemo } from 'react';
 import { COMPETITOR_LOT, PARK_LOT, WAREHOUSE_LOT } from '@/game/world/cityLayout';
 import { PALETTE } from '../assets/palette';
 import { asphaltTexture, signTexture } from '../assets/textures';
 import { Box, Window } from './parts';
 import { Selectable } from '../interactions/Selectable';
+import { SupplyDisplayPart } from '../props/SupplyProps';
 
 export function SupplyWarehouse() {
   const asphalt = useMemo(() => asphaltTexture(), []);
@@ -31,13 +32,11 @@ export function SupplyWarehouse() {
             <planeGeometry args={[30, 3.2]} />
             <meshStandardMaterial map={signTexture('MOJAVE HVAC SUPPLY', '#e0862e', '#2a2d31')} />
           </mesh>
-          {/* Office corner */}
-          <Box size={[14, 5, 10]} position={[-33, 2.5, 27]} color="#f0eee8" />
-          <Window position={[-33, 2.4, 32.02]} size={[6, 2]} />
-          <Window position={[-29, 2.4, 32.02]} size={[1.4, 2]} />
+          <ProStorefront />
         </group>
-        {/* Pallets and condensers in the yard */}
-        {[-30, -22, -14].map((x) => (
+        <DepotForecourt />
+        {/* Pallets and condensers in the yard, east of the docks */}
+        {[16, 24, 32].map((x) => (
           <group key={x} position={[x, 0, 30]}>
             <Box size={[3, 0.25, 3]} position={[0, 0.12, 0]} color="#b08a5a" />
             <Box size={[2.4, 2.2, 2.4]} position={[0, 1.35, 0]} color="#d6d9dc" roughness={0.6} metalness={0.2} />
@@ -48,6 +47,64 @@ export function SupplyWarehouse() {
           <meshBasicMaterial />
         </mesh>
       </Selectable>
+    </group>
+  );
+}
+
+/**
+ * Pro Supply Depot retail counter: a glass-fronted showroom on the warehouse's west end, with a
+ * canopy, an illuminated sign and an entrance facing the street (building frame: front face z = 22).
+ */
+function ProStorefront() {
+  const sign = useMemo(() => signTexture('PRO SUPPLY', '#19d3c5', '#14181d'), []);
+  return (
+    <group position={[-33, 0, 22]}>
+      {/* Showroom block standing proud of the warehouse wall */}
+      <Box size={[14, 6.2, 9]} position={[0, 3.1, 4.5]} color="#e9e7e1" roughness={0.7} />
+      <Box size={[14.4, 0.5, 9.4]} position={[0, 6.35, 4.5]} color="#2a2f36" />
+      {/* Curtain-wall glazing with mullions, and a glass door pair */}
+      <Box size={[12.4, 4.2, 0.12]} position={[0, 2.5, 9.04]} color="#7fb6d6" roughness={0.08} metalness={0.6} castShadow={false} />
+      {[-6, -3.1, 0, 3.1, 6].map((x) => (
+        <Box key={x} size={[0.18, 4.4, 0.2]} position={[x, 2.5, 9.1]} color="#2a2f36" castShadow={false} />
+      ))}
+      <Box size={[12.6, 0.18, 0.2]} position={[0, 4.62, 9.1]} color="#2a2f36" castShadow={false} />
+      <Box size={[2.6, 2.6, 0.14]} position={[1.55, 1.3, 9.16]} color="#1c2229" roughness={0.2} metalness={0.4} castShadow={false} />
+      {/* Canopy over the entrance and the sign band above it */}
+      <Box size={[14.8, 0.35, 3]} position={[0, 5.0, 10.4]} color="#2a2f36" />
+      <Box size={[14.8, 0.08, 3]} position={[0, 4.8, 10.4]} color="#19d3c5" emissive="#19d3c5" emissiveIntensity={0.35} castShadow={false} />
+      <mesh position={[0, 5.55, 9.12]}>
+        <planeGeometry args={[11, 1.5]} />
+        <meshStandardMaterial map={sign} emissive="#ffffff" emissiveMap={sign} emissiveIntensity={0.35} />
+      </mesh>
+      {[-6.6, 6.6].map((x) => (
+        <Box key={x} size={[0.25, 4.8, 0.25]} position={[x, 2.4, 11.7]} color="#2a2f36" />
+      ))}
+    </group>
+  );
+}
+
+/** Customer parking and an outdoor equipment display in front of the showroom (lot frame). */
+function DepotForecourt() {
+  return (
+    <group>
+      {/* Five customer stalls with painted lines and wheel stops */}
+      {[0, 1, 2, 3, 4, 5].map((i) => (
+        <Box key={i} size={[0.15, 0.02, 5.4]} position={[-50 + i * 3.4, 0.04, 34.5]} color="#f4f1e8" castShadow={false} />
+      ))}
+      {[0, 1, 2, 3, 4].map((i) => (
+        <Box key={i} size={[1.8, 0.14, 0.25]} position={[-48.3 + i * 3.4, 0.07, 32.3]} color="#c9c4b8" castShadow={false} />
+      ))}
+      {/* Display counter beside the entrance (0.9 m): pumps, a recovery machine and a tool case at
+          true scale, nitrogen cylinders standing beside it */}
+      <Box size={[3.0, 0.86, 1.1]} position={[-43.2, 0.43, 28.6]} color="#3a4048" />
+      <Box size={[3.08, 0.05, 1.18]} position={[-43.2, 0.885, 28.6]} color="#19d3c5" castShadow={false} emissive="#19d3c5" emissiveIntensity={0.15} />
+      <Suspense fallback={null}>
+        <SupplyDisplayPart part="vacuum-pump" position={[-44.25, 0.91, 28.55]} rotation={0.35} />
+        <SupplyDisplayPart part="recovery-machine" position={[-43.3, 0.91, 28.6]} rotation={0.05} />
+        <SupplyDisplayPart part="tool-case" position={[-42.25, 0.91, 28.6]} rotation={-0.3} />
+        <SupplyDisplayPart part="nitrogen-kit" position={[-41.15, 0, 28.3]} />
+        <SupplyDisplayPart part="nitrogen-kit" position={[-40.85, 0, 28.75]} rotation={1.2} />
+      </Suspense>
     </group>
   );
 }

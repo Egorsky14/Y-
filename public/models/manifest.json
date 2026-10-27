@@ -57,6 +57,17 @@
       "description": "Job-site service kit in the condenser frame: tool bag with EGO teal webbing, 2-valve gauge manifold hung on the unit with hoses to its service valves, recovery cylinder (nodes bag, manifold, cylinder)",
       "source": "blender 5.2.3 (tools/blender/jobsite_kit.py)",
       "license": "project"
+    },
+    {
+      "id": "supply-tools",
+      "category": "props",
+      "file": "models/props/supply-tools.glb",
+      "bytes": 221616,
+      "meshes": 4,
+      "triangles": 4008,
+      "description": "Supply Depot equipment in the condenser frame: hard tool case, two-stage vacuum pump, refrigerant recovery machine, nitrogen cylinder with regulator (nodes tool-case, vacuum-pump, recovery-machine, nitrogen-kit)",
+      "source": "blender 5.2.3 (tools/blender/supply_tools.py)",
+      "license": "project"
     }
   ]
 }

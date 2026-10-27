@@ -10,6 +10,11 @@ import { Worker, type WorkerAnim } from '../characters/Worker';
 import { Selectable } from '../interactions/Selectable';
 import { PALETTE } from '../assets/palette';
 import { HOUSE_HALF_WIDTH, condenserPosition, condenserSideDir, lotById, lotLocalToWorld, workPosition } from '@/game/world/cityLayout';
+import { useSupplyKit } from '../props/SupplyProps';
+import { toolsHeldBy } from '@/game/equipment/inventory';
+import { vehicleAtJob } from '@/game/equipment/performance';
+import { faultById } from '@/game/jobs/faults';
+import type { GameState, Job } from '@/game/simulation/types';
 import { EXIT_DELAY, EXIT_SECONDS, GAUGES_DELAY, PARK_SECONDS, WALK_SPEED, approachPath, curbDoor, ease, pathLength, samplePath, siteFor, siteParking, siteVisuals, vanVisuals, visualPace } from './serviceCall';
 
 declare global {
@@ -369,19 +374,53 @@ function JobSiteKit({ jobId, install }: { jobId: string; install: boolean }) {
   return <primitive object={kit} />;
 }
 
-/** Tools staged beside the condenser while a technician is on site: tool bag, gauge manifold with hoses, a recovery cylinder on installs. */
+/**
+ * Company equipment that is really on site (equipment/inventory.ts): c = the technician's hard tool
+ * case, v / r / n = the van's vacuum pump, recovery machine and nitrogen kit, set out only while a
+ * repair that uses them (evacuation, recovery, pressure test) is under way and that van is at the job.
+ */
+function siteEquipment(s: GameState, j: Job): string {
+  let flags = '';
+  if (j.technicianId && toolsHeldBy(s, { kind: 'employee', id: j.technicianId }).some((t) => t.defId === 'hand-tools')) flags += 'c';
+  const van = vehicleAtJob(s, j);
+  if (van && j.status === 'repairing' && j.chosenDiagnosis) {
+    const steps = faultById(j.chosenDiagnosis).procedures;
+    const rack = new Set(toolsHeldBy(s, { kind: 'vehicle', id: van.id }).map((t) => t.defId));
+    if (rack.has('vacuum-pump') && steps.includes('evacuation')) flags += 'v';
+    if (rack.has('recovery-machine') && steps.includes('recovery')) flags += 'r';
+    if (rack.has('nitrogen-kit') && steps.includes('pressure-test')) flags += 'n';
+  }
+  return flags;
+}
+
+const EQUIPMENT_FLAGS: Record<string, string> = { 'tool-case': 'c', 'vacuum-pump': 'v', 'recovery-machine': 'r', 'nitrogen-kit': 'n' };
+
+/** Supply Depot equipment staged in the unit frame (tools/blender/supply_tools.py), shown once the technician is set up. */
+function JobSiteEquipment({ jobId, flags }: { jobId: string; flags: string }) {
+  const kit = useSupplyKit();
+  useFrame(() => {
+    const arrived = (siteVisuals.get(jobId)?.arrived.size ?? 0) > 0;
+    for (const [name, flag] of Object.entries(EQUIPMENT_FLAGS)) {
+      const part = kit.getObjectByName(name);
+      if (part) part.visible = arrived && flags.includes(flag);
+    }
+  });
+  return <primitive object={kit} name="jobsite-equipment" />;
+}
+
+/** Tools staged beside the condenser while a technician is on site: tool bag, gauge manifold with hoses, a recovery cylinder on installs, and the company equipment that came along. */
 export function JobSiteProps() {
   const sites = useGame((s) =>
     Object.values(s.jobs)
       .filter((j) => ['arriving', 'diagnosing', 'awaiting-diagnosis', 'quoted', 'awaiting-authorization', 'repairing', 'installing'].includes(j.status))
-      .map((j) => `${j.id}:${s.customers[j.customerId].lotId}:${j.status === 'installing' ? 'i' : 'r'}`)
+      .map((j) => `${j.id}:${s.customers[j.customerId].lotId}:${j.status === 'installing' ? 'i' : 'r'}:${siteEquipment(s, j)}`)
       .join('|'),
   );
   if (!sites) return null;
   return (
     <>
       {sites.split('|').map((entry) => {
-        const [id, lotId, kind] = entry.split(':');
+        const [id, lotId, kind, equipment] = entry.split(':');
         const lot = lotById(lotId);
         if (!lot) return null;
         // The kit's frame is the unit's: house-local axes, origin at the unit centre. The premium
@@ -394,6 +433,11 @@ export function JobSiteProps() {
             <Suspense fallback={null}>
               <JobSiteKit jobId={id} install={kind === 'i'} />
             </Suspense>
+            {equipment && (
+              <Suspense fallback={null}>
+                <JobSiteEquipment jobId={id} flags={equipment} />
+              </Suspense>
+            )}
           </group>
         );
       })}
