@@ -140,7 +140,8 @@ export const TOOLS: ToolDef[] = [
     name: 'Electronic leak detector',
     category: 'refrigerant',
     tier: 'professional',
-    price: 560,
+    // $390: it only serves leak calls (about 7% of the lead mix); at $560 it took ~300 busy calls to pay back.
+    price: 390,
     description: 'Heated-diode detector sensitive to A2L and HFC refrigerants down to 0.1 oz/yr.',
     mount: 'technician',
     bulk: 0.5,

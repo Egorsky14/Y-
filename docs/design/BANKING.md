@@ -341,6 +341,27 @@ What changed:
 - **Rating incentives:** holding every offer as cash no longer reaches 99. Its remaining edge
   over the conservative run is payment history.
 
+
+### Rerun with the Supply Depot (starter equipment)
+
+Every company now starts with the owner's starter kit (hand tool set and multimeter), which makes
+the owner slightly faster and more accurate (see SUPPLY_DEPOT.md). The scenarios were rerun
+unchanged on the same five seeds; all assertions pass.
+
+| Financed vs self-funded growth | Before | After the starter kit |
+|---|---|---|
+| High demand | +$6,043 equity, 4 / 5 seeds | +$2,764, 3 / 5 (+158 jobs, financing cost $1,049) |
+| Normal demand | −$7,558, 1 / 5 | −$16,774, 0 / 5 |
+| Low demand | −$11,152, 0 / 5 | −$17,906, 0 / 5 |
+| Low demand, borrow to expand on plan | −$17,723, 0 / 5, delinquent on 3 | −$31,009, 0 / 5, delinquent on 4 |
+
+The relationship holds: borrowing to meet unserved demand still pays on most seeds, and borrowing
+without demand still loses on every seed. Better-equipped owners raise the self-funded baselines,
+so the margin financing adds is smaller where demand is high and the cost larger where it is not.
+The held-as-cash stunts stay within seed noise (microloan +$856, 1 / 5; every offer −$3,161, 1 / 5;
+online loan paid off day 45 −$1,343, 1 / 5), and the struggling owner still ends in default on
+every seed.
+
 ## Tuning notes and assumptions
 
 - **Fictional numbers:** rates are game-economy numbers chosen to feel plausible. They are not
