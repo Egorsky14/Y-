@@ -118,7 +118,16 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
   await page.waitForFunction((id) => { window.__ego.advanceMinutes(0.5); const j = window.__ego.getState().jobs[id]; return j.status === 'diagnosing'; }, job.id, { timeout: 60_000, polling: 30 });
   // Let the walk-up finish in real time so the technician stands at the unit.
   await ev(() => window.__ego.dispatch({ type: 'set-speed', speed: 1 }));
-  await sleep(12000);
+  // Until the technician has stopped walking (at the unit), at most 40 s.
+  let lastPos = null;
+  let still = 0;
+  for (let i = 0; i < 160 && still < 5; i++) {
+    await sleep(250);
+    const w = await ev(() => { const w = window.__egoWorkers?.['emp-owner']; const o = window.__egoThree.scene.getObjectByName('employee:emp-owner'); const v = window.__egoVehicles?.['veh-1']; return w && o?.visible && v && Math.hypot(w.x - v.x, w.z - v.z) < 40 && Math.hypot(w.x - v.x, w.z - v.z) > 3 ? w : null; });
+    still = w && lastPos && i > 8 && Math.hypot(w.x - lastPos.x, w.z - lastPos.z) < 0.01 ? still + 1 : 0;
+    lastPos = w;
+  }
+  await sleep(1500);
   await ev(() => window.__ego.dispatch({ type: 'set-speed', speed: 0 }));
   const geo = await ev((lotId) => {
     const scene = window.__egoThree.scene;
@@ -141,6 +150,10 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
   await shot('12-overview-1730', { type: 'reset' });
   await shot('13-neighborhood-1730', { type: 'focus', target: { x: -21, z: 25 }, distance: 48, azimuth: 0.9 }, { perf: false });
   await shot('14-hq-1730', { type: 'hq' }, { perf: false });
+  await advanceTo(18 * 60 + 45);
+  await shot('17-overview-1845', { type: 'reset' }, { perf: false });
+  await shot('18-street-close-1845', { type: 'focus', target: { x: -40, z: 0 }, distance: 24, azimuth: 0.6, elevation: 0.32 }, { perf: false });
+  await shot('19-hq-van-close-1845', { type: 'focus', target: { x: 22, z: 22 }, distance: 11, azimuth: -2.2, elevation: 0.3, targetY: 1 }, { perf: false });
   await advanceTo(21 * 60);
   await shot('15-overview-2100', { type: 'reset' });
   await shot('16-hq-2100', { type: 'hq' }, { perf: false });

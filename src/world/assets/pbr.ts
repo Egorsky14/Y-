@@ -365,9 +365,24 @@ export function lawnPbr(): PbrSet {
     const size = 256;
     const [c, ctx] = makeCanvas(size);
     const rnd = makeDecoRng(91);
-    ctx.fillStyle = '#5f8f3c';
+    // Irrigated desert turf: a muted olive green with darker and sun-bleached blade speckle and soft
+    // mottling, instead of a uniform saturated lime.
+    ctx.fillStyle = '#5a7a3a';
     ctx.fillRect(0, 0, size, size);
-    speckle(c, 20000, rnd, (r) => { const g = 120 + r() * 60; return [g * 0.6, g, g * 0.35, 0.6]; });
+    for (let i = 0; i < 14; i++) {
+      const x = rnd() * size;
+      const y = rnd() * size;
+      const r = 30 + rnd() * 50;
+      const warm = rnd() < 0.5;
+      for (const dx of [-size, 0, size]) for (const dy of [-size, 0, size]) {
+        const g = ctx.createRadialGradient(x + dx, y + dy, 0, x + dx, y + dy, r);
+        g.addColorStop(0, warm ? 'rgba(150,150,80,0.22)' : 'rgba(40,70,30,0.25)');
+        g.addColorStop(1, 'rgba(0,0,0,0)');
+        ctx.fillStyle = g;
+        ctx.fillRect(x + dx - r, y + dy - r, r * 2, r * 2);
+      }
+    }
+    speckle(c, 22000, rnd, (r) => { const g = 95 + r() * 70; const dry = r() < 0.15; return dry ? [g * 0.95, g * 0.9, g * 0.5, 0.5] : [g * 0.62, g * 0.86, g * 0.4, 0.55]; });
     const [h, hctx] = makeCanvas(size);
     noiseFill(hctx, size, 92, 128, 40, 6000, 1.5);
     const normal = heightToNormal(h, 0.8);

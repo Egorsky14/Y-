@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import { useFrame } from '@react-three/fiber';
 import type { EmployeeRole } from '@/game/employees/roles';
 import { PALETTE } from '../assets/palette';
+import { wordmarkTexture } from '../assets/textures';
 
 export type WorkerAnim = 'idle' | 'walk' | 'carry' | 'inspect' | 'stand-inspect' | 'repair' | 'install' | 'train' | 'celebrate';
 
@@ -21,6 +22,60 @@ const SHIRT: Record<EmployeeRole, string> = { technician: '#1d2126', installer: 
 const PANTS: Record<EmployeeRole, string> = { technician: '#3a3f46', installer: '#4a4238', dispatcher: '#2c3340', 'comfort-advisor': '#2c3340' };
 
 const PELVIS_Y = 0.95;
+
+/**
+ * Shared body geometry (built once for every worker): a lathed torso that tapers from chest to
+ * waist and is flattened front to back, rounded hips, work boots with a rounded toe cap and a
+ * lugged sole, and mitten-shaped hands. Replaces the earlier boxes, which read as blocks at the
+ * close service-call camera.
+ */
+const lathe = (pts: [number, number][], segs = 20, depth = 0.62) => {
+  const g = new THREE.LatheGeometry(pts.map(([r, y]) => new THREE.Vector2(r, y)), segs);
+  g.scale(1, 1, depth);
+  g.computeVertexNormals();
+  return g;
+};
+const GEO = {
+  torso: lathe([[0.001, 0], [0.165, 0.0], [0.168, 0.1], [0.178, 0.22], [0.198, 0.36], [0.205, 0.44], [0.19, 0.5], [0.15, 0.55], [0.08, 0.58], [0.001, 0.585]]),
+  hem: lathe([[0.17, 0], [0.172, 0.035]], 20, 0.64),
+  hips: lathe([[0.001, -0.1], [0.12, -0.1], [0.165, -0.05], [0.17, 0.04], [0.16, 0.1], [0.001, 0.1]], 18, 0.7),
+  boot: (() => {
+    const g = new THREE.CapsuleGeometry(0.062, 0.17, 4, 12);
+    g.rotateX(Math.PI / 2);
+    g.scale(1.12, 0.95, 1);
+    g.translate(0, 0.03, 0.07);
+    return g;
+  })(),
+  sole: (() => {
+    const s = new THREE.Shape();
+    const w = 0.075;
+    s.moveTo(-w, -0.1);
+    s.lineTo(w, -0.1);
+    s.quadraticCurveTo(w + 0.008, 0.16, 0, 0.255);
+    s.quadraticCurveTo(-w - 0.008, 0.16, -w, -0.1);
+    const g = new THREE.ExtrudeGeometry(s, { depth: 0.035, bevelEnabled: true, bevelThickness: 0.006, bevelSize: 0.006, bevelSegments: 1, curveSegments: 8 });
+    g.rotateX(Math.PI / 2);
+    g.translate(0, -0.005, 0);
+    return g;
+  })(),
+  shaft: new THREE.CylinderGeometry(0.068, 0.074, 0.14, 12),
+  hand: (() => {
+    const g = new THREE.SphereGeometry(0.045, 12, 10);
+    g.scale(0.85, 1.25, 0.6);
+    return g;
+  })(),
+  belt: lathe([[0.176, 0], [0.18, 0.05]], 20, 0.66),
+  pouch: (() => {
+    const g = new THREE.CapsuleGeometry(0.045, 0.06, 3, 8);
+    g.scale(1.1, 1, 0.75);
+    return g;
+  })(),
+};
+let backPrint: THREE.MeshStandardMaterial | null = null;
+function backPrintMaterial(): THREE.MeshStandardMaterial {
+  backPrint ??= new THREE.MeshStandardMaterial({ map: wordmarkTexture('light', false), transparent: true, alphaTest: 0.1, roughness: 0.8, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2 });
+  return backPrint;
+}
 
 const mat = (color: string, roughness = 0.85, metalness = 0) => new THREE.MeshStandardMaterial({ color, roughness, metalness });
 
@@ -71,10 +126,12 @@ export function Worker({ role, look, anim, scale = 1, pace = 1 }: WorkerProps) {
       hair: mat(HAIR[(look >> 3) % HAIR.length], 0.9),
       shirt: mat(SHIRT[role]),
       pants: mat(PANTS[role]),
-      boot: mat('#2a2622', 0.9),
-      sole: mat('#141211', 0.95),
+      boot: mat('#4a3423', 0.78),
+      sole: mat('#18140f', 0.95),
       teal: new THREE.MeshStandardMaterial({ color: PALETTE.egoTeal, emissive: PALETTE.egoTeal, emissiveIntensity: 0.2, roughness: 0.7 }),
-      belt: mat('#4a3522', 0.9),
+      belt: mat('#1c1d20', 0.85),
+      leather: mat('#5b3f27', 0.75),
+      buckle: mat('#c9ced3', 0.35, 0.8),
       tool: mat('#f2c230', 0.6),
       steel: mat('#b9bfc5', 0.4, 0.7),
       dark: mat('#1d1f22', 0.7),
@@ -251,17 +308,11 @@ export function Worker({ role, look, anim, scale = 1, pace = 1 }: WorkerProps) {
   // Boot meshes are placed relative to the ankle pivot (the foot group sits at the bottom of the shin).
   const Boot = ({ side }: { side: 1 | -1 }) => (
     <group>
-      <mesh position={[0, 0.02, 0.06]} material={materials.boot} castShadow>
-        <boxGeometry args={[0.14, 0.11, 0.3]} />
-      </mesh>
-      <mesh position={[0, 0.06, 0.2]} material={materials.boot} scale={[1, 0.7, 1]}>
-        <sphereGeometry args={[0.07, 10, 8]} />
-      </mesh>
-      <mesh position={[0, -0.035, 0.07]} material={materials.sole}>
-        <boxGeometry args={[0.15, 0.03, 0.33]} />
-      </mesh>
-      <mesh position={[side * 0.0, 0.12, 0.02]} material={materials.pants}>
-        <cylinderGeometry args={[0.07, 0.075, 0.12, 10]} />
+      <mesh geometry={GEO.boot} material={materials.boot} castShadow />
+      <mesh geometry={GEO.sole} position={[0, 0.0, 0]} material={materials.sole} />
+      <mesh geometry={GEO.shaft} position={[side * 0.0, 0.1, 0.0]} material={materials.boot} />
+      <mesh position={[0, 0.17, 0]} material={materials.pants}>
+        <cylinderGeometry args={[0.072, 0.076, 0.06, 12]} />
       </mesh>
     </group>
   );
@@ -269,9 +320,7 @@ export function Worker({ role, look, anim, scale = 1, pace = 1 }: WorkerProps) {
   return (
     <group ref={root} scale={scale * build}>
       <group ref={refs.pelvis} position={[0, PELVIS_Y, 0]}>
-        <mesh position={[0, -0.02, 0]} material={materials.pants} castShadow scale={[heavy, 1, 1]}>
-          <boxGeometry args={[0.34, 0.2, 0.22]} />
-        </mesh>
+        <mesh geometry={GEO.hips} position={[0, -0.02, 0]} material={materials.pants} castShadow scale={[heavy, 1, 1]} />
         {/* Legs: thigh → knee → shin → ankle/foot */}
         {([-1, 1] as const).map((side) => (
           <group key={side} ref={side < 0 ? refs.legL : refs.legR} position={[side * 0.1, -0.05, 0]}>
@@ -291,12 +340,9 @@ export function Worker({ role, look, anim, scale = 1, pace = 1 }: WorkerProps) {
         ))}
         {/* Torso */}
         <group ref={refs.torso} position={[0, 0.06, 0]}>
-          <mesh position={[0, 0.3, 0]} material={materials.shirt} castShadow scale={[heavy, 1, 1]}>
-            <boxGeometry args={[0.4, 0.54, 0.23]} />
-          </mesh>
-          <mesh position={[0, 0.32, 0]} material={materials.shirt} castShadow scale={[heavy, 1, 1]}>
-            <capsuleGeometry args={[0.2, 0.28, 4, 12]} />
-          </mesh>
+          <mesh geometry={GEO.torso} position={[0, 0.03, 0]} material={materials.shirt} castShadow scale={[heavy, 1, 1]} />
+          <mesh geometry={GEO.hem} position={[0, 0.02, 0]} material={materials.shirt} scale={[heavy, 1, 1]} />
+          {role === 'technician' && <mesh position={[0, 0.36, -0.128]} rotation={[0, Math.PI, 0]} material={backPrintMaterial()}><planeGeometry args={[0.26, 0.065]} /></mesh>}
           {/* Shoulder caps round the silhouette */}
           {([-1, 1] as const).map((side) => (
             <mesh key={side} position={[side * 0.24 * heavy, 0.5, 0]} material={materials.shirt}>
@@ -318,9 +364,11 @@ export function Worker({ role, look, anim, scale = 1, pace = 1 }: WorkerProps) {
           <mesh position={[0.1, 0.42, 0.12]} material={materials.teal}>
             <boxGeometry args={[0.05, 0.05, 0.01]} />
           </mesh>
-          <mesh position={[0, 0.36, -0.12]} material={materials.teal}>
-            <boxGeometry args={[0.16, 0.08, 0.01]} />
-          </mesh>
+          {role !== 'technician' && (
+            <mesh position={[0, 0.36, -0.12]} material={materials.teal}>
+              <boxGeometry args={[0.16, 0.08, 0.01]} />
+            </mesh>
+          )}
           {role === 'installer' && (
             <group>
               <mesh position={[0, 0.3, 0]} material={materials.hiVis} scale={[heavy, 1, 1]}>
@@ -335,15 +383,12 @@ export function Worker({ role, look, anim, scale = 1, pace = 1 }: WorkerProps) {
           )}
           {tech && (
             <group position={[0, 0.02, 0]}>
-              <mesh material={materials.belt} scale={[heavy, 1, 1]}>
-                <boxGeometry args={[0.44, 0.08, 0.28]} />
+              <mesh geometry={GEO.belt} position={[0, -0.025, 0]} material={materials.belt} scale={[heavy, 1, 1]} />
+              <mesh position={[0, 0.0, 0.118]} material={materials.buckle}>
+                <boxGeometry args={[0.05, 0.04, 0.012]} />
               </mesh>
-              <mesh position={[0.2 * heavy, -0.09, 0.08]} material={materials.belt}>
-                <boxGeometry args={[0.1, 0.16, 0.12]} />
-              </mesh>
-              <mesh position={[-0.2 * heavy, -0.09, 0.08]} material={materials.belt}>
-                <boxGeometry args={[0.1, 0.16, 0.12]} />
-              </mesh>
+              <mesh geometry={GEO.pouch} position={[0.17 * heavy, -0.07, 0.07]} rotation={[0, -0.5, 0]} material={materials.leather} />
+              <mesh geometry={GEO.pouch} position={[-0.17 * heavy, -0.07, 0.07]} rotation={[0, 0.5, 0]} material={materials.leather} scale={[0.85, 0.85, 0.85]} />
               <mesh position={[0.12, -0.08, -0.14]} material={materials.dark}>
                 <boxGeometry args={[0.07, 0.1, 0.04]} />
               </mesh>
@@ -453,9 +498,7 @@ export function Worker({ role, look, anim, scale = 1, pace = 1 }: WorkerProps) {
               <Limb length={0.3} radius={0.06} color={materials.shirt} />
               <group ref={side < 0 ? refs.foreL : refs.foreR} position={[0, -0.3, 0]}>
                 <Limb length={0.28} radius={0.05} color={materials.skin} taper={0.75} />
-                <mesh position={[0, -0.31, 0.01]} material={materials.skin}>
-                  <boxGeometry args={[0.075, 0.1, 0.045]} />
-                </mesh>
+                <mesh geometry={GEO.hand} position={[0, -0.31, 0.01]} material={materials.skin} />
                 <mesh position={[side * -0.04, -0.28, 0.025]} material={materials.skin} rotation={[0, 0, side * 0.5]}>
                   <boxGeometry args={[0.025, 0.05, 0.025]} />
                 </mesh>

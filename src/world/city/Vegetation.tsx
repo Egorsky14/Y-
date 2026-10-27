@@ -53,7 +53,7 @@ function jittered(geo: THREE.BufferGeometry, amount: number, rnd: () => number):
  * low-frequency noise along its normals, welded so normals are smooth, and vertex-shaded darker
  * underneath and toward the core so it reads as volume under the sun rather than faceted plastic.
  */
-function mass(rnd: () => number, radius: number, position: [number, number, number], scale: [number, number, number], color: THREE.Color, { detail = 2, lumps = 0.22, shade = 0.42, jitter = 0.07 } = {}): THREE.BufferGeometry {
+function mass(rnd: () => number, radius: number, position: [number, number, number], scale: [number, number, number], color: THREE.Color, { detail = 2, lumps = 0.22, shade = 0.42, jitter = 0.07, faceted = false } = {}): THREE.BufferGeometry {
   let g: THREE.BufferGeometry = new THREE.IcosahedronGeometry(1, detail);
   g.deleteAttribute('normal');
   g.deleteAttribute('uv');
@@ -80,6 +80,12 @@ function mass(rnd: () => number, radius: number, position: [number, number, numb
   }
   g.setAttribute('color', new THREE.BufferAttribute(colors, 3));
   g.translate(...position);
+  // Stone keeps chiselled facets: per-face normals from the same welded, displaced surface.
+  if (faceted) {
+    const flat = g.toNonIndexed();
+    flat.computeVertexNormals();
+    return flat;
+  }
   return g.toNonIndexed();
 }
 
@@ -335,10 +341,10 @@ function buildSpecies(species: Species): THREE.BufferGeometry {
       return merge(parts);
     }
     case 'rock':
-      return mass(rnd, 0.45, [0, 0.24, 0], [1.2, 0.72, 1], new THREE.Color('#ad9576'), { detail: 1, lumps: 0.16, shade: 0.35, jitter: 0.05 });
+      return mass(rnd, 0.45, [0, 0.24, 0], [1.2, 0.72, 1], new THREE.Color('#ad9576'), { detail: 1, lumps: 0.3, shade: 0.35, jitter: 0.05, faceted: true });
     case 'boulder': {
-      const parts = [mass(rnd, 0.9, [0, 0.5, 0], [1.3, 0.8, 1], new THREE.Color('#a08870'), { detail: 2, lumps: 0.2, shade: 0.38, jitter: 0.05 })];
-      parts.push(mass(rnd, 0.5, [0.95, 0.28, 0.3], [1.1, 0.75, 1], new THREE.Color('#ad9576'), { detail: 1, lumps: 0.16, shade: 0.38, jitter: 0.05 }));
+      const parts = [mass(rnd, 0.9, [0, 0.5, 0], [1.3, 0.8, 1], new THREE.Color('#a08870'), { detail: 1, lumps: 0.3, shade: 0.38, jitter: 0.05, faceted: true })];
+      parts.push(mass(rnd, 0.5, [0.95, 0.28, 0.3], [1.1, 0.75, 1], new THREE.Color('#ad9576'), { detail: 1, lumps: 0.3, shade: 0.38, jitter: 0.05, faceted: true }));
       return merge(parts);
     }
   }
