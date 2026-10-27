@@ -4,6 +4,7 @@ import { gableEndGeometry, gableRoofGeometry, hipRoofGeometry, MeshBuilder } fro
 import { makeDecoRng } from '../assets/random';
 import { DOOR_COLORS, roofMaterial, STATIC_MATERIALS, UV_SCALES, WALL_TINTS, wallMaterial, type RoofKind } from './materials';
 import { hashLot, yardPlan } from '../city/yardLayout';
+import { DRIVEWAYS } from './driveways';
 import { addCondenser } from '../props/hvac';
 import { condenserPosition, condenserSideDir, HOUSE_HALF_WIDTH } from '@/game/world/cityLayout';
 
@@ -203,9 +204,6 @@ export function buildNeighborhood(lots: Lot[]): THREE.Group {
 }
 
 /** Single-lot build (used by tests and previews). */
-/** Driveway of every built house in its local frame (garage-door line at frontZ), for parked cars. */
-export const DRIVEWAYS = new Map<string, { x: number; w: number; frontZ: number }>();
-
 export function buildHouse(lot: Lot): THREE.Group {
   const b = new MeshBuilder(houseMaterialResolver, UV_SCALES);
   addHouse(b, lot);

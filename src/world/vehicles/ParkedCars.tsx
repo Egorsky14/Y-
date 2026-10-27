@@ -3,9 +3,7 @@ import * as THREE from 'three';
 import { useGLTF } from '@react-three/drei';
 import * as BGU from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { useGame } from '@/app/store';
-import { HOUSE_LOTS, HQ_LOT, lotLocalHeading, lotLocalToWorld } from '@/game/world/cityLayout';
-import { hashLot } from '../city/yardLayout';
-import { DRIVEWAYS } from '../buildings/HouseBuilder';
+import { CIVILIAN_MODELS as MODELS, parkedCarSpots, type CivilianModel as Model, type ParkedCarSpot as Spot } from './parkedCarSpots';
 
 /**
  * Parked civilian cars: residents' cars in about half the driveways, visitors at the HQ front row
@@ -14,45 +12,8 @@ import { DRIVEWAYS } from '../buildings/HouseBuilder';
  * material and drawn as one InstancedMesh each, with the paint tinted per car.
  */
 
-const MODELS = ['civilian-sedan', 'civilian-suv'] as const;
-type Model = (typeof MODELS)[number];
 const url = (m: Model) => `${import.meta.env.BASE_URL}models/vehicles/${m}.glb`;
 for (const m of MODELS) useGLTF.preload(url(m));
-
-const PAINTS = ['#e6e7e8', '#a7abb0', '#5b6068', '#8b2c2c', '#2f4c74', '#c8b998', '#34493f', '#d9d4c8', '#6f747b'];
-
-interface Spot {
-  x: number;
-  z: number;
-  heading: number;
-  model: Model;
-  paint: string;
-}
-
-function hqSpot(x: number, z: number, heading: number, seed: number): Spot {
-  return { x: HQ_LOT.center.x + x, z: HQ_LOT.center.z + z, heading, model: MODELS[seed % 2], paint: PAINTS[(seed >> 2) % PAINTS.length] };
-}
-
-export function parkedCarSpots(staff: number): Spot[] {
-  const out: Spot[] = [];
-  // Residents: about half the houses have a car on the driveway, two on wide driveways.
-  for (const lot of HOUSE_LOTS) {
-    const d = DRIVEWAYS.get(lot.id);
-    const h = hashLot(lot.id + 'car');
-    if (!d || h % 9 > 3) continue;
-    const cars = d.w > 7 && h % 2 === 0 ? [-1.4, 1.4] : [0];
-    const heading = lotLocalHeading(lot, 0, 1); // nose toward the garage
-    cars.forEach((off, i) => {
-      const p = lotLocalToWorld(lot, d.x + off, d.frontZ - 3.4 - i * 0.4);
-      out.push({ ...p, heading, model: MODELS[(h >> (3 + i)) % 2], paint: PAINTS[(h >> (5 + i * 3)) % PAINTS.length] });
-    });
-  }
-  // HQ visitors (front row, nose to the north curb): three of six stalls.
-  for (const i of [0, 2, 3]) out.push(hqSpot(-24.5 + (i + 0.5) * 2.8, -30.7, Math.PI, 11 + i * 7));
-  // HQ staff row (nose to the south curb): one car per employee, up to nine.
-  for (let i = 0; i < Math.min(9, staff); i++) out.push(hqSpot(-54 + (i + 0.5) * 3.0, 18.4, 0, 31 + i * 13));
-  return out;
-}
 
 interface Part {
   geometry: THREE.BufferGeometry;
