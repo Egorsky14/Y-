@@ -1,3 +1,4 @@
+/// <reference types="node" />
 import { describe, expect, it } from 'vitest';
 import { readFileSync, statSync } from 'node:fs';
 import { hqParkingStalls, HQ_LOT } from '@/game/world/cityLayout';
