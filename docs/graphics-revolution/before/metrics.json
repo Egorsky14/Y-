@@ -1,0 +1,117 @@
+{
+  "label": "before",
+  "size": "1920x1080",
+  "shots": {
+    "01-overview-1000": {
+      "calls": 672,
+      "triangles": 1012006,
+      "geometries": 452,
+      "textures": 51
+    },
+    "02-hq-1000": {
+      "calls": 638,
+      "triangles": 1013826,
+      "geometries": 462,
+      "textures": 52
+    },
+    "03-hq-parking-1000": {
+      "calls": 535,
+      "triangles": 1022418,
+      "geometries": 468,
+      "textures": 53
+    },
+    "04-neighborhood-1000": {
+      "calls": 392,
+      "triangles": 990376,
+      "geometries": 471,
+      "textures": 54
+    },
+    "05-street-close-1000": {
+      "calls": 394,
+      "triangles": 981620,
+      "geometries": 501,
+      "textures": 55
+    },
+    "06-supply-depot-1000": {
+      "calls": 440,
+      "triangles": 972464,
+      "geometries": 504,
+      "textures": 55
+    },
+    "07-hq-van-close-1000": {
+      "calls": 554,
+      "triangles": 1034608,
+      "geometries": 504,
+      "textures": 55
+    },
+    "08-service-wide-1000": {
+      "calls": 493,
+      "triangles": 1018714,
+      "geometries": 513,
+      "textures": 55
+    },
+    "09-van-at-home-1000": {
+      "calls": 548,
+      "triangles": 1034406,
+      "geometries": 517,
+      "textures": 55
+    },
+    "10-tech-unit-close-1000": {
+      "calls": 477,
+      "triangles": 1016322,
+      "geometries": 517,
+      "textures": 55
+    },
+    "11-tech-unit-close-b-1000": {
+      "calls": 439,
+      "triangles": 991476,
+      "geometries": 518,
+      "textures": 56
+    },
+    "12-overview-1730": {
+      "calls": 675,
+      "triangles": 1014274,
+      "geometries": 516,
+      "textures": 56
+    },
+    "13-neighborhood-1730": {
+      "calls": 493,
+      "triangles": 1008698,
+      "geometries": 516,
+      "textures": 56
+    },
+    "14-hq-1730": {
+      "calls": 542,
+      "triangles": 993712,
+      "geometries": 516,
+      "textures": 56
+    },
+    "15-overview-2100": {
+      "calls": 675,
+      "triangles": 1014464,
+      "geometries": 516,
+      "textures": 57
+    },
+    "16-hq-2100": {
+      "calls": 542,
+      "triangles": 991862,
+      "geometries": 516,
+      "textures": 57
+    }
+  },
+  "errors": [],
+  "serviceGeo": {
+    "house": {
+      "x": -21,
+      "z": 25
+    },
+    "tech": {
+      "x": -12.420286975267718,
+      "z": 15.936021896024588
+    },
+    "van": {
+      "x": -13.05,
+      "z": 3.75
+    }
+  }
+}
