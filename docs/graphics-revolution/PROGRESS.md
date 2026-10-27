@@ -59,3 +59,12 @@ overview +2.1–2.9%, neighborhood +1.0–1.8%, technician close-up +2.7–3.4%.
 
 Next: date-palm fronds, fleet preview check, browser test matrix (one process at a time), final
 captures at 1080p / 1366×768 / 390×844, final paired performance, report.
+- 989ec9b Date palm fronds. 3204984 / 3471142 graphics asset tests. 94d99fe vehicle wear. 5b1ea78 mountains softened.
+- Browser matrix (21 isolated runs) stopped by the system low-memory guard: graphics spec passed on
+  desktop-1080p, laptop-768p, small-1024 (exit 0); gameplay interrupted; 17 not run. Not restarted.
+- Final evidence: after/, after-1366/, after-390/, compare/ (13 sheets), final-perf.json
+  (paired: +1.5% to +4.9% GPU per view).
+- Final validation at HEAD: tsc and lint clean, 92 unit tests passed (3 opt-in skipped), production build OK.
+
+Status: complete for this sprint. Next action if resumed: rerun the remaining browser specs one at a
+time when memory allows, then the items under "Next graphics milestone" in docs/design/GRAPHICS_REVOLUTION.md.

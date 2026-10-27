@@ -1,0 +1,135 @@
+{
+  "label": "after-1366",
+  "size": "1366x768",
+  "shots": {
+    "01-overview-1000": {
+      "calls": 725,
+      "triangles": 1197194,
+      "geometries": 472,
+      "textures": 52
+    },
+    "02-hq-1000": {
+      "calls": 712,
+      "triangles": 1199266,
+      "geometries": 482,
+      "textures": 53
+    },
+    "03-hq-parking-1000": {
+      "calls": 584,
+      "triangles": 1176549,
+      "geometries": 488,
+      "textures": 54
+    },
+    "04-neighborhood-1000": {
+      "calls": 440,
+      "triangles": 1143049,
+      "geometries": 491,
+      "textures": 55
+    },
+    "05-street-close-1000": {
+      "calls": 442,
+      "triangles": 1134293,
+      "geometries": 521,
+      "textures": 56
+    },
+    "06-supply-depot-1000": {
+      "calls": 474,
+      "triangles": 1124073,
+      "geometries": 524,
+      "textures": 56
+    },
+    "07-hq-van-close-1000": {
+      "calls": 608,
+      "triangles": 1202094,
+      "geometries": 524,
+      "textures": 56
+    },
+    "08-service-wide-1000": {
+      "calls": 586,
+      "triangles": 1207216,
+      "geometries": 551,
+      "textures": 59
+    },
+    "09-van-at-home-1000": {
+      "calls": 642,
+      "triangles": 1223292,
+      "geometries": 555,
+      "textures": 59
+    },
+    "10-tech-unit-close-1000": {
+      "calls": 565,
+      "triangles": 1195861,
+      "geometries": 555,
+      "textures": 59
+    },
+    "11-tech-unit-close-b-1000": {
+      "calls": 531,
+      "triangles": 1169083,
+      "geometries": 556,
+      "textures": 60
+    },
+    "12-overview-1730": {
+      "calls": 765,
+      "triangles": 1220774,
+      "geometries": 556,
+      "textures": 60
+    },
+    "13-neighborhood-1730": {
+      "calls": 584,
+      "triangles": 1197496,
+      "geometries": 556,
+      "textures": 60
+    },
+    "14-hq-1730": {
+      "calls": 629,
+      "triangles": 1175067,
+      "geometries": 556,
+      "textures": 60
+    },
+    "17-overview-1845": {
+      "calls": 765,
+      "triangles": 1220964,
+      "geometries": 556,
+      "textures": 61
+    },
+    "18-street-close-1845": {
+      "calls": 461,
+      "triangles": 1147253,
+      "geometries": 556,
+      "textures": 61
+    },
+    "19-hq-van-close-1845": {
+      "calls": 525,
+      "triangles": 1178085,
+      "geometries": 556,
+      "textures": 61
+    },
+    "15-overview-2100": {
+      "calls": 765,
+      "triangles": 1223004,
+      "geometries": 556,
+      "textures": 61
+    },
+    "16-hq-2100": {
+      "calls": 629,
+      "triangles": 1173217,
+      "geometries": 556,
+      "textures": 61
+    }
+  },
+  "errors": [],
+  "serviceGeo": {
+    "house": {
+      "x": -21,
+      "z": 25
+    },
+    "tech": {
+      "x": -11.959999999999999,
+      "z": 20.98
+    },
+    "van": {
+      "x": -13.05,
+      "z": 3.75
+    }
+  }
+}

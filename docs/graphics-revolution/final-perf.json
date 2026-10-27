@@ -1,0 +1,116 @@
+{
+  "01-overview-1000": {
+    "gpuBase": [
+      6.01,
+      6.09
+    ],
+    "gpuNew": [
+      6.33,
+      6.34
+    ],
+    "gpuDeltaPct": 4.7,
+    "fpsBase": 152.8,
+    "fpsNew": 146.2,
+    "frameMsBase": 6.54,
+    "frameMsNew": 6.84,
+    "callsBase": 672,
+    "callsNew": 725,
+    "trisBase": 1012006,
+    "trisNew": 1197194
+  },
+  "02-hq-1000": {
+    "gpuBase": [
+      5.89,
+      6
+    ],
+    "gpuNew": [
+      6.22,
+      6.25
+    ],
+    "gpuDeltaPct": 4.9,
+    "fpsBase": 156.3,
+    "fpsNew": 149.8,
+    "frameMsBase": 6.41,
+    "frameMsNew": 6.68,
+    "callsBase": 638,
+    "callsNew": 712,
+    "trisBase": 1013826,
+    "trisNew": 1199266
+  },
+  "04-neighborhood-1000": {
+    "gpuBase": [
+      4.86,
+      4.95
+    ],
+    "gpuNew": [
+      4.95,
+      5.01
+    ],
+    "gpuDeltaPct": 1.5,
+    "fpsBase": 192.7,
+    "fpsNew": 188.9,
+    "frameMsBase": 5.19,
+    "frameMsNew": 5.29,
+    "callsBase": 392,
+    "callsNew": 440,
+    "trisBase": 986296,
+    "trisNew": 1138969
+  },
+  "08-service-wide-1000": {
+    "gpuBase": [
+      5.37,
+      5.52
+    ],
+    "gpuNew": [
+      5.63,
+      5.64
+    ],
+    "gpuDeltaPct": 3.5,
+    "fpsBase": 170.9,
+    "fpsNew": 164.3,
+    "frameMsBase": 5.86,
+    "frameMsNew": 6.09,
+    "callsBase": 532,
+    "callsNew": 586,
+    "trisBase": 1039730,
+    "trisNew": 1207216
+  },
+  "10-tech-unit-close-1000": {
+    "gpuBase": [
+      4.69,
+      4.76
+    ],
+    "gpuNew": [
+      4.82,
+      4.91
+    ],
+    "gpuDeltaPct": 3,
+    "fpsBase": 196.9,
+    "fpsNew": 189.7,
+    "frameMsBase": 5.08,
+    "frameMsNew": 5.27,
+    "callsBase": 516,
+    "callsNew": 565,
+    "trisBase": 1041730,
+    "trisNew": 1193821
+  },
+  "15-overview-2100": {
+    "gpuBase": [
+      5.66,
+      5.7
+    ],
+    "gpuNew": [
+      5.91,
+      5.89
+    ],
+    "gpuDeltaPct": 3.9,
+    "fpsBase": 163.3,
+    "fpsNew": 156.2,
+    "frameMsBase": 6.13,
+    "frameMsNew": 6.4,
+    "callsBase": 712,
+    "callsNew": 765,
+    "trisBase": 1035776,
+    "trisNew": 1220964
+  }
+}

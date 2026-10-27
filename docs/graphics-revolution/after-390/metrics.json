@@ -1,0 +1,49 @@
+{
+  "label": "after-390",
+  "size": "390x844",
+  "shots": {
+    "01-overview-1000": {
+      "calls": 634,
+      "triangles": 1170396,
+      "geometries": 439,
+      "textures": 49
+    },
+    "02-hq-1000": {
+      "calls": 612,
+      "triangles": 1145681,
+      "geometries": 470,
+      "textures": 55
+    },
+    "03-hq-parking-1000": {
+      "calls": 527,
+      "triangles": 1152283,
+      "geometries": 476,
+      "textures": 56
+    },
+    "04-neighborhood-1000": {
+      "calls": 457,
+      "triangles": 1125051,
+      "geometries": 507,
+      "textures": 58
+    },
+    "05-street-close-1000": {
+      "calls": 430,
+      "triangles": 1115989,
+      "geometries": 510,
+      "textures": 58
+    },
+    "06-supply-depot-1000": {
+      "calls": 426,
+      "triangles": 1100583,
+      "geometries": 531,
+      "textures": 58
+    },
+    "07-hq-van-close-1000": {
+      "calls": 612,
+      "triangles": 1184308,
+      "geometries": 531,
+      "textures": 58
+    }
+  },
+  "errors": []
+}
