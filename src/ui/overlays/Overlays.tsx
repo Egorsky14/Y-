@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useApp, useGame } from '@/app/store';
 import { lotById } from '@/game/world/cityLayout';
+import { serviceSiteCamera } from '@/world/scene/serviceCall';
 import { deviceProfile } from '@/app/device';
 
 export function Toasts() {
@@ -27,7 +28,7 @@ export function Toasts() {
       if (job) {
         select({ kind: 'job', id: job.id });
         const lot = lotById(s.customers[job.customerId].lotId);
-        if (lot) camera({ type: 'focus', target: lot.center, distance: 60 });
+        if (lot) camera(serviceSiteCamera(lot));
       }
     } else if (t.focus.kind === 'vehicle') {
       select({ kind: 'vehicle', id: t.focus.id });

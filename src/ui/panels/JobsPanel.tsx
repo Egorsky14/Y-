@@ -4,6 +4,7 @@ import { PanelShell, Tabs } from './PanelShell';
 import { JobFlow } from './JobFlow';
 import { faultById } from '@/game/jobs/faults';
 import { lotById } from '@/game/world/cityLayout';
+import { serviceSiteCamera } from '@/world/scene/serviceCall';
 import { Money } from '../components/common';
 import { attentionQueue, waitingOnWarranty } from '@/game/operations/automation';
 
@@ -65,7 +66,7 @@ export function JobsPanel() {
                     const lot = lotById(customers[current.customerId].lotId)!;
                     select({ kind: 'job', id: current.id });
                     useApp.getState().openPanel(null);
-                    camera({ type: 'focus', target: lot.center, distance: 60 });
+                    camera(serviceSiteCamera(lot));
                   }}
                 >
                   Show on map

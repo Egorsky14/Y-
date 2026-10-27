@@ -13,7 +13,8 @@ function cached(key: string, make: () => THREE.Material): THREE.Material {
   return m;
 }
 
-export const WALL_TINTS = ['#f0e3c8', '#e2c9a2', '#f6f3ea', '#e9c6a3', '#d9d2c4', '#cfd6c6', '#f1d9b8', '#e6dccb'];
+// Las Vegas stucco: soft whites and creams, warm tans and adobe, taupe and sage gray (multiplied over the stucco map).
+export const WALL_TINTS = ['#f4efe2', '#ead9b9', '#dcc09a', '#cfa983', '#d8b39a', '#bfae95', '#c3c4b4', '#d6d2c8', '#e8c9a8', '#b9a083'];
 export const DOOR_COLORS = ['#6f3f24', '#1b8f86', '#2d3a4a', '#8a2d2d', '#3f3a35'];
 
 export type RoofKind = 'tile' | 'shingle-slate' | 'shingle-brown' | 'shingle-charcoal';

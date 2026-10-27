@@ -302,14 +302,14 @@ function buildSpecies(species: Species): THREE.BufferGeometry {
         parts.push(colored(transformed(new THREE.CylinderGeometry(0.07, 0.12, 1.6, 6), [Math.cos(a) * 0.5, 2.7, Math.sin(a) * 0.5], [Math.sin(a) * 0.5, 0, -Math.cos(a) * 0.5]), trunkColor, 0.1, rnd));
       }
       const blobs: [number, number, number, number][] = [[0, 3.8, 0, 1.6], [1.1, 3.4, 0.4, 1.2], [-1.0, 3.5, -0.5, 1.1], [0.3, 3.2, 1.1, 1.0], [-0.3, 3.3, -1.1, 0.95], [0.6, 4.4, -0.3, 1.0]];
-      for (const [x, y, z, r] of blobs) parts.push(mass(rnd, r, [x, y, z], [1, 0.82, 1], leaf.clone().offsetHSL((rnd() - 0.5) * 0.03, 0, (rnd() - 0.5) * 0.04), { detail: 2, lumps: 0.2, shade: 0.5, jitter: 0.06 }));
+      for (const [x, y, z, r] of blobs) parts.push(mass(rnd, r, [x, y, z], [1, 0.82, 1], leaf.clone().offsetHSL((rnd() - 0.5) * 0.03, 0, (rnd() - 0.5) * 0.04), { detail: r >= 1.5 ? 2 : 1, lumps: 0.2, shade: 0.5, jitter: 0.06 }));
       return merge(parts);
     }
     case 'shrub-sage':
     case 'shrub-green':
     case 'shrub-red': {
       const color = species === 'shrub-sage' ? new THREE.Color('#a0aa8c') : species === 'shrub-red' ? new THREE.Color('#717d4a') : new THREE.Color('#62803f');
-      const parts = [mass(rnd, 0.6, [0, 0.46, 0], [1, 0.8, 1], color, { detail: 2, lumps: 0.18, shade: 0.5 })];
+      const parts = [mass(rnd, 0.6, [0, 0.46, 0], [1, 0.8, 1], color, { detail: 1, lumps: 0.18, shade: 0.5 })];
       parts.push(mass(rnd, 0.4, [0.35, 0.38, 0.2], [1, 0.85, 1], color, { detail: 1, lumps: 0.15, shade: 0.5 }));
       if (species === 'shrub-red') for (let i = 0; i < 6; i++) parts.push(colored(transformed(new THREE.ConeGeometry(0.03, 0.9, 4), [(rnd() - 0.5) * 0.6, 0.9, (rnd() - 0.5) * 0.6], [(rnd() - 0.5) * 0.5, 0, (rnd() - 0.5) * 0.5]), new THREE.Color('#c84b3a'), 0.1, rnd));
       return merge(parts);
@@ -331,7 +331,7 @@ function buildSpecies(species: Species): THREE.BufferGeometry {
     case 'flower-pink':
     case 'flower-yellow': {
       const bloom = species === 'flower-pink' ? new THREE.Color('#e46aa7') : new THREE.Color('#f2c230');
-      const parts = [mass(rnd, 0.45, [0, 0.36, 0], [1, 0.75, 1], new THREE.Color('#567a3a'), { detail: 2, lumps: 0.15, shade: 0.45 })];
+      const parts = [mass(rnd, 0.45, [0, 0.36, 0], [1, 0.75, 1], new THREE.Color('#567a3a'), { detail: 1, lumps: 0.15, shade: 0.45 })];
       for (let i = 0; i < 9; i++) parts.push(colored(transformed(new THREE.SphereGeometry(0.07, 5, 4), [(rnd() - 0.5) * 0.7, 0.55 + rnd() * 0.25, (rnd() - 0.5) * 0.7]), bloom, 0.08, rnd));
       return merge(parts);
     }

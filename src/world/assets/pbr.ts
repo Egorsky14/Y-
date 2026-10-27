@@ -376,7 +376,7 @@ export function lawnPbr(): PbrSet {
       const warm = rnd() < 0.5;
       for (const dx of [-size, 0, size]) for (const dy of [-size, 0, size]) {
         const g = ctx.createRadialGradient(x + dx, y + dy, 0, x + dx, y + dy, r);
-        g.addColorStop(0, warm ? 'rgba(150,150,80,0.22)' : 'rgba(40,70,30,0.25)');
+        g.addColorStop(0, warm ? 'rgba(150,150,80,0.12)' : 'rgba(40,70,30,0.14)');
         g.addColorStop(1, 'rgba(0,0,0,0)');
         ctx.fillStyle = g;
         ctx.fillRect(x + dx - r, y + dy - r, r * 2, r * 2);

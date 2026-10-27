@@ -1,4 +1,4 @@
-import { curbParking, lotById, workPosition, type Lot } from '@/game/world/cityLayout';
+import { condenserPosition, curbParking, lotById, workPosition, type Lot } from '@/game/world/cityLayout';
 import type { GameState } from '@/game/simulation/types';
 
 /**
@@ -7,6 +7,17 @@ import type { GameState } from '@/game/simulation/types';
  * pulls into the curb lane, the technician steps out of the curb-side door, walks to the unit at a
  * walking pace and kneels at the service panel, and the tools appear where they are set down.
  */
+
+/**
+ * Camera framing for a customer's service site: from the street side, centred between the curb
+ * spot where the van parks and the condenser, close enough that the van, the technician and the
+ * unit read at once with the house behind them.
+ */
+export function serviceSiteCamera(lot: Lot): { type: 'focus'; target: { x: number; z: number }; distance: number; azimuth: number; elevation: number; targetY: number } {
+  const curb = curbParking(lot);
+  const unit = condenserPosition(lot);
+  return { type: 'focus', target: { x: curb.x * 0.45 + unit.x * 0.55, z: curb.z * 0.45 + unit.z * 0.55 }, distance: 34, azimuth: Math.atan2(curb.x - unit.x, curb.z - unit.z) + 0.55, elevation: 0.66, targetY: 0.6 };
+}
 
 /** Walking speed at 1× game speed (m/s); the walk cycle in Worker covers ~1.5 m per second. */
 export const WALK_SPEED = 1.5;
