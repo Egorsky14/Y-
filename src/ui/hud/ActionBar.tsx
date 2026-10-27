@@ -1,10 +1,11 @@
 import { useApp, useGame, type PanelId } from '@/app/store';
 import { Icon } from '../components/common';
 
-const ITEMS: { id: Exclude<PanelId, null | 'settings'>; label: string; icon: 'jobs' | 'employees' | 'fleet' | 'hq' | 'marketing' | 'finance' }[] = [
+const ITEMS: { id: Exclude<PanelId, null | 'settings'>; label: string; icon: 'jobs' | 'employees' | 'fleet' | 'supply' | 'hq' | 'marketing' | 'finance' }[] = [
   { id: 'jobs', label: 'Jobs', icon: 'jobs' },
   { id: 'employees', label: 'Team', icon: 'employees' },
   { id: 'fleet', label: 'Fleet', icon: 'fleet' },
+  { id: 'supply', label: 'Supply', icon: 'supply' },
   { id: 'hq', label: 'HQ', icon: 'hq' },
   { id: 'marketing', label: 'Marketing', icon: 'marketing' },
   { id: 'finance', label: 'Finances', icon: 'finance' },

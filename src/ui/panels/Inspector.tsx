@@ -323,10 +323,14 @@ function CommercialInspector({ lotId, onClose }: { lotId: string; onClose: () =>
   if (lotId === WAREHOUSE_LOT.id) {
     return (
       <>
-        <Head title="Mojave HVAC Supply" subtitle="Wholesale distributor · Desert Bloom Ave" onClose={onClose} />
+        <Head title="Pro Supply Depot" subtitle="Mojave HVAC Supply · Desert Bloom Ave" onClose={onClose} />
         <div className="inspector-body">
           <div className="card muted" style={{ fontSize: 13 }}>
-            Your parts and equipment come from here. The Parts Warehouse HQ upgrade stocks common parts on site and lowers parts cost by 12%.
+            Professional tools and equipment: meters, digital manifolds, vacuum pumps, recovery machines. Equip technicians and load vans; the right tool makes readings more reliable and repairs faster.
+          </div>
+          <button className="btn primary block" onClick={() => openPanel('supply')} data-testid="open-supply">Shop the Supply Depot</button>
+          <div className="card muted" style={{ fontSize: 12.5 }}>
+            Parts come from here too. The Parts Warehouse HQ upgrade stocks common parts on site and lowers parts cost by 12%.
           </div>
           <button className="btn block" onClick={() => openPanel('hq')}>View HQ upgrades</button>
         </div>

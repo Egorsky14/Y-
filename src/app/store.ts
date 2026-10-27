@@ -14,7 +14,7 @@ export interface Selection {
   id: string;
 }
 
-export type PanelId = 'jobs' | 'employees' | 'fleet' | 'hq' | 'marketing' | 'finance' | 'settings' | null;
+export type PanelId = 'jobs' | 'employees' | 'fleet' | 'supply' | 'hq' | 'marketing' | 'finance' | 'settings' | null;
 
 export interface CameraCommand {
   id: number;
@@ -80,7 +80,8 @@ interface AppState {
   loadFromKey: (key: string) => boolean;
   save: () => boolean;
   toMenu: () => void;
-  dispatch: (action: GameAction) => ActionResult;
+  /** inline: the caller shows the result itself, so a failure does not also raise the error banner. */
+  dispatch: (action: GameAction, opts?: { inline?: boolean }) => ActionResult;
   select: (selection: Selection | null) => void;
   openPanel: (panel: PanelId) => void;
   togglePanel: (panel: Exclude<PanelId, null>) => void;
@@ -174,11 +175,11 @@ export const useApp = create<AppState>((set, get) => ({
     if (engine) saveToStorage(engine.state, SAVE_KEY);
     set({ screen: 'menu', panel: null, selection: null });
   },
-  dispatch: (action) => {
+  dispatch: (action, opts) => {
     const engine = get().engine;
     if (!engine) return { ok: false, reason: 'No game running.' };
     const result = engine.dispatch(action);
-    if (!result.ok) set({ lastError: result.reason });
+    if (!result.ok && !opts?.inline) set({ lastError: result.reason });
     get().bump();
     return result;
   },
@@ -247,6 +248,17 @@ export function useGame<T>(selector: (state: GameState) => T): T {
   const version = useApp((s) => s.version);
   const engine = useApp((s) => s.engine);
   return useMemo(() => (engine ? selector(engine.state) : (undefined as unknown as T)), [version, engine]);
+}
+
+/**
+ * Like useGame, for selectors that also read component inputs (a selected technician or van):
+ * re-runs when the simulation changes or when any of `deps` changes.
+ */
+export function useGameWith<T>(selector: (state: GameState) => T, deps: unknown[]): T {
+  const version = useApp((s) => s.version);
+  const engine = useApp((s) => s.engine);
+  const key = JSON.stringify(deps);
+  return useMemo(() => (engine ? selector(engine.state) : (undefined as unknown as T)), [version, engine, key]);
 }
 
 export function getGameState(): GameState | null {

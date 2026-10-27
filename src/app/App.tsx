@@ -9,6 +9,7 @@ import { Inspector } from '@/ui/panels/Inspector';
 import { JobsPanel } from '@/ui/panels/JobsPanel';
 import { EmployeesPanel } from '@/ui/panels/EmployeesPanel';
 import { FleetPanel } from '@/ui/panels/FleetPanel';
+import { SupplyPanel } from '@/ui/panels/SupplyPanel';
 import { HqPanel } from '@/ui/panels/HqPanel';
 import { MarketingPanel } from '@/ui/panels/MarketingPanel';
 import { FinancePanel } from '@/ui/panels/FinancePanel';
@@ -125,6 +126,7 @@ export function App() {
         {panel === 'jobs' && <JobsPanel />}
         {panel === 'employees' && <EmployeesPanel />}
         {panel === 'fleet' && <FleetPanel />}
+        {panel === 'supply' && <SupplyPanel />}
         {panel === 'hq' && <HqPanel />}
         {panel === 'marketing' && <MarketingPanel />}
         {panel === 'finance' && <FinancePanel />}

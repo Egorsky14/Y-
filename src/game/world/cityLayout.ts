@@ -98,7 +98,7 @@ export const HQ_LOT: Lot = {
 export const WAREHOUSE_LOT: Lot = {
   id: 'warehouse',
   kind: 'warehouse',
-  name: 'Mojave HVAC Supply',
+  name: 'Pro Supply Depot',
   center: { x: 65, z: -150 },
   width: 110,
   depth: 80,

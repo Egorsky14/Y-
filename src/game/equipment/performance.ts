@@ -177,6 +177,46 @@ export function summarize(attrs: Attributes, fatigue: number, defs: ToolDef[]): 
   };
 }
 
+export interface ToolEstimate {
+  /** The loadout already has this tool: a second one adds nothing. */
+  already: boolean;
+  reads: { kind: MeasureKind; label: string; before: number; after: number }[];
+  /** Averages over the calls the tool helps with (minutes, with the technician's own speed). */
+  diagMinutes?: { before: number; after: number };
+  repairMinutes?: { before: number; after: number };
+  workmanship?: { before: number; after: number };
+  faults: Fault[];
+}
+
+/** What adding one tool to a loadout changes for this technician, on the calls it applies to. */
+export function toolEstimate(attrs: Attributes, fatigue: number, current: ToolDef[], add: ToolDef): ToolEstimate {
+  const already = current.some((d) => d.id === add.id);
+  const after = already ? current : [...current, add];
+  const base = measurementAccuracy(attrs, fatigue);
+  const faults = faultsHelpedBy(add);
+  const kinds = (Object.keys(MEASURE_LABELS) as MeasureKind[]).filter((k) => (add.read?.[k] ?? 0) > 0);
+  const reads = kinds.map((kind) => ({ kind, label: MEASURE_LABELS[kind], before: effectiveAccuracy(base, readGain(current, kind)), after: effectiveAccuracy(base, readGain(after, kind)) }));
+  const dm = durationMultiplier(attrs, fatigue);
+  const avg = (fn: (f: Fault) => number, list: Fault[]) => (list.length ? list.reduce((s, f) => s + fn(f), 0) / list.length : 0);
+  const est: ToolEstimate = { already, reads, faults };
+  const diagFaults = faults.filter((f) => f.evidence.some((ev) => (add.diag?.[ev.measure] ?? 0) > 0));
+  if (diagFaults.length) {
+    est.diagMinutes = {
+      before: avg((f) => BALANCE.diagnosticBaseMinutes * dm * diagMultiplier(f, current), diagFaults),
+      after: avg((f) => BALANCE.diagnosticBaseMinutes * dm * diagMultiplier(f, after), diagFaults),
+    };
+  }
+  const workFaults = faults.filter((f) => f.procedures.some((p) => (add.work?.[p] ?? 0) > 0) || (add.work?.general ?? 0) > 0);
+  if (workFaults.length) {
+    est.repairMinutes = { before: avg((f) => f.laborMinutes * dm * repairMultiplier(f, current), workFaults), after: avg((f) => f.laborMinutes * dm * repairMultiplier(f, after), workFaults) };
+  }
+  const qFaults = faults.filter((f) => qualityProcedures(f).some((p) => (add.quality?.[p] ?? 0) > 0));
+  if (qFaults.length) {
+    est.workmanship = { before: avg((f) => workmanship(f, attrs, current)!.quality, qFaults), after: avg((f) => workmanship(f, attrs, after)!.quality, qFaults) };
+  }
+  return est;
+}
+
 /** Faults a tool helps with (diagnosis or repair), for "compatible jobs" in the store. */
 export function faultsHelpedBy(def: ToolDef): Fault[] {
   return FAULTS.filter(

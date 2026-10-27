@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { useApp, useGame } from '@/app/store';
+import { useApp, useGame, useGameWith } from '@/app/store';
 import type { Job } from '@/game/simulation/types';
 import { EQUIPMENT_TIERS, faultById } from '@/game/jobs/faults';
 import { absoluteMinutes } from '@/game/simulation/time';
@@ -8,6 +8,8 @@ import { VEHICLE_SPECS } from '@/game/fleet/vehicleCatalog';
 import { etaMinutes } from '@/game/fleet/fleet';
 import { Bar, Money, Section, minutesLabel } from '../components/common';
 import { ROLE_LABELS } from '@/game/employees/roles';
+import { performanceSummary, toolsOnSite } from '@/game/equipment/performance';
+import { toolDef } from '@/game/equipment/catalog';
 
 /** The interactive heart of a service call: accept → dispatch → diagnose → quote → complete. */
 export function JobFlow({ jobId }: { jobId: string }) {
@@ -98,10 +100,35 @@ function DispatchStep({ job }: { job: Job }) {
         </select>
       </label>
       {techs.some((t) => !employeeAvailable(t)) && <div className="muted" style={{ fontSize: 12 }}>{techs.filter((t) => !employeeAvailable(t)).map((t) => `${t.name}: ${t.status}`).join(' · ')}</div>}
+      {tech && <DispatchLoadout techId={tech.id} vehicleId={vehicle?.id} />}
       <button className="btn primary block" disabled={!tech || !vehicle} onClick={() => tech && vehicle && dispatch({ type: 'dispatch', jobId: job.id, technicianId: tech.id, vehicleId: vehicle.id })} data-testid="dispatch-go">
         Dispatch {vehicle?.nickname ?? ''}
       </button>
     </Section>
+  );
+}
+
+/** The equipment this crew would bring, and what it does for a typical call (from equipment/performance.ts). */
+function DispatchLoadout({ techId, vehicleId }: { techId: string; vehicleId?: string }) {
+  const info = useGameWith((s) => {
+    const tech = s.employees[techId];
+    const van = vehicleId ? s.vehicles[vehicleId] : undefined;
+    if (!tech) return null;
+    const items = toolsOnSite(s, tech, van);
+    return { names: [...new Set(items.map((t) => toolDef(t.defId).name))], perf: performanceSummary(s, tech, van) };
+  }, [techId, vehicleId]);
+  if (!info) return null;
+  const { names, perf } = info;
+  return (
+    <div className="card col dispatch-loadout" style={{ gap: 4, fontSize: 12.5 }} data-testid="dispatch-loadout">
+      <div className="row between">
+        <b>Equipment on this call</b>
+        <span className="muted">{names.length} tool{names.length === 1 ? '' : 's'}</span>
+      </div>
+      <div className="muted">{names.length ? names.join(' · ') : 'No tools: readings and repairs rely on skill alone.'}</div>
+      <div className="row between"><span className="muted">All readings right (typical call)</span><b>{Math.round(perf.allReadingsRight.effective * 100)}%{perf.allReadingsRight.effective > perf.allReadingsRight.base + 0.0005 && <span className="muted"> · {Math.round(perf.allReadingsRight.base * 100)}% without</span>}</b></div>
+      <div className="row between"><span className="muted">Average repair</span><b>{minutesLabel(perf.avgRepairMinutes.effective)}{perf.avgRepairMinutes.effective < perf.avgRepairMinutes.base - 0.05 && <span className="muted"> · {minutesLabel(perf.avgRepairMinutes.base)} without</span>}</b></div>
+    </div>
   );
 }
 
@@ -210,11 +237,14 @@ function DiagnosisStep({ job }: { job: Job }) {
           {job.evidence.map((ev) => (
             <div key={ev.label} className="evidence-item">
               <span className="label">{ev.label}</span>
-              <span>{ev.value}</span>
+              <span>
+                {ev.value}
+                {ev.tools && <small className="evidence-tool" data-testid="evidence-tool">Measured with {ev.tools.join(' + ')}</small>}
+              </span>
             </div>
           ))}
         </div>
-        <div className="muted" style={{ fontSize: 12 }}>Readings reflect the technician’s skill. Cross-check them: one misread can point at the wrong part.</div>
+        <div className="muted" style={{ fontSize: 12 }}>Readings reflect the technician’s skill and the instruments on site. Cross-check them: one misread can point at the wrong part.</div>
       </Section>
       <Section title="Diagnosis">
         <div className="col" style={{ gap: 6 }}>
@@ -345,6 +375,16 @@ function CompletedStep({ job }: { job: Job }) {
               <div className="row between">
                 <span className="muted">Diagnosis</span>
                 <span className={`tag ${job.diagnosisCorrect ? 'green' : 'red'}`}>{job.diagnosisCorrect ? 'Correct' : `Wrong — was ${truth.name}`}</span>
+              </div>
+            )}
+            {job.toolReport && (job.toolReport.toolIds.length > 0 || job.toolReport.quality !== undefined) && (
+              <div className="row between" data-testid="job-tool-report">
+                <span className="muted">Equipment</span>
+                <span style={{ textAlign: 'right' }}>
+                  {job.toolReport.toolIds.length} tool{job.toolReport.toolIds.length === 1 ? '' : 's'}
+                  {job.toolReport.diagMinutesSaved + job.toolReport.repairMinutesSaved >= 0.5 && <> · saved {Math.round(job.toolReport.diagMinutesSaved + job.toolReport.repairMinutesSaved)} min</>}
+                  {job.toolReport.quality !== undefined && <> · workmanship {Math.round(job.toolReport.quality * 100)}%</>}
+                </span>
               </div>
             )}
             {job.reviewStars !== undefined && (

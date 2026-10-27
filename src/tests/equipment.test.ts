@@ -8,7 +8,7 @@ import { spawnLead } from '@/game/jobs/leads';
 import { FAULTS, faultById } from '@/game/jobs/faults';
 import { CAPITALIZATION_THRESHOLD, READ_CEILING, STARTER_KIT, TOOLS, toolDef, type ToolId } from '@/game/equipment/catalog';
 import { equipmentBookValue, rackCapacity, rackUsed, resalePrice, toolsHeldBy } from '@/game/equipment/inventory';
-import { diagMultiplier, effectiveAccuracy, performanceSummary, readGain, repairMultiplier, summarize, workmanship } from '@/game/equipment/performance';
+import { diagMultiplier, effectiveAccuracy, performanceSummary, readGain, repairMultiplier, summarize, toolEstimate, workmanship } from '@/game/equipment/performance';
 import { measurementAccuracy } from '@/game/employees/attributes';
 import { deserialize, serialize } from '@/persistence/save';
 import { createNewGame } from '@/game/simulation/newGame';
@@ -272,6 +272,25 @@ describe('effective performance', () => {
     expect(q.quality).toBeGreaterThan(q.base);
     expect(q.quality).toBeLessThan(1);
     expect(workmanship(cap, createNewGame().employees[OWNER].attributes, TOOLS)).toBeUndefined();
+  });
+
+  it('estimates a purchase for a technician from the same formulas the jobs use', () => {
+    const attrs = createNewGame().employees[OWNER].attributes;
+    const kit = [toolDef('hand-tools'), toolDef('multimeter')];
+    const leak = toolEstimate(attrs, 0, kit, toolDef('leak-detector'));
+    expect(leak.already).toBe(false);
+    expect(leak.reads).toHaveLength(1);
+    const base = measurementAccuracy(attrs, 0);
+    expect(leak.reads[0]).toMatchObject({ kind: 'leak', before: base });
+    expect(leak.reads[0].after).toBeCloseTo(effectiveAccuracy(base, 0.6), 10);
+    expect(leak.faults.map((f) => f.id)).toEqual(['refrigerant-leak']);
+    // The scale changes workmanship, not readings; a second multimeter changes nothing.
+    const scale = toolEstimate(attrs, 0, kit, toolDef('charging-scale'));
+    expect(scale.reads).toHaveLength(0);
+    expect(scale.workmanship!.after).toBeGreaterThan(scale.workmanship!.before);
+    expect(toolEstimate(attrs, 0, kit, toolDef('multimeter')).already).toBe(true);
+    const again = toolEstimate(attrs, 0, kit, toolDef('multimeter'));
+    expect(again.reads[0].after).toBe(again.reads[0].before);
   });
 
   it('reports a technician-specific summary that reacts to the van they take', () => {

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useApp, useGame } from '@/app/store';
+import { useApp, useGame, useGameWith } from '@/app/store';
 import { PanelShell, Tabs } from './PanelShell';
 import { ATTRIBUTE_KEYS, ATTRIBUTE_LABELS } from '@/game/employees/attributes';
 import { ROLE_CORE_ATTRIBUTES, ROLE_DESCRIPTIONS, ROLE_LABELS } from '@/game/employees/roles';
@@ -7,8 +7,12 @@ import { TRAINING_PROGRAMS } from '@/game/employees/training';
 import { employeeCapacity } from '@/game/fleet/fleet';
 import { Bar, Money, initials, roleAvatarClass } from '../components/common';
 import type { Employee } from '@/game/simulation/types';
+import { performanceSummary } from '@/game/equipment/performance';
+import { toolsHeldBy } from '@/game/equipment/inventory';
+import { toolDef } from '@/game/equipment/catalog';
+import { PerformanceCard } from './SupplyPanel';
 
-type Tab = 'team' | 'hire' | 'train';
+type Tab = 'team' | 'hire' | 'train' | 'equipment';
 
 export function EmployeesPanel() {
   const employees = useGame((s) => Object.values(s.employees));
@@ -26,7 +30,7 @@ export function EmployeesPanel() {
       title="Team"
       subtitle={`${employees.length} of ${capacity} seats at headquarters`}
       testId="panel-employees"
-      tabs={<Tabs value={tab} onChange={setTab} items={[{ id: 'team', label: 'Roster' }, { id: 'hire', label: 'Hiring market', badge: candidates.length }, { id: 'train', label: 'Training academy' }]} />}
+      tabs={<Tabs value={tab} onChange={setTab} items={[{ id: 'team', label: 'Roster' }, { id: 'hire', label: 'Hiring market', badge: candidates.length }, { id: 'train', label: 'Training academy' }, { id: 'equipment', label: 'Equipment' }]} />}
     >
       {tab === 'team' && (
         <div className="panel-body split">
@@ -49,6 +53,7 @@ export function EmployeesPanel() {
           </div>
         </div>
       )}
+      {tab === 'equipment' && <EquipmentTab selectedId={emp?.id} onSelect={setSelectedEmp} />}
       {tab === 'hire' && (
         <div className="panel-body">
           <div className="muted" style={{ marginBottom: 12, fontSize: 13 }}>
@@ -128,6 +133,40 @@ export function EmployeesPanel() {
         </div>
       )}
     </PanelShell>
+  );
+}
+
+/** Each field employee's own kit and effective performance (their kit alone; the van adds its rack on a call). */
+function EquipmentTab({ selectedId, onSelect }: { selectedId?: string; onSelect: (id: string) => void }) {
+  const staff = useGame((s) => Object.values(s.employees).filter((e) => e.role === 'technician' || e.role === 'installer'));
+  const sel = staff.find((e) => e.id === selectedId) ?? staff[0];
+  const kit = useGameWith((s) => (sel ? toolsHeldBy(s, { kind: 'employee', id: sel.id }).map((t) => toolDef(t.defId).name) : []), [sel?.id]);
+  const perf = useGameWith((s) => (sel ? performanceSummary(s, s.employees[sel.id]) : null), [sel?.id]);
+  const rows = useGame((s) => Object.values(s.employees).filter((e) => e.role === 'technician' || e.role === 'installer').map((e) => ({ e, perf: performanceSummary(s, e), n: toolsHeldBy(s, { kind: 'employee', id: e.id }).length })));
+  return (
+    <div className="panel-body split" data-testid="team-equipment">
+      <div className="list">
+        {rows.map(({ e, perf: p, n }) => (
+          <div key={e.id} className={`list-item ${sel?.id === e.id ? 'selected' : ''}`} onClick={() => onSelect(e.id)} data-testid={`equip-row-${e.id}`}>
+            <div>
+              <div className="name">{e.name}</div>
+              <div className="sub">{n} tool{n === 1 ? '' : 's'} · readings right {Math.round(p.allReadingsRight.effective * 100)}% · avg repair {Math.round(p.avgRepairMinutes.effective)} min</div>
+            </div>
+            <span className={`tag ${n ? 'teal' : 'amber'}`}>{n ? 'Equipped' : 'No kit'}</span>
+          </div>
+        ))}
+      </div>
+      <div className="col">
+        {sel && perf && (
+          <>
+            <h3>{sel.name}</h3>
+            <div className="chip-row">{kit.length ? kit.map((k) => <span key={k} className="chip active">{k}</span>) : <span className="muted" style={{ fontSize: 12.5 }}>No personal tools yet.</span>}</div>
+            <PerformanceCard title="Effective performance (own kit)" perf={perf} testId="team-performance" />
+            <button className="btn small primary" onClick={() => useApp.getState().openPanel('supply')} data-testid="team-open-supply">Equip in the Supply Depot</button>
+          </>
+        )}
+      </div>
+    </div>
   );
 }
 

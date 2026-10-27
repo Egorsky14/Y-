@@ -1,9 +1,11 @@
 import { useState } from 'react';
-import { useApp, useGame } from '@/app/store';
+import { useApp, useGame, useGameWith } from '@/app/store';
 import { PanelShell, Tabs } from './PanelShell';
 import { PAINT_OPTIONS, VEHICLE_SPECS, VEHICLE_UPGRADES, type PaintId, type VehicleClass } from '@/game/fleet/vehicleCatalog';
 import { monthlyLoanPayment, resaleValue, vehicleCapacity, type FinancingChoice } from '@/game/fleet/fleet';
-import { Money } from '../components/common';
+import { Bar, Money } from '../components/common';
+import { rackCapacity, rackUsed, toolsHeldBy } from '@/game/equipment/inventory';
+import { toolDef } from '@/game/equipment/catalog';
 import { VehiclePreview } from './VehiclePreview';
 
 type Tab = 'garage' | 'market';
@@ -54,6 +56,7 @@ export function FleetPanel() {
                   <div><span>Seats</span><b>{VEHICLE_SPECS[vehicle.classId].seats}</b></div>
                   <div><span>Replacement</span><b>{VEHICLE_SPECS[vehicle.classId].canCarryReplacement ? 'Yes' : 'No'}</b></div>
                 </div>
+                <VehicleRack vehicleId={vehicle.id} />
                 <h4>Upgrades &amp; customization</h4>
                 <div className="col" style={{ gap: 6 }}>
                   {VEHICLE_UPGRADES.map((u) => {
@@ -159,5 +162,25 @@ export function FleetPanel() {
         </div>
       )}
     </PanelShell>
+  );
+}
+
+/** The van's equipment rack (space is the tool capacity its shelving and storage upgrades add to). */
+function VehicleRack({ vehicleId }: { vehicleId: string }) {
+  const info = useGameWith((s) => {
+    const v = s.vehicles[vehicleId];
+    return v ? { used: rackUsed(s, v.id), cap: rackCapacity(v), names: toolsHeldBy(s, { kind: 'vehicle', id: v.id }).map((t) => toolDef(t.defId).name) } : null;
+  }, [vehicleId]);
+  if (!info) return null;
+  return (
+    <div className="card col" style={{ gap: 6 }} data-testid={`vehicle-rack-${vehicleId}`}>
+      <div className="row between">
+        <b style={{ fontSize: 13 }}>Equipment rack</b>
+        <span className="muted" style={{ fontSize: 12 }}>{info.used} / {info.cap} space</span>
+      </div>
+      <Bar value={info.used} max={info.cap} tone={info.used >= info.cap ? 'amber' : undefined} />
+      <div className="muted" style={{ fontSize: 12 }}>{info.names.length ? info.names.join(' · ') : 'Empty. Vacuum pumps, recovery machines and nitrogen kits ride here.'}</div>
+      <button className="btn small" onClick={() => useApp.getState().openPanel('supply')}>Load equipment</button>
+    </div>
   );
 }

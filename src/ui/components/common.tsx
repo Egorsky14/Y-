@@ -51,12 +51,13 @@ export function KV({ items }: { items: [string, ReactNode][] }) {
   );
 }
 
-export function Icon({ name }: { name: 'jobs' | 'employees' | 'fleet' | 'hq' | 'marketing' | 'finance' | 'camera' | 'home' | 'follow' | 'save' | 'menu' | 'settings' | 'close' | 'pause' | 'play' | 'photo' }) {
+export function Icon({ name }: { name: 'jobs' | 'employees' | 'fleet' | 'supply' | 'hq' | 'marketing' | 'finance' | 'camera' | 'home' | 'follow' | 'save' | 'menu' | 'settings' | 'close' | 'pause' | 'play' | 'photo' }) {
   const paths: Record<string, ReactNode> = {
     jobs: <path d="M4 7h16v12H4zM8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M4 12h16" />,
     employees: <path d="M16 11a4 4 0 1 0-8 0 4 4 0 0 0 8 0zM4 21a8 8 0 0 1 16 0" />,
     fleet: <path d="M3 13l2-5h9l3 5h4v5h-2M3 13v5h2M8 20a2 2 0 1 0 0-4 2 2 0 0 0 0 4zm9 0a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM10 18h5" />,
     hq: <path d="M3 21h18M5 21V9l7-5 7 5v12M9 21v-6h6v6M10 11h1m2 0h1" />,
+    supply: <path d="M3 9h18v11H3zM3 9l2-5h14l2 5M9 13h6M14.5 3.5l-1 5.5M9.5 3.5l1 5.5" />,
     marketing: <path d="M3 11v2a1 1 0 0 0 1 1h2l6 4V6L6 10H4a1 1 0 0 0-1 1zm13-2a4 4 0 0 1 0 6m2.5-9a8 8 0 0 1 0 12" />,
     finance: <path d="M4 19h16M6 16V10m4 6V6m4 10v-4m4 4V8" />,
     camera: <path d="M4 9V5h4M20 9V5h-4M4 15v4h4M20 15v4h-4M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z" />,
