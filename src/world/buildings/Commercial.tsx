@@ -2,46 +2,26 @@ import { Suspense, useMemo } from 'react';
 import { COMPETITOR_LOT, PARK_LOT, WAREHOUSE_LOT } from '@/game/world/cityLayout';
 import { PALETTE } from '../assets/palette';
 import { asphaltTexture, signTexture } from '../assets/textures';
+import { buildWarehouse } from './WarehouseBuilder';
 import { Box, Window } from './parts';
 import { Selectable } from '../interactions/Selectable';
 import { SupplyDisplayPart } from '../props/SupplyProps';
 
 export function SupplyWarehouse() {
-  const asphalt = useMemo(() => asphaltTexture(), []);
   const lot = WAREHOUSE_LOT;
+  const shell = useMemo(() => buildWarehouse(), []);
   return (
     <group position={[lot.center.x, 0, lot.center.z]}>
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.02, 0]} receiveShadow>
-        <planeGeometry args={[lot.width - 2, lot.depth - 2]} />
-        <meshStandardMaterial map={asphalt} roughness={0.95} />
-      </mesh>
       <Selectable selection={{ kind: 'lot', id: lot.id }} ringRadius={30} ringOffset={[0, 0.08, -4]}>
+        <primitive object={shell} />
         <group position={[0, 0, -8]}>
-          <Box size={[80, 10, 44]} position={[0, 5, 0]} color="#c9ccd0" roughness={0.6} metalness={0.15} />
-          <Box size={[80.6, 0.6, 44.6]} position={[0, 10.3, 0]} color="#6f757c" />
-          <Box size={[80.2, 1.2, 44.2]} position={[0, 2.0, 0]} color="#8d7f6b" />
-          {/* Loading docks facing the street (south, +z) */}
-          {[-24, -12, 0, 12, 24].map((x) => (
-            <group key={x} position={[x, 0, 22.2]}>
-              <Box size={[6, 4.2, 0.3]} position={[0, 2.6, 0]} color="#3a3f45" castShadow={false} />
-              <Box size={[7, 0.3, 4]} position={[0, 4.9, 1.6]} color="#5a6066" />
-              <Box size={[6.4, 1.1, 1.2]} position={[0, 0.55, 0.9]} color="#2a2d31" />
-            </group>
-          ))}
-          <mesh position={[0, 8.2, 22.4]}>
+          <mesh position={[0, 8.2, 22.12]}>
             <planeGeometry args={[30, 3.2]} />
             <meshStandardMaterial map={signTexture('MOJAVE HVAC SUPPLY', '#e0862e', '#2a2d31', 30 / 3.2)} />
           </mesh>
           <ProStorefront />
         </group>
         <DepotForecourt />
-        {/* Pallets and condensers in the yard, east of the docks */}
-        {[16, 24, 32].map((x) => (
-          <group key={x} position={[x, 0, 30]}>
-            <Box size={[3, 0.25, 3]} position={[0, 0.12, 0]} color="#b08a5a" />
-            <Box size={[2.4, 2.2, 2.4]} position={[0, 1.35, 0]} color="#d6d9dc" roughness={0.6} metalness={0.2} />
-          </group>
-        ))}
         <mesh position={[0, 4, -8]} visible={false}>
           <boxGeometry args={[80, 10, 48]} />
           <meshBasicMaterial />
