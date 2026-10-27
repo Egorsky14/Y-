@@ -47,7 +47,8 @@ function VehicleView({ id }: { id: string }) {
   const parking = useRef<{ curve: { x: number; z: number }[] | null; t: number; seconds: number; leaving: number; framed: boolean }>({ curve: null, t: 0, seconds: PARK_SECONDS, leaving: 0, framed: false });
   const descriptor = useGame((s) => {
     const v = s.vehicles[id];
-    return v ? `${v.classId}|${v.paint}|${v.upgrades.join(',')}` : '';
+    // Wear in three buckets so the model only rebuilds when condition crosses 80 or 60.
+    return v ? `${v.classId}|${v.paint}|${v.upgrades.join(',')}|${v.condition >= 80 ? 0 : v.condition >= 60 ? 1 : 2}` : '';
   });
   const status = useGame((s) => s.vehicles[id]?.status);
   const vehicle = getGameState()?.vehicles[id];
@@ -155,12 +156,12 @@ function VehicleView({ id }: { id: string }) {
   });
 
   if (!vehicle) return null;
-  const [classId, paint, upgrades] = descriptor.split('|');
+  const [classId, paint, upgrades, wear] = descriptor.split('|');
   void status;
   return (
     <group ref={group} name={`vehicle:${id}`}>
       <Selectable selection={{ kind: 'vehicle', id }} ringRadius={4.2} ringOffset={[0, 0.07, 0]}>
-        <VehicleGltf classId={classId as never} paint={paint as never} upgrades={(upgrades ? upgrades.split(',') : []) as never} onRig={onRig} />
+        <VehicleGltf classId={classId as never} paint={paint as never} upgrades={(upgrades ? upgrades.split(',') : []) as never} wear={Number(wear) || 0} onRig={onRig} />
         <mesh position={[0, 1.2, 0]} visible={false}>
           <boxGeometry args={[2.4, 2.6, 6]} />
           <meshBasicMaterial />

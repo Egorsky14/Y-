@@ -46,7 +46,7 @@ function decalTexture(darkPaint: boolean): THREE.Texture {
  * Builds a per-instance scene graph from the shared glTF: cloned paint and decal materials,
  * upgrade-driven rack visibility, and a chassis group that can roll and pitch over the wheels.
  */
-export function buildVehicleRig(source: THREE.Group, classId: VehicleClass, paint: PaintId, upgrades: VehicleUpgradeId[]): VehicleRig {
+export function buildVehicleRig(source: THREE.Group, classId: VehicleClass, paint: PaintId, upgrades: VehicleUpgradeId[], wear = 0): VehicleRig {
   const root = source.clone(true);
   root.name = `vehicle-model:${classId}`;
   const chassis = new THREE.Group();
@@ -83,8 +83,14 @@ export function buildVehicleRig(source: THREE.Group, classId: VehicleClass, pain
     const mat = mesh.material as THREE.MeshStandardMaterial;
     switch (mat.name) {
       case 'paint': {
-        const m = mat.clone();
+        const m = mat.clone() as THREE.MeshPhysicalMaterial;
         m.color.set(paintHex);
+        // Condition shows as road dust and a duller clearcoat, never as damage.
+        if (wear > 0) {
+          m.color.lerp(new THREE.Color('#8f8270'), wear * 0.07);
+          m.roughness = Math.min(0.75, m.roughness + wear * 0.12);
+          if (m.clearcoat !== undefined) m.clearcoat = Math.max(0.2, m.clearcoat - wear * 0.3);
+        }
         mesh.material = m;
         break;
       }
@@ -144,14 +150,16 @@ interface VehicleGltfProps {
   classId: VehicleClass;
   paint: PaintId;
   upgrades: VehicleUpgradeId[];
+  /** 0 clean, 1 slightly dusty, 2 dusty (from the vehicle's condition). */
+  wear?: number;
   onRig?: (rig: VehicleRig | null) => void;
 }
 
 /** Renders a vehicle class from its glTF asset. */
-export function VehicleGltf({ classId, paint, upgrades, onRig }: VehicleGltfProps) {
+export function VehicleGltf({ classId, paint, upgrades, wear = 0, onRig }: VehicleGltfProps) {
   const { scene } = useGLTF(vehicleModelUrl(classId));
   const upgradeKey = upgrades.join(',');
-  const rig = useMemo(() => buildVehicleRig(scene, classId, paint, upgradeKey ? (upgradeKey.split(',') as VehicleUpgradeId[]) : []), [scene, classId, paint, upgradeKey]);
+  const rig = useMemo(() => buildVehicleRig(scene, classId, paint, upgradeKey ? (upgradeKey.split(',') as VehicleUpgradeId[]) : [], wear), [scene, classId, paint, upgradeKey, wear]);
   useEffect(() => {
     onRig?.(rig);
     return () => onRig?.(null);
