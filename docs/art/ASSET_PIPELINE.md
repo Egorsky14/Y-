@@ -32,6 +32,18 @@ PowerShell: `& "C:\Users\egohv\Tools\blender-5.2.3\Blender Foundation\Blender 5.
 
 Omit the second argument to skip the preview renders (export only, ~3 s).
 
+The other Blender assets build the same way:
+
+```sh
+"$BLENDER" -b --factory-startup --python tools/blender/supply_tools.py -- public/models/props/supply-tools.glb
+# Environment Revolution yard kit: 12 named parts placed by the property plans (YardProps.tsx)
+"$BLENDER" -b --factory-startup --python tools/blender/yard_kit.py -- public/models/props/yard-kit.glb docs/environment-revolution/previews
+```
+
+After re-exporting the yard kit, update its `bytes` and `triangles` in
+`public/models/manifest.json`: `src/tests/graphicsAssets.test.ts` checks them against the file
+and checks that every prop kind is present as a named node.
+
 ## What an asset script does
 
 `tools/blender/jobsite_kit.py` is the template for further assets:

@@ -1,0 +1,21 @@
+desktop-1080p|gameplay.spec.ts exit=0 passed=1 failed= secs=86 minFreeRamMB=1814 minFreeCommitMB=1859 peakBrowserMB=1967 leftover=0
+desktop-1080p|graphics.spec.ts exit=0 passed=1 failed= secs=29 minFreeRamMB=2327 minFreeCommitMB=2411 peakBrowserMB=1572 leftover=0
+desktop-1080p|automation.spec.ts exit=1 passed= failed=1 secs=130 minFreeRamMB=3035 minFreeCommitMB=3099 peakBrowserMB=836 leftover=0
+desktop-1080p|banking.spec.ts exit=0 passed=1 failed= secs=19 minFreeRamMB=1956 minFreeCommitMB=1980 peakBrowserMB=1890 leftover=0
+desktop-1080p|banking-layout.spec.ts exit=0 passed=1 failed= secs=15 minFreeRamMB=1941 minFreeCommitMB=1964 peakBrowserMB=1792 leftover=0
+desktop-1080p|supply.spec.ts exit=0 passed=1 failed= secs=26 minFreeRamMB=2056 minFreeCommitMB=2133 peakBrowserMB=1662 leftover=0
+laptop-768p|graphics.spec.ts exit=0 passed=1 failed= secs=29 minFreeRamMB=2414 minFreeCommitMB=2500 peakBrowserMB=1443 leftover=0
+small-1024|graphics.spec.ts exit=0 passed=1 failed= secs=29 minFreeRamMB=2401 minFreeCommitMB=2457 peakBrowserMB=1437 leftover=0
+small-1024|banking-layout.spec.ts exit=0 passed=1 failed= secs=12 minFreeRamMB=2346 minFreeCommitMB=2396 peakBrowserMB=1433 leftover=0
+small-1024|supply.spec.ts exit=0 passed=1 failed= secs=22 minFreeRamMB=2304 minFreeCommitMB=2406 peakBrowserMB=1459 leftover=0
+small-1024|automation.spec.ts exit=0 passed=1 failed= secs=22 minFreeRamMB=2408 minFreeCommitMB=2449 peakBrowserMB=1453 leftover=0
+iphone-portrait|mobile.spec.ts exit=0 passed=1 failed= secs=42 minFreeRamMB=2639 minFreeCommitMB=2711 peakBrowserMB=1257 leftover=0
+iphone-portrait|banking-layout.spec.ts exit=0 passed=1 failed= secs=12 minFreeRamMB=2587 minFreeCommitMB=2665 peakBrowserMB=1236 leftover=0
+phone-390x844|banking-layout.spec.ts exit=0 passed=1 failed= secs=12 minFreeRamMB=2600 minFreeCommitMB=2661 peakBrowserMB=1226 leftover=0
+phone-390x844|supply.spec.ts INTERRUPTED (run stopped by the system low-memory guard; no result)
+phone-390x844|automation.spec.ts NOT RUN
+iphone-landscape|mobile.spec.ts NOT RUN
+iphone-landscape|supply.spec.ts NOT RUN
+android-portrait|mobile.spec.ts NOT RUN
+android-landscape|mobile.spec.ts NOT RUN
+tablet-portrait|mobile.spec.ts NOT RUN

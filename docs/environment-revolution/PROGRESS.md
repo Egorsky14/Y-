@@ -47,5 +47,32 @@ baseline and new builds in the same session are compared.
 - Paired GPU after optimisation (two rounds, 1080p High): six houses +8.3%, backyard −5.2%, HQ +5.5%,
   street +6.6% (budget 10%). Draw calls +20% (six houses), triangles +40%.
 
-Next: HQ service yard, landscaping and roof equipment; golden hour, night and phone checks; final
-captures, comparison sheets, browser matrix, report.
+- ee5cbb1 HQ site detail (roof solar array, makeup-air unit, gas and conduit runs, walk pads; yard
+  racking and growing stock; parking-island understorey; east-strip trees) and environment tests.
+- c963460 Modern-minimal backyards (planted rhythm, tree-lined side bed, stepping pads, fire-pit
+  lounge); archetype close-up views E16–E18.
+- 4857ba6 Backyard trees placed before the understorey (every backyard has canopy); tree far LOD;
+  yard props baked into two static meshes; boulder and yucca shadows off. Final paired GPU: six
+  houses +7.6%, backyard −6.5%, HQ +5.5%, street +5.9%, night +7.1%; draw calls +13.5%.
+- Final evidence: after/, after-390/, 14 sheets in compare/, final-perf.json. Golden hour, night and
+  phone reviewed.
+- Validation at 4857ba6: tsc, lint and build pass; vitest 109 passed, 3 opt-in skipped.
+- Browser matrix at 4857ba6 (one case at a time): 13 passed, 1 failed (desktop automation: scene
+  not ready in 120 s; cause unconfirmed), 1 interrupted and 6 not run. The system's low-memory
+  guard stopped the run, and per its instruction it was not restarted.
+  Record: browser-matrix-4857ba6.txt.
+
+## Continuation checkpoint
+
+- **Branch:** `feature/v3-environment-revolution` (local), from 942846a. The last code commit is
+  4857ba6; the documentation commit follows. Nothing pushed, merged or deployed.
+- **Status:** ENVIRONMENT REVOLUTION 2.0: PARTIALLY COMPLETE. The visuals and performance are done;
+  the validation is not. See `FINAL_REPORT.md`.
+- **Next, needs the owner's go-ahead because of the memory guard:**
+  1. Rerun `desktop-1080p|automation.spec.ts` alone and keep its `test-results` trace. If it fails
+     again, debug `sceneReady`; the yard kit GLB now loads inside the scene's Suspense.
+  2. Run the 7 remaining cases: phone-390x844 supply and automation; iphone-landscape mobile and
+     supply; android-portrait, android-landscape and tablet-portrait mobile.
+  3. Restore `docs/screenshots` after every e2e run.
+- **Then:** the weaknesses in FINAL_REPORT.md section I (street infrastructure, house massing
+  variants, rental backyards, entry pots).
