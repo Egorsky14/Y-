@@ -62,11 +62,16 @@ export function GameScene() {
         // Synchronous shader-log reads stall startup on slow drivers; errors still surface via the console.
         gl.debug.checkShaderErrors = import.meta.env.DEV;
         // Phones drop the GPU context under memory pressure or after long backgrounding.
+        // Logged as well, so a loss during start-up (the scene never becomes ready) shows in console captures and traces.
         gl.domElement.addEventListener('webglcontextlost', (e) => {
           e.preventDefault();
+          console.warn('[graphics] WebGL context lost');
           useApp.getState().setContextLost(true);
         });
-        gl.domElement.addEventListener('webglcontextrestored', () => useApp.getState().setContextLost(false));
+        gl.domElement.addEventListener('webglcontextrestored', () => {
+          console.warn('[graphics] WebGL context restored');
+          useApp.getState().setContextLost(false);
+        });
       }}
       onPointerMissed={(e) => {
         if (e.button === 0) select(null);
