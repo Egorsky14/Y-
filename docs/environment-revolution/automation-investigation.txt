@@ -1,0 +1,15 @@
+# Desktop automation investigation: isolated and repeated runs on the 4857ba6 build (full trace, screenshots on failure,
+# console, network and memory captured; unique artifact directory per run). 12 runs (8 automation, 2 gameplay, 2 graphics), 12 passed, 0 failed.
+# Scene ready ~4 s after New game; 42 requests, 0 failed (all GLBs 200, yard-kit.glb included); 0 page errors.
+automation-desktop-20261027-225318 exit=0
+seq1-automation-20261027-225605 exit=0
+seq1-gameplay-20261027-225404 exit=0
+seq1-graphics-20261027-225534 exit=0
+seq2-automation-20261027-225836 exit=0
+seq2-gameplay-20261027-225629 exit=0
+seq2-graphics-20261027-225807 exit=0
+rep1-automation-20261027-225945 exit=0
+rep2-automation-20261027-230009 exit=0
+rep3-automation-20261027-230035 exit=0
+rep4-automation-20261027-230101 exit=0
+rep5-automation-20261027-230127 exit=0

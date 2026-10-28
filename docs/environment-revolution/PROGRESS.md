@@ -62,17 +62,31 @@ baseline and new builds in the same session are compared.
   guard stopped the run, and per its instruction it was not restarted.
   Record: browser-matrix-4857ba6.txt.
 
+## Final validation (2026-10-27)
+
+- Desktop automation failure investigated:
+  - 12 instrumented runs on 4857ba6 passed: the case alone, the matrix order twice, and five
+    repeats. Each run kept its trace, screenshots, console, network and memory in its own directory.
+  - Traces were clean: 0 failed requests, all GLBs served, 0 page errors, scene ready in about 4 s.
+  - Not reproduced; cause unconfirmed (it is consistent with a WebGL context loss or GPU-process
+    restart during start-up).
+  - Record: automation-investigation.txt.
+- a7c245e logs WebGL context loss and restore to the console. It is the only code change in this
+  validation and does not affect rendering.
+- The matrix runner now gives each case its own artifact directory (trace and screenshot kept on
+  failure) and stops safely on low memory.
+- Final browser matrix at a7c245e: 21/21 passed, all exit 0, no leftover browsers, free commit
+  memory at least 1,758 MB. Record: browser-matrix-a7c245e.txt.
+- tsc, lint and build pass; vitest 109 passed, 3 opt-in skipped. docs/screenshots restored after
+  every e2e run.
+- The comparison sheets were inspected again (six houses, classic, family, rental, desert-garden
+  and upscale backyards, HQ, mobile); no defects.
+
 ## Continuation checkpoint
 
-- **Branch:** `feature/v3-environment-revolution` (local), from 942846a. The last code commit is
-  4857ba6; the documentation commit follows. Nothing pushed, merged or deployed.
-- **Status:** ENVIRONMENT REVOLUTION 2.0: PARTIALLY COMPLETE. The visuals and performance are done;
-  the validation is not. See `FINAL_REPORT.md`.
-- **Next, needs the owner's go-ahead because of the memory guard:**
-  1. Rerun `desktop-1080p|automation.spec.ts` alone and keep its `test-results` trace. If it fails
-     again, debug `sceneReady`; the yard kit GLB now loads inside the scene's Suspense.
-  2. Run the 7 remaining cases: phone-390x844 supply and automation; iphone-landscape mobile and
-     supply; android-portrait, android-landscape and tablet-portrait mobile.
-  3. Restore `docs/screenshots` after every e2e run.
-- **Then:** the weaknesses in FINAL_REPORT.md section I (street infrastructure, house massing
-  variants, rental backyards, entry pots).
+- **Branch:** `feature/v3-environment-revolution` (local), from 942846a. The final code commit is
+  a7c245e; the validation documentation commit follows. Nothing pushed, merged or deployed.
+- **Status:** ENVIRONMENT REVOLUTION 2.0: COMPLETE. Ready for a separate Vercel Preview on the
+  owner's authorization.
+- **Open note:** one unreproduced start-up failure, now instrumented.
+- **Next milestone, after approval:** the weaknesses in FINAL_REPORT.md section I.

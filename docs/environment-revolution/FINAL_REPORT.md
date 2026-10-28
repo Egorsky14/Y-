@@ -2,21 +2,22 @@
 
 ## A. Executive result
 
-**ENVIRONMENT REVOLUTION 2.0: PARTIALLY COMPLETE**
+**ENVIRONMENT REVOLUTION 2.0: COMPLETE**
 
-The environment work itself is done and measured:
+The environment work is done and measured:
 - every residential lot is a composed property;
 - the empty strips between rows are landscaped greenbelts;
 - the HQ reads as a working business;
 - all views stay within the 10% GPU budget.
 
-Validation is not complete:
-- **Browser matrix:** stopped by the system's low-memory guard after 14 of 21 cases; per the system
-  instruction it was not restarted.
-- **Desktop automation case:** failed in that run (scene not ready within 120 s). The same spec
-  passed at 1024×768 on the same build, but the failure was not reproduced or diagnosed (see H).
+Validation is now complete. The full 21-case browser matrix passes (21/21) on the final build
+`a7c245e`.
 
-Until those run, this branch should not go to a preview.
+One earlier desktop automation failure (scene not ready within 120 s) could not be reproduced:
+- 12 instrumented reruns passed, 8 of them that exact case;
+- the final matrix also passed it.
+
+Its cause is unconfirmed, so it remains an open note rather than a known fix (see H).
 
 ## B. Source control
 
@@ -24,7 +25,8 @@ Until those run, this branch should not go to a preview.
 |---|---|
 | Starting branch / commit | `feature/v3-graphics-revolution` at `942846a` |
 | Feature branch | `feature/v3-environment-revolution` (local only) |
-| Commits | 5 (`342fa17`, `ee5cbb1`, `c963460`, `4857ba6`, then the documentation commit) |
+| Commits | 7: `342fa17`, `ee5cbb1`, `c963460`, `4857ba6` (environment), `3d6e0bf` (docs), `a7c245e` (context-loss logging), then the validation documentation commit |
+| Final code commit | `a7c245e`. The browser matrix ran against this build |
 | Working tree | Clean after the documentation commit |
 | Remote | Nothing pushed, merged or deployed. Production (`ccr-9ef3ffbb-g9q8fs`), the Graphics Revolution branch and the other preview branches are unchanged |
 | Simulation | No changes under `src/game` or `src/app`. The road graph, lots, addresses, job locations, economy, banking, automation and saves are untouched |
@@ -226,21 +228,61 @@ rounds of the baseline (`942846a`) and new builds in one session. Data: `final-p
 | Asset manifest | Yard kit entry matches the file; all prop kinds are present as named nodes |
 | Job pin / camera | `serviceSiteCamera.test.ts` passes. Gameplay e2e (Show on map, job pins) passed on desktop |
 
-**Browser matrix at `4857ba6`:** one Playwright process, one worker, one case at a time. Per-case
-record: `browser-matrix-4857ba6.txt`.
+**Final browser matrix at `a7c245e`: 21 passed, 0 failed, 0 skipped, 0 not run.**
+- One Playwright process and one worker per case, run sequentially.
+- Each case had its own artifact directory, with trace and screenshot kept on failure.
+- Memory was sampled every 2 s. Free commit memory never dropped below 1,758 MB, and no case left a
+  browser process behind.
+- Per-case exit codes: `browser-matrix-a7c245e.txt`.
 
-| Result | Count | Cases |
-|---|---|---|
-| Passed | **13** | Desktop: gameplay, graphics, banking, banking-layout, supply. 1366×768: graphics. 1024×768: graphics, banking-layout, supply, automation. iPhone portrait: mobile, banking-layout. Phone 390×844: banking-layout |
-| Failed | **1** | Desktop automation: `waitForFunction(sceneReady)` timed out after 120 s, so the test never got past loading. Peak browser memory was only 836 MB (other desktop cases 1.6–2.0 GB), consistent with the scene not finishing its load. The same spec passed at 1024×768 on the same build minutes later, and it passed on desktop at `ec25623`. The trace was overwritten by the next case, and the run was stopped before I could rerun it alone, so **the cause is not confirmed** |
-| Interrupted | **1** | Phone 390×844 supply: stopped mid-run by the low-memory guard |
-| Not run | **6** | Phone 390×844 automation, iPhone landscape mobile and supply, Android portrait and landscape mobile, tablet portrait mobile |
+| Project | Specs (all exit 0) |
+|---|---|
+| desktop-1080p | gameplay, graphics, automation, banking, banking-layout, supply |
+| laptop-768p | graphics |
+| small-1024 | graphics, banking-layout, supply, automation |
+| iphone-portrait | mobile, banking-layout |
+| phone-390x844 | banking-layout, supply, automation |
+| iphone-landscape | mobile, supply |
+| android-portrait / android-landscape / tablet-portrait | mobile |
+
+These cover the remaining required checks:
+- **Save and load:** gameplay, banking and automation each save, reload and continue.
+- **Automation:** the Operations Center routine call and the owner-attention replacement work.
+- **Camera and job pins:** "Show on map" keeps the job pin visible in gameplay, backed by
+  `serviceSiteCamera.test.ts`.
+- **Asset loading:** none of the specs logged console errors.
+
+**Earlier failure and investigation.** In the interrupted run at `4857ba6`, desktop automation timed
+out waiting for `sceneReady`:
+- The HUD loaded, but the 3D scene never reported ready.
+- Peak browser memory was 836 MB, against 1.6–2.0 GB for the other desktop cases.
+- The trace was lost, because every case shared `test-results/` and the next case deleted it.
+
+The investigation (`automation-investigation.txt`) reran it with full traces, screenshots, console,
+network and memory capture, each run in its own directory:
+- **12 runs, 12 passed:** the case alone, twice in the matrix order (gameplay → graphics →
+  automation), and five back-to-back repeats.
+- **Traces:** 42 requests, 0 failed; every GLB (yard kit included) served 200 in about 10 ms;
+  0 page errors; the scene ready about 4 s after New game. That is far from the 120 s limit.
+
+Conclusion: **an intermittent start-up failure whose cause is not confirmed.**
+- The evidence (a loaded HUD, a scene that never draws, low browser memory) fits a WebGL context loss
+  or a GPU-process restart during start-up on this machine's Intel driver.
+- I didn't reproduce it, so I'm not claiming that as the cause.
+
+Two changes so it can't go undiagnosed again, without weakening any assertion or timeout:
+- The app now logs `[graphics] WebGL context lost` and `restored` to the console (`a7c245e`, the
+  only code change in this validation).
+- The matrix runner keeps a separate artifact directory per case.
+
+The previous record for `4857ba6` is kept in `browser-matrix-4857ba6.txt`.
 
 ## I. Remaining weaknesses
 
-1. **Validation gaps:**
-   - the desktop automation failure is undiagnosed;
-   - 7 browser cases have not completed.
+1. **Intermittent start-up failure (cause unconfirmed):**
+   - seen once in the desktop automation case;
+   - not reproduced in 12 instrumented runs or the final 21-case matrix;
+   - context-loss logging and per-case artifacts will capture it if it recurs.
 2. **Rental backyards:** deliberately sparse, but from some angles the rear bed is hidden by the
    wall and the yard still reads plainer than the others.
 3. **House architecture changed less than the landscape.** Roof forms, massing and floor plans
@@ -257,11 +299,13 @@ record: `browser-matrix-4857ba6.txt`.
 
 ## J. Release recommendation
 
-**Not yet ready for a separate Vercel Preview.**
+**Ready for a separate Vercel Preview from the final commit of this branch.** At that commit:
+- TypeScript, ESLint, the production build and the unit tests pass (109 passed, 3 opt-in skipped,
+  including the environment placement tests);
+- the full browser matrix passes 21/21;
+- all views are within the GPU budget.
 
-The visual and performance goals are met, but two things must happen first:
-1. Rerun the desktop automation case on its own, keeping its trace, and fix it if it fails again.
-2. Complete the 7 remaining browser cases.
+The one open item is the intermittent start-up failure in I.1. It was not reproducible, and it is
+now instrumented.
 
-Both need your go-ahead, because the last run was stopped by the system's memory guard. Once they
-pass, I'll recommend the preview; deploying still needs your authorization.
+Deploying needs your authorization; nothing has been pushed or deployed.
