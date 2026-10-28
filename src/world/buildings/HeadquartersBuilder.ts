@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import type { HqUpgradeId } from '@/game/progression/hqUpgrades';
 import { MeshBuilder, membranePbr, pbrMaterial } from '../assets/pbr';
-import { STATIC_MATERIALS, UV_SCALES } from './materials';
+import { groundMaterial, STATIC_MATERIALS, UV_SCALES } from './materials';
 import { HQ_LOT, hqParkingStalls } from '@/game/world/cityLayout';
 import { addAirHandler, addCargoTrailer, addChainLinkFence, addCondenser, addContainer, addCylinder, addDolly, addDuctStack, addDumpster, addLadder, addPackageUnit, addPalletUnit, addServiceMachine, addToolCart } from '../props/hvac';
 
@@ -35,6 +35,73 @@ function coping(b: MeshBuilder, material: string, cx: number, cz: number, w: num
   b.box(material, [lip, t, d + 0.4], [cx + w / 2 + 0.2 - lip / 2, y, cz]);
 }
 
+/**
+ * Environment Revolution site detail: equipment on the roofs that reads from the strategy camera
+ * (a solar array, a makeup-air unit, conduit and gas runs, walk pads), a working service yard
+ * (concrete pad, pallet racking, condenser stock that grows with each HQ upgrade) and a planted
+ * east strip. Static and decorative: nothing here changes stalls, routes or upgrade effects.
+ */
+function addSiteDetail(b: MeshBuilder, has: (id: HqUpgradeId) => boolean, upgradeCount: number): void {
+  const o = HQ.office;
+  const s = HQ.bays;
+  // ---- Service building roof: south half carries a tilted solar array in rows.
+  for (let row = 0; row < 3; row++) {
+    const z = s.z + 5 + row * 3.4;
+    for (let i = 0; i < 9; i++) {
+      const x = s.x - 20 + i * 2.15;
+      b.box('solar', [2.05, 0.05, 2.3], [x, s.h + 0.55, z], [-0.17, 0, 0]);
+      b.box('galvanized', [2.1, 0.04, 2.36], [x, s.h + 0.5, z], [-0.17, 0, 0]);
+    }
+    for (const x of [s.x - 21, s.x - 1.6]) b.box('galvanized', [0.08, 0.5, 2.0], [x, s.h + 0.3, z]);
+    b.box('galvanized', [19.5, 0.06, 0.06], [s.x - 11.3, s.h + 0.25, z + 1.1]); // combiner conduit
+  }
+  // Makeup-air unit with its supply duct dropping into the shop, on a steel curb.
+  b.box('darkMetal', [5.2, 0.4, 2.2], [s.x + 12, s.h + 0.2, s.z + 8]);
+  b.box('unitCabinet', [5.0, 1.5, 2.0], [s.x + 12, s.h + 1.15, s.z + 8]);
+  b.box('grille', [1.6, 1.0, 0.06], [s.x + 10, s.h + 1.15, s.z + 6.98]);
+  b.box('galvanized', [1.2, 1.2, 3.0], [s.x + 15.6, s.h + 1.0, s.z + 8]);
+  // Gas line (yellow) on pipe supports from the parapet to the units, conduit to the disconnects.
+  for (let x = s.x - 22; x <= s.x + 16; x += 3) b.box('rubber', [0.2, 0.25, 0.3], [x, s.h + 0.12, s.z - 11.5]);
+  b.box('bollard', [38.5, 0.08, 0.08], [s.x - 3, s.h + 0.3, s.z - 11.5]);
+  b.box('bollard', [0.08, 0.08, 9.5], [s.x + 14, s.h + 0.3, s.z - 6.8]);
+  b.box('galvanized', [0.06, 0.06, 18], [s.x + 18.5, s.h + 0.12, s.z]);
+  // Walk pads from the roof hatches to the equipment (lighter membrane pads).
+  for (let z = s.z - 12; z < s.z + 2; z += 1.0) b.box('apron', [0.9, 0.04, 0.8], [s.x + 18, s.h + 0.1, z]);
+  for (let x = o.x + 17; x > o.x - 14; x -= 1.0) b.box('apron', [0.8, 0.04, 0.9], [x, o.h + 0.1, o.z + 9.5]);
+  b.box('galvanized', [0.9, 0.5, 0.9], [s.x + 18, s.h + 0.3, s.z - 13]); // hatch
+  for (const [dx, dz] of [[-0.6, -0.6], [0.6, -0.6], [-0.6, 0.6], [0.6, 0.6]] as [number, number][]) b.box('bollard', [0.05, 1.0, 0.05], [s.x + 18 + dx, s.h + 0.6, s.z - 13 + dz]);
+
+  // ---- Service yard: concrete pad with pallet racking along the south wall and condenser stock.
+  const D = HQ_LOT.depth;
+  b.box('apron', [24, 0.08, 4.4], [5, 0.05, D / 2 - 3.2]);
+  for (let bay = 0; bay < 4; bay++) {
+    const x0 = -5 + bay * 5.2;
+    for (const dx of [0, 5]) for (const dz of [0, 1.1]) b.box('darkMetal', [0.1, 3.6, 0.1], [x0 + dx, 1.8, D / 2 - 2.2 + dz]);
+    for (const y of [0.15, 1.35, 2.55]) {
+      for (const dz of [0, 1.1]) b.box('safetyOrange', [5.0, 0.12, 0.08], [x0 + 2.5, y, D / 2 - 2.2 + dz]);
+      for (let k = 0; k < 3; k++) b.box(k === 1 ? 'shrinkWrap' : 'cardboard', [1.3, 0.85, 1.0], [x0 + 0.85 + k * 1.65, y + 0.5, D / 2 - 1.65]);
+    }
+  }
+  // Stock grows with the business: one more row of palletised condensers per HQ upgrade (up to five).
+  const rows = Math.min(5, 1 + upgradeCount);
+  for (let r = 0; r < rows; r++) for (let c = 0; c < 3; c++) addPalletUnit(b, [-1 + c * 1.6, 0.06, 35.6 + r * 1.55], (r + c) * 0.04, (r + c) % 4 === 3 ? 'box' : 'condenser');
+  if (!has('staging-area')) {
+    // Equipment carts staged for tomorrow's installs.
+    for (const [x, z] of [[20, 40.5], [23, 40.5]] as [number, number][]) {
+      b.box('galvanized', [2.2, 0.06, 1.0], [x, 0.5, z]);
+      b.box('darkMetal', [0.06, 0.9, 1.0], [x - 1.1, 0.9, z]);
+      addPalletUnit(b, [x, 0.55, z], 0, 'box');
+    }
+  }
+
+  // ---- East strip between the buildings and the east wall: rock beds for the desert trees.
+  const W = HQ_LOT.width;
+  for (const [z0, z1] of [[-40, -17], [-6, 31]] as [number, number][]) {
+    b.box('rockBrown', [W / 2 - 49.5, 0.04, z1 - z0], [(49 + W / 2 - 0.8) / 2, 0.035, (z0 + z1) / 2]);
+    b.box('curb', [0.25, 0.14, z1 - z0], [49.4, 0.07, (z0 + z1) / 2]);
+  }
+}
+
 export function buildHeadquarters(upgrades: HqUpgradeId[]): THREE.Group {
   const t0 = performance.now();
   const has = (id: HqUpgradeId) => upgrades.includes(id);
@@ -56,8 +123,11 @@ export function buildHeadquarters(upgrades: HqUpgradeId[]): THREE.Group {
     shadeFabric: new THREE.MeshStandardMaterial({ color: '#2c3238', roughness: 0.9, side: THREE.DoubleSide }),
     planter: new THREE.MeshStandardMaterial({ color: '#8a8580', roughness: 0.9 }),
     apron: S.apron(),
+    solar: S.solar(),
+    rockBrown: groundMaterial('rock-brown'),
+    rockLight: groundMaterial('rock-light'),
   };
-  const b = new MeshBuilder(mats, { ...UV_SCALES, wear: 0, stain: 0, apron: 3.6, roofMembrane: 6 });
+  const b = new MeshBuilder(mats, { ...UV_SCALES, wear: 0, stain: 0, apron: 3.6, roofMembrane: 6, rockBrown: 2.4, rockLight: 2.6 });
   const W = HQ_LOT.width;
   const D = HQ_LOT.depth;
   const o = HQ.office;
@@ -160,7 +230,7 @@ export function buildHeadquarters(upgrades: HqUpgradeId[]): THREE.Group {
     b.box('curb', [w, 0.18, 0.3], [x, 0.09, z + d / 2]);
     b.box('curb', [0.3, 0.18, d], [x - w / 2, 0.09, z]);
     b.box('curb', [0.3, 0.18, d], [x + w / 2, 0.09, z]);
-    b.box('gravel', [w - 0.3, 0.14, d - 0.3], [x, 0.07, z]);
+    b.box('rockBrown', [w - 0.3, 0.14, d - 0.3], [x, 0.07, z]);
   };
   island(-25.5, -18, 2.6, 30);
   island(-14, -5, 4.0, 4.0);
@@ -516,6 +586,7 @@ export function buildHeadquarters(upgrades: HqUpgradeId[]): THREE.Group {
     b.box('darkMetal', [18.6, 0.3, 8.6], [px, 4.6, pz]);
     b.box('concrete', [18.6, 0.2, 8.6], [px, 0.1, pz]);
   }
+  addSiteDetail(b, has, upgrades.length);
   const g = b.build('hq');
   if (import.meta.env.DEV) console.debug(`[build] hq ${(performance.now() - t0).toFixed(0)} ms`);
   return g;

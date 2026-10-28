@@ -6,6 +6,7 @@ import { HOUSE_LOTS, HQ_LOT, PARK_LOT, ROAD_WIDTH, SIDEWALK_WIDTH, STREETS, WORL
 import { makeDecoRng } from '../assets/random';
 import { yardPlan, type Species } from './yardLayout';
 import { greenbelts } from './greenbelt';
+import { hqLandscapePlants } from './hqLandscape';
 import { useApp } from '@/app/store';
 
 /**
@@ -463,6 +464,8 @@ function collectInstances(density: number): Instance[] {
   for (const [lx, lz] of [[-44, -37.5], [-14, -37.5], [-56.5, 24]] as [number, number][]) hqPlant('boulder', lx, lz, 0.8);
   for (const lz of [-29.2, -18.8]) hqPlant('flower-pink', -4.0, lz, 0.9); // entry planters
   for (const [lx, lz] of [[-26, 34], [-34, 35], [-42, 34.5], [-28, 40]] as [number, number][]) hqPlant('shrub-green', lx, lz, 1.1);
+  // Environment Revolution planting: parking-island understorey and the east-strip tree screen.
+  for (const p of hqLandscapePlants()) hqPlant(p.species, p.x, p.z, p.scale);
   // Park
   for (let i = 0; i < 16; i++) {
     out.push({ species: i % 3 === 0 ? 'palm' : i % 3 === 1 ? 'olive' : 'mesquite', x: PARK_LOT.center.x + (rnd() - 0.5) * (PARK_LOT.width - 12), z: PARK_LOT.center.z + (rnd() - 0.5) * (PARK_LOT.depth - 12), rotation: rnd() * 6.28, scale: 0.9 + rnd() * 0.5, tint: 0.95 + rnd() * 0.1 });
