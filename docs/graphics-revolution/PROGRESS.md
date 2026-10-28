@@ -66,5 +66,39 @@ captures at 1080p / 1366×768 / 390×844, final paired performance, report.
   (paired: +1.5% to +4.9% GPU per view).
 - Final validation at HEAD: tsc and lint clean, 92 unit tests passed (3 opt-in skipped), production build OK.
 
-Status: complete for this sprint. Next action if resumed: rerun the remaining browser specs one at a
-time when memory allows, then the items under "Next graphics milestone" in docs/design/GRAPHICS_REVOLUTION.md.
+## Final validation (2026-10-27)
+
+- The earlier gameplay interruption was an environment kill (no test output, no summary line). A
+  clean rerun on 08e12d9 then failed for real: "Show on map" left the job pin off screen (closer
+  service-site camera). Fixed in ec25623, with the new unit test `src/tests/serviceSiteCamera.test.ts`.
+- Browser matrix on ec25623: **21/21 passed**, each case run alone (one process, one worker),
+  exit 0, no leftover browsers. Record: `browser-matrix-ec25623.txt`.
+- Baseline service-call views 08–11 recaptured with the same "stopped at the unit" wait, so the
+  technician comparison now shows the same phase from the same camera. compare/02–04 regenerated.
+- tsc, lint and build pass; vitest 94 passed, 3 opt-in skipped. Performance unchanged
+  (final-perf.json).
+- Final report: `FINAL_REPORT.md`.
+
+## Continuation checkpoint
+
+- **Branch:** `feature/v3-graphics-revolution` (local only), from 67983b4. The last code commit is
+  ec25623; the validation docs commit is on top of it. Working tree is clean. Nothing pushed,
+  merged or deployed. Production `ccr-9ef3ffbb-g9q8fs` and the other preview branches are untouched.
+- **Status:** validated and ready for a separate Vercel Preview, which needs the owner's
+  authorization.
+- **Remaining issues:**
+  - Night palette on sand is warm-brown.
+  - Backyards are plain.
+  - The condenser model is unchanged.
+  - Vehicle GLBs are about 1.4 MB.
+  - No new animation work.
+- **Environment notes for the next session:**
+  - Run Playwright one case at a time with `run-specs.ps1` (project|spec items), and restore
+    `docs/screenshots` after e2e runs.
+  - Use `vite preview --host 127.0.0.1` for capture scripts.
+- **Next steps, after the Claude Code update:**
+  1. If authorized, create the Vercel Preview from this branch.
+  2. Start the next graphics milestone in docs/design/GRAPHICS_REVOLUTION.md: night grading,
+     backyard variety, condenser variants, shadow-camera fit, GLB compression.
+
+Do not start another milestone before then.

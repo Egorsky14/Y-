@@ -41,7 +41,7 @@ company's own vehicles, uniforms and HQ only, and a dry desert palette everywher
 | HQ | Single-ply membrane roofs with roll seams and weathering | `src/world/assets/pbr.ts` (`membranePbr`), `HeadquartersBuilder.ts` |
 | Supply Depot | Merged rebuild: tilt-up concrete panels with reveals, parapet coping and accent band, membrane roof with packaged units and skylights, five dock positions (ribbed door, seals, bumpers, leveler, canopy, light), PBR asphalt with a truck apron and guide lines, condensers on pallets; sign un-stretched and un-clipped | `src/world/buildings/WarehouseBuilder.ts`, `Commercial.tsx`, `textures.ts` (`signTexture` aspect and fit) |
 | Vehicle condition | Paint picks up road dust and a duller clearcoat below 80 and again below 60 condition (no damage); the model only rebuilds when a threshold is crossed | `VehicleGltf.tsx`, `LiveEntities.tsx` |
-| Camera | "Show on map" and job notifications frame the service site from the street side (van spot, technician and condenser together) instead of the lot centre from any angle | `src/world/scene/serviceCall.ts` (`serviceSiteCamera`), `JobsPanel.tsx`, `Overlays.tsx` |
+| Camera | "Show on map" and job notifications frame the service site from the street side (van spot, technician and condenser together, with the job pin above the house kept on screen) instead of the lot centre from any angle | `src/world/scene/serviceCall.ts` (`serviceSiteCamera`), `JobsPanel.tsx`, `Overlays.tsx` |
 
 ## Asset pipeline
 
@@ -66,6 +66,15 @@ and within budget; all fleet classes, both civilian cars and the Blender props a
 cars are deterministic, the staff row follows the head count, and no car sits in or against any
 fleet stall the HQ can have.
 
+`src/tests/serviceSiteCamera.test.ts`: for every house lot, the service-site framing keeps the job
+pin, the van spot and the condenser on screen at 1920×1080 and on an upright 390×844 phone. (The
+first version of the closer framing hid the job pin after "Show on map"; the gameplay e2e caught
+it, fixed in `ec25623`.)
+
+Browser matrix at `ec25623`: all 21 cases (9 Playwright projects × their specs) passed, run one
+process and one worker at a time; per-case exit codes and memory in
+`docs/graphics-revolution/browser-matrix-ec25623.txt`.
+
 ## Before and after
 
 Matched captures (seed 42, paused, HUD hidden, same clock and camera command): `docs/graphics-revolution/before*/`
@@ -74,9 +83,9 @@ and `after*/` at 1920×1080, 1366×768 and 390×844, and side-by-side sheets in
 the unit, HQ, HQ parking, neighborhood, city overview, golden-hour street and overview, night,
 Supply Depot, phone). Regenerate with `scripts/capture.cjs` and `scripts/compare.cjs`.
 
-Caveat: the baseline technician close-ups were taken while he was still walking (the capture then
-waited a fixed time); the after set waits until he is at the unit, so those two frames show
-different moments of the same call.
+The service-call views (08–11) of both sets wait until the technician has stopped at the unit, so
+the before and after technician frames show the same work phase (kneeling at the service panel)
+from the same camera; the house, van and technician positions are identical in both builds.
 
 ## Performance
 
@@ -100,9 +109,6 @@ calls are mostly the parked cars (one instanced mesh per material per model, plu
 
 ## Known limitations
 
-- The full browser matrix was not completed: the system's low-memory guard stopped the run after
-  the graphics spec had passed on desktop, 1366×768 and 1024×768; gameplay was interrupted and the
-  other 17 runs did not start. It was not restarted automatically.
 - Night still reads warm-brown on open sand (bright sand albedo under blue moonlight); readable,
   not yet a cool night palette.
 - Backyards remain large plain gravel areas; the condenser model itself was not changed (its

@@ -45,28 +45,28 @@
       "textures": 55
     },
     "08-service-wide-1000": {
-      "calls": 493,
-      "triangles": 1018714,
-      "geometries": 513,
-      "textures": 55
+      "calls": 532,
+      "triangles": 1037690,
+      "geometries": 479,
+      "textures": 53
     },
     "09-van-at-home-1000": {
-      "calls": 548,
-      "triangles": 1034406,
-      "geometries": 517,
-      "textures": 55
+      "calls": 588,
+      "triangles": 1053766,
+      "geometries": 493,
+      "textures": 54
     },
     "10-tech-unit-close-1000": {
-      "calls": 477,
-      "triangles": 1016322,
-      "geometries": 517,
-      "textures": 55
+      "calls": 516,
+      "triangles": 1039690,
+      "geometries": 493,
+      "textures": 54
     },
     "11-tech-unit-close-b-1000": {
-      "calls": 439,
-      "triangles": 991476,
-      "geometries": 518,
-      "textures": 56
+      "calls": 482,
+      "triangles": 1014952,
+      "geometries": 494,
+      "textures": 55
     },
     "12-overview-1730": {
       "calls": 675,
@@ -106,8 +106,8 @@
       "z": 25
     },
     "tech": {
-      "x": -12.420286975267718,
-      "z": 15.936021896024588
+      "x": -11.959999999999999,
+      "z": 20.98
     },
     "van": {
       "x": -13.05,
