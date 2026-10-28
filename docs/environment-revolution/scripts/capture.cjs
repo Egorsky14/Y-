@@ -37,6 +37,10 @@ const VIEWS = [
   ['E13-backyard-d', { type: 'focus', target: { x: 51, z: -37 }, distance: 26, azimuth: Math.PI - 0.5, elevation: 0.62 }],
   ['E14-street', { type: 'focus', target: { x: -64, z: 2 }, distance: 30, azimuth: 0.9, elevation: 0.34, targetY: 1 }],
   ['E15-roofs', { type: 'focus', target: { x: 36, z: 25 }, distance: 70, azimuth: 0.7, elevation: 0.95 }],
+  // Archetype close-ups: a-n-2 (classic xeriscape) and a-n-4 (modern minimal) backyards, c-n-3 (upscale, pool).
+  ['E16-classic', { type: 'focus', target: { x: -79, z: -62 }, distance: 30, azimuth: 0.5, elevation: 0.7 }],
+  ['E17-modern', { type: 'focus', target: { x: -21, z: -62 }, distance: 30, azimuth: -0.5, elevation: 0.7 }],
+  ['E18-upscale-pool', { type: 'focus', target: { x: -50, z: 37 }, distance: 32, azimuth: 0.45, elevation: 0.72 }],
 ];
 const MOBILE = new Set(['E01-six-houses', 'E02-house-street', 'E06-hq']);
 

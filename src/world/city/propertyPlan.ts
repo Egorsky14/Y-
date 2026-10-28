@@ -437,9 +437,21 @@ function buildPlan(lot: Lot, archetype: Archetype): PropertyPlan {
     if (A === 'modern-minimal') {
       const strip = R(-WALL_X + 0.1, WALL_X - 0.1, WALL_Z - 1.5, WALL_Z - 0.05);
       bed('rock-light', rectPoly(strip), 2, 'steel');
-      for (let x = strip.x0 + 1.2; x < strip.x1 - 1; x += rr(1.6, 2.6)) plant(rnd() < 0.55 ? 'desert-grass' : rnd() < 0.5 ? 'agave' : 'yucca', x, rr(strip.z0 + 0.4, strip.z1 - 0.5), rr(0.8, 1.1));
+      // A deliberate rhythm: agave and grass alternating, olive accents, cypress at the ends.
+      for (let x = strip.x0 + 1.4, i = 0; x < strip.x1 - 1.2; x += 1.25, i++) plant(i % 6 === 3 ? 'olive' : i % 2 ? 'desert-grass' : 'agave', x, (strip.z0 + strip.z1) / 2 + (i % 2 ? 0.2 : -0.2), i % 6 === 3 ? 0.8 : rr(0.85, 1.0));
       plant('cypress', strip.x0 + 0.8, strip.z1 - 0.6, 1);
       plant('cypress', strip.x1 - 0.8, strip.z1 - 0.6, 1);
+      // Side bed along the far wall with a row of trees, steel edged.
+      const sideBed = R(-WALL_X + 0.05, -WALL_X + 1.7, backZ + 0.5, strip.z0 - 0.4);
+      bed('rock-light', rectPoly(sideBed), 2, 'steel');
+      for (let z = sideBed.z0 + 1.2; z < sideBed.z1 - 0.8; z += 3.2) plant('palo-verde', (sideBed.x0 + sideBed.x1) / 2, z, 0.85);
+      for (let z = sideBed.z0 + 2.8; z < sideBed.z1 - 0.8; z += 3.2) plant('desert-grass', (sideBed.x0 + sideBed.x1) / 2, z, 0.9);
+      // Concrete stepping pads on a grid from the patio to a fire-pit lounge in the gravel.
+      const fx = Math.min(WALL_X - 3.5, patio.x1 + 3.2);
+      const fz = Math.min(strip.z0 - 2.0, patio.z1 + 3.0);
+      for (let i = 0; i < 4; i++) hardscape.push({ kind: 'pad', mat: 'concrete', rect: rectAt(patio.x1 - 0.8 + i * ((fx - patio.x1 + 0.8) / 4), patio.z1 + 0.9 + i * ((fz - patio.z1 - 1.6) / 4), 0.9, 0.9), rot: 0 });
+      hardscape.push({ kind: 'pad', mat: 'concrete', rect: rectAt(fx, fz, 3.4, 3.4), rot: 0 });
+      placeProp('fire-pit', fx, fz + 0.3, 0);
       structures.push({ kind: 'raised-bed', rect: R(patio.x1 + 0.8, Math.min(WALL_X - 2.0, patio.x1 + 3.2), backZ + 0.4, backZ + 1.4) });
     } else if (A === 'desert-garden') {
       const curved = blob(rnd, rr(-4, 4), WALL_Z - 2.2, WALL_X - 1, 2.6, R(-WALL_X, WALL_X, backZ + patioD + 0.8, WALL_Z), 20);
