@@ -97,6 +97,24 @@
       "triangles": 1120111,
       "geometries": 511,
       "textures": 58
+    },
+    "E16-classic": {
+      "calls": 418,
+      "triangles": 1117669,
+      "geometries": 493,
+      "textures": 53
+    },
+    "E17-modern": {
+      "calls": 425,
+      "triangles": 1141155,
+      "geometries": 493,
+      "textures": 53
+    },
+    "E18-upscale-pool": {
+      "calls": 419,
+      "triangles": 1129957,
+      "geometries": 496,
+      "textures": 53
     }
   },
   "errors": []

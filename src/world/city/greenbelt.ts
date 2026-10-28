@@ -62,7 +62,7 @@ export function greenbelts(): GreenbeltPlan[] {
       tree(rnd() < 0.5 ? 'palo-verde' : rnd() < 0.5 ? 'mesquite' : 'olive', x + rr(-1.5, 1.5), bz + rr(-0.4, 0.4), rr(1.0, 1.3));
       if (rx > 4.5) tree(rnd() < 0.6 ? 'palm' : 'palo-verde', x + rr(2.5, 3.5) * (rnd() < 0.5 ? -1 : 1), bz, rr(0.9, 1.15));
       plants.push({ species: 'boulder', x: x + rr(-2.5, 2.5), z: bz + rr(-0.6, 0.6), rotation: rnd() * 6.28, scale: rr(0.7, 1.1) });
-      for (let i = 0; i < 7; i++) {
+      for (let i = 0; i < 6; i++) {
         const a = rnd() * Math.PI * 2;
         const d = rr(0.6, 1);
         const px = x + Math.cos(a) * rx * d * 0.85;

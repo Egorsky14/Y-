@@ -1,0 +1,121 @@
+{
+  "label": "after",
+  "size": "1920x1080",
+  "shots": {
+    "E01-six-houses": {
+      "calls": 495,
+      "triangles": 1497420,
+      "geometries": 538,
+      "textures": 72
+    },
+    "E02-house-street": {
+      "calls": 491,
+      "triangles": 1516714,
+      "geometries": 545,
+      "textures": 73
+    },
+    "E03-backyard": {
+      "calls": 471,
+      "triangles": 1536252,
+      "geometries": 546,
+      "textures": 74
+    },
+    "E04-upscale": {
+      "calls": 471,
+      "triangles": 1519884,
+      "geometries": 546,
+      "textures": 74
+    },
+    "E05-modest": {
+      "calls": 475,
+      "triangles": 1547114,
+      "geometries": 546,
+      "textures": 74
+    },
+    "E06-hq": {
+      "calls": 779,
+      "triangles": 1630023,
+      "geometries": 556,
+      "textures": 75
+    },
+    "E07-hq-yard": {
+      "calls": 518,
+      "triangles": 1473628,
+      "geometries": 556,
+      "textures": 77
+    },
+    "E11-backyard-b": {
+      "calls": 465,
+      "triangles": 1526086,
+      "geometries": 556,
+      "textures": 77
+    },
+    "E12-backyard-c": {
+      "calls": 511,
+      "triangles": 1617178,
+      "geometries": 556,
+      "textures": 77
+    },
+    "E13-backyard-d": {
+      "calls": 514,
+      "triangles": 1597272,
+      "geometries": 556,
+      "textures": 77
+    },
+    "E14-street": {
+      "calls": 486,
+      "triangles": 1522714,
+      "geometries": 558,
+      "textures": 77
+    },
+    "E15-roofs": {
+      "calls": 613,
+      "triangles": 1588493,
+      "geometries": 558,
+      "textures": 77
+    },
+    "E16-classic": {
+      "calls": 467,
+      "triangles": 1523440,
+      "geometries": 558,
+      "textures": 77
+    },
+    "E17-modern": {
+      "calls": 479,
+      "triangles": 1547720,
+      "geometries": 558,
+      "textures": 77
+    },
+    "E18-upscale-pool": {
+      "calls": 471,
+      "triangles": 1523356,
+      "geometries": 561,
+      "textures": 77
+    },
+    "E08-golden-hour": {
+      "calls": 493,
+      "triangles": 1497400,
+      "geometries": 555,
+      "textures": 77
+    },
+    "E08b-golden-street": {
+      "calls": 489,
+      "triangles": 1516694,
+      "geometries": 555,
+      "textures": 77
+    },
+    "E09-night": {
+      "calls": 493,
+      "triangles": 1497590,
+      "geometries": 555,
+      "textures": 78
+    },
+    "E09b-night-street": {
+      "calls": 489,
+      "triangles": 1516884,
+      "geometries": 555,
+      "textures": 78
+    }
+  },
+  "errors": []
+}

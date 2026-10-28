@@ -354,10 +354,10 @@ function buildSpecies(species: Species): THREE.BufferGeometry {
         parts.push(colored(transformed(new THREE.CylinderGeometry(0.05, 0.09, 1.9, 6), [Math.cos(a) * 0.45, 1.75, Math.sin(a) * 0.45], [Math.sin(a) * 0.55, 0, -Math.cos(a) * 0.55]), bark, 0.08, rnd));
       }
       const leaf = new THREE.Color('#9db35a');
-      for (let i = 0; i < 7; i++) {
+      for (let i = 0; i < 5; i++) {
         const a = rnd() * Math.PI * 2;
         const d = 0.6 + rnd() * 1.4;
-        parts.push(mass(rnd, 0.55 + rnd() * 0.35, [Math.cos(a) * d, 2.6 + rnd() * 0.7, Math.sin(a) * d], [1.2, 0.55, 1.2], leaf.clone().offsetHSL((rnd() - 0.5) * 0.04, 0, (rnd() - 0.5) * 0.06), { detail: 1, lumps: 0.3, shade: 0.45, jitter: 0.06 }));
+        parts.push(mass(rnd, 0.65 + rnd() * 0.35, [Math.cos(a) * d, 2.6 + rnd() * 0.7, Math.sin(a) * d], [1.2, 0.55, 1.2], leaf.clone().offsetHSL((rnd() - 0.5) * 0.04, 0, (rnd() - 0.5) * 0.06), { detail: 1, lumps: 0.3, shade: 0.45, jitter: 0.06 }));
       }
       return merge(parts);
     }
@@ -408,6 +408,32 @@ function buildSpecies(species: Species): THREE.BufferGeometry {
     }
   }
 }
+
+/**
+ * Far level of detail for the canopy trees (beyond the palm LOD distance): the same trunk and
+ * silhouette with three larger crown masses instead of six to nine, about 40% of the triangles.
+ */
+function treeFar(species: 'mesquite' | 'olive' | 'palo-verde'): THREE.BufferGeometry {
+  const rnd = makeDecoRng(species.length * 977 + 29);
+  const parts: THREE.BufferGeometry[] = [];
+  if (species === 'palo-verde') {
+    const bark = new THREE.Color('#7f9a52');
+    parts.push(colored(transformed(new THREE.CylinderGeometry(0.11, 0.17, 1.1, 6), [0, 0.55, 0]), bark, 0.08, rnd));
+    for (let i = 0; i < 3; i++) {
+      const a = (i / 3) * Math.PI * 2 + 0.4;
+      parts.push(colored(transformed(new THREE.CylinderGeometry(0.05, 0.09, 1.9, 5), [Math.cos(a) * 0.45, 1.75, Math.sin(a) * 0.45], [Math.sin(a) * 0.55, 0, -Math.cos(a) * 0.55]), bark, 0.08, rnd));
+      parts.push(mass(rnd, 1.0, [Math.cos(a) * 1.1, 2.85, Math.sin(a) * 1.1], [1.25, 0.55, 1.25], new THREE.Color('#9db35a'), { detail: 1, lumps: 0.3, shade: 0.45, jitter: 0.06 }));
+    }
+    return merge(parts);
+  }
+  const leaf = species === 'olive' ? new THREE.Color('#8a9a70') : new THREE.Color('#6a8743');
+  const trunkColor = new THREE.Color(species === 'olive' ? '#7a6652' : '#6d5438');
+  parts.push(colored(transformed(new THREE.CylinderGeometry(0.16, 0.26, 2.6, 6), [0, 1.3, 0], [0, 0, 0.08]), trunkColor, 0.1, rnd));
+  for (const [x, y, z, r] of [[0, 3.75, 0, 1.85], [1.0, 3.4, 0.45, 1.35], [-0.95, 3.45, -0.55, 1.3]] as [number, number, number, number][]) parts.push(mass(rnd, r, [x, y, z], [1, 0.82, 1], leaf, { detail: 1, lumps: 0.2, shade: 0.5, jitter: 0.06 }));
+  return merge(parts);
+}
+
+const TREE_LOD = new Set<Species>(['mesquite', 'olive', 'palo-verde']);
 
 interface Instance {
   species: Species;
@@ -489,21 +515,23 @@ export function Vegetation() {
   const instances = useMemo(() => collectInstances(density), [density]);
   const geometries = useMemo(() => Object.fromEntries(SPECIES.map((s) => [s, buildSpecies(s)])) as Record<Species, THREE.BufferGeometry>, []);
   const farPalm = useMemo(() => fanPalm('far'), []);
+  const farTrees = useMemo(() => ({ mesquite: treeFar('mesquite'), olive: treeFar('olive'), 'palo-verde': treeFar('palo-verde') }) as Record<string, THREE.BufferGeometry>, []);
   const material = useMemo(() => new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.95, metalness: 0, flatShading: false, side: THREE.DoubleSide }), []);
   // Closed shapes (shrub and crown masses, cacti, rocks, trunks) only need their front faces.
   const solid = useMemo(() => new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.95, metalness: 0, flatShading: false, side: THREE.FrontSide }), []);
   return (
     <group name="vegetation">
       {SPECIES.map((species) => {
-        // Small ground plants and shrubs do not cast: their shadows are a few pixels from the strategy
-        // camera and there are hundreds of them. Trees, palms, yucca, cypress and boulders keep theirs.
-        const castShadow = !['rock', 'flower-pink', 'flower-yellow', 'groundcover', 'desert-grass', 'barrel-cactus', 'agave', 'shrub-sage', 'shrub-green', 'shrub-red'].includes(species);
+        // Small ground plants, shrubs, yucca and boulders do not cast: their shadows are a few pixels from
+        // the strategy camera and there are hundreds of them. Trees, palms and cypress keep theirs.
+        const castShadow = !['rock', 'boulder', 'yucca', 'flower-pink', 'flower-yellow', 'groundcover', 'desert-grass', 'barrel-cactus', 'agave', 'shrub-sage', 'shrub-green', 'shrub-red'].includes(species);
         const list = instances.filter((i) => i.species === species && !i.scatter);
         const scatter = instances.filter((i) => i.species === species && i.scatter);
         return (
           <group key={species}>
             {list.length > 0 && species === 'palm' && <LodLayer near={geometries.palm} far={farPalm} material={material} list={list} />}
-            {species !== 'palm' &&
+            {list.length > 0 && TREE_LOD.has(species) && <LodLayer near={geometries[species]} far={farTrees[species]} material={solid} list={list} crown={3.6} name={species} />}
+            {species !== 'palm' && !TREE_LOD.has(species) &&
               chunks(list).map(([key, part]) => <SpeciesLayer key={key} name={`veg:${species}:${key}`} geometry={geometries[species]} material={BLADED.has(species) ? material : solid} list={part} castShadow={castShadow} />)}
             {scatter.length > 0 && <SpeciesLayer name={`veg:${species}:desert`} geometry={geometries[species]} material={BLADED.has(species) ? material : solid} list={scatter} castShadow={false} />}
           </group>
@@ -560,7 +588,7 @@ const PALM_LOD_BAND = 4;
  * Two instanced meshes over one instance list: each instance is drawn by the near or the far mesh
  * depending on its distance to the camera. Buckets are rebuilt only when the camera moves.
  */
-function LodLayer({ near, far, material, list }: { near: THREE.BufferGeometry; far: THREE.BufferGeometry; material: THREE.Material; list: Instance[] }) {
+function LodLayer({ near, far, material, list, crown = 8, name = 'palm' }: { near: THREE.BufferGeometry; far: THREE.BufferGeometry; material: THREE.Material; list: Instance[]; crown?: number; name?: string }) {
   const nearRef = useRef<THREE.InstancedMesh>(null);
   const farRef = useRef<THREE.InstancedMesh>(null);
   const camera = useThree((s) => s.camera);
@@ -575,7 +603,7 @@ function LodLayer({ near, far, material, list }: { near: THREE.BufferGeometry; f
     let f = 0;
     list.forEach((it, i) => {
       // Distance to the crown, which carries nearly all of the palm's triangles.
-      const d = Math.hypot(it.x - camera.position.x, 8 * it.scale - camera.position.y, it.z - camera.position.z);
+      const d = Math.hypot(it.x - camera.position.x, crown * it.scale - camera.position.y, it.z - camera.position.z);
       const isNear = cache.isNear[i] ? d < PALM_LOD_DISTANCE + PALM_LOD_BAND : d < PALM_LOD_DISTANCE - PALM_LOD_BAND;
       cache.isNear[i] = isNear ? 1 : 0;
       const mesh = isNear ? nm : fm;
@@ -592,8 +620,8 @@ function LodLayer({ near, far, material, list }: { near: THREE.BufferGeometry; f
   });
   return (
     <>
-      <instancedMesh ref={nearRef} name="palm:near" args={[near, material, list.length]} castShadow receiveShadow frustumCulled={false} />
-      <instancedMesh ref={farRef} name="palm:far" args={[far, material, list.length]} castShadow receiveShadow frustumCulled={false} />
+      <instancedMesh ref={nearRef} name={`${name}:near`} args={[near, material, list.length]} castShadow receiveShadow frustumCulled={false} />
+      <instancedMesh ref={farRef} name={`${name}:far`} args={[far, material, list.length]} castShadow receiveShadow frustumCulled={false} />
     </>
   );
 }

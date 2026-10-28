@@ -331,7 +331,7 @@ function buildPlan(lot: Lot, archetype: Archetype): PropertyPlan {
     const xs = poly.map((p) => p[0]);
     const zs = poly.map((p) => p[1]);
     const bx0 = Math.min(...xs), bx1 = Math.max(...xs), bz0 = Math.min(...zs), bz1 = Math.max(...zs);
-    const n = Math.round(polyArea(poly) * density * 0.62);
+    const n = Math.round(polyArea(poly) * density * 0.55);
     for (let i = 0, tries = 0; i < n && tries < n * 8; tries++) {
       const x = rr(bx0, bx1);
       const z = rr(bz0, bz1);
@@ -456,31 +456,31 @@ function buildPlan(lot: Lot, archetype: Archetype): PropertyPlan {
     } else if (A === 'desert-garden') {
       const curved = blob(rnd, rr(-4, 4), WALL_Z - 2.2, WALL_X - 1, 2.6, R(-WALL_X, WALL_X, backZ + patioD + 0.8, WALL_Z), 20);
       bed(accentRock, curved, 2, 'stone');
+      // Trees first, then the understorey fills in around them.
+      plant('palo-verde', rr(5, 9), WALL_Z - 2.6, rr(1.0, 1.15));
       fillBed(curved, desertMix, 0.45);
       const island = blob(rnd, rr(-8, -4), backZ + patioD + 2.4, 2.2, 1.5, back, 12);
       bed('rock-brown', island, 3, 'stone');
       plant('boulder', (island[0][0] + island[6][0]) / 2, (island[0][1] + island[6][1]) / 2, rr(0.7, 0.9));
       fillBed(island, ['barrel-cactus', 'agave', 'groundcover'], 0.7);
-      plant('palo-verde', rr(5, 9), WALL_Z - 2.6, rr(1.0, 1.15));
       // Flagstone stepping path from the patio into the garden.
       for (let i = 0; i < 5; i++) hardscape.push({ kind: 'pad', mat: 'flagstone', rect: rectAt(px + 2.5 + i * 1.1 + Math.sin(i) * 0.4, backZ + patioD + 0.7 + i * 0.85, 0.75, 0.6), rot: i * 0.6 });
       placeProp('fire-pit', rr(-1, 3), WALL_Z - 5.2, 0);
     } else {
       const rearBed = A === 'older' ? blob(rnd, 0, WALL_Z - 1.2, WALL_X - 0.6, 1.5, R(-WALL_X, WALL_X, WALL_Z - 3.2, WALL_Z), 18) : roundRect(R(-WALL_X + 0.05, WALL_X - 0.05, WALL_Z - rearBedDepth, WALL_Z - 0.05), A === 'rental' ? 0 : 1.0);
       bed(A === 'older' ? 'mulch' : accentRock, rearBed, 2, A === 'rental' ? undefined : 'curb');
-      fillBed(rearBed, desertMix, A === 'rental' ? 0.16 : A === 'upscale' ? 0.3 : 0.24);
-      // Trees anchor the rear bed so the yard has canopy from the strategy camera.
+      // Trees anchor the rear bed (placed before the understorey) so the yard has canopy from the strategy camera.
       if (A !== 'family') plant(A === 'rental' ? 'palm' : accentTree, rr(1, 7), WALL_Z - rearBedDepth / 2 - 0.2, rr(0.95, 1.15));
+      if (A === 'upscale') { plant('date-palm', -WALL_X + 2.2, WALL_Z - 2.0, rr(0.85, 1.0)); plant('date-palm', WALL_X - 2.4, WALL_Z - 2.0, rr(0.85, 1.0)); }
+      else if (A === 'older') plant(accentTree, rr(-8, -4), WALL_Z - 3.6, rr(1.2, 1.4));
+      else if (A !== 'family') plant(accentTree, rr(-10, -6), WALL_Z - 2.4, rr(0.95, 1.15));
+      fillBed(rearBed, desertMix, A === 'rental' ? 0.16 : A === 'upscale' ? 0.3 : 0.24);
       // Side border along the wall opposite the gate path.
       if (A !== 'rental') {
         const side = roundRect(R(-WALL_X + 0.05, -WALL_X + 1.6, backZ + 0.6, WALL_Z - rearBedDepth), 0.6);
         bed(A === 'older' ? 'mulch' : accentRock, side, 2, 'curb');
         fillBed(side, desertMix, 0.28);
       }
-      // A shade tree or palms where there is room.
-      if (A === 'upscale') { plant('date-palm', -WALL_X + 2.2, WALL_Z - 2.0, rr(0.85, 1.0)); plant('date-palm', WALL_X - 2.4, WALL_Z - 2.0, rr(0.85, 1.0)); }
-      else if (A === 'older') { plant(accentTree, rr(-8, -4), WALL_Z - 3.6, rr(1.2, 1.4)); plant('palm', WALL_X - 3, WALL_Z - 1.6, rr(1.0, 1.2)); }
-      else if (A !== 'family') plant(accentTree, rr(-10, -6), WALL_Z - 2.4, rr(0.95, 1.15));
     }
 
     // An island bed in the open middle of the backyard: boulder group, small tree, desert cluster.
@@ -489,8 +489,11 @@ function buildPlan(lot: Lot, archetype: Archetype): PropertyPlan {
       const iz = Math.min(WALL_Z - (A === 'rental' ? 2.4 : 4.6), backZ + patioD + rr(2.2, 3.0));
       const island = blob(rnd, ix, iz, A === 'rental' ? 1.6 : 2.6, A === 'rental' ? 1.1 : 1.6, back, 14);
       bed(A === 'older' ? 'mulch' : accentRock, island, 3, A === 'rental' ? undefined : 'stone');
-      plant('boulder', ix + rr(-0.6, 0.6), iz + rr(-0.3, 0.3), rr(0.55, 0.75));
-      if (A !== 'rental') plant(A === 'older' ? 'olive' : pick(['palo-verde', 'mesquite', 'olive'] as const), ix + rr(-1.2, 1.2), iz, rr(0.85, 1.0));
+      // Every island gets a small tree (a rental's one shade tree too), placed before the boulder
+      // group, which sits off to the side so the spacing rule keeps both.
+      const side = rnd() < 0.5 ? -1 : 1;
+      plant(A === 'older' ? 'olive' : A === 'rental' ? 'mesquite' : pick(['palo-verde', 'mesquite', 'olive'] as const), ix + side * 0.8, iz, A === 'rental' ? rr(0.95, 1.1) : rr(0.85, 1.0));
+      plant('boulder', ix - side * (A === 'rental' ? 1.3 : 1.9), iz + rr(-0.3, 0.3), rr(0.5, 0.7));
       fillBed(island, desertMix, A === 'rental' ? 0.4 : 0.55);
     }
 

@@ -1,0 +1,100 @@
+{
+  "method": "Intel Arc 140V, Chrome headless (ANGLE D3D11), 1920x1080, High preset, vsync off; GPU ms = median EXT_disjoint_timer_query_webgl2 time per render over 3 s; two alternating rounds (baseline 942846a, new) in one session; triangles and draw calls from renderer.info (all passes)",
+  "views": {
+    "E01-six-houses": {
+      "gpuMsBefore": [
+        4.85,
+        4.83
+      ],
+      "gpuMsAfter": [
+        5.25,
+        5.16
+      ],
+      "gpuMeanBefore": 4.84,
+      "gpuMeanAfter": 5.21,
+      "changePct": 7.6,
+      "fpsBefore": 196.45,
+      "fpsAfter": 182.5,
+      "callsBefore": 436,
+      "callsAfter": 495,
+      "trianglesBefore": 1103665,
+      "trianglesAfter": 1497420
+    },
+    "E03-backyard": {
+      "gpuMsBefore": [
+        4.5,
+        4.42
+      ],
+      "gpuMsAfter": [
+        4.21,
+        4.14
+      ],
+      "gpuMeanBefore": 4.46,
+      "gpuMeanAfter": 4.17,
+      "changePct": -6.5,
+      "fpsBefore": 214.25,
+      "fpsAfter": 230.2,
+      "callsBefore": 417,
+      "callsAfter": 471,
+      "trianglesBefore": 1125843,
+      "trianglesAfter": 1536252
+    },
+    "E06-hq": {
+      "gpuMsBefore": [
+        6.18,
+        6.12
+      ],
+      "gpuMsAfter": [
+        6.59,
+        6.39
+      ],
+      "gpuMeanBefore": 6.15,
+      "gpuMeanAfter": 6.49,
+      "changePct": 5.5,
+      "fpsBefore": 150.95,
+      "fpsAfter": 144.9,
+      "callsBefore": 712,
+      "callsAfter": 779,
+      "trianglesBefore": 1201306,
+      "trianglesAfter": 1627983
+    },
+    "E14-street": {
+      "gpuMsBefore": [
+        5.96,
+        5.9
+      ],
+      "gpuMsAfter": [
+        6.3,
+        6.25
+      ],
+      "gpuMeanBefore": 5.93,
+      "gpuMeanAfter": 6.28,
+      "changePct": 5.9,
+      "fpsBefore": 162.45,
+      "fpsAfter": 155.8,
+      "callsBefore": 432,
+      "callsAfter": 486,
+      "trianglesBefore": 1125993,
+      "trianglesAfter": 1516594
+    },
+    "E09-night": {
+      "gpuMsBefore": [
+        4.54,
+        4.43
+      ],
+      "gpuMsAfter": [
+        4.88,
+        4.73
+      ],
+      "gpuMeanBefore": 4.48,
+      "gpuMeanAfter": 4.8,
+      "changePct": 7.1,
+      "fpsBefore": 208,
+      "fpsAfter": 200.75,
+      "callsBefore": 436,
+      "callsAfter": 493,
+      "trianglesBefore": 1105875,
+      "trianglesAfter": 1497590
+    }
+  }
+}

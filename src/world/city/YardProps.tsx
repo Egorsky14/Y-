@@ -9,10 +9,9 @@ import { greenbelts } from './greenbelt';
 /**
  * Outdoor furniture and yard props from the property plans (dining and bistro sets, loungers,
  * grills, sectionals, fire pits, umbrellas, sheds, pots, swing sets, carts, benches), authored in
- * Blender (tools/blender/yard_kit.py → models/props/yard-kit.glb). Each kind is drawn as at most
- * two InstancedMeshes: a fixed part (frames, wood, metal, baked into vertex colours) and a tinted
- * part (cushions, canopies, ceramic) that takes a per-instance colour, so one asset reads in many
- * colour schemes for a handful of draw calls. Not selectable.
+ * Blender (tools/blender/yard_kit.py → models/props/yard-kit.glb). Material colours are baked into
+ * vertex colours; cushions, canopies and ceramic are tinted per placement, so one asset reads in
+ * many colour schemes. All placements are merged into two static meshes. Not selectable.
  */
 
 const URL = `${import.meta.env.BASE_URL}models/props/yard-kit.glb`;
@@ -80,39 +79,47 @@ function placements(): Record<PropKind, Placement[]> {
 const fixedMaterial = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.7, metalness: 0.15 });
 const tintedMaterial = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.92 });
 
-function KindLayer({ parts, list, kind }: { parts: Part[]; list: Placement[]; kind: PropKind }) {
-  const setup = (part: Part) => (im: THREE.InstancedMesh | null) => {
-    if (!im) return;
-    const m = new THREE.Matrix4();
-    const q = new THREE.Quaternion();
-    const up = new THREE.Vector3(0, 1, 0);
-    const c = new THREE.Color();
+/**
+ * Bakes every placed prop into two static meshes: fixed parts and tinted parts (cushions, canopies,
+ * pottery) with each placement's colour multiplied into its vertex colours. The props never move,
+ * so this draws the whole yard kit in two calls (plus two in the shadow pass) instead of one
+ * instanced mesh per kind and part.
+ */
+function bake(byKind: Record<PropKind, Part[]>, lists: Record<PropKind, Placement[]>): { fixed: THREE.BufferGeometry | null; tinted: THREE.BufferGeometry | null } {
+  const fixed: THREE.BufferGeometry[] = [];
+  const tinted: THREE.BufferGeometry[] = [];
+  const m = new THREE.Matrix4();
+  const q = new THREE.Quaternion();
+  const up = new THREE.Vector3(0, 1, 0);
+  const c = new THREE.Color();
+  for (const kind of KINDS) {
     const palette = kind === 'planter-pot' ? POTTERY : FABRIC;
-    list.forEach((p, i) => {
+    for (const p of lists[kind]) {
       m.compose(new THREE.Vector3(p.x, 0, p.z), q.setFromAxisAngle(up, p.heading), new THREE.Vector3(1, 1, 1));
-      im.setMatrixAt(i, m);
-      if (part.tinted) im.setColorAt(i, c.set(palette[p.seed % palette.length]));
-    });
-    im.instanceMatrix.needsUpdate = true;
-    if (im.instanceColor) im.instanceColor.needsUpdate = true;
-    im.computeBoundingSphere();
-  };
-  return (
-    <>
-      {parts.map((p, i) => (
-        <instancedMesh key={i} name={`yard:${kind}:${p.tinted ? 'tint' : 'fixed'}`} ref={setup(p)} args={[p.geometry, p.tinted ? tintedMaterial : fixedMaterial, list.length]} castShadow={kind !== 'planter-pot'} receiveShadow raycast={() => null} />
-      ))}
-    </>
-  );
+      for (const part of byKind[kind]) {
+        const g = part.geometry.clone().applyMatrix4(m);
+        if (part.tinted) {
+          c.set(palette[p.seed % palette.length]);
+          const col = g.attributes.color as THREE.BufferAttribute;
+          for (let i = 0; i < col.count; i++) col.setXYZ(i, col.getX(i) * c.r, col.getY(i) * c.g, col.getZ(i) * c.b);
+          tinted.push(g);
+        } else fixed.push(g);
+      }
+    }
+  }
+  return { fixed: fixed.length ? BGU.mergeGeometries(fixed, false) : null, tinted: tinted.length ? BGU.mergeGeometries(tinted, false) : null };
 }
 
 export function YardProps() {
   const { scene } = useGLTF(URL);
-  const byKind = useMemo(() => Object.fromEntries(KINDS.map((k) => [k, partsFor(scene, k)])) as Record<PropKind, Part[]>, [scene]);
-  const lists = useMemo(() => placements(), []);
+  const baked = useMemo(() => {
+    const byKind = Object.fromEntries(KINDS.map((k) => [k, partsFor(scene, k)])) as Record<PropKind, Part[]>;
+    return bake(byKind, placements());
+  }, [scene]);
   return (
     <group name="yard-props">
-      {KINDS.map((k) => (lists[k].length > 0 && byKind[k].length > 0 ? <KindLayer key={k} kind={k} parts={byKind[k]} list={lists[k]} /> : null))}
+      {baked.fixed && <mesh name="yard:fixed" geometry={baked.fixed} material={fixedMaterial} castShadow receiveShadow raycast={() => null} />}
+      {baked.tinted && <mesh name="yard:tinted" geometry={baked.tinted} material={tintedMaterial} castShadow receiveShadow raycast={() => null} />}
     </group>
   );
 }
