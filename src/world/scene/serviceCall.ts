@@ -10,13 +10,16 @@ import type { GameState } from '@/game/simulation/types';
 
 /**
  * Camera framing for a customer's service site: from the street side, centred between the curb
- * spot where the van parks and the condenser, close enough that the van, the technician and the
- * unit read at once with the house behind them.
+ * spot where the van parks and the condenser (pulled a little toward the lot centre and aimed 3 m up),
+ * close enough that the van, the technician and the unit read at once with the house behind them,
+ * while the job pin above the lot centre stays on screen on desktop and on an upright phone
+ * (src/tests/serviceSiteCamera.test.ts).
  */
 export function serviceSiteCamera(lot: Lot): { type: 'focus'; target: { x: number; z: number }; distance: number; azimuth: number; elevation: number; targetY: number } {
   const curb = curbParking(lot);
   const unit = condenserPosition(lot);
-  return { type: 'focus', target: { x: curb.x * 0.45 + unit.x * 0.55, z: curb.z * 0.45 + unit.z * 0.55 }, distance: 34, azimuth: Math.atan2(curb.x - unit.x, curb.z - unit.z) + 0.55, elevation: 0.66, targetY: 0.6 };
+  const c = lot.center;
+  return { type: 'focus', target: { x: curb.x * 0.36 + unit.x * 0.44 + c.x * 0.2, z: curb.z * 0.36 + unit.z * 0.44 + c.z * 0.2 }, distance: 38, azimuth: Math.atan2(curb.x - unit.x, curb.z - unit.z) + 0.35, elevation: 0.66, targetY: 3 };
 }
 
 /** Walking speed at 1× game speed (m/s); the walk cycle in Worker covers ~1.5 m per second. */
