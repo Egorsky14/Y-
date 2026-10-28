@@ -1,0 +1,31 @@
+{
+  "label": "before-390",
+  "size": "390x844",
+  "shots": {
+    "E01-six-houses": {
+      "calls": 437,
+      "triangles": 1085497,
+      "geometries": 486,
+      "textures": 51
+    },
+    "E02-house-street": {
+      "calls": 430,
+      "triangles": 1101709,
+      "geometries": 486,
+      "textures": 51
+    },
+    "E06-hq": {
+      "calls": 612,
+      "triangles": 1147721,
+      "geometries": 515,
+      "textures": 56
+    },
+    "E10-mobile-neighborhood": {
+      "calls": 433,
+      "triangles": 1093585,
+      "geometries": 515,
+      "textures": 56
+    }
+  },
+  "errors": []
+}

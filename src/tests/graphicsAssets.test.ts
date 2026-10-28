@@ -23,7 +23,14 @@ const manifest = JSON.parse(readFileSync('public/models/manifest.json', 'utf8'))
 describe('model assets', () => {
   it('lists every vehicle class, both civilian cars and the Blender props', () => {
     const ids = manifest.assets.map((a) => a.id);
-    for (const id of ['full-size-van', 'compact-van', 'pickup', 'box-truck', ...CIVILIAN_MODELS, 'jobsite-kit', 'supply-tools']) expect(ids).toContain(id);
+    for (const id of ['full-size-van', 'compact-van', 'pickup', 'box-truck', ...CIVILIAN_MODELS, 'jobsite-kit', 'supply-tools', 'yard-kit']) expect(ids).toContain(id);
+  });
+
+  it('ships every yard prop the property plans place as a named node of the yard kit', () => {
+    const glb = readFileSync('public/models/props/yard-kit.glb');
+    const json = JSON.parse(glb.toString('utf8', 20, 20 + glb.readUInt32LE(12))) as { nodes: { name?: string }[] };
+    const names = new Set(json.nodes.map((n) => n.name));
+    for (const kind of ['dining-set', 'bistro-set', 'lounge-chair', 'grill', 'sofa-set', 'fire-pit', 'umbrella', 'shed', 'planter-pot', 'swing-set', 'trash-bins', 'bench']) expect(names, kind).toContain(kind);
   });
 
   it('ships each asset as binary glTF 2.0 matching the manifest, within its budget', () => {

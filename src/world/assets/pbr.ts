@@ -763,3 +763,169 @@ export function gableEndGeometry(w: number, h: number, z: number, facingPositive
   g.computeVertexNormals();
   return g;
 }
+
+// ---- Environment Revolution: landscape ground and hardscape surfaces ------------------------------
+
+/** Discs written into ImageData with wrap-around (seamless tiles), lit from the upper left. */
+function chipData(d: Uint8ClampedArray, h: Uint8ClampedArray, size: number, cx: number, cy: number, r: number, rgb: [number, number, number], height: number) {
+  const r2 = r * r;
+  for (let y = Math.floor(-r); y <= Math.ceil(r); y++) for (let x = Math.floor(-r); x <= Math.ceil(r); x++) {
+    const q = x * x + y * y * 1.25;
+    if (q > r2) continue;
+    const xx = ((Math.round(cx + x) % size) + size) % size;
+    const yy = ((Math.round(cy + y) % size) + size) % size;
+    const i = (yy * size + xx) * 4;
+    const lit = 1 + (-(x + y) / (r * 2.4)) * 0.22 - (q / r2) * 0.12;
+    d[i] = Math.min(255, rgb[0] * lit);
+    d[i + 1] = Math.min(255, rgb[1] * lit);
+    d[i + 2] = Math.min(255, rgb[2] * lit);
+    const hv = height * (1 - q / r2);
+    if (hv > h[i]) h[i] = h[i + 1] = h[i + 2] = hv;
+  }
+}
+
+/** Soft, wrapped colour patches so large ground areas do not repeat visibly. */
+function mottle(ctx: CanvasRenderingContext2D, size: number, rnd: () => number, count: number, colors: string[], alpha: number, rMin: number, rMax: number) {
+  for (let i = 0; i < count; i++) {
+    const x = rnd() * size;
+    const y = rnd() * size;
+    const r = rMin + rnd() * (rMax - rMin);
+    const col = colors[Math.floor(rnd() * colors.length)];
+    for (const dx of [-size, 0, size]) for (const dy of [-size, 0, size]) {
+      const g = ctx.createRadialGradient(x + dx, y + dy, 0, x + dx, y + dy, r);
+      g.addColorStop(0, `rgba(${col},${alpha})`);
+      g.addColorStop(1, `rgba(${col},0)`);
+      ctx.fillStyle = g;
+      ctx.fillRect(x + dx - r, y + dy - r, r * 2, r * 2);
+    }
+  }
+}
+
+interface AggregateSpec { base: [number, number, number]; chips: [number, number, number][]; count: number; rMin: number; rMax: number; mottle: string[]; metersPerRepeat: number; normal: number; seed: number }
+
+export type AggregateKind = 'dg' | 'rock-light' | 'rock-gray' | 'rock-brown' | 'rock-red' | 'mulch' | 'soil';
+
+const AGGREGATES: Record<AggregateKind, AggregateSpec> = {
+  // Decomposed granite: fine warm tan, dense small grains.
+  dg: { base: [178, 140, 98], chips: [[198, 164, 120], [156, 122, 86], [214, 190, 150], [136, 104, 74]], count: 30000, rMin: 0.7, rMax: 1.5, mottle: ['140,104,70', '205,176,136'], metersPerRepeat: 3, normal: 1.1, seed: 301 },
+  // Light desert gravel ("desert gold").
+  'rock-light': { base: [170, 150, 118], chips: [[226, 210, 180], [196, 170, 132], [242, 232, 212], [150, 126, 96], [212, 192, 156], [120, 104, 86]], count: 15000, rMin: 1.2, rMax: 2.6, mottle: ['150,124,90', '225,208,176'], metersPerRepeat: 2.6, normal: 1.8, seed: 302 },
+  // Gray decorative stone (modern landscapes).
+  'rock-gray': { base: [128, 128, 124], chips: [[150, 150, 146], [104, 104, 102], [178, 176, 170], [88, 90, 92], [138, 132, 124]], count: 10000, rMin: 1.1, rMax: 2.6, mottle: ['90,92,94', '170,168,160'], metersPerRepeat: 2.6, normal: 1.5, seed: 303 },
+  // Brown "Apache" rock in planting beds.
+  'rock-brown': { base: [118, 88, 62], chips: [[140, 104, 72], [96, 70, 50], [160, 126, 92], [84, 62, 46], [124, 98, 76]], count: 9000, rMin: 1.3, rMax: 3.0, mottle: ['80,58,40', '150,116,84'], metersPerRepeat: 2.4, normal: 1.7, seed: 304 },
+  // Red "Sedona" rock.
+  'rock-red': { base: [150, 92, 64], chips: [[170, 106, 74], [130, 78, 54], [186, 124, 90], [112, 66, 46]], count: 9000, rMin: 1.2, rMax: 2.8, mottle: ['110,62,42', '182,120,88'], metersPerRepeat: 2.4, normal: 1.6, seed: 305 },
+  mulch: { base: [84, 60, 42], chips: [[104, 74, 50], [66, 46, 32], [120, 88, 60], [56, 40, 30]], count: 14000, rMin: 0.8, rMax: 2.2, mottle: ['50,36,26', '110,80,56'], metersPerRepeat: 2, normal: 1.2, seed: 306 },
+  // Bare compacted soil with sparse pebbles (older yards).
+  soil: { base: [176, 146, 108], chips: [[156, 126, 92], [196, 170, 132], [140, 114, 84]], count: 5000, rMin: 0.6, rMax: 1.8, mottle: ['140,110,76', '200,176,138', '120,104,70'], metersPerRepeat: 4, normal: 0.8, seed: 307 },
+};
+
+export function aggregatePbr(kind: AggregateKind): PbrSet {
+  return getOrMake(`agg:${kind}`, () => {
+    const s = AGGREGATES[kind];
+    const size = 512;
+    const color = tintedColor(size, s.seed, s.base, 14, 0, 1.6);
+    const cctx = color.getContext('2d')!;
+    const rnd = makeDecoRng(s.seed * 7);
+    mottle(cctx, size, rnd, 12, s.mottle, 0.22, 60, 180);
+    const [h, hctx] = makeCanvas(size);
+    hctx.fillStyle = '#3a3a3a';
+    hctx.fillRect(0, 0, size, size);
+    const cimg = cctx.getImageData(0, 0, size, size);
+    const himg = hctx.getImageData(0, 0, size, size);
+    for (let i = 0; i < s.count; i++) {
+      const c = s.chips[Math.floor(rnd() * s.chips.length)];
+      const v = 0.9 + rnd() * 0.2;
+      chipData(cimg.data, himg.data, size, rnd() * size, rnd() * size, s.rMin + rnd() * (s.rMax - s.rMin), [c[0] * v, c[1] * v, c[2] * v], 140 + rnd() * 110);
+    }
+    cctx.putImageData(cimg, 0, 0);
+    hctx.putImageData(himg, 0, 0);
+    const normal = heightToNormal(blurCanvas(h, 0.5), s.normal);
+    return { map: toTexture(color, true), normalMap: toTexture(normal, false), metersPerRepeat: s.metersPerRepeat };
+  });
+}
+
+/**
+ * Unit paving: concrete pavers in a running bond, travertine in a French pattern, or irregular
+ * flagstone set in decomposed granite. Each unit gets its own tone and raised face, with joints.
+ */
+export function pavingPbr(kind: 'pavers' | 'travertine' | 'flagstone'): PbrSet {
+  return getOrMake(`paving:${kind}`, () => {
+    const size = 512;
+    const rnd = makeDecoRng(kind === 'pavers' ? 401 : kind === 'travertine' ? 402 : 403);
+    const [c, ctx] = makeCanvas(size);
+    const [h, hctx] = makeCanvas(size);
+    const joint = kind === 'flagstone' ? '#a88f6c' : kind === 'travertine' ? '#b8ab94' : '#77706a';
+    ctx.fillStyle = joint;
+    ctx.fillRect(0, 0, size, size);
+    hctx.fillStyle = '#202020';
+    hctx.fillRect(0, 0, size, size);
+    const units: [number, number][][] = [];
+    if (kind === 'pavers') {
+      // 30 x 15 cm units over 2.4 m: 8 x 16 courses, alternate courses offset by half a unit.
+      const uw = size / 8;
+      const uh = size / 16;
+      for (let row = 0; row < 16; row++) for (let col = -1; col < 8; col++) {
+        const x = col * uw + (row % 2 ? uw / 2 : 0);
+        const y = row * uh;
+        units.push([[x + 2, y + 2], [x + uw - 2, y + 2], [x + uw - 2, y + uh - 2], [x + 2, y + uh - 2]]);
+      }
+    } else if (kind === 'travertine') {
+      // French pattern approximated by 2x2, 2x1 and 1x1 modules (30 cm module over 2.4 m).
+      const m = size / 8;
+      const taken = new Set<string>();
+      for (let gy = 0; gy < 8; gy++) for (let gx = 0; gx < 8; gx++) {
+        if (taken.has(`${gx},${gy}`)) continue;
+        const r = rnd();
+        let w = 1;
+        let hh = 1;
+        if (r < 0.3 && gx < 7 && gy < 7 && !taken.has(`${gx + 1},${gy}`) && !taken.has(`${gx},${gy + 1}`) && !taken.has(`${gx + 1},${gy + 1}`)) { w = 2; hh = 2; }
+        else if (r < 0.6 && gx < 7 && !taken.has(`${gx + 1},${gy}`)) w = 2;
+        for (let a = 0; a < w; a++) for (let b = 0; b < hh; b++) taken.add(`${gx + a},${gy + b}`);
+        const x = gx * m;
+        const y = gy * m;
+        units.push([[x + 1.5, y + 1.5], [x + w * m - 1.5, y + 1.5], [x + w * m - 1.5, y + hh * m - 1.5], [x + 1.5, y + hh * m - 1.5]]);
+      }
+    } else {
+      // Flagstone: jittered grid of irregular quads with wide joints, seamless at the tile edges.
+      const n = 6;
+      const cell = size / n;
+      const pts: [number, number][][] = [];
+      for (let y = 0; y <= n; y++) {
+        pts.push([]);
+        for (let x = 0; x <= n; x++) pts[y].push([x * cell + (rnd() - 0.5) * cell * 0.5, y * cell + (rnd() - 0.5) * cell * 0.5]);
+      }
+      for (let y = 0; y <= n; y++) pts[y][n] = [pts[y][0][0] + size, pts[y][0][1]];
+      for (let x = 0; x <= n; x++) pts[n][x] = [pts[0][x][0], pts[0][x][1] + size];
+      for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) {
+        const quad = [pts[y][x], pts[y][x + 1], pts[y + 1][x + 1], pts[y + 1][x]];
+        const cx = quad.reduce((a, p) => a + p[0], 0) / 4;
+        const cy = quad.reduce((a, p) => a + p[1], 0) / 4;
+        units.push(quad.map(([px, py]) => [cx + (px - cx) * 0.86, cy + (py - cy) * 0.86] as [number, number]));
+      }
+    }
+    const tone = (): [number, number, number] => {
+      const v = rnd();
+      if (kind === 'pavers') return v < 0.33 ? [178, 160, 138] : v < 0.66 ? [158, 140, 120] : [192, 178, 158];
+      if (kind === 'travertine') return v < 0.4 ? [226, 212, 186] : v < 0.75 ? [214, 196, 166] : [234, 224, 204];
+      return v < 0.3 ? [176, 132, 96] : v < 0.6 ? [196, 160, 120] : v < 0.85 ? [158, 120, 90] : [184, 168, 140];
+    };
+    for (const u of units) {
+      const [r, g, b] = tone();
+      for (const [ox, oy] of [[0, 0], [-size, 0], [size, 0], [0, -size], [0, size]]) {
+        for (const [cx2, fill] of [[ctx, `rgb(${r},${g},${b})`], [hctx, '#b0b0b0']] as [CanvasRenderingContext2D, string][]) {
+          cx2.beginPath();
+          u.forEach(([x, y], i) => (i === 0 ? cx2.moveTo(x + ox, y + oy) : cx2.lineTo(x + ox, y + oy)));
+          cx2.closePath();
+          cx2.fillStyle = fill;
+          cx2.fill();
+        }
+      }
+    }
+    speckle(c, kind === 'travertine' ? 9000 : 14000, rnd, (r) => { const d = 0.75 + r() * 0.4; return [150 * d, 136 * d, 116 * d, 0.25]; });
+    mottle(ctx, size, rnd, 8, ['90,80,70', '240,230,210'], 0.1, 50, 140);
+    const normal = heightToNormal(blurCanvas(h, 1.2), 1.6);
+    return { map: toTexture(c, true), normalMap: toTexture(normal, false), metersPerRepeat: kind === 'flagstone' ? 3.2 : 2.4 };
+  });
+}

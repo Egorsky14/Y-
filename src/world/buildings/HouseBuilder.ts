@@ -2,8 +2,10 @@ import * as THREE from 'three';
 import type { Lot, HouseStyle } from '@/game/world/cityLayout';
 import { gableEndGeometry, gableRoofGeometry, hipRoofGeometry, MeshBuilder } from '../assets/pbr';
 import { makeDecoRng } from '../assets/random';
-import { DOOR_COLORS, roofMaterial, STATIC_MATERIALS, UV_SCALES, WALL_TINTS, wallMaterial, type RoofKind } from './materials';
-import { hashLot, yardPlan } from '../city/yardLayout';
+import { DOOR_COLORS, groundMaterial, hardMaterial, LANDSCAPE_MATERIALS, roofMaterial, STATIC_MATERIALS, UV_SCALES, wallMaterial, type RoofKind } from './materials';
+import { hashLot, propertyPlan, type PropertyPlan } from '../city/propertyPlan';
+import { renderGreenbelt, renderProperty } from './PropertyBuilder';
+import { greenbelts } from '../city/greenbelt';
 import { DRIVEWAYS } from './driveways';
 import { addCondenser } from '../props/hvac';
 import { condenserPosition, condenserSideDir, HOUSE_HALF_WIDTH } from '@/game/world/cityLayout';
@@ -16,18 +18,18 @@ export interface HouseVariant {
   wall: string;
   roof: RoofKind;
   door: string;
-  lawn: boolean;
 }
 
 export function houseVariant(lot: Lot): HouseVariant {
   const seed = hashLot(lot.id);
   const rnd = makeDecoRng(seed);
   const style = lot.style ?? 'ranch';
-  const wall = WALL_TINTS[Math.floor(rnd() * WALL_TINTS.length)];
+  const palette = propertyPlan(lot).facade.wallPalette;
+  const wall = palette[Math.floor(rnd() * palette.length)];
   const roofPick = rnd();
   const roof: RoofKind = style === 'spanish' ? 'tile' : style === 'modern' ? 'shingle-charcoal' : roofPick < 0.4 ? 'tile' : roofPick < 0.65 ? 'shingle-slate' : roofPick < 0.85 ? 'shingle-brown' : 'shingle-charcoal';
   const door = style === 'modern' ? '#19d3c5' : DOOR_COLORS[Math.floor(rnd() * DOOR_COLORS.length)];
-  return { wall, roof, door, lawn: yardPlan(lot).lawn };
+  return { wall, roof, door };
 }
 
 type B = MeshBuilder;
@@ -124,27 +126,65 @@ function gableRoof(b: B, w: number, d: number, h: number, y: number, overhang = 
   if (primary) b.box('trim', [a * 2, 0.06, c * 2], [pos[0], y + pos[1] - 0.19, pos[2]]);
 }
 
-function blockWall(b: B, lot: Lot, frontZ: number) {
+function blockWall(b: B, lot: Lot, frontZ: number, finish: 'block' | 'wall' = 'block') {
   // Rear and side block walls from the front wall line back to the rear lot line, with pilasters.
   const x0 = -lot.width / 2 + 0.6;
   const x1 = lot.width / 2 - 0.6;
   const zBack = lot.depth / 2 - 0.8;
   const h = 1.8;
   const len = zBack - frontZ;
-  b.box('block', [0.2, h, len], [x0, h / 2, frontZ + len / 2]);
-  b.box('block', [0.2, h, len], [x1, h / 2, frontZ + len / 2]);
-  b.box('block', [x1 - x0, h, 0.2], [0, h / 2, zBack]);
-  for (let z = frontZ; z <= zBack + 0.01; z += 6) for (const x of [x0, x1]) b.box('block', [0.36, h + 0.15, 0.36], [x, (h + 0.15) / 2, Math.min(z, zBack)]);
+  // Block walls by default; modern and upscale lots get smooth stucco walls in the house colour.
+  b.box(finish, [0.2, h, len], [x0, h / 2, frontZ + len / 2]);
+  b.box(finish, [0.2, h, len], [x1, h / 2, frontZ + len / 2]);
+  b.box(finish, [x1 - x0, h, 0.2], [0, h / 2, zBack]);
+  for (let z = frontZ; z <= zBack + 0.01; z += 6) for (const x of [x0, x1]) b.box(finish, [0.36, h + 0.15, 0.36], [x, (h + 0.15) / 2, Math.min(z, zBack)]);
   for (const x of [x0, x1]) b.box('trim', [0.3, 0.06, len], [x, h + 0.03, frontZ + len / 2]);
   b.box('trim', [x1 - x0, 0.06, 0.3], [0, h + 0.03, zBack]);
   // Side gate on the condenser side (dark metal)
   b.box('darkMetal', [0.05, 1.7, 1.2], [x1 - 0.0, 0.85, frontZ + 1.2]);
 }
 
+/** Front face of the garage door wall per style (stone pilasters frame the door there). */
+const GARAGE_FRONT_Z: Record<HouseStyle, number> = { ranch: -5.5, 'two-story': -5.0, spanish: -6.0, modern: -5.5, premium: -5.0 };
+
+/** Front windows per style ([x, y, width, height] on the front wall at z), for shutters. */
+const FRONT_WINDOWS: Record<HouseStyle, { z: number; items: [number, number, number, number][] }> = {
+  ranch: { z: -5.5, items: [[1.6, 1.8, 1.4, 1.2], [5.6, 1.8, 1.8, 1.2]] },
+  'two-story': { z: -5.5, items: [[-3.5, 1.8, 1.3, 1.3], [-3.5, 4.8, 1.3, 1.2], [3.5, 4.8, 1.3, 1.2], [3.5, 1.8, 2.0, 1.4]] },
+  spanish: { z: -6, items: [[-0.4, 1.9, 1.3, 1.5]] },
+  modern: { z: -5.5, items: [] },
+  premium: { z: -6, items: [[-5, 1.9, 1.5, 1.5], [-1.8, 1.9, 1.5, 1.5], [4.5, 1.9, 1.5, 1.5], [7.5, 1.9, 1.5, 1.5]] },
+};
+
+function shutters(b: B, style: HouseStyle, color: string) {
+  const { z, items } = FRONT_WINDOWS[style];
+  for (const [x, y, w, h] of items) for (const s of [-1, 1]) {
+    b.box(`shutter:${color}`, [0.42, h + 0.1, 0.05], [x + s * (w / 2 + 0.32), y, z - 0.07]);
+    for (let k = 0; k < 4; k++) b.box('dark', [0.36, 0.015, 0.02], [x + s * (w / 2 + 0.32), y - h / 2 + 0.15 + k * (h / 4), z - 0.1]);
+  }
+}
+
 /** Resolves shared material keys, including per-variant keys such as `wall:#f0e3c8`. */
 export function houseMaterialResolver(key: string): THREE.Material {
   const [kind, arg] = key.split(':');
   switch (kind) {
+    case 'ground':
+    case 'bed':
+      return groundMaterial(arg);
+    case 'hard':
+      return hardMaterial(arg);
+    case 'poolWater': return LANDSCAPE_MATERIALS.poolWater();
+    case 'poolShell': return LANDSCAPE_MATERIALS.poolShell();
+    case 'coping': return LANDSCAPE_MATERIALS.coping();
+    case 'steelEdge': return LANDSCAPE_MATERIALS.steelEdge();
+    case 'curbEdge': return LANDSCAPE_MATERIALS.curbEdge();
+    case 'stoneEdge': return LANDSCAPE_MATERIALS.stoneEdge();
+    case 'pergolaWood': return LANDSCAPE_MATERIALS.pergolaWood();
+    case 'pergolaDark': return LANDSCAPE_MATERIALS.pergolaDark();
+    case 'stoneVeneer': return LANDSCAPE_MATERIALS.stoneVeneer();
+    case 'counter': return LANDSCAPE_MATERIALS.counter();
+    case 'shutter': return LANDSCAPE_MATERIALS.shutter(arg);
+    case 'line': return LANDSCAPE_MATERIALS.line();
     case 'wall':
       return wallMaterial(arg);
     case 'roof':
@@ -198,7 +238,11 @@ export function buildNeighborhood(lots: Lot[]): THREE.Group {
     addHouse(shared, lot);
   }
   shared.setFrame(null);
+  // Common-area greenbelts between the back walls of facing rows (only when the whole neighbourhood is built).
+  if (lots.length > 8) for (const gb of greenbelts()) renderGreenbelt(shared, gb);
   const g = shared.build('houses');
+  // Beds first, then zone ground, then everything else (see PropertyBuilder).
+  for (const m of g.children) m.renderOrder = m.name.startsWith('houses:bed:') ? -2 : m.name.startsWith('houses:ground:') ? -1 : 0;
   if (import.meta.env.DEV) console.debug(`[build] neighborhood ${(performance.now() - t0).toFixed(0)} ms`);
   return g;
 }
@@ -213,7 +257,7 @@ export function buildHouse(lot: Lot): THREE.Group {
 export function addHouse(shared: MeshBuilder, lot: Lot): void {
   const style: HouseStyle = lot.style ?? 'ranch';
   const variant = houseVariant(lot);
-  const plan = yardPlan(lot);
+  const plan: PropertyPlan = propertyPlan(lot);
   // Alias generic keys to this house's variant materials; everything else is shared.
   const garageTint = ['#e9e6de', '#d9d2c4', '#c9bfae', '#3a3d41'][hashLot(lot.id + 'g') % 4];
   const alias: Record<string, string> = { wall: `wall:${variant.wall}`, roof: `roof:${variant.roof}`, roofCap: `roofCap:${variant.roof}`, door: `door:${variant.door}`, garage: `garageTint:${garageTint}` };
@@ -221,14 +265,7 @@ export function addHouse(shared: MeshBuilder, lot: Lot): void {
     add: (k: string, g: THREE.BufferGeometry, p?: [number, number, number], r?: [number, number, number], s?: [number, number, number]) => shared.add(alias[k] ?? k, g, p, r, s),
     box: (k: string, size: [number, number, number], p: [number, number, number], r?: [number, number, number]) => shared.box(alias[k] ?? k, size, p, r),
   } as unknown as B;
-  const lotW = lot.width;
-  const lotD = lot.depth;
-  const lotFront = -lotD / 2;
-
-  // Ground cover for the whole lot, lawn panel in front if chosen.
-  b.add('gravel', new THREE.PlaneGeometry(lotW - 0.4, lotD - 0.4), [0, 0.012, 0], [-Math.PI / 2, 0, 0]);
-  // Mulch beds
-  for (const [x, z, w, d] of plan.beds) b.add('mulch', new THREE.PlaneGeometry(w, d), [x, 0.03, z], [-Math.PI / 2, 0, 0]);
+  const lotFront = -lot.depth / 2;
 
   let frontZ: number;
   let driveX: number;
@@ -381,10 +418,6 @@ export function addHouse(shared: MeshBuilder, lot: Lot): void {
     chimney(b, -6, 2, h + 1.2, 2.4, variant.wall);
     roofVents(b, [[4, h + 1.4, 3], [-3, h + 1.3, -1]]);
     downspouts(b, [[-w / 2 - 0.75, frontZ - 0.6, 0], [w / 2 + 0.75, d / 2 + 1.1, 0]], h);
-    // Pool with deck and a shade sail post
-    b.add('water', new THREE.PlaneGeometry(7, 3.5), [0, 0.06, 12], [-Math.PI / 2, 0, 0]);
-    b.box('concrete', [9.2, 0.14, 5.6], [0, 0.02, 12]);
-    b.box('concrete', [7.4, 0.3, 3.9], [0, -0.1, 12]);
     driveX = -11;
     driveW = 8.5;
     walkX = 1;
@@ -433,29 +466,7 @@ export function addHouse(shared: MeshBuilder, lot: Lot): void {
       b.box('galvanized', [1.06, 0.03, 1.74], [px, cy - 0.03, cz], [back * theta, 0, 0]);
     }
   }
-  for (const [i, col] of (['bin', 'dark'] as const).entries()) {
-    b.box(col, [0.62, 1.05, 0.7], [driveX + driveW / 2 + 0.6 + i * 0.75, 0.52, frontZ + 1.3]);
-    b.box('dark', [0.66, 0.08, 0.74], [driveX + driveW / 2 + 0.6 + i * 0.75, 1.08, frontZ + 1.3]);
-  }
-  {
-    const backZ = { ranch: 5.5, 'two-story': 5.5, spanish: 6, modern: 5.5, premium: 7 }[style] + 3.2;
-    const px = style === 'premium' ? -6 : 1.5;
-    b.box('concrete', [5.5, 0.1, 4.5], [px, 0.05, backZ]);
-    b.add('wood', new THREE.CylinderGeometry(0.7, 0.7, 0.06, 16), [px, 0.74, backZ]);
-    b.box('darkMetal', [0.06, 0.72, 0.06], [px, 0.37, backZ]);
-    for (let k = 0; k < 4; k++) {
-      const a = (k / 4) * Math.PI * 2 + 0.4;
-      b.box('darkMetal', [0.45, 0.06, 0.45], [px + Math.cos(a) * 1.1, 0.45, backZ + Math.sin(a) * 1.1], [0, -a, 0]);
-      b.box('darkMetal', [0.45, 0.5, 0.05], [px + Math.cos(a) * 1.32, 0.72, backZ + Math.sin(a) * 1.32], [0, -a - Math.PI / 2, 0]);
-    }
-    const umbrella = ['#b7442e', '#2f5d8a', '#c9a24a', '#4a7a52'][seed % 4];
-    b.box('darkMetal', [0.05, 2.4, 0.05], [px, 1.2, backZ]);
-    b.add(`umbrella:${umbrella}`, new THREE.ConeGeometry(1.5, 0.45, 8), [px, 2.45, backZ]);
-    b.box('dark', [0.6, 0.9, 0.5], [px + 2.8, 0.75, backZ - 1.2]); // grill
-    b.box('darkMetal', [0.7, 0.05, 0.6], [px + 2.8, 1.22, backZ - 1.2]);
-    for (const [gx, gz] of [[-0.25, -0.2], [0.25, 0.2]]) b.add('darkMetal', new THREE.CylinderGeometry(0.1, 0.1, 0.05, 10), [px + 2.8 + gx, 0.05, backZ - 1.2 + gz], [0, 0, Math.PI / 2]);
-  }
-  if (seed % 3 === 0) {
+  if (plan.archetype === 'family') {
     // Basketball hoop at the driveway
     b.box('darkMetal', [0.08, 3.2, 0.08], [driveX - driveW / 2 - 0.4, 1.6, frontZ - 3]);
     b.box('white', [1.4, 0.9, 0.05], [driveX - driveW / 2 + 0.1, 3.2, frontZ - 3]);
@@ -463,18 +474,15 @@ export function addHouse(shared: MeshBuilder, lot: Lot): void {
   }
 
   DRIVEWAYS.set(lot.id, { x: driveX, w: driveW, frontZ });
-  // Driveway from the garage down to the sidewalk; walkway from the door.
-  const driveLen = frontZ - lotFront + 0.6;
-  b.add('concrete', new THREE.PlaneGeometry(driveW, driveLen), [driveX, 0.04, frontZ - driveLen / 2 + 0.6], [-Math.PI / 2, 0, 0]);
-  const walkLen = frontZ - lotFront - 1.2;
-  b.add('concrete', new THREE.PlaneGeometry(1.3, walkLen), [walkX, 0.04, frontZ - 1.2 - walkLen / 2], [-Math.PI / 2, 0, 0]);
-  // Lawn panel in the front yard if the plan has one
-  if (plan.lawn) b.add('lawn', new THREE.PlaneGeometry(Math.max(4, lotW / 2 - 4), Math.max(3, frontZ - lotFront - 3)), [walkX + (lotW / 2 - 4) / 2 + 1.0, 0.02, frontZ - (frontZ - lotFront - 3) / 2 - 1.5], [-Math.PI / 2, 0, 0]);
+  // Ground zones, hardscape, driveway, walk, pool and shade structures from the property plan.
+  renderProperty(b, plan, lot, { garageFrontZ: GARAGE_FRONT_Z[style] });
+  if (plan.facade.shutters) shutters(b, style, ['#3f5a4a', '#5a4632'][hashLot(lot.id + 's') % 2]);
+  void walkX;
   // Mailbox at the curb beside the driveway
   b.box('wood', [0.1, 1.0, 0.1], [driveX + driveW / 2 + 0.8, 0.5, lotFront + 0.4]);
   b.box('darkMetal', [0.3, 0.26, 0.5], [driveX + driveW / 2 + 0.8, 1.1, lotFront + 0.4]);
   // Low landscape lights along the walkway
   for (let i = 0; i < 3; i++) b.box('lamp', [0.12, 0.3, 0.12], [walkX + 0.9, 0.15, frontZ - 2.5 - i * 2.2]);
   // Backyard block walls and side gate
-  blockWall(b, lot, frontZ + 2);
+  blockWall(b, lot, frontZ + 2, plan.archetype === 'modern-minimal' || plan.archetype === 'upscale' ? 'wall' : 'block');
 }

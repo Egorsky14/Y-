@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { aggregatePbr, pavingPbr, type AggregateKind } from '../assets/pbr';
 import { asphaltPbr, blockWallPbr, concretePbr, corrugatedPbr, darkPanelPbr, garageDoorPbr, gravelPbr, lawnPbr, pbrMaterial, sandPbr, shinglePbr, sidingPbr, stuccoPbr, tileRoofPbr } from '../assets/pbr';
 import { adaTexture, chainLinkTexture, stainTexture, wearTexture, windowTexture } from '../assets/textures';
 
@@ -93,7 +94,63 @@ export const STATIC_MATERIALS = {
 };
 
 /** World-meters-per-repeat for textured material keys used by the builders. */
+/** Landscape ground covers (Environment Revolution property plans). */
+export function groundMaterial(kind: string): THREE.Material {
+  return cached(`ground:${kind}`, () => {
+    if (kind === 'turf') return pbrMaterial(lawnPbr(), { roughness: 1 });
+    if (kind === 'turf-dry') return pbrMaterial(lawnPbr(), { roughness: 1, color: '#c9bf86' });
+    return pbrMaterial(aggregatePbr(kind as AggregateKind), { roughness: 1 });
+  });
+}
+
+/** Hardscape surfaces: patios, walks, decks and driveways. */
+export function hardMaterial(kind: string): THREE.Material {
+  return cached(`hard:${kind}`, () => {
+    if (kind === 'concrete') return pbrMaterial(concretePbr(), { roughness: 0.92, color: '#ece8e0' });
+    if (kind === 'concrete-old') return pbrMaterial(concretePbr(), { roughness: 0.95, color: '#cfc5b4' });
+    return pbrMaterial(pavingPbr(kind as 'pavers' | 'travertine' | 'flagstone'), { roughness: kind === 'travertine' ? 0.8 : 0.9 });
+  });
+}
+
+export const LANDSCAPE_MATERIALS = {
+  poolWater: () => cached('poolWater', () => new THREE.MeshStandardMaterial({ color: '#2f9fbf', roughness: 0.05, metalness: 0.1, emissive: '#0d4a63', emissiveIntensity: 0.25, envMapIntensity: 1.6, transparent: true, opacity: 0.88 })),
+  poolShell: () => cached('poolShell', () => new THREE.MeshStandardMaterial({ color: '#8fc9d6', roughness: 0.6 })),
+  coping: () => cached('coping', () => pbrMaterial(pavingPbr('travertine'), { roughness: 0.8, color: '#f2ece0' })),
+  steelEdge: () => cached('steelEdge', () => new THREE.MeshStandardMaterial({ color: '#5b3b27', roughness: 0.8, metalness: 0.3 })),
+  curbEdge: () => cached('curbEdge', () => new THREE.MeshStandardMaterial({ color: '#c9c0b0', roughness: 0.95 })),
+  stoneEdge: () => cached('stoneEdge', () => new THREE.MeshStandardMaterial({ color: '#9a8468', roughness: 0.95 })),
+  pergolaWood: () => cached('pergolaWood', () => new THREE.MeshStandardMaterial({ color: '#8b6a49', roughness: 0.85 })),
+  pergolaDark: () => cached('pergolaDark', () => new THREE.MeshStandardMaterial({ color: '#2f2c2a', roughness: 0.6, metalness: 0.4 })),
+  stoneVeneer: () => cached('stoneVeneer', () => pbrMaterial(pavingPbr('flagstone'), { roughness: 0.95, color: '#c8b8a2' })),
+  counter: () => cached('counter', () => new THREE.MeshStandardMaterial({ color: '#3a3836', roughness: 0.35, metalness: 0.1 })),
+  shutter: (c: string) => cached(`shutter:${c}`, () => new THREE.MeshStandardMaterial({ color: c, roughness: 0.7 })),
+  line: () => cached('line', () => new THREE.MeshStandardMaterial({ color: '#e8e4dc', roughness: 0.8 })),
+};
+
 export const UV_SCALES: Record<string, number> = {
+  'ground:dg': 3,
+  'ground:rock-light': 2.6,
+  'ground:rock-gray': 2.6,
+  'ground:rock-brown': 2.4,
+  'ground:rock-red': 2.4,
+  'ground:mulch': 2,
+  'ground:soil': 4,
+  'ground:turf': 2,
+  'ground:turf-dry': 2,
+  'hard:concrete': 1.5,
+  'hard:concrete-old': 1.5,
+  'hard:pavers': 2.4,
+  'hard:travertine': 2.4,
+  'hard:flagstone': 3.2,
+  'bed:rock-light': 2.6,
+  'bed:rock-gray': 2.6,
+  'bed:rock-brown': 2.4,
+  'bed:rock-red': 2.4,
+  'bed:mulch': 2,
+  'bed:dg': 3,
+  'bed:turf': 2,
+  coping: 2.4,
+  stoneVeneer: 1.6,
   wall: 2.5,
   roof: 3.0,
   garage: 2.6,

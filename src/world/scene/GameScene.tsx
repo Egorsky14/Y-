@@ -20,6 +20,7 @@ import { RenderProbe } from './RenderProbe';
 import { StudioEnvironment } from './StudioEnvironment';
 import { preloadVehicleModels } from '../vehicles/VehicleGltf';
 import { ParkedCars } from '../vehicles/ParkedCars';
+import { YardProps } from '../city/YardProps';
 
 preloadVehicleModels();
 
@@ -81,6 +82,7 @@ export function GameScene() {
         <Vegetation />
         <Houses />
         <ParkedCars />
+        <YardProps />
         <Headquarters />
         <SupplyWarehouse />
         <CompetitorBuilding />

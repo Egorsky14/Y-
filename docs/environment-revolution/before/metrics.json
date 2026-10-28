@@ -1,0 +1,103 @@
+{
+  "label": "before",
+  "size": "1920x1080",
+  "shots": {
+    "E01-six-houses": {
+      "calls": 436,
+      "triangles": 1103665,
+      "geometries": 499,
+      "textures": 53
+    },
+    "E02-house-street": {
+      "calls": 436,
+      "triangles": 1119941,
+      "geometries": 504,
+      "textures": 54
+    },
+    "E03-backyard": {
+      "calls": 417,
+      "triangles": 1127883,
+      "geometries": 505,
+      "textures": 55
+    },
+    "E04-upscale": {
+      "calls": 419,
+      "triangles": 1119747,
+      "geometries": 505,
+      "textures": 55
+    },
+    "E05-modest": {
+      "calls": 416,
+      "triangles": 1134001,
+      "geometries": 505,
+      "textures": 55
+    },
+    "E06-hq": {
+      "calls": 712,
+      "triangles": 1201306,
+      "geometries": 515,
+      "textures": 56
+    },
+    "E07-hq-yard": {
+      "calls": 474,
+      "triangles": 1112053,
+      "geometries": 515,
+      "textures": 57
+    },
+    "E11-backyard-b": {
+      "calls": 417,
+      "triangles": 1127883,
+      "geometries": 515,
+      "textures": 57
+    },
+    "E12-backyard-c": {
+      "calls": 442,
+      "triangles": 1153147,
+      "geometries": 515,
+      "textures": 57
+    },
+    "E13-backyard-d": {
+      "calls": 449,
+      "triangles": 1148737,
+      "geometries": 473,
+      "textures": 53
+    },
+    "E14-street": {
+      "calls": 432,
+      "triangles": 1128033,
+      "geometries": 517,
+      "textures": 57
+    },
+    "E15-roofs": {
+      "calls": 553,
+      "triangles": 1168918,
+      "geometries": 517,
+      "textures": 57
+    },
+    "E08-golden-hour": {
+      "calls": 434,
+      "triangles": 1103645,
+      "geometries": 513,
+      "textures": 57
+    },
+    "E08b-golden-street": {
+      "calls": 434,
+      "triangles": 1119921,
+      "geometries": 513,
+      "textures": 57
+    },
+    "E09-night": {
+      "calls": 436,
+      "triangles": 1105875,
+      "geometries": 511,
+      "textures": 58
+    },
+    "E09b-night-street": {
+      "calls": 434,
+      "triangles": 1120111,
+      "geometries": 511,
+      "textures": 58
+    }
+  },
+  "errors": []
+}

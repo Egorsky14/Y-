@@ -90,6 +90,17 @@
       "description": "Supply Depot equipment in the condenser frame: hard tool case, two-stage vacuum pump, refrigerant recovery machine, nitrogen cylinder with regulator (nodes tool-case, vacuum-pump, recovery-machine, nitrogen-kit)",
       "source": "blender 5.2.3 (tools/blender/supply_tools.py)",
       "license": "project"
+    },
+    {
+      "id": "yard-kit",
+      "category": "props",
+      "file": "models/props/yard-kit.glb",
+      "bytes": 319792,
+      "meshes": 12,
+      "triangles": 5642,
+      "description": "Residential yard props (nodes dining-set, bistro-set, lounge-chair, grill, sofa-set, fire-pit, umbrella, shed, planter-pot, swing-set, trash-bins, bench); cushions, canopies and pots tinted per instance",
+      "source": "blender 5.2.3 (tools/blender/yard_kit.py)",
+      "license": "project"
     }
   ]
 }

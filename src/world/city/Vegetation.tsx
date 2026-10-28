@@ -5,6 +5,7 @@ import * as BGU from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { HOUSE_LOTS, HQ_LOT, PARK_LOT, ROAD_WIDTH, SIDEWALK_WIDTH, STREETS, WORLD_HALF, type Lot } from '@/game/world/cityLayout';
 import { makeDecoRng } from '../assets/random';
 import { yardPlan, type Species } from './yardLayout';
+import { greenbelts } from './greenbelt';
 import { useApp } from '@/app/store';
 
 /**
@@ -311,8 +312,7 @@ function buildSpecies(species: Species): THREE.BufferGeometry {
     case 'shrub-green':
     case 'shrub-red': {
       const color = species === 'shrub-sage' ? new THREE.Color('#a0aa8c') : species === 'shrub-red' ? new THREE.Color('#717d4a') : new THREE.Color('#62803f');
-      const parts = [mass(rnd, 0.6, [0, 0.46, 0], [1, 0.8, 1], color, { detail: 1, lumps: 0.18, shade: 0.5 })];
-      parts.push(mass(rnd, 0.4, [0.35, 0.38, 0.2], [1, 0.85, 1], color, { detail: 1, lumps: 0.15, shade: 0.5 }));
+      const parts = [mass(rnd, 0.62, [0.1, 0.44, 0.05], [1.2, 0.78, 1.05], color, { detail: 1, lumps: 0.26, shade: 0.5 })];
       if (species === 'shrub-red') for (let i = 0; i < 6; i++) parts.push(colored(transformed(new THREE.ConeGeometry(0.03, 0.9, 4), [(rnd() - 0.5) * 0.6, 0.9, (rnd() - 0.5) * 0.6], [(rnd() - 0.5) * 0.5, 0, (rnd() - 0.5) * 0.5]), new THREE.Color('#c84b3a'), 0.1, rnd));
       return merge(parts);
     }
@@ -323,7 +323,7 @@ function buildSpecies(species: Species): THREE.BufferGeometry {
         const a = (i / leaves) * Math.PI * 2;
         const tilt = 0.55 + (i % 2) * 0.35;
         const len = 0.9 + (i % 3) * 0.15;
-        const g = new THREE.ConeGeometry(0.11, len, 4);
+        const g = new THREE.ConeGeometry(0.11, len, 4, 1, true);
         g.translate(0, len / 2, 0);
         parts.push(colored(transformed(g, [0, 0.05, 0], [tilt * Math.cos(a), 0, tilt * Math.sin(a)]), new THREE.Color('#7fa98a'), 0.1, rnd));
       }
@@ -334,12 +334,68 @@ function buildSpecies(species: Species): THREE.BufferGeometry {
     case 'flower-yellow': {
       const bloom = species === 'flower-pink' ? new THREE.Color('#e46aa7') : new THREE.Color('#f2c230');
       const parts = [mass(rnd, 0.45, [0, 0.36, 0], [1, 0.75, 1], new THREE.Color('#567a3a'), { detail: 1, lumps: 0.15, shade: 0.45 })];
-      for (let i = 0; i < 9; i++) parts.push(colored(transformed(new THREE.SphereGeometry(0.07, 5, 4), [(rnd() - 0.5) * 0.7, 0.55 + rnd() * 0.25, (rnd() - 0.5) * 0.7]), bloom, 0.08, rnd));
+      for (let i = 0; i < 6; i++) parts.push(colored(transformed(new THREE.OctahedronGeometry(0.09, 0), [(rnd() - 0.5) * 0.7, 0.55 + rnd() * 0.25, (rnd() - 0.5) * 0.7]), bloom, 0.08, rnd));
       return merge(parts);
     }
     case 'barrel-cactus': {
-      const parts = [colored(jittered(transformed(new THREE.SphereGeometry(0.38, 12, 8), [0, 0.36, 0], [0, 0, 0], [1, 0.9, 1]), 0.05, rnd), new THREE.Color('#4e7f3c'), 0.08, rnd)];
-      parts.push(colored(transformed(new THREE.TorusGeometry(0.16, 0.05, 6, 12), [0, 0.68, 0], [Math.PI / 2, 0, 0]), new THREE.Color('#e0b24a'), 0.05, rnd));
+      const parts = [colored(jittered(transformed(new THREE.SphereGeometry(0.38, 7, 5), [0, 0.36, 0], [0, 0, 0], [1, 0.9, 1]), 0.05, rnd), new THREE.Color('#4e7f3c'), 0.08, rnd)];
+      parts.push(colored(transformed(new THREE.TorusGeometry(0.16, 0.05, 3, 6), [0, 0.68, 0], [Math.PI / 2, 0, 0]), new THREE.Color('#e0b24a'), 0.05, rnd));
+      return merge(parts);
+    }
+    case 'palo-verde': {
+      // Blue palo verde: smooth green trunk splitting low into several leaning stems, an airy
+      // spreading canopy of small yellow-green clumps.
+      const parts: THREE.BufferGeometry[] = [];
+      const bark = new THREE.Color('#7f9a52');
+      parts.push(colored(transformed(new THREE.CylinderGeometry(0.11, 0.17, 1.1, 7), [0, 0.55, 0]), bark, 0.08, rnd));
+      for (let i = 0; i < 4; i++) {
+        const a = (i / 4) * Math.PI * 2 + 0.4;
+        parts.push(colored(transformed(new THREE.CylinderGeometry(0.05, 0.09, 1.9, 6), [Math.cos(a) * 0.45, 1.75, Math.sin(a) * 0.45], [Math.sin(a) * 0.55, 0, -Math.cos(a) * 0.55]), bark, 0.08, rnd));
+      }
+      const leaf = new THREE.Color('#9db35a');
+      for (let i = 0; i < 7; i++) {
+        const a = rnd() * Math.PI * 2;
+        const d = 0.6 + rnd() * 1.4;
+        parts.push(mass(rnd, 0.55 + rnd() * 0.35, [Math.cos(a) * d, 2.6 + rnd() * 0.7, Math.sin(a) * d], [1.2, 0.55, 1.2], leaf.clone().offsetHSL((rnd() - 0.5) * 0.04, 0, (rnd() - 0.5) * 0.06), { detail: 1, lumps: 0.3, shade: 0.45, jitter: 0.06 }));
+      }
+      return merge(parts);
+    }
+    case 'cypress': {
+      // Italian cypress: a tall narrow column, slightly tapered, darker at the base.
+      const parts = [colored(transformed(new THREE.CylinderGeometry(0.08, 0.12, 0.6, 6), [0, 0.3, 0]), new THREE.Color('#5a4632'), 0.05, rnd)];
+      parts.push(mass(rnd, 0.6, [0, 2.5, 0], [0.85, 3.6, 0.85], new THREE.Color('#3f5a32'), { detail: 2, lumps: 0.12, shade: 0.5, jitter: 0.05 }));
+      return merge(parts);
+    }
+    case 'yucca': {
+      // Yucca: a short shaggy trunk with a spiky rosette of stiff blue-green blades on top.
+      const parts = [colored(transformed(new THREE.CylinderGeometry(0.12, 0.16, 0.9, 7), [0, 0.45, 0]), new THREE.Color('#8a7556'), 0.1, rnd)];
+      const blades = 22;
+      for (let i = 0; i < blades; i++) {
+        const a = (i / blades) * Math.PI * 2 + rnd() * 0.2;
+        const tilt = 0.25 + (i % 3) * 0.32 + rnd() * 0.1;
+        const g = new THREE.ConeGeometry(0.05, 0.85, 3, 1, true);
+        g.translate(0, 0.42, 0);
+        parts.push(colored(transformed(g, [0, 0.95, 0], [tilt * Math.cos(a), 0, tilt * Math.sin(a)]), new THREE.Color(i % 4 === 0 ? '#9a9a64' : '#6f8f6a'), 0.08, rnd));
+      }
+      return merge(parts);
+    }
+    case 'desert-grass': {
+      // Deer grass / muhly clump: many fine arching blades, straw-green with pink-tan tips.
+      const parts: THREE.BufferGeometry[] = [];
+      for (let i = 0; i < 26; i++) {
+        const a = rnd() * Math.PI * 2;
+        const tilt = 0.15 + rnd() * 0.55;
+        const len = 0.55 + rnd() * 0.35;
+        const g = new THREE.ConeGeometry(0.025, len, 3, 1, true);
+        g.translate(0, len / 2, 0);
+        parts.push(colored(transformed(g, [Math.cos(a) * 0.08, 0, Math.sin(a) * 0.08], [tilt * Math.cos(a), 0, tilt * Math.sin(a)]), new THREE.Color(rnd() < 0.3 ? '#c8a98a' : '#a3a46a'), 0.1, rnd));
+      }
+      return merge(parts);
+    }
+    case 'groundcover': {
+      // Trailing lantana / verbena: a low spreading mat with small lavender and yellow blooms.
+      const parts = [mass(rnd, 0.55, [0, 0.12, 0], [1.4, 0.32, 1.2], new THREE.Color('#5d7a3c'), { detail: 1, lumps: 0.2, shade: 0.4 })];
+      for (let i = 0; i < 6; i++) parts.push(colored(transformed(new THREE.OctahedronGeometry(0.07, 0), [(rnd() - 0.5) * 1.2, 0.24 + rnd() * 0.06, (rnd() - 0.5) * 1.0]), new THREE.Color(rnd() < 0.7 ? '#9b7fd0' : '#f0d24a'), 0.08, rnd));
       return merge(parts);
     }
     case 'rock':
@@ -378,6 +434,8 @@ function collectInstances(density: number): Instance[] {
       out.push({ species: p.species, x: wx, z: wz, rotation: p.rotation + rot, scale: p.scale, tint: 0.92 + ((plan.seed >> 4) % 17) / 100 });
     }
   }
+  // Common-area greenbelts between the rows.
+  for (const gb of greenbelts()) for (const p of gb.plants) out.push({ species: p.species, x: p.x, z: p.z, rotation: p.rotation, scale: p.scale, tint: 0.95 });
   const rnd = makeDecoRng(4242);
   // Street palms along the avenues; mesquite along the east-west streets at block corners.
   for (const st of STREETS.filter((s) => s.axis === 'z')) {
@@ -420,7 +478,7 @@ function collectInstances(density: number): Instance[] {
   return out;
 }
 
-const SPECIES: Species[] = ['palm', 'date-palm', 'mesquite', 'olive', 'shrub-sage', 'shrub-green', 'shrub-red', 'agave', 'flower-pink', 'flower-yellow', 'rock', 'boulder', 'barrel-cactus'];
+const SPECIES: Species[] = ['palm', 'date-palm', 'mesquite', 'olive', 'palo-verde', 'cypress', 'shrub-sage', 'shrub-green', 'shrub-red', 'agave', 'yucca', 'desert-grass', 'groundcover', 'flower-pink', 'flower-yellow', 'rock', 'boulder', 'barrel-cactus'];
 
 export function Vegetation() {
   const quality = useApp((s) => s.settings.quality);
@@ -429,17 +487,22 @@ export function Vegetation() {
   const geometries = useMemo(() => Object.fromEntries(SPECIES.map((s) => [s, buildSpecies(s)])) as Record<Species, THREE.BufferGeometry>, []);
   const farPalm = useMemo(() => fanPalm('far'), []);
   const material = useMemo(() => new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.95, metalness: 0, flatShading: false, side: THREE.DoubleSide }), []);
+  // Closed shapes (shrub and crown masses, cacti, rocks, trunks) only need their front faces.
+  const solid = useMemo(() => new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.95, metalness: 0, flatShading: false, side: THREE.FrontSide }), []);
   return (
     <group name="vegetation">
       {SPECIES.map((species) => {
-        const castShadow = species !== 'rock' && species !== 'flower-pink' && species !== 'flower-yellow';
+        // Small ground plants and shrubs do not cast: their shadows are a few pixels from the strategy
+        // camera and there are hundreds of them. Trees, palms, yucca, cypress and boulders keep theirs.
+        const castShadow = !['rock', 'flower-pink', 'flower-yellow', 'groundcover', 'desert-grass', 'barrel-cactus', 'agave', 'shrub-sage', 'shrub-green', 'shrub-red'].includes(species);
         const list = instances.filter((i) => i.species === species && !i.scatter);
         const scatter = instances.filter((i) => i.species === species && i.scatter);
         return (
           <group key={species}>
             {list.length > 0 && species === 'palm' && <LodLayer near={geometries.palm} far={farPalm} material={material} list={list} />}
-            {list.length > 0 && species !== 'palm' && <SpeciesLayer geometry={geometries[species]} material={material} list={list} castShadow={castShadow} />}
-            {scatter.length > 0 && <SpeciesLayer geometry={geometries[species]} material={material} list={scatter} castShadow={false} />}
+            {species !== 'palm' &&
+              chunks(list).map(([key, part]) => <SpeciesLayer key={key} name={`veg:${species}:${key}`} geometry={geometries[species]} material={BLADED.has(species) ? material : solid} list={part} castShadow={castShadow} />)}
+            {scatter.length > 0 && <SpeciesLayer name={`veg:${species}:desert`} geometry={geometries[species]} material={BLADED.has(species) ? material : solid} list={scatter} castShadow={false} />}
           </group>
         );
       })}
@@ -451,7 +514,25 @@ function instanceMatrix(it: Instance, m = new THREE.Matrix4()): THREE.Matrix4 {
   return m.compose(new THREE.Vector3(it.x, 0, it.z), new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), it.rotation), new THREE.Vector3(it.scale, it.scale, it.scale));
 }
 
-function SpeciesLayer({ geometry, material, list, castShadow }: { geometry: THREE.BufferGeometry; material: THREE.Material; list: Instance[]; castShadow: boolean }) {
+/** Species with open blades or fronds, drawn double-sided; everything else is a closed shape. */
+const BLADED = new Set<Species>(['palm', 'date-palm', 'agave', 'yucca', 'desert-grass']);
+
+/**
+ * Splits a species' instances into the four quadrants of the town so each InstancedMesh has a
+ * tight bounding sphere and is frustum-culled (camera and shadow pass) when off screen.
+ */
+function chunks(list: Instance[]): [string, Instance[]][] {
+  // Species with few instances stay one mesh (one draw call); chunking pays off for the numerous ones.
+  if (list.length <= 80) return list.length ? [['all', list]] : [];
+  const out = new Map<string, Instance[]>();
+  for (const it of list) {
+    const key = `${it.x < 0 ? 'w' : 'e'}${it.z < 0 ? 'n' : 's'}`;
+    (out.get(key) ?? out.set(key, []).get(key)!).push(it);
+  }
+  return [...out.entries()];
+}
+
+function SpeciesLayer({ name, geometry, material, list, castShadow }: { name: string; geometry: THREE.BufferGeometry; material: THREE.Material; list: Instance[]; castShadow: boolean }) {
   const ref = (mesh: THREE.InstancedMesh | null) => {
     if (!mesh) return;
     const m = new THREE.Matrix4();
@@ -465,7 +546,7 @@ function SpeciesLayer({ geometry, material, list, castShadow }: { geometry: THRE
     if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
     mesh.computeBoundingSphere();
   };
-  return <instancedMesh ref={ref} args={[geometry, material, list.length]} castShadow={castShadow} receiveShadow frustumCulled={false} />;
+  return <instancedMesh ref={ref} name={name} args={[geometry, material, list.length]} castShadow={castShadow} receiveShadow />;
 }
 
 /** Camera distance (m) where fan palms switch to the far mesh; the band around it stops flicker. */
