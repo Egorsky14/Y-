@@ -1,0 +1,49 @@
+{
+  "method": "EXT_disjoint_timer_query_webgl2 GPU time per render (median), vsync off, seed 42, simulation paused, HUD hidden, identical camera commands and clock. Desktop 1920x1080 (quality High); phone 390x844 at DPR 2 (quality Medium, the game's own choice). Baseline = ef407c7 profile build, after = 2eaeecb profile build (code identical at 90feb5b). One preview server at a time; rounds alternate baseline then after on the same machine in the same session.",
+  "machine": "Windows 11, 16 GB RAM; Chrome with ANGLE D3D11, headless",
+  "desktopRound2": {
+    "note": "Alternating pair (baseline run, then after run, minutes apart). The after build here is 2eaeecb (Lambert-shaded traffic).",
+    "views": {
+      "W01-overview": { "gpuMs": [6.68, 6.86], "changePct": 2.7, "drawCalls": [936, 1001], "triangles": [1623421, 2196517], "fps": [138.5, 135.2] },
+      "W02-boundary-ne": { "gpuMs": [4.57, 4.87], "changePct": 6.6, "drawCalls": [489, 534], "triangles": [1470090, 1964324], "fps": [207.1, 188.0] },
+      "W03-boundary-sw": { "gpuMs": [4.16, 4.5], "changePct": 8.2, "drawCalls": [496, 541], "triangles": [1445582, 1953588], "fps": [223.2, 201.9] },
+      "W04-street": { "gpuMs": [5.8, 5.98], "changePct": 3.1, "drawCalls": [508, 559], "triangles": [1511472, 2044012], "fps": [158.1, 154.7] },
+      "W05-hq": { "gpuMs": [6.51, 6.31], "changePct": -3.1, "drawCalls": [779, 839], "triangles": [1627143, 2159401], "fps": [145.1, 145.6] },
+      "W08-diagnosis": { "gpuMs": [4.5, 4.81], "changePct": 6.9, "drawCalls": [627, 679], "triangles": [1568132, 2070664], "fps": [204.7, 191.4] },
+      "W09-repair": { "gpuMs": [4.36, 4.75], "changePct": 8.9, "drawCalls": [621, 673], "triangles": [1576900, 2070134], "fps": [211.2, 193.7] },
+      "W10-golden": { "gpuMs": [6.45, 6.55], "changePct": 1.6, "drawCalls": [930, 995], "triangles": [1623365, 2196461], "fps": [143.1, 139.7] },
+      "W11-night": { "gpuMs": [6.15, 6.29], "changePct": 2.3, "drawCalls": [928, 995], "triangles": [1623537, 2161269], "fps": [148.4, 145.9] }
+    }
+  },
+  "desktopRound1": {
+    "note": "Full capture runs (baseline first, then after). The after build was 4957b35 (PBR-shaded traffic, before the Medium-tier change). The GPU ran faster in the after run than in the baseline run, so this round understates the cost; round 2 is the reliable pair.",
+    "views": {
+      "W01-overview": { "gpuMs": [8.33, 7.5] },
+      "W02-boundary-ne": { "gpuMs": [5.97, 5.48] },
+      "W03-boundary-sw": { "gpuMs": [5.65, 5.08] },
+      "W04-street": { "gpuMs": [7.29, 6.51] },
+      "W05-hq": { "gpuMs": [8.07, 6.98] },
+      "W08-diagnosis": { "gpuMs": [5.95, 5.57] },
+      "W09-repair": { "gpuMs": [5.87, 5.54] },
+      "W10-golden": { "gpuMs": [7.84, 7.38] },
+      "W11-night": { "gpuMs": [7.45, 7.08] }
+    }
+  },
+  "phone": {
+    "note": "Two alternating rounds after the Medium-tier optimisation (2eaeecb).",
+    "W12a-mobile-overview": { "gpuMs": { "round3": [3.09, 3.39], "round4": [3.09, 3.37] }, "changePct": 9.4, "drawCalls": [873, 933], "triangles": [1608667, 2024557] },
+    "W12b-mobile-street": { "gpuMs": { "round3": [2.51, 2.85], "round4": [2.51, 2.84] }, "changePct": 13.3, "drawCalls": [578, 626], "triangles": [1496228, 1876724] }
+  },
+  "attribution": {
+    "desktopW02BeforeFloorFix": "districts 0.7 ms, scenic roads 0.4 ms, terrain +0.25 ms; drawing the floor after other opaques removed the floor's overdraw (W02 5.78 -> 4.48 ms).",
+    "phoneW12bMedium": "districts 0.17 ms, ambient traffic 0.13 ms (before Medium thinning), scenic roads 0.06 ms; vegetation 0.24 ms in both builds (wind is free); terrain 0.13 ms vs 0.19 ms baseline."
+  },
+  "memory": {
+    "launchThresholds": "free RAM >= 3400 MB and free commit >= 4000 MB before each browser launch; abort at 900 MB RAM / 1200 MB commit",
+    "captureRunsMinFreeRamMB": 1646,
+    "captureRunsMinFreeCommitMB": 1811,
+    "browserMatrixMinFreeRamMB": 1502,
+    "browserMatrixMinFreeCommitMB": 1395,
+    "browserPeakMB": 2114
+  }
+}

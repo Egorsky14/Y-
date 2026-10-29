@@ -85,3 +85,22 @@ camera; HQ is dominated by asphalt; nothing moves.
   baseline views added since 403236b: W07 follow, W08c, W14), paired GPU timing (two alternating
   rounds), compare sheets (scripts/compare.cjs), the 21-case browser matrix one case at a time,
   FINAL_REPORT.md.
+
+## Final validation (2026-10-28, authorised)
+
+- Memory-safe workflow: one preview server at a time (stopped with children, port verified closed),
+  foreground phases under 10 min, launch gate 3.4 GB free RAM / 4.0 GB free commit, in-run abort at
+  0.9 GB / 1.2 GB (never triggered). Runners: scratch `diag/run-captures.ps1`, `diag/run-matrix.ps1`.
+- 4957b35: the arm IK missed off-axis targets by up to 7 cm (new forward-kinematics test caught it);
+  replaced with an exact arm-frame construction. New tests: technician IK, HQ operations clearances.
+- 2eaeecb: phone (Medium) street was +16%; attribution (districts, traffic, roads; wind and terrain
+  free) led to 30 % traffic and 25 % distant scrub on Medium, Lambert traffic: now +13.3%, recorded
+  as the one performance exception.
+- Evidence: matched before/after (desktop and phone) and 30 comparison sheets; flagship B rebuilt
+  from profile views at fixed loop times after the original service cameras showed too little
+  difference; flagship D split into edge traffic, night occupancy and the (unchanged) interior street.
+- Paired GPU (round 2): desktop +1.6% to +8.9% (HQ -3.1%); phone overview +9.4%, street +13.3%.
+- Browser matrix at 90feb5b: 21/21 passed (`browser-matrix-90feb5b.txt`). vitest 121 passed,
+  3 skipped; tsc, eslint, build pass.
+- Status: COMPLETE (one phone performance exception). FINAL_REPORT.md written. Ready for a separate
+  Vercel Preview on authorisation; nothing pushed, merged or deployed.
