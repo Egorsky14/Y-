@@ -1,0 +1,34 @@
+{
+  "label": "after-390",
+  "size": "390x844",
+  "loadMs": 5166,
+  "shots": {
+    "W12a-mobile-overview": {
+      "calls": 938,
+      "triangles": 1952461,
+      "geometries": 611,
+      "textures": 81,
+      "gpuMsMedian": 3.38,
+      "frameMsMean": 4.44,
+      "fps": 225.1,
+      "samples": 677
+    },
+    "W12b-mobile-street": {
+      "calls": 626,
+      "triangles": 1801386,
+      "geometries": 611,
+      "textures": 81,
+      "gpuMsMedian": 2.81,
+      "frameMsMean": 3.07,
+      "fps": 326.2,
+      "samples": 977
+    },
+    "W12c-mobile-diagnosis": {
+      "calls": 712,
+      "triangles": 1892886,
+      "geometries": 639,
+      "textures": 83
+    }
+  },
+  "errors": []
+}

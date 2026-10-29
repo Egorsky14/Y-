@@ -15,8 +15,8 @@ interface WorkerProps {
   scale?: number;
   /** Walk-cycle rate multiplier, matched to how fast the character covers ground (1 ≈ 1.5 m/s); 0 freezes every clip (game paused). */
   pace?: number;
-  /** At a unit: distance from the character root to the cabinet's service face, and the cabinet height (m). */
-  work?: { face: number; top: number };
+  /** At a unit: distance from the character root to the cabinet's service face, the cabinet height (m), and where the tool bag sits in the character's frame (lead technician only). */
+  work?: { face: number; top: number; bag?: { x: number; z: number } };
 }
 
 const SKIN = ['#f1c7a6', '#d9a57c', '#b97a52', '#8d5a3b', '#f6d7bf', '#6b4430'];
@@ -111,6 +111,22 @@ function Limb({ length, radius, color, taper = 0.85 }: { length: number; radius:
 /** Joint rotation targets for one pose; everything not named returns to zero. */
 type Pose = Record<string, [number, number, number]>;
 
+/**
+ * Kneeling at the unit (rig metres and radians). The kneeling (R) thigh is near vertical with the knee
+ * joint 7 cm up, so the knee pad rests on the ground; that shin rises 0.25 rad toward a tucked-toe
+ * ankle about 16 cm up, the boot angled down to the toes. The forward (L) shin is vertical and its
+ * ankle sits at standing height (3 cm), so the boot is planted flat (src/tests/worldImmersion.test.ts).
+ */
+export const KNEEL = {
+  pelvisY: 0.57,
+  legR: [0.05, 0, -0.06] as [number, number, number],
+  shinR: 1.74,
+  footR: -1.2,
+  legL: [-1.414, 0, 0.08] as [number, number, number],
+  shinL: 1.414,
+  footL: 0,
+};
+
 const UPPER_ARM = 0.3;
 const FOREARM = 0.31; // elbow to the middle of the hand
 
@@ -120,19 +136,13 @@ const FOREARM = 0.31; // elbow to the middle of the hand
  * The arm hangs along -y; Euler XYZ applies the abduction (z) first, then the pitch (x), and the elbow
  * flexes about the arm's local x. Out-of-reach targets are approached along the same line.
  */
-export function armIK(side: 1 | -1, target: { x: number; y: number; z: number }, torsoPitch: number, pelvisY: number, heavy = 1): { arm: [number, number, number]; fore: number } {
-  const c = Math.cos(torsoPitch);
-  const sn = Math.sin(torsoPitch);
-  const sx = side * 0.25 * heavy;
-  const sy = pelvisY + 0.06 + 0.5 * c;
-  const sz = 0.5 * sn;
-  const wx = target.x - sx;
-  const wy = target.y - sy;
-  const wz = target.z - sz;
-  // Into the torso frame (undo the lean about x).
-  const dx = wx;
-  const dy = wy * c + wz * sn;
-  const dz = -wy * sn + wz * c;
+export function armIK(side: 1 | -1, target: { x: number; y: number; z: number }, torsoPitch: number, pelvisY: number, heavy = 1, torsoYaw = 0, torsoRoll = 0): { arm: [number, number, number]; fore: number } {
+  // Into the torso frame: undo the torso's lean, twist and side bend (Euler XYZ about the waist pivot),
+  // then measure from the shoulder.
+  const local = new THREE.Vector3(target.x, target.y - (pelvisY + 0.06), target.z).applyMatrix4(new THREE.Matrix4().makeRotationFromEuler(new THREE.Euler(torsoPitch, torsoYaw, torsoRoll, 'XYZ')).invert());
+  const dx = local.x - side * 0.25 * heavy;
+  const dy = local.y - 0.5;
+  const dz = local.z;
   const len = Math.max(1e-4, Math.hypot(dx, dy, dz));
   const d = THREE.MathUtils.clamp(len, Math.abs(UPPER_ARM - FOREARM) + 0.05, UPPER_ARM + FOREARM - 0.005);
   const n = new THREE.Vector3(dx / len, dy / len, dz / len);
@@ -240,8 +250,8 @@ export function Worker({ role, look, anim, scale = 1, pace = 1, work }: WorkerPr
     let showTablet = false;
     let showLoad = false;
     const s = scale * build;
-    const ik = (side: 1 | -1, x: number, y: number, z: number, torsoPitch: number, pY: number) => {
-      const sol = armIK(side, { x: x / s, y: y / s, z: z / s - pelvisZ }, torsoPitch, pY, heavy);
+    const ik = (side: 1 | -1, x: number, y: number, z: number, torsoPitch: number, pY: number, yaw = 0, roll = 0) => {
+      const sol = armIK(side, { x: x / s, y: y / s, z: z / s - pelvisZ }, torsoPitch, pY, heavy, yaw, roll);
       set(side < 0 ? 'armL' : 'armR', sol.arm[0], sol.arm[1], sol.arm[2]);
       set(side < 0 ? 'foreL' : 'foreR', sol.fore);
     };
@@ -255,13 +265,13 @@ export function Worker({ role, look, anim, scale = 1, pace = 1, work }: WorkerPr
     };
     // Kneeling stance at the unit: right knee down, left foot planted forward, pelvis low.
     const kneel = () => {
-      set('legR', 0.05, 0, -0.06);
-      set('shinR', 1.55);
-      set('footR', -0.45);
-      set('legL', -1.45, 0, 0.08);
-      set('shinL', 1.45);
-      set('footL', 0.0);
-      return 0.53;
+      set('legR', ...KNEEL.legR);
+      set('shinR', KNEEL.shinR);
+      set('footR', KNEEL.footR);
+      set('legL', ...KNEEL.legL);
+      set('shinL', KNEEL.shinL);
+      set('footL', KNEEL.footL);
+      return KNEEL.pelvisY;
     };
     // Standing with soft knees, feet apart.
     const stand = (bend = 0) => {
@@ -368,17 +378,25 @@ export function Worker({ role, look, anim, scale = 1, pace = 1, work }: WorkerPr
         }
         pelvisY = kY + (sY - kY) * check;
         pelvisZ = -0.12 * check;
-        const lean = 0.42 + 0.12 * check - 0.1 * fetch;
-        const twist = 0.55 * fetch;
-        set('torso', lean, twist);
+        const bag = work?.bag;
+        const lean = 0.42 + 0.12 * check + (bag ? 0.1 : -0.1) * fetch;
+        // Turning toward the bag (beside the hip on the free-hand side) and bending down to it.
+        const twist = bag ? -0.2 * fetch : 0.55 * fetch;
+        const roll = bag ? 0.6 * fetch : 0;
+        set('torso', lean, twist, roll);
         if (check > 0.5) {
           ik(1, 0.25, top + 0.02, face + 0.25, lean, pelvisY);
           ik(-1, -0.25, top + 0.02, face + 0.25, lean, pelvisY);
           look(0, top, face + 0.45, lean, pelvisY);
+        } else if (fetch > 0.5 && bag) {
+          // Reach into the tool bag set down beside the hip: hand to the handles, the other hand on the thigh.
+          ik(-1, bag.x, 0.42, bag.z, lean, pelvisY, twist, roll);
+          ik(1, 0.16, 0.5, 0.36, lean, pelvisY, twist, roll);
+          look(bag.x, 0.3, bag.z, lean, pelvisY, twist);
         } else if (fetch > 0.5) {
-          // Reach to the bag beside the knee.
-          ik(1, 0.48, 0.12, 0.2, lean, pelvisY);
-          ik(-1, -0.2, top + 0.02, face + 0.1, lean, pelvisY);
+          // Crew without the bag: reach down beside the knee.
+          ik(1, 0.48, 0.12, 0.2, lean, pelvisY, twist);
+          ik(-1, -0.2, top + 0.02, face + 0.1, lean, pelvisY, twist);
           look(0.5, 0.1, 0.25, lean, pelvisY, twist);
         } else {
           // Wrench turns: small arcs at the valve/terminal; the forearm rolls with each pull.

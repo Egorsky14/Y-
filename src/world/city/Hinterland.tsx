@@ -1,5 +1,6 @@
 import { useEffect, useMemo } from 'react';
 import * as THREE from 'three';
+import * as BGU from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { useFrame } from '@react-three/fiber';
 import { getGameState, useApp } from '@/app/store';
 import { sunAngles } from '@/game/simulation/weather';
@@ -86,12 +87,12 @@ function chunked(h: Layout, scrub: number): Map<string, ChunkData> {
   const get = (x: number, z: number) => {
     const k = chunkKey(x, z);
     let c = out.get(k);
-    if (!c) out.set(k, (c = { boxes: [], roofs: [], flats: [[], [], []], crowns: [], palms: [], shrubs: [] }));
+    if (!c) out.set(k, (c = { boxes: [], roofs: [], flats: [[], [], [], [], [], []], crowns: [], palms: [], shrubs: [] }));
     return c;
   };
   for (const b of h.boxes) get(b.x, b.z).boxes.push(b);
   for (const r of h.roofs) get(r.x, r.z).roofs.push(r);
-  for (const f of h.flats) get(f.x, f.z).flats[f.layer].push(f);
+  for (const f of h.flats) get(f.x, f.z).flats[f.layer + (f.disc ? 3 : 0)].push(f);
   for (const t of h.trees) (t.palm ? get(t.x, t.z).palms : get(t.x, t.z).crowns).push(t);
   h.shrubs.forEach((s, i) => {
     if (i % 1000 < scrub * 1000) get(s.x, s.z).shrubs.push(s);
@@ -107,6 +108,7 @@ const GEO = {
     return g;
   })(),
   flat: new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2),
+  disc: new THREE.CircleGeometry(0.5, 20).rotateX(-Math.PI / 2),
   crown: new THREE.IcosahedronGeometry(1, 0),
   palm: (() => {
     const g = new THREE.OctahedronGeometry(1, 0);
@@ -173,9 +175,11 @@ function buildDistricts(h: Layout, scrub: number): THREE.Group {
         m.compose(v.set(r.x, r.y + terrainHeight(r.x, r.z), r.z), q, r.turn ? s.set(r.d, r.h, r.w) : s.set(r.w, r.h, r.d));
         col.setHex(r.color);
       }));
-    c.flats.forEach((list, layer) => {
+    c.flats.forEach((list, bucket) => {
+      const layer = bucket % 3;
+      const disc = bucket >= 3;
       if (!list.length) return;
-      add(instanced(`hinterland:ground${layer}:${key}`, GEO.flat, mats.flat[layer], list.length, (i, m, col) => {
+      add(instanced(`hinterland:ground${layer}${disc ? 'd' : ''}:${key}`, disc ? GEO.disc : GEO.flat, mats.flat[layer], list.length, (i, m, col) => {
         const f = list[i];
         q.setFromAxisAngle(yAxis, f.rot ?? 0);
         m.compose(v.set(f.x, 0.05 + layer * 0.03 + terrainHeight(f.x, f.z), f.z), q, s.set(f.w, 1, f.d));
@@ -286,6 +290,63 @@ function buildRoads(roads: ScenicRoad[]): THREE.Group {
   return g;
 }
 
+/** Lattice transmission towers along the utility easements, with three sagging conductors per span. */
+function buildPowerLines(h: Layout): THREE.Group {
+  const g = new THREE.Group();
+  g.name = 'hinterland:power';
+  const part = (geo: THREE.BufferGeometry) => {
+    const n = geo.index ? geo.toNonIndexed() : geo;
+    for (const k of Object.keys(n.attributes)) if (!['position', 'normal'].includes(k)) n.deleteAttribute(k);
+    return n;
+  };
+  const H = 27;
+  const legs = [-1, 1].flatMap((sx) => [-1, 1].map((sz) => {
+    const leg = new THREE.CylinderGeometry(0.12, 0.22, H, 4);
+    leg.translate(0, H / 2, 0);
+    leg.rotateZ(sx * 0.06);
+    leg.rotateX(sz * -0.06);
+    leg.translate(sx * 1.6, 0, sz * 1.6);
+    return part(leg);
+  }));
+  const arms = [17, 21, 25].map((y, i) => part(new THREE.BoxGeometry(i === 1 ? 11 : 8, 0.35, 0.5).translate(0, y, 0)));
+  const tower = BGU.mergeGeometries([...legs, ...arms])!;
+  const all = h.powerLines.flat();
+  const mesh = new THREE.InstancedMesh(tower, new THREE.MeshLambertMaterial({ color: '#8b9096' }), all.length);
+  const m = new THREE.Matrix4();
+  all.forEach((p, i) => mesh.setMatrixAt(i, m.makeTranslation(p.x, terrainHeight(p.x, p.z), p.z)));
+  mesh.instanceMatrix.needsUpdate = true;
+  mesh.computeBoundingSphere();
+  mesh.raycast = noRaycast;
+  g.add(mesh);
+  const pts: number[] = [];
+  for (const line of h.powerLines) {
+    for (let i = 1; i < line.length; i++) {
+      const a = line[i - 1];
+      const b = line[i];
+      const dx = b.x - a.x;
+      const dz = b.z - a.z;
+      const len = Math.hypot(dx, dz);
+      const px = -dz / len;
+      const pz = dx / len;
+      for (const [off, y] of [[-4, 17], [4, 17], [0, 25]] as [number, number][]) {
+        const seg = 8;
+        for (let k = 0; k < seg; k++) {
+          const t0 = k / seg;
+          const t1 = (k + 1) / seg;
+          const sag = (t: number) => y - 4 * t * (1 - t) * 3.2;
+          pts.push(a.x + dx * t0 + px * off, sag(t0), a.z + dz * t0 + pz * off, a.x + dx * t1 + px * off, sag(t1), a.z + dz * t1 + pz * off);
+        }
+      }
+    }
+  }
+  const lg = new THREE.BufferGeometry();
+  lg.setAttribute('position', new THREE.Float32BufferAttribute(pts, 3));
+  const wires = new THREE.LineSegments(lg, new THREE.LineBasicMaterial({ color: '#4a4e53' }));
+  wires.raycast = noRaycast;
+  g.add(wires);
+  return g;
+}
+
 function buildLights(h: Layout): THREE.Points {
   const pos = new Float32Array(h.lights.length * 3);
   const col = new Float32Array(h.lights.length * 3);
@@ -311,6 +372,7 @@ export function Hinterland() {
   const scrub = quality === 'low' ? 0.15 : quality === 'medium' ? 0.25 : 1;
   const districts = useMemo(() => buildDistricts(layout, scrub), [layout, scrub]);
   const lights = useMemo(() => buildLights(layout), [layout]);
+  const power = useMemo(() => buildPowerLines(layout), [layout]);
   useEffect(
     () => () => {
       districts.traverse((o) => {
@@ -332,6 +394,7 @@ export function Hinterland() {
       <primitive object={roads} />
       <primitive object={districts} />
       <primitive object={lights} />
+      <primitive object={power} />
     </group>
   );
 }

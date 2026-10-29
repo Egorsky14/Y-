@@ -29,6 +29,10 @@ export function Headquarters() {
   const monument = useMemo(() => monumentTexture(), []);
   const signMaterial = useMemo(() => new THREE.MeshStandardMaterial({ map: wordmarkPlain, transparent: true, roughness: 0.4, emissive: '#ffffff', emissiveMap: wordmarkPlain, emissiveIntensity: 0.15 }), [wordmarkPlain]);
   const has = (id: string) => upgrades.includes(id as (typeof upgrades)[number]);
+  const legalName = useMemo(() => {
+    const map = signTexture('EGO HVAC SERVICES LLC', '#ffffff', '#111418', 11.3);
+    return new THREE.MeshStandardMaterial({ map, roughness: 0.5, emissive: '#ffffff', emissiveMap: map, emissiveIntensity: 0.15 });
+  }, []);
   const fleetStencil = useMemo(() => new THREE.MeshStandardMaterial({ map: signTexture('EGO FLEET', '#ffffff', PALETTE.egoTeal), roughness: 0.7, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -4 }), []);
   const cx = HQ_LOT.center.x;
   const cz = HQ_LOT.center.z;
@@ -68,6 +72,14 @@ export function Headquarters() {
             <BayDoor position={[sx0 + 0.2, 0, z]} active={activeBays[i]} index={i} />
           </group>
         ))}
+        {/* Full company name over the office's lot-side glazing, toward the visitor parking */}
+        <mesh position={[HQ.office.x - HQ.office.w / 2 - 0.08, 6.55, -12.4]} rotation={[0, -Math.PI / 2, 0]}>
+          <boxGeometry args={[10.6, 1.05, 0.1]} />
+          <meshStandardMaterial color="#111418" roughness={0.5} metalness={0.35} />
+        </mesh>
+        <mesh position={[HQ.office.x - HQ.office.w / 2 - 0.14, 6.55, -12.4]} rotation={[0, -Math.PI / 2, 0]} material={legalName}>
+          <planeGeometry args={[10.2, 0.9]} />
+        </mesh>
         {/* "EGO FLEET" stencils on the company stalls in use (stall positions come from the simulation) */}
         {hqParkingStalls(2 + (has('expanded-garage') ? 2 : 0) + (has('additional-parking') ? 4 : 0)).map((st, i) => (
           <mesh key={i} position={[st.pos.x - cx + 2.2, 0.058, st.pos.z - cz]} rotation={[-Math.PI / 2, 0, Math.PI / 2]} material={fleetStencil}>

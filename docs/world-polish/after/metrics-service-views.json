@@ -1,0 +1,100 @@
+{
+  "label": "after",
+  "size": "1920x1080",
+  "loadMs": 5773,
+  "shots": {
+    "W07-arrival": {
+      "calls": 720,
+      "triangles": 2085741,
+      "geometries": 547,
+      "textures": 75
+    },
+    "W08-diagnosis": {
+      "calls": 681,
+      "triangles": 2021148,
+      "geometries": 568,
+      "textures": 77
+    },
+    "W08c-diagnosis-side": {
+      "calls": 633,
+      "triangles": 1965726,
+      "geometries": 569,
+      "textures": 78
+    },
+    "W08b-service-wide": {
+      "calls": 710,
+      "triangles": 2104905,
+      "geometries": 569,
+      "textures": 78
+    },
+    "W08d-probe-profile": {
+      "calls": 648,
+      "triangles": 2060724,
+      "geometries": 570,
+      "textures": 79
+    },
+    "W08e-gauges-profile": {
+      "calls": 646,
+      "triangles": 2060684,
+      "geometries": 570,
+      "textures": 79
+    },
+    "W09-repair": {
+      "calls": 677,
+      "triangles": 2036976,
+      "geometries": 574,
+      "textures": 79
+    },
+    "W09b-repair-side": {
+      "calls": 631,
+      "triangles": 1967250,
+      "geometries": 574,
+      "textures": 79
+    },
+    "W09c-wrench-profile": {
+      "calls": 646,
+      "triangles": 2061048,
+      "geometries": 577,
+      "textures": 79
+    },
+    "W09d-reach-profile": {
+      "calls": 643,
+      "triangles": 2061012,
+      "geometries": 577,
+      "textures": 79
+    },
+    "W09e-fan-check-profile": {
+      "calls": 643,
+      "triangles": 2061012,
+      "geometries": 577,
+      "textures": 79
+    }
+  },
+  "errors": [],
+  "statusAtGauges": "diagnosing",
+  "statusAtFanCheck": "repairing",
+  "service": {
+    "job": {
+      "id": "job-8",
+      "lot": "c-n-4"
+    },
+    "geo": {
+      "house": {
+        "x": -21,
+        "z": 25
+      },
+      "van": {
+        "x": -21,
+        "z": -2.6
+      }
+    },
+    "tech": {
+      "x": -11.959999999999999,
+      "z": 20.98,
+      "y": 0,
+      "status": "working"
+    },
+    "statusAtDiagnosis": "diagnosing",
+    "statusAtRepair": "repairing"
+  }
+}

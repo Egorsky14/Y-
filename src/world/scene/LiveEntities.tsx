@@ -15,7 +15,7 @@ import { toolsHeldBy } from '@/game/equipment/inventory';
 import { vehicleAtJob } from '@/game/equipment/performance';
 import { faultById } from '@/game/jobs/faults';
 import type { GameState, Job } from '@/game/simulation/types';
-import { EXIT_DELAY, EXIT_SECONDS, GAUGES_DELAY, PARK_SECONDS, WALK_SPEED, approachPath, curbDoor, ease, pathLength, samplePath, siteFor, siteParking, siteVisuals, vanVisuals, visualPace } from './serviceCall';
+import { BAG_LOCAL, bagWorldPosition, EXIT_DELAY, EXIT_SECONDS, GAUGES_DELAY, PARK_SECONDS, WALK_SPEED, approachPath, curbDoor, ease, pathLength, samplePath, siteFor, siteParking, siteVisuals, vanVisuals, visualPace } from './serviceCall';
 
 declare global {
   interface Window {
@@ -334,7 +334,7 @@ function WorkerView({ id }: { id: string }) {
     const c = condenserPosition(workLot);
     const w = workPosition(workLot, info.crew);
     const size = workLot.style === 'premium' ? 1.08 : 0.92;
-    return { face: Math.hypot(c.x - w.x, c.z - w.z) - size / 2, top: size + 0.04 };
+    return { face: Math.hypot(c.x - w.x, c.z - w.z) - size / 2, top: size + 0.04, bag: info.crew === 0 ? BAG_LOCAL : undefined };
   })();
   return (
     <group ref={group} name={`employee:${id}`}>
@@ -350,6 +350,14 @@ function WorkerView({ id }: { id: string }) {
   );
 }
 
+/** The tool bag's position in the kit frame (unit-centred, rotated by `rot` about y at `origin`). */
+function bagInKit(lot: NonNullable<ReturnType<typeof lotById>>, origin: { x: number; z: number }, rot: number): { x: number; z: number } {
+  const wb = bagWorldPosition(lot);
+  const dx = wb.x - origin.x;
+  const dz = wb.z - origin.z;
+  return { x: dx * Math.cos(rot) - dz * Math.sin(rot), z: dx * Math.sin(rot) + dz * Math.cos(rot) };
+}
+
 /** Blender-authored job-site kit (tools/blender/jobsite_kit.py): bag, gauge manifold with hoses, recovery cylinder. */
 const KIT_URL = `${import.meta.env.BASE_URL}models/props/jobsite-kit.glb`;
 useGLTF.preload(KIT_URL);
@@ -359,7 +367,7 @@ useGLTF.preload(KIT_URL);
  * unit: manifold hung on the cabinet, hoses on the service valves. It appears when the technician
  * has walked up and set the bag down; the gauges follow a moment later, as if just hooked up.
  */
-function JobSiteKit({ jobId, install }: { jobId: string; install: boolean }) {
+function JobSiteKit({ jobId, install, bagAt }: { jobId: string; install: boolean; bagAt?: { x: number; z: number } }) {
   const { scene } = useGLTF(KIT_URL);
   const kit = useMemo(() => {
     const root = scene.clone(true);
@@ -369,8 +377,11 @@ function JobSiteKit({ jobId, install }: { jobId: string; install: boolean }) {
       o.receiveShadow = true;
     });
     root.visible = false;
+    // The bag is set down where the technician reaches for it (serviceCall.ts BAG_LOCAL).
+    const bag = root.getObjectByName('bag');
+    if (bag && bagAt) bag.position.set(bagAt.x, bag.position.y, bagAt.z);
     return root;
-  }, [scene]);
+  }, [scene, bagAt?.x, bagAt?.z]);
   const staged = useRef(0);
   useEffect(() => () => void siteVisuals.delete(jobId), [jobId]);
   useFrame((_, dt) => {
@@ -442,7 +453,7 @@ export function JobSiteProps() {
         return (
           <group key={id} name="jobsite-kit" position={[p.x, 0, p.z]} rotation={[0, Math.atan2(-side.z, side.x), 0]}>
             <Suspense fallback={null}>
-              <JobSiteKit jobId={id} install={kind === 'i'} />
+              <JobSiteKit jobId={id} install={kind === 'i'} bagAt={bagInKit(lot, p, Math.atan2(-side.z, side.x))} />
             </Suspense>
             {equipment && (
               <Suspense fallback={null}>

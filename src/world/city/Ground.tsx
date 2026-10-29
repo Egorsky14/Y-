@@ -83,14 +83,67 @@ function macroTexture(): THREE.DataTexture {
   const toPx = (m: number) => ((m + MACRO_HALF) / (2 * MACRO_HALF)) * S;
   const ppm = S / (2 * MACRO_HALF);
   const h = hinterland();
-  // 2. Disturbed, landscaped ground under built parcels (gravel yards, graded pads).
+  // 2. Vegetation stands in the open desert: darker olive-brown speckle gathered in irregular patches
+  //    (free in the shader, and far more of it than 3D scrub could afford).
   const rnd = makeDecoRng(14);
-  for (const c of h.cells) {
-    if (c.kind === 'desert' || c.kind === 'buffer') continue;
-    ctx.fillStyle = c.kind === 'golf' ? 'rgba(170,160,128,0.55)' : `rgba(${188 + rnd() * 16},${172 + rnd() * 14},${144 + rnd() * 14},0.55)`;
-    ctx.fillRect(toPx(c.x0), toPx(c.z0), (c.x1 - c.x0) * ppm, (c.z1 - c.z0) * ppm);
+  const veg = valueNoise(16);
+  for (let k = 0; k < 26000; k++) {
+    const px = rnd() * S;
+    const py = rnd() * S;
+    const d = veg(px / 24, py / 24) * 0.7 + veg(px / 7, py / 7) * 0.3;
+    if (d < 0.55 + rnd() * 0.2) continue;
+    ctx.fillStyle = `rgba(${92 + rnd() * 30},${88 + rnd() * 24},${62 + rnd() * 18},${0.25 + rnd() * 0.3})`;
+    ctx.beginPath();
+    ctx.arc(px, py, 0.6 + rnd() * 1.4, 0, 6.28);
+    ctx.fill();
   }
-  // 3. Roadside gravel shoulders along every scenic road (lighter, greyer).
+  // 3. Disturbed and landscaped ground under built parcels, and light graded soil where tracts are
+  //    being built out, painted with ragged, softened edges (never hard rectangles).
+  const ragged = (c: { x0: number; x1: number; z0: number; z1: number }, style: string, inset: number, jitter: number, blur: number) => {
+    const pts: [number, number][] = [];
+    const x0 = toPx(c.x0 + inset);
+    const x1 = toPx(c.x1 - inset);
+    const z0 = toPx(c.z0 + inset);
+    const z1 = toPx(c.z1 - inset);
+    const along = (a: [number, number], b: [number, number], n: number) => {
+      for (let i = 0; i < n; i++) {
+        const t = i / n;
+        pts.push([a[0] + (b[0] - a[0]) * t + (rnd() - 0.5) * jitter, a[1] + (b[1] - a[1]) * t + (rnd() - 0.5) * jitter]);
+      }
+    };
+    const n = Math.max(4, Math.round(Math.max(x1 - x0, z1 - z0) / 6));
+    along([x0, z0], [x1, z0], n);
+    along([x1, z0], [x1, z1], n);
+    along([x1, z1], [x0, z1], n);
+    along([x0, z1], [x0, z0], n);
+    ctx.save();
+    ctx.filter = `blur(${blur}px)`;
+    ctx.fillStyle = style;
+    ctx.beginPath();
+    pts.forEach(([x, y], i) => (i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)));
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+  };
+  for (const c of h.cells) {
+    if (c.kind === 'desert' || c.kind === 'buffer' || c.kind === 'park') continue;
+    if (c.kind === 'graded') {
+      ragged(c, 'rgba(222,208,180,0.6)', 2, 9, 2);
+      // Grader and truck tracks across the pad.
+      ctx.strokeStyle = 'rgba(170,150,118,0.35)';
+      ctx.lineWidth = 0.8;
+      for (let k = 0; k < 6; k++) {
+        ctx.beginPath();
+        ctx.moveTo(toPx(c.x0 + rnd() * (c.x1 - c.x0)), toPx(c.z0 + rnd() * (c.z1 - c.z0)));
+        ctx.quadraticCurveTo(toPx(c.x0 + rnd() * (c.x1 - c.x0)), toPx(c.z0 + rnd() * (c.z1 - c.z0)), toPx(c.x0 + rnd() * (c.x1 - c.x0)), toPx(c.z0 + rnd() * (c.z1 - c.z0)));
+        ctx.stroke();
+      }
+      continue;
+    }
+    const tone = c.kind === 'golf' ? 'rgba(170,160,128,0.5)' : `rgba(${186 + rnd() * 16},${170 + rnd() * 14},${142 + rnd() * 14},0.5)`;
+    ragged(c, tone, 0, 3, 1.5);
+  }
+  // 4. Roadside gravel shoulders along every scenic road (lighter, greyer).
   ctx.lineCap = 'butt';
   for (const r of h.roads) {
     ctx.strokeStyle = 'rgba(196,188,170,0.55)';
@@ -105,7 +158,7 @@ function macroTexture(): THREE.DataTexture {
     }
     ctx.stroke();
   }
-  // 4. Washes: a wide grey-tan floodplain, a pale sand bed, darker vegetated banks.
+  // 5. Washes: a wide grey-tan floodplain, a pale sand bed, darker vegetated banks.
   ctx.lineJoin = 'round';
   ctx.lineCap = 'round';
   const stroke = (pts: { x: number; z: number }[], width: number, style: string) => {
@@ -129,7 +182,7 @@ function macroTexture(): THREE.DataTexture {
       ctx.fill();
     }
   }
-  // 5. Neutral inside the playable district, blending out over the buffer.
+  // 6. Neutral inside the playable district, blending out over the buffer.
   const src = ctx.getImageData(0, 0, S, S).data;
   const out = new Uint8Array(S * S * 4);
   const mean = SAND_MEAN.map(srgbToLinear);

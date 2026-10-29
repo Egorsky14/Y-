@@ -117,6 +117,9 @@ export const HQ_OPERATIONS_SOLIDS: { name: string; x: number; z: number; w: numb
   { name: 'condenser on hand truck', x: 2 - 0.85, z: 13.1, w: 1.0, d: 0.95 },
   { name: 'cylinder rack', x: 2 - 0.3, z: 14.6, w: 0.6, d: 0.95 },
   ...[-23.1, -20.3].map((x) => ({ name: 'EV charger', x, z: -34.2, w: 0.6, d: 0.5 })),
+  // World Immersion 3.1: a planted island between the visitor aisle and the drive aisle, and receiving at the south wall.
+  { name: 'tree island', x: -14, z: -12.5, w: 14, d: 5 },
+  { name: 'receiving pallets', x: 44.6, z: 33.2, w: 1.4, d: 2.6 },
 ];
 
 function addOperations(b: MeshBuilder): void {
@@ -160,6 +163,41 @@ function addOperations(b: MeshBuilder): void {
     b.add('galvanized', new THREE.CylinderGeometry(0.03, 0.03, 0.12, 6), [wx - 0.42, 1.52, 14.6 + dz]);
   }
   for (const y of [0.55, 1.05]) b.box('galvanized', [0.04, 0.03, 0.8], [wx - 0.56, y, 14.6]);
+  // ---- Tree island in the open east half of the lot (visitor aisle north of it, drive aisle south)
+  {
+    const isl = HQ_OPERATIONS_SOLIDS.find((p) => p.name === 'tree island')!;
+    b.box('curb', [isl.w, 0.18, 0.3], [isl.x, 0.09, isl.z - isl.d / 2]);
+    b.box('curb', [isl.w, 0.18, 0.3], [isl.x, 0.09, isl.z + isl.d / 2]);
+    b.box('curb', [0.3, 0.18, isl.d], [isl.x - isl.w / 2, 0.09, isl.z]);
+    b.box('curb', [0.3, 0.18, isl.d], [isl.x + isl.w / 2, 0.09, isl.z]);
+    b.box('rockBrown', [isl.w - 0.3, 0.14, isl.d - 0.3], [isl.x, 0.07, isl.z]);
+    b.box('mulch', [isl.w * 0.5, 0.05, isl.d * 0.5], [isl.x, 0.15, isl.z]);
+  }
+  // ---- Receiving at the service building's south wall (yard side): roll-up door, dock bumpers,
+  //      a striped loading zone kept clear, and the latest delivery on a pallet jack beside it.
+  {
+    const sz1 = HQ.bays.z + HQ.bays.d / 2; // south face, z = 30
+    const dx = 40;
+    b.box('darkPanel', [4.2, 4.2, 0.12], [dx, 2.1, sz1 + 0.07]);
+    for (let i = 1; i < 8; i++) b.box('galvanized', [4.1, 0.04, 0.04], [dx, i * 0.52, sz1 + 0.14]);
+    b.box('darkMetal', [4.8, 0.35, 0.3], [dx, 4.4, sz1 + 0.15]);
+    for (const sx of [-1, 1]) {
+      b.box('darkMetal', [0.25, 4.4, 0.25], [dx + sx * 2.3, 2.2, sz1 + 0.13]);
+      b.box('rubber', [0.35, 0.5, 0.25], [dx + sx * 1.6, 0.6, sz1 + 0.22]);
+      b.box('bollard', [0.3, 1.1, 0.3], [dx + sx * 2.9, 0.55, sz1 + 0.6]);
+    }
+    b.box('lamp', [0.5, 0.15, 0.3], [dx, 4.85, sz1 + 0.3]);
+    b.box('stripeYellow', [4.4, 0.012, 0.16], [dx, 0.06, sz1 + 5.6]);
+    for (let i = 0; i < 6; i++) b.box('stripeYellow', [0.16, 0.012, 1.6], [dx - 1.9 + i * 0.76, 0.06, sz1 + 3.0], [0, 0.6, 0]);
+    // Delivery staged beside the door: two stretch-wrapped units on pallets, a pallet jack under one.
+    const p = HQ_OPERATIONS_SOLIDS.find((q) => q.name === 'receiving pallets')!;
+    for (const [k, oz] of [[0, -0.65], [1, 0.65]] as [number, number][]) {
+      b.box('wood', [1.2, 0.14, 1.1], [p.x, 0.08, p.z + oz]);
+      b.box(k ? 'shrinkWrap' : 'cardboard', [1.0, 1.0, 0.95], [p.x, 0.66, p.z + oz]);
+    }
+    b.box('safetyOrange', [0.5, 0.12, 1.1], [p.x - 0.35, 0.07, p.z - 0.65]);
+    b.box('darkMetal', [0.06, 1.1, 0.06], [p.x - 0.75, 0.6, p.z - 0.65], [0, 0, 0.35]);
+  }
   // ---- EV chargers at the head of the visitor row (north curb)
   for (const x of [-23.1, -20.3]) {
     b.box('concrete', [0.6, 0.12, 0.5], [x, 0.06, -34.2]);

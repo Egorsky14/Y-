@@ -15,6 +15,9 @@ export function hqLandscapePlants(): { species: Species; x: number; z: number; s
     out.push({ species: rnd() < 0.4 ? 'agave' : rnd() < 0.6 ? 'shrub-sage' : 'desert-grass', x: -25.5 + (rnd() - 0.5) * 0.6, z, scale: 0.85 });
   }
   out.push({ species: 'groundcover', x: -15.2, z: -6.2, scale: 0.9 }, { species: 'groundcover', x: -12.8, z: -3.8, scale: 0.9 });
+  // Tree island in the east half of the lot (HeadquartersBuilder: 14 x 5 m at (-14, -12.5)): shade trees and understorey.
+  for (const x of [-18.5, -14, -9.5]) out.push({ species: x === -14 ? 'palo-verde' : 'mesquite', x, z: -12.5, scale: 1.05 + rnd() * 0.15 });
+  for (const x of [-16.3, -11.7]) out.push({ species: rnd() < 0.5 ? 'desert-grass' : 'shrub-sage', x, z: -12.0, scale: 0.85 });
   for (const z of [-37, -30, -23, -2, 6, 14, 22, 29]) {
     out.push({ species: rnd() < 0.5 ? 'palo-verde' : 'mesquite', x: 53.5 + (rnd() - 0.5) * 1.5, z, scale: 1.0 + rnd() * 0.2 });
     out.push({ species: rnd() < 0.5 ? 'desert-grass' : 'shrub-sage', x: 51.5, z: z + 2.5, scale: 0.9 });

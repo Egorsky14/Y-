@@ -22,6 +22,20 @@ export function serviceSiteCamera(lot: Lot): { type: 'focus'; target: { x: numbe
   return { type: 'focus', target: { x: curb.x * 0.36 + unit.x * 0.44 + c.x * 0.2, z: curb.z * 0.36 + unit.z * 0.44 + c.z * 0.2 }, distance: 38, azimuth: Math.atan2(curb.x - unit.x, curb.z - unit.z) + 0.35, elevation: 0.66, targetY: 3 };
 }
 
+/**
+ * Where the lead technician sets the tool bag down, in his own frame (+z toward the unit): beside the
+ * hip on the free-hand side, clear of the kneeling leg, within reach when he turns to it.
+ */
+export const BAG_LOCAL = { x: -0.58, z: -0.1 };
+
+/** World position of the tool bag for a lot (the lead technician's work spot, facing the unit). */
+export function bagWorldPosition(lot: Lot): { x: number; z: number } {
+  const w = workPosition(lot, 0);
+  const c = condenserPosition(lot);
+  const yaw = Math.atan2(c.x - w.x, c.z - w.z);
+  return { x: w.x + BAG_LOCAL.x * Math.cos(yaw) + BAG_LOCAL.z * Math.sin(yaw), z: w.z - BAG_LOCAL.x * Math.sin(yaw) + BAG_LOCAL.z * Math.cos(yaw) };
+}
+
 /** Walking speed at 1× game speed (m/s); the walk cycle in Worker covers ~1.5 m per second. */
 export const WALK_SPEED = 1.5;
 /** Seconds (at 1×) for the van to pull from the route's end into the curb lane. */
