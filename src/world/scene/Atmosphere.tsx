@@ -57,18 +57,18 @@ function lookFor(minute: number, weather: WeatherKind): Look {
     ground: new THREE.Color('#c4a47a').lerp(new THREE.Color('#b0805a'), golden * 0.45).lerp(new THREE.Color('#18233a'), night),
     hemi: 0.74 * (0.22 + 0.78 * day) * (0.78 + 0.22 * sunHeight) + 0.12 * twilight + 0.1 * night,
     ambient: 0.16 * (0.3 + 0.7 * day) + 0.05 * night,
-    fogNear: 240,
-    fogFar: 2100,
+    fogNear: 300,
+    fogFar: 2900,
     exposure: 0.98 - night * 0.22 + golden * 0.05 - (1 - sunHeight) * day * 0.05,
     rain: 0,
     envIntensity: 0.55 * (0.2 + 0.8 * day),
   };
   switch (weather) {
     case 'heat-wave':
-      look = { ...look, sunIntensity: look.sunIntensity * 1.06, sunColor: look.sunColor.clone().lerp(new THREE.Color('#ffd9a8'), 0.4), skyZenith: look.skyZenith.clone().lerp(new THREE.Color('#9fb6c8'), 0.3 * day), skyHorizon: look.skyHorizon.clone().lerp(new THREE.Color('#e9d6b8'), 0.55 * day), fogNear: 220, fogFar: 900, exposure: look.exposure * 1.03 };
+      look = { ...look, sunIntensity: look.sunIntensity * 1.06, sunColor: look.sunColor.clone().lerp(new THREE.Color('#ffd9a8'), 0.4), skyZenith: look.skyZenith.clone().lerp(new THREE.Color('#9fb6c8'), 0.3 * day), skyHorizon: look.skyHorizon.clone().lerp(new THREE.Color('#e9d6b8'), 0.55 * day), fogNear: 260, fogFar: 1700, exposure: look.exposure * 1.03 };
       break;
     case 'overcast':
-      look = { ...look, sunIntensity: look.sunIntensity * 0.42, sunColor: new THREE.Color('#e6e9ee'), skyZenith: look.skyZenith.clone().lerp(new THREE.Color('#7d8894'), 0.85 * day), skyHorizon: look.skyHorizon.clone().lerp(new THREE.Color('#aab3bc'), 0.85 * day), hemi: look.hemi * 1.3, ambient: look.ambient * 1.35, fogNear: 280, fogFar: 1100, exposure: look.exposure * 0.94 };
+      look = { ...look, sunIntensity: look.sunIntensity * 0.42, sunColor: new THREE.Color('#e6e9ee'), skyZenith: look.skyZenith.clone().lerp(new THREE.Color('#7d8894'), 0.85 * day), skyHorizon: look.skyHorizon.clone().lerp(new THREE.Color('#aab3bc'), 0.85 * day), hemi: look.hemi * 1.3, ambient: look.ambient * 1.35, fogNear: 300, fogFar: 1800, exposure: look.exposure * 0.94 };
       break;
     case 'monsoon':
       look = { ...look, sunIntensity: look.sunIntensity * 0.16, sunColor: new THREE.Color('#cfd5df'), skyZenith: look.skyZenith.clone().lerp(new THREE.Color('#3a434d'), 0.92 * day), skyHorizon: look.skyHorizon.clone().lerp(new THREE.Color('#6a747f'), 0.92 * day), ground: look.ground.clone().lerp(new THREE.Color('#4e4c48'), 0.6), hemi: look.hemi * 0.95, ambient: look.ambient * 1.1, fogNear: 140, fogFar: 650, exposure: look.exposure * 0.76, rain: day > 0.2 ? 1 : 0.6, envIntensity: look.envIntensity * 1.3 };

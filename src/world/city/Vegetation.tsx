@@ -7,6 +7,7 @@ import { makeDecoRng } from '../assets/random';
 import { yardPlan, type Species } from './yardLayout';
 import { greenbelts } from './greenbelt';
 import { hqLandscapePlants } from './hqLandscape';
+import { isOpenDesert } from './hinterlandLayout';
 import { useApp } from '@/app/store';
 
 /**
@@ -502,6 +503,7 @@ function collectInstances(density: number): Instance[] {
     const a = rnd() * Math.PI * 2;
     const d = 232 + rnd() * 320;
     const r = rnd();
+    if (!isOpenDesert(Math.cos(a) * d, Math.sin(a) * d)) continue;
     out.push({ species: r < 0.6 ? 'shrub-sage' : r < 0.8 ? 'rock' : r < 0.9 ? 'boulder' : 'agave', x: Math.cos(a) * d, z: Math.sin(a) * d, rotation: rnd() * 6.28, scale: 1 + rnd() * 1.4, tint: 0.9 + rnd() * 0.2, scatter: true });
   }
   return out;

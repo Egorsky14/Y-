@@ -21,6 +21,7 @@ import { StudioEnvironment } from './StudioEnvironment';
 import { preloadVehicleModels } from '../vehicles/VehicleGltf';
 import { ParkedCars } from '../vehicles/ParkedCars';
 import { YardProps } from '../city/YardProps';
+import { Hinterland } from '../city/Hinterland';
 
 preloadVehicleModels();
 
@@ -83,6 +84,7 @@ export function GameScene() {
         <NightLights />
         <StudioEnvironment />
         <Ground />
+        <Hinterland />
         <Roads />
         <Vegetation />
         <Houses />

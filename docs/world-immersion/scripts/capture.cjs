@@ -31,6 +31,7 @@ const VIEWS = [
   ['W01c-overview-west', { ...OVERVIEW, azimuth: -2.3 }],
   ['W02-boundary-ne', { type: 'focus', target: { x: 140, z: -190 }, distance: 240, azimuth: -0.75, elevation: 0.36 }],
   ['W03-boundary-sw', { type: 'focus', target: { x: -140, z: 190 }, distance: 240, azimuth: Math.PI - 0.75, elevation: 0.36 }],
+  ['W13-horizon-west', { type: 'focus', target: { x: -120, z: -160 }, distance: 300, azimuth: 0.95, elevation: 0.2 }],
   ['W04-street', { type: 'focus', target: { x: -64, z: 4 }, distance: 72, azimuth: 0.55, elevation: 0.55 }],
   ['W05-hq', { type: 'hq' }],
   ['W06-hq-yard', { type: 'focus', target: { x: 85, z: 68 }, distance: 42, azimuth: -0.9, elevation: 0.62 }],
