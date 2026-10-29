@@ -51,3 +51,37 @@ camera; HQ is dominated by asphalt; nothing moves.
 - Tests: `src/tests/hinterland.test.ts` (routing graph and playable streets unchanged, every street
   end continued, no scenery on lots, streets or scenic roads, determinism, flat valley floor,
   open-desert query). vitest 115 passed, 3 opt-in skipped; tsc and lint clean.
+
+## Phase 3: technician (602ea8d)
+
+- Two-bone arm IK puts the hands on the real cabinet (distance from workPosition to
+  condenserPosition, unit size per home). Diagnosis loop: survey, kneel, probe the terminals with the
+  meter held up, rise to read the gauges. Repair loop: wrench at the panel with the free hand braced on
+  the cabinet, reach to the bag, lean over the fan guard. Clip time follows the game pace (pause
+  freezes it) and restarts on each state; transitions blend.
+- Gloved hands with fingers and thumb, deltoids that turn with the arms, polo collar with teal
+  placket, cargo pockets, head about 1:7.5 of height; walk with heel strike and counter-rotation.
+- Lot selection: corner brackets on the lot outline (fade at close range) replace the 22 m ring that
+  crossed walls and the house; HQ, depot and competitor (26-30 m rings) likewise; job ring slimmed.
+- Reviewed: arrival (mid-stride with the bag), diagnosis side, repair side, selected lot.
+
+## Phases 4-5: HQ and ambient life (523bd6e)
+
+- HQ: solar carport over the staff row, apron staging between bays 1 and 2 (tool chest, condenser on
+  a hand truck, chained nitrogen cylinders), EGO FLEET stencils on stalls in use, EV chargers, visitor
+  cars by business hours. Nothing in the fleet stalls or the route corridor.
+- Ambient traffic on scenic arterials and parkways only (not in the routing graph, never in the
+  district), lights at night, paced by the game, none on Battery Saver. GPU wind on vegetation.
+- vitest 116 passed, 3 opt-in skipped; tsc and lint clean.
+
+## Checkpoint (2026-10-28): stopped by the low-memory guard
+
+- The final capture batch (matched before/after, paired GPU timing, phone) and both preview servers
+  were stopped by the system's low-memory guard during the first (baseline) run. Per its instruction
+  they were not restarted. Completed before the stop: the new W13 baseline view (kept); partially
+  re-shot baseline files were restored from the committed baseline. Orphaned preview servers started
+  by this task were stopped; no test browsers left.
+- Remaining, on authorization: final after/ and after-390/ captures with the final script (plus the
+  baseline views added since 403236b: W07 follow, W08c, W14), paired GPU timing (two alternating
+  rounds), compare sheets (scripts/compare.cjs), the 21-case browser matrix one case at a time,
+  FINAL_REPORT.md.
