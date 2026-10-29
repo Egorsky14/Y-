@@ -73,7 +73,8 @@ function ModelLayer({ model, spots }: { model: Model; spots: Spot[] }) {
 
 export function ParkedCars() {
   const staff = useGame((s) => Object.keys(s.employees).length);
-  const spots = useMemo(() => parkedCarSpots(staff), [staff]);
+  const open = useGame((s) => s.clock.minute >= 7 * 60 && s.clock.minute < 18 * 60);
+  const spots = useMemo(() => parkedCarSpots(staff, open), [staff, open]);
   return (
     <group name="parked-cars">
       {MODELS.map((m) => (

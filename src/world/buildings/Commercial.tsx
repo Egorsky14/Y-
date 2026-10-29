@@ -12,7 +12,7 @@ export function SupplyWarehouse() {
   const shell = useMemo(() => buildWarehouse(), []);
   return (
     <group position={[lot.center.x, 0, lot.center.z]}>
-      <Selectable selection={{ kind: 'lot', id: lot.id }} ringRadius={30} ringOffset={[0, 0.08, -4]}>
+      <Selectable selection={{ kind: 'lot', id: lot.id }} bracket={[lot.width - 2, lot.depth - 2]} ringOffset={[0, 0.09, 0]}>
         <primitive object={shell} />
         <group position={[0, 0, -8]}>
           <mesh position={[0, 8.2, 22.12]}>
@@ -98,7 +98,7 @@ export function CompetitorBuilding() {
         <planeGeometry args={[lot.width - 2, lot.depth - 2]} />
         <meshStandardMaterial map={asphalt} roughness={0.95} />
       </mesh>
-      <Selectable selection={{ kind: 'lot', id: lot.id }} ringRadius={28} ringOffset={[0, 0.08, 6]}>
+      <Selectable selection={{ kind: 'lot', id: lot.id }} bracket={[lot.width - 2, lot.depth - 2]} ringOffset={[0, 0.09, 0]}>
         <group position={[0, 0, 8]}>
           <Box size={[60, 7, 36]} position={[0, 3.5, 0]} color="#eef1f4" roughness={0.6} />
           <Box size={[60.6, 0.6, 36.6]} position={[0, 7.3, 0]} color="#2e6fd8" />

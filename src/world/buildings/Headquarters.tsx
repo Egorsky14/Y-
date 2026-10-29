@@ -1,7 +1,8 @@
 import { useMemo, useRef } from 'react';
 import * as THREE from 'three';
 import { useFrame } from '@react-three/fiber';
-import { HQ_LOT } from '@/game/world/cityLayout';
+import { HQ_LOT, hqParkingStalls } from '@/game/world/cityLayout';
+import { PALETTE } from '../assets/palette';
 import { getGameState, useGame } from '@/app/store';
 import { monumentTexture, signTexture, wordmarkTexture } from '../assets/textures';
 import { Selectable } from '../interactions/Selectable';
@@ -28,6 +29,7 @@ export function Headquarters() {
   const monument = useMemo(() => monumentTexture(), []);
   const signMaterial = useMemo(() => new THREE.MeshStandardMaterial({ map: wordmarkPlain, transparent: true, roughness: 0.4, emissive: '#ffffff', emissiveMap: wordmarkPlain, emissiveIntensity: 0.15 }), [wordmarkPlain]);
   const has = (id: string) => upgrades.includes(id as (typeof upgrades)[number]);
+  const fleetStencil = useMemo(() => new THREE.MeshStandardMaterial({ map: signTexture('EGO FLEET', '#ffffff', PALETTE.egoTeal), roughness: 0.7, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -4 }), []);
   const cx = HQ_LOT.center.x;
   const cz = HQ_LOT.center.z;
   const sx0 = HQ.bays.x - HQ.bays.w / 2;
@@ -37,7 +39,7 @@ export function Headquarters() {
 
   return (
     <group position={[cx, 0, cz]}>
-      <Selectable selection={{ kind: 'lot', id: 'hq' }} ringRadius={26} ringOffset={[22, 0.08, -4]}>
+      <Selectable selection={{ kind: 'lot', id: 'hq' }} bracket={[HQ_LOT.width - 2, HQ_LOT.depth - 2]} ringOffset={[0, 0.09, 0]}>
         <primitive object={campus} />
         {/* Main sign on the entry tower (west face), raised letters on a thin backer */}
         <mesh position={[tx - 0.05, 7.6, t.z]} rotation={[0, -Math.PI / 2, 0]}>
@@ -65,6 +67,12 @@ export function Headquarters() {
             </mesh>
             <BayDoor position={[sx0 + 0.2, 0, z]} active={activeBays[i]} index={i} />
           </group>
+        ))}
+        {/* "EGO FLEET" stencils on the company stalls in use (stall positions come from the simulation) */}
+        {hqParkingStalls(2 + (has('expanded-garage') ? 2 : 0) + (has('additional-parking') ? 4 : 0)).map((st, i) => (
+          <mesh key={i} position={[st.pos.x - cx + 2.2, 0.058, st.pos.z - cz]} rotation={[-Math.PI / 2, 0, Math.PI / 2]} material={fleetStencil}>
+            <planeGeometry args={[3.0, 0.75]} />
+          </mesh>
         ))}
         {/* Monument sign face toward the street */}
         <mesh position={[-54.82, 1.5, -16]} rotation={[0, -Math.PI / 2, 0]}>

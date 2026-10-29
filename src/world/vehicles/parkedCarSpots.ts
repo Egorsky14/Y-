@@ -22,14 +22,15 @@ function hqSpot(x: number, z: number, heading: number, seed: number): ParkedCarS
 }
 
 /** HQ visitor row (nose to the north curb) and staff row (nose to the south curb), lot-local. */
-export const HQ_VISITOR_CARS = [0, 2, 3].map((i) => ({ x: -24.5 + (i + 0.5) * 2.8, z: -30.7, seed: 11 + i * 7 }));
+export const HQ_VISITOR_CARS = [0, 2, 3, 5, 1].map((i) => ({ x: -24.5 + (i + 0.5) * 2.8, z: -30.7, seed: 11 + i * 7 }));
 export const HQ_STAFF_ROW = Array.from({ length: 9 }, (_, i) => ({ x: -54 + (i + 0.5) * 3.0, z: 18.4, seed: 31 + i * 13 }));
 
 /**
- * Residents' cars in about half the driveways (two on wide ones), visitors at HQ, and one car per
- * staff member in the HQ staff row, up to nine, so the lot fills as the company hires.
+ * Residents' cars in about half the driveways (two on wide ones), visitors at HQ (customers and
+ * vendor reps: five of the six stalls during business hours, one after), and one car per staff
+ * member in the HQ staff row, up to nine, so the lot fills as the company hires.
  */
-export function parkedCarSpots(staff: number): ParkedCarSpot[] {
+export function parkedCarSpots(staff: number, businessHours = true): ParkedCarSpot[] {
   const out: ParkedCarSpot[] = [];
   for (const lot of HOUSE_LOTS) {
     const d = DRIVEWAYS.get(lot.id);
@@ -42,7 +43,7 @@ export function parkedCarSpots(staff: number): ParkedCarSpot[] {
       out.push({ ...p, heading, model: CIVILIAN_MODELS[(h >> (3 + i)) % 2], paint: PAINTS[(h >> (5 + i * 3)) % PAINTS.length] });
     });
   }
-  for (const v of HQ_VISITOR_CARS) out.push(hqSpot(v.x, v.z, Math.PI, v.seed));
+  for (const v of HQ_VISITOR_CARS.slice(0, businessHours ? 5 : 1)) out.push(hqSpot(v.x, v.z, Math.PI, v.seed));
   for (const s of HQ_STAFF_ROW.slice(0, Math.max(0, Math.min(9, staff)))) out.push(hqSpot(s.x, s.z, 0, s.seed));
   return out;
 }

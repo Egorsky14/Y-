@@ -102,6 +102,64 @@ function addSiteDetail(b: MeshBuilder, has: (id: HqUpgradeId) => boolean, upgrad
   }
 }
 
+/**
+ * World Immersion: the parts of a working HVAC shop that read from the strategy camera, all clear of
+ * the fleet stalls and the stall-to-apron route corridor (x < -26, -32 < z < 2):
+ * - a solar shade carport over the staff row (columns behind the south curb, canopy over the stalls);
+ * - work staged on the bay apron against the wall between bays 1 and 2: a rolling tool chest, a
+ *   condenser on a hand truck waiting to go out, nitrogen cylinders chained upright in a wall rack;
+ * - two EV chargers at the head of the visitor row.
+ */
+function addOperations(b: MeshBuilder): void {
+  // ---- Staff carport (staff row: cars x -54..-27, nose to the south curb at z 21)
+  const cz0 = 13.6;
+  const cz1 = 21.9;
+  for (const x of [-55.2, -48.6, -42, -35.4, -28.8]) {
+    b.add('concrete', new THREE.CylinderGeometry(0.3, 0.34, 0.5, 10), [x, 0.25, 21.7]);
+    b.box('paintBlack', [0.26, 3.6, 0.26], [x, 1.8, 21.7]);
+    // Cantilever arm sloping toward the stalls
+    b.box('paintBlack', [0.2, 0.32, cz1 - cz0], [x, 3.62, (cz0 + cz1) / 2], [0.05, 0, 0]);
+  }
+  b.box('paintBlack', [27.2, 0.2, 0.22], [-42, 3.78, 21.5]);
+  b.box('paintBlack', [27.2, 0.16, 0.18], [-42, 3.36, cz0 + 0.3]);
+  // Panels in two ranks on the canopy (dark modules, thin frames)
+  for (let i = 0; i < 12; i++) {
+    for (const [z, y] of [[16.0, 3.62], [19.6, 3.8]] as [number, number][]) {
+      b.box('solar', [2.1, 0.05, 3.4], [-54.6 + i * 2.25, y + 0.12, z], [0.05, 0, 0]);
+    }
+  }
+  // ---- Apron staging against the service-building wall between bay doors 1 and 2 (z 10.6..15.4)
+  const wx = HQ.bays.x - HQ.bays.w / 2; // west face, x = 2
+  // Rolling tool chest: red cabinet, drawer lines, casters
+  b.box('redSteel', [0.6, 1.0, 1.1], [wx - 0.45, 0.62, 11.6]);
+  for (let i = 0; i < 4; i++) b.box('darkMetal', [0.62, 0.02, 1.0], [wx - 0.45, 0.4 + i * 0.2, 11.6]);
+  b.box('darkMetal', [0.62, 0.05, 1.12], [wx - 0.45, 1.14, 11.6]);
+  for (const dz of [-0.45, 0.45]) b.add('rubber', new THREE.CylinderGeometry(0.06, 0.06, 0.05, 8), [wx - 0.45, 0.06, 11.6 + dz], [0, 0, Math.PI / 2]);
+  // Condenser on a hand truck, ready for an install
+  b.box('unitCabinet', [0.8, 0.8, 0.8], [wx - 0.9, 0.52, 13.1]);
+  b.box('grille', [0.82, 0.62, 0.02], [wx - 1.31, 0.5, 13.1]);
+  b.add('darkMetal', new THREE.CylinderGeometry(0.3, 0.3, 0.03, 16), [wx - 0.9, 0.94, 13.1]);
+  for (const dz of [-0.36, 0.36]) b.box('safetyOrange', [0.05, 1.3, 0.05], [wx - 0.42, 0.75, 13.1 + dz], [0, 0, 0.12]);
+  b.box('safetyOrange', [0.05, 0.05, 0.78], [wx - 0.35, 1.38, 13.1]);
+  b.box('darkMetal', [0.5, 0.04, 0.8], [wx - 0.62, 0.1, 13.1]);
+  for (const dz of [-0.42, 0.42]) b.add('rubber', new THREE.CylinderGeometry(0.11, 0.11, 0.07, 10), [wx - 0.42, 0.11, 13.1 + dz], [Math.PI / 2, 0, 0]);
+  // Nitrogen cylinders chained upright in a wall rack
+  b.box('darkMetal', [0.3, 1.2, 0.9], [wx - 0.16, 0.62, 14.6]);
+  for (const dz of [-0.22, 0.22]) {
+    b.add('darkGreen', new THREE.CylinderGeometry(0.115, 0.115, 1.35, 12), [wx - 0.42, 0.7, 14.6 + dz]);
+    b.add('darkGreen', new THREE.SphereGeometry(0.115, 10, 6, 0, Math.PI * 2, 0, Math.PI / 2), [wx - 0.42, 1.37, 14.6 + dz]);
+    b.add('galvanized', new THREE.CylinderGeometry(0.03, 0.03, 0.12, 6), [wx - 0.42, 1.52, 14.6 + dz]);
+  }
+  for (const y of [0.55, 1.05]) b.box('galvanized', [0.04, 0.03, 0.8], [wx - 0.56, y, 14.6]);
+  // ---- EV chargers at the head of the visitor row (north curb)
+  for (const x of [-23.1, -20.3]) {
+    b.box('concrete', [0.6, 0.12, 0.5], [x, 0.06, -34.2]);
+    b.box('darkPanel', [0.34, 1.35, 0.26], [x, 0.78, -34.2]);
+    b.box('teal', [0.3, 0.06, 0.22], [x, 1.2, -34.07]);
+    b.box('interiorLight', [0.16, 0.12, 0.01], [x, 1.0, -34.06]);
+  }
+}
+
 export function buildHeadquarters(upgrades: HqUpgradeId[]): THREE.Group {
   const t0 = performance.now();
   const has = (id: HqUpgradeId) => upgrades.includes(id);
@@ -587,6 +645,7 @@ export function buildHeadquarters(upgrades: HqUpgradeId[]): THREE.Group {
     b.box('concrete', [18.6, 0.2, 8.6], [px, 0.1, pz]);
   }
   addSiteDetail(b, has, upgrades.length);
+  addOperations(b);
   const g = b.build('hq');
   if (import.meta.env.DEV) console.debug(`[build] hq ${(performance.now() - t0).toFixed(0)} ms`);
   return g;

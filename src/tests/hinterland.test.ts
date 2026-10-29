@@ -89,3 +89,19 @@ describe('hinterland', () => {
     expect(isOpenDesert((sub.x0 + sub.x1) / 2, (sub.z0 + sub.z1) / 2)).toBe(false);
   });
 });
+
+describe('ambient traffic', () => {
+  it('drives only on scenic arterials, inside their asphalt and outside the playable district', async () => {
+    const { ambientCars } = await import('@/world/vehicles/AmbientTraffic');
+    const cars = ambientCars(1);
+    const roads = scenicRoads().filter((r) => r.kind !== 'collector');
+    expect(cars.length).toBeGreaterThan(100);
+    expect(ambientCars(0)).toHaveLength(0);
+    for (const c of cars) {
+      const road = roads.find((r) => r.axis === c.axis && r.at === c.at)!;
+      expect(road).toBeDefined();
+      expect(Math.abs(c.lane)).toBeLessThan(road.width / 2 - 0.9);
+      expect(Math.abs(c.at)).toBeGreaterThan(WORLD_HALF + 20);
+    }
+  });
+});

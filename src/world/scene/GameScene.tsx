@@ -22,6 +22,7 @@ import { preloadVehicleModels } from '../vehicles/VehicleGltf';
 import { ParkedCars } from '../vehicles/ParkedCars';
 import { YardProps } from '../city/YardProps';
 import { Hinterland } from '../city/Hinterland';
+import { AmbientTraffic } from '../vehicles/AmbientTraffic';
 
 preloadVehicleModels();
 
@@ -85,6 +86,7 @@ export function GameScene() {
         <StudioEnvironment />
         <Ground />
         <Hinterland />
+        <AmbientTraffic />
         <Roads />
         <Vegetation />
         <Houses />

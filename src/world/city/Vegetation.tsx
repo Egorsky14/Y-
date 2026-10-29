@@ -8,7 +8,8 @@ import { yardPlan, type Species } from './yardLayout';
 import { greenbelts } from './greenbelt';
 import { hqLandscapePlants } from './hqLandscape';
 import { isOpenDesert } from './hinterlandLayout';
-import { useApp } from '@/app/store';
+import { getGameState, useApp } from '@/app/store';
+import { visualPace } from '../scene/serviceCall';
 
 /**
  * All vegetation in the world is drawn with one InstancedMesh per species. Species geometry is
@@ -509,6 +510,31 @@ function collectInstances(density: number): Instance[] {
   return out;
 }
 
+/**
+ * Gentle wind on everything taller than a shrub, in the vertex shader (no per-frame CPU work): the
+ * sway grows with the square of height above 1.2 m, so trunks stay planted and palm heads and tree
+ * crowns move a few tens of centimetres, each plant on its own phase.
+ */
+const wind = { value: 0 };
+function withWind(m: THREE.MeshStandardMaterial): THREE.MeshStandardMaterial {
+  m.onBeforeCompile = (shader) => {
+    shader.uniforms.uWindT = wind;
+    shader.vertexShader = shader.vertexShader.replace('#include <common>', '#include <common>\nuniform float uWindT;').replace(
+      '#include <begin_vertex>',
+      `#include <begin_vertex>
+      #ifdef USE_INSTANCING
+        float hW = max(0.0, transformed.y - 1.2);
+        float ph = instanceMatrix[3].x * 0.21 + instanceMatrix[3].z * 0.17;
+        float gust = 0.75 + 0.25 * sin(uWindT * 0.37 + ph * 0.5);
+        transformed.x += sin(uWindT * 1.35 + ph) * 0.0055 * hW * hW * gust;
+        transformed.z += cos(uWindT * 1.1 + ph * 1.3) * 0.0035 * hW * hW * gust;
+      #endif`,
+    );
+  };
+  m.customProgramCacheKey = () => 'veg-wind-v1-' + m.side;
+  return m;
+}
+
 const SPECIES: Species[] = ['palm', 'date-palm', 'mesquite', 'olive', 'palo-verde', 'cypress', 'shrub-sage', 'shrub-green', 'shrub-red', 'agave', 'yucca', 'desert-grass', 'groundcover', 'flower-pink', 'flower-yellow', 'rock', 'boulder', 'barrel-cactus'];
 
 export function Vegetation() {
@@ -518,9 +544,13 @@ export function Vegetation() {
   const geometries = useMemo(() => Object.fromEntries(SPECIES.map((s) => [s, buildSpecies(s)])) as Record<Species, THREE.BufferGeometry>, []);
   const farPalm = useMemo(() => fanPalm('far'), []);
   const farTrees = useMemo(() => ({ mesquite: treeFar('mesquite'), olive: treeFar('olive'), 'palo-verde': treeFar('palo-verde') }) as Record<string, THREE.BufferGeometry>, []);
-  const material = useMemo(() => new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.95, metalness: 0, flatShading: false, side: THREE.DoubleSide }), []);
+  const material = useMemo(() => withWind(new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.95, metalness: 0, flatShading: false, side: THREE.DoubleSide })), []);
   // Closed shapes (shrub and crown masses, cacti, rocks, trunks) only need their front faces.
-  const solid = useMemo(() => new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.95, metalness: 0, flatShading: false, side: THREE.FrontSide }), []);
+  const solid = useMemo(() => withWind(new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.95, metalness: 0, flatShading: false, side: THREE.FrontSide })), []);
+  // Wind time follows the game pace, so a paused game holds the trees still.
+  useFrame((_, dt) => {
+    wind.value += Math.min(dt, 0.1) * Math.min(visualPace(getGameState()?.speed ?? 1), 1.5);
+  });
   return (
     <group name="vegetation">
       {SPECIES.map((species) => {
