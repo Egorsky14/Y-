@@ -135,14 +135,26 @@ export function armIK(side: 1 | -1, target: { x: number; y: number; z: number },
   const dz = -wy * sn + wz * c;
   const len = Math.max(1e-4, Math.hypot(dx, dy, dz));
   const d = THREE.MathUtils.clamp(len, Math.abs(UPPER_ARM - FOREARM) + 0.05, UPPER_ARM + FOREARM - 0.005);
-  const ux = dx / len;
-  const uy = dy / len;
-  const uz = dz / len;
+  const n = new THREE.Vector3(dx / len, dy / len, dz / len);
   const a1 = Math.acos(THREE.MathUtils.clamp((UPPER_ARM * UPPER_ARM + d * d - FOREARM * FOREARM) / (2 * UPPER_ARM * d), -1, 1));
   const flex = Math.PI - Math.acos(THREE.MathUtils.clamp((UPPER_ARM * UPPER_ARM + FOREARM * FOREARM - d * d) / (2 * UPPER_ARM * FOREARM), -1, 1));
-  const alpha = Math.asin(THREE.MathUtils.clamp(ux, -0.95, 0.95));
-  const thetaD = Math.atan2(-uz, -uy);
-  return { arm: [thetaD + a1, 0, alpha], fore: -flex };
+  // The elbow sits behind and below the shoulder-to-hand line: the upper arm leans from the target
+  // direction toward the back (or down, when reaching straight back).
+  const pole = new THREE.Vector3(0, -0.35, -1);
+  const m = pole.clone().addScaledVector(n, -pole.dot(n));
+  if (m.lengthSq() < 1e-6) m.set(0, -1, 0).addScaledVector(n, n.y);
+  m.normalize();
+  const u = n.clone().multiplyScalar(Math.cos(a1)).addScaledVector(m, Math.sin(a1)); // shoulder → elbow
+  const elbow = u.clone().multiplyScalar(UPPER_ARM);
+  const fdir = n.clone().multiplyScalar(d).sub(elbow).normalize(); // elbow → hand
+  // Arm frame: local -y along the upper arm, local +z the direction the forearm flexes toward.
+  const yAxis = u.clone().negate();
+  const zAxis = fdir.clone().addScaledVector(u, -fdir.dot(u));
+  if (zAxis.lengthSq() < 1e-8) zAxis.set(0, 0, 1).addScaledVector(yAxis, -yAxis.z);
+  zAxis.normalize();
+  const xAxis = new THREE.Vector3().crossVectors(yAxis, zAxis).normalize();
+  const e = new THREE.Euler().setFromRotationMatrix(new THREE.Matrix4().makeBasis(xAxis, yAxis, zAxis), 'XYZ');
+  return { arm: [e.x, e.y, e.z], fore: -flex };
 }
 
 /**

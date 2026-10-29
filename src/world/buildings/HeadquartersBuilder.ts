@@ -110,11 +110,20 @@ function addSiteDetail(b: MeshBuilder, has: (id: HqUpgradeId) => boolean, upgrad
  *   condenser on a hand truck waiting to go out, nitrogen cylinders chained upright in a wall rack;
  * - two EV chargers at the head of the visitor row.
  */
+/** Lot-local footprints of everything solid that addOperations stands on the ground (tests check clearances). */
+export const HQ_OPERATIONS_SOLIDS: { name: string; x: number; z: number; w: number; d: number }[] = [
+  ...[-55.2, -48.6, -42, -35.4, -28.8].map((x) => ({ name: 'carport column', x, z: 21.7, w: 0.7, d: 0.7 })),
+  { name: 'tool chest', x: 2 - 0.45, z: 11.6, w: 0.62, d: 1.12 },
+  { name: 'condenser on hand truck', x: 2 - 0.85, z: 13.1, w: 1.0, d: 0.95 },
+  { name: 'cylinder rack', x: 2 - 0.3, z: 14.6, w: 0.6, d: 0.95 },
+  ...[-23.1, -20.3].map((x) => ({ name: 'EV charger', x, z: -34.2, w: 0.6, d: 0.5 })),
+];
+
 function addOperations(b: MeshBuilder): void {
   // ---- Staff carport (staff row: cars x -54..-27, nose to the south curb at z 21)
   const cz0 = 13.6;
   const cz1 = 21.9;
-  for (const x of [-55.2, -48.6, -42, -35.4, -28.8]) {
+  for (const x of HQ_OPERATIONS_SOLIDS.filter((p) => p.name === 'carport column').map((p) => p.x)) {
     b.add('concrete', new THREE.CylinderGeometry(0.3, 0.34, 0.5, 10), [x, 0.25, 21.7]);
     b.box('paintBlack', [0.26, 3.6, 0.26], [x, 1.8, 21.7]);
     // Cantilever arm sloping toward the stalls
