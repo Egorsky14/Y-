@@ -40,7 +40,7 @@ const MOBILE_VIEWS = [
   ['W12a-mobile-overview', { ...OVERVIEW, distance: 330 }],
   ['W12b-mobile-street', VIEWS[5][1]],
 ];
-const PERF_VIEWS = new Set(['W01-overview', 'W02-boundary-ne', 'W04-street', 'W05-hq', 'W08-diagnosis', 'W12a-mobile-overview']);
+const PERF_VIEWS = new Set(['W01-overview', 'W02-boundary-ne', 'W03-boundary-sw', 'W04-street', 'W05-hq', 'W08-diagnosis', 'W09-repair', 'W10-golden', 'W11-night', 'W12a-mobile-overview', 'W12b-mobile-street']);
 
 (async () => {
   const launchArgs = ['--ignore-gpu-blocklist', '--enable-gpu', '--use-angle=d3d11'];
