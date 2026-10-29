@@ -1,0 +1,20 @@
+{
+  "method": "EXT_disjoint_timer_query_webgl2 GPU time per render (median), vsync off, seed 42, paused, HUD hidden, identical cameras. Baseline = World Immersion 3.0 (67b0538) profile build; new = 3.1 profile build. One preview server at a time; baseline run then new run back to back.",
+  "desktopPairedRound2": {
+    "W01-overview": { "gpuMs": [6.86, 6.73], "changePct": -1.9, "drawCalls": [1001, 1004], "triangles": [2196517, 2144435] },
+    "W02-boundary-ne": { "gpuMs": [4.87, 4.78], "changePct": -1.8, "drawCalls": [534, 540], "triangles": [1964324, 1901914] },
+    "W03-boundary-sw": { "gpuMs": [4.53, 4.47], "changePct": -1.3, "drawCalls": [541, 550], "triangles": [1953588, 1922588] },
+    "W04-street": { "gpuMs": [5.93, 5.86], "changePct": -1.2, "drawCalls": [559, 557], "triangles": [2044012, 1978640] },
+    "W05-hq": { "gpuMs": [6.34, 6.24], "changePct": -1.6, "drawCalls": [839, 844], "triangles": [2159401, 2108473] }
+  },
+  "phonePaired": {
+    "W12a-mobile-overview": { "gpuMs": [3.38, 3.35], "changePct": -0.9, "drawCalls": [933, 938] },
+    "W12b-mobile-street": { "gpuMs": [2.83, 2.8], "changePct": -1.1, "drawCalls": [626, 626], "note": "The known +13.3% phone-street regression of 3.0 against ef407c7 is not worsened; 3.1 is 1.1% faster than 3.0." }
+  },
+  "round1FullRuns": {
+    "note": "Full capture runs: the baseline run was in a slower GPU state (overview 8.36 ms vs 6.86 ms in round 2), so round 1 is not used for comparison. Service, golden-hour and night views were timed only in round 1.",
+    "base": { "W01": 8.36, "W02": 6.46, "W03": 6.01, "W04": 7.43, "W05": 7.86, "W08": 6.34, "W09": 6.38, "W10": 8.06, "W11": 7.6 },
+    "new": { "W01": 6.73, "W02": 4.75, "W03": 4.43, "W04": 5.97, "W05": 6.3, "W08": 4.83, "W09": 4.84, "W10": 6.45, "W11": 6.19 }
+  },
+  "memory": { "captureMinFreeRamMB": 1463, "captureMinFreeCommitMB": 1426, "matrixMinFreeRamMB": 1505, "matrixMinFreeCommitMB": 1774, "browserPeakMB": 2110 }
+}
