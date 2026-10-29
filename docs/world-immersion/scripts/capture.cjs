@@ -142,13 +142,17 @@ const PERF_VIEWS = new Set(['W01-overview', 'W02-boundary-ne', 'W04-street', 'W0
     await cam({ type: 'focus', target: mid, distance: 16, azimuth: az + 0.75, elevation: 0.42, targetY: 1 });
     // Play in real time until the technician has stepped out and is walking to the unit.
     await ev(() => window.__ego.dispatch({ type: 'set-speed', speed: 1 }));
+    // Walking up the yard: 3 m from where the technician first appeared beside the van.
     let walking = null;
-    for (let i = 0; i < 120 && !walking; i++) {
+    let first = null;
+    for (let i = 0; i < 200 && !walking; i++) {
       await sleep(100);
-      walking = await ev(() => { const w = window.__egoWorkers?.['emp-owner']; const o = window.__egoThree.scene.getObjectByName('employee:emp-owner'); const v = window.__ego.getState().vehicles['veh-1']; const d = w && Math.hypot(w.x - v.position.x, w.z - v.position.z); return w && o?.visible && d > 2.6 ? w : null; });
+      const w = await ev(() => { const w = window.__egoWorkers?.['emp-owner']; const o = window.__egoThree.scene.getObjectByName('employee:emp-owner'); return w && o?.visible ? { x: w.x, z: w.z } : null; });
+      if (w && !first) first = w;
+      if (w && first && Math.hypot(w.x - first.x, w.z - first.z) > 3) walking = w;
     }
     await ev(() => window.__ego.dispatch({ type: 'set-speed', speed: 0 }));
-    if (!mobile) await shot('W07-arrival', null, { wait: 1200 });
+    if (!mobile && walking) await shot('W07-arrival', { type: 'focus', target: walking, distance: 9, azimuth: az + Math.PI - 0.7, elevation: 0.3, targetY: 0.9 });
     // Continue until the technician kneels at the unit (stopped moving), still diagnosing.
     await ev(() => window.__ego.dispatch({ type: 'set-speed', speed: 1 }));
     let lastPos = null;
@@ -166,7 +170,13 @@ const PERF_VIEWS = new Set(['W01-overview', 'W02-boundary-ne', 'W04-street', 'W0
     const close = { type: 'focus', target: tech, distance: mobile ? 8 : 6.5, azimuth: az + 0.75, elevation: 0.38, targetY: 0.7 };
     await shot(mobile ? 'W12c-mobile-diagnosis' : 'W08-diagnosis', close);
     if (!mobile) {
-      await shot('W08b-service-wide', { type: 'focus', target: { x: (tech.x + geo.van.x) / 2, z: (tech.z + geo.van.z) / 2 }, distance: 30, azimuth: az + 0.5, elevation: 0.7 });
+      await shot('W08c-diagnosis-side', { ...close, azimuth: az - 0.75 });
+      const wide = { type: 'focus', target: { x: (tech.x + geo.van.x) / 2, z: (tech.z + geo.van.z) / 2 }, distance: 30, azimuth: az + 0.5, elevation: 0.7 };
+      await shot('W08b-service-wide', wide);
+      // The lot selected (as after clicking the house or its job pin): the selection highlight on the property.
+      await ev((lotId) => window.__ego.app.getState().select({ kind: 'lot', id: lotId }), job.lot);
+      await shot('W14-selected-lot', { ...wide, distance: 34 });
+      await ev(() => window.__ego.app.getState().select(null));
       // Repair: finish the diagnosis, choose the real fault, quote a repair; the job goes to repairing.
       await page.waitForFunction((id) => { window.__ego.advanceMinutes(1); return window.__ego.getState().jobs[id].status === 'awaiting-diagnosis'; }, job.id, { timeout: 60_000, polling: 30 });
       const status2 = await ev((id) => {

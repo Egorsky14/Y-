@@ -16,7 +16,7 @@ export function House({ lot, hasActiveJob }: { lot: Lot; hasActiveJob: boolean }
 
   return (
     <group position={[lot.center.x, 0, lot.center.z]}>
-      <Selectable selection={{ kind: 'lot', id: lot.id }} ringRadius={11} ringOffset={[0, 0.08, 0]}>
+      <Selectable selection={{ kind: 'lot', id: lot.id }} bracket={[lot.width - 0.6, lot.depth - 0.6]} ringOffset={[0, 0.09, 0]}>
         <group rotation={[0, FACING_ROTATION[lot.facing], 0]} name={`house:${lot.id}`}>
           <mesh position={[0, 2, 0]} visible={false}>
             <boxGeometry args={[lot.width - 2, 6, lot.depth - 4]} />
@@ -27,9 +27,10 @@ export function House({ lot, hasActiveJob }: { lot: Lot; hasActiveJob: boolean }
       <group position={[condenser.x - lot.center.x, 0, condenser.z - lot.center.z]}>
         <CondenserFan running={!hasActiveJob} />
         {(hasActiveJob || isSelected) && (
+          // A slim outline around the unit's pad marks the job without painting the work area.
           <mesh position={[0, 0.03, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-            <ringGeometry args={[1.0, 1.25, 32]} />
-            <meshBasicMaterial color={hasActiveJob ? '#ffb347' : PALETTE.egoTeal} transparent opacity={0.85} />
+            <ringGeometry args={[0.98, 1.06, 40]} />
+            <meshBasicMaterial color={hasActiveJob ? '#ffb347' : PALETTE.egoTeal} transparent opacity={0.7} depthWrite={false} />
           </mesh>
         )}
       </group>

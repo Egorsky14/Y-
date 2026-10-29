@@ -4,6 +4,7 @@ import { useFrame } from '@react-three/fiber';
 import type { EmployeeRole } from '@/game/employees/roles';
 import { PALETTE } from '../assets/palette';
 import { wordmarkTexture } from '../assets/textures';
+import * as BGU from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 
 export type WorkerAnim = 'idle' | 'walk' | 'carry' | 'inspect' | 'stand-inspect' | 'repair' | 'install' | 'train' | 'celebrate';
 
@@ -12,8 +13,10 @@ interface WorkerProps {
   look: number;
   anim: WorkerAnim;
   scale?: number;
-  /** Walk-cycle rate multiplier, matched to how fast the character covers ground (1 ≈ 1.5 m/s). */
+  /** Walk-cycle rate multiplier, matched to how fast the character covers ground (1 ≈ 1.5 m/s); 0 freezes every clip (game paused). */
   pace?: number;
+  /** At a unit: distance from the character root to the cabinet's service face, and the cabinet height (m). */
+  work?: { face: number; top: number };
 }
 
 const SKIN = ['#f1c7a6', '#d9a57c', '#b97a52', '#8d5a3b', '#f6d7bf', '#6b4430'];
@@ -64,6 +67,18 @@ const GEO = {
     g.scale(0.85, 1.25, 0.6);
     return g;
   })(),
+  /** Work glove (per side): palm, a slightly curled four-finger block and an opposed thumb. */
+  glove: ([-1, 1] as const).map((side) => {
+    const palm = new THREE.CapsuleGeometry(0.03, 0.045, 3, 8).scale(1.3, 1, 0.62).translate(0, -0.035, 0);
+    const fingers = new THREE.CapsuleGeometry(0.028, 0.05, 3, 8).scale(1.25, 1, 0.55).rotateX(-0.35).translate(0, -0.1, 0.012);
+    const thumb = new THREE.CapsuleGeometry(0.013, 0.04, 3, 6).rotateZ(side * 0.7).rotateX(-0.4).translate(-side * 0.036, -0.045, 0.018);
+    const cuff = new THREE.CylinderGeometry(0.046, 0.042, 0.04, 10).translate(0, 0.012, 0);
+    const parts = [palm, fingers, thumb, cuff].map((p) => (p.index ? p.toNonIndexed() : p));
+    for (const p of parts) for (const k of Object.keys(p.attributes)) if (!['position', 'normal'].includes(k)) p.deleteAttribute(k);
+    return BGU.mergeGeometries(parts, false)!;
+  }),
+  cargo: new THREE.BoxGeometry(0.035, 0.13, 0.12),
+  collar: new THREE.CylinderGeometry(0.07, 0.098, 0.055, 14, 1, true),
   belt: lathe([[0.176, 0], [0.18, 0.05]], 20, 0.66),
   pouch: (() => {
     const g = new THREE.CapsuleGeometry(0.045, 0.06, 3, 8);
@@ -96,11 +111,45 @@ function Limb({ length, radius, color, taper = 0.85 }: { length: number; radius:
 /** Joint rotation targets for one pose; everything not named returns to zero. */
 type Pose = Record<string, [number, number, number]>;
 
+const UPPER_ARM = 0.3;
+const FOREARM = 0.31; // elbow to the middle of the hand
+
+/**
+ * Two-bone arm IK in the character frame (+z forward, +y up, unscaled rig metres): shoulder and elbow
+ * rotations that put the hand on the target, given the torso's forward lean and the pelvis height.
+ * The arm hangs along -y; Euler XYZ applies the abduction (z) first, then the pitch (x), and the elbow
+ * flexes about the arm's local x. Out-of-reach targets are approached along the same line.
+ */
+export function armIK(side: 1 | -1, target: { x: number; y: number; z: number }, torsoPitch: number, pelvisY: number, heavy = 1): { arm: [number, number, number]; fore: number } {
+  const c = Math.cos(torsoPitch);
+  const sn = Math.sin(torsoPitch);
+  const sx = side * 0.25 * heavy;
+  const sy = pelvisY + 0.06 + 0.5 * c;
+  const sz = 0.5 * sn;
+  const wx = target.x - sx;
+  const wy = target.y - sy;
+  const wz = target.z - sz;
+  // Into the torso frame (undo the lean about x).
+  const dx = wx;
+  const dy = wy * c + wz * sn;
+  const dz = -wy * sn + wz * c;
+  const len = Math.max(1e-4, Math.hypot(dx, dy, dz));
+  const d = THREE.MathUtils.clamp(len, Math.abs(UPPER_ARM - FOREARM) + 0.05, UPPER_ARM + FOREARM - 0.005);
+  const ux = dx / len;
+  const uy = dy / len;
+  const uz = dz / len;
+  const a1 = Math.acos(THREE.MathUtils.clamp((UPPER_ARM * UPPER_ARM + d * d - FOREARM * FOREARM) / (2 * UPPER_ARM * d), -1, 1));
+  const flex = Math.PI - Math.acos(THREE.MathUtils.clamp((UPPER_ARM * UPPER_ARM + FOREARM * FOREARM - d * d) / (2 * UPPER_ARM * FOREARM), -1, 1));
+  const alpha = Math.asin(THREE.MathUtils.clamp(ux, -0.95, 0.95));
+  const thetaD = Math.atan2(-uz, -uy);
+  return { arm: [thetaD + a1, 0, alpha], fore: -flex };
+}
+
 /**
  * Stylized-realistic worker (~1.8 m): articulated shoulders, elbows, hips and knees driven by
  * procedural clips per job state, blended across state changes. Feet stay on the ground.
  */
-export function Worker({ role, look, anim, scale = 1, pace = 1 }: WorkerProps) {
+export function Worker({ role, look, anim, scale = 1, pace = 1, work }: WorkerProps) {
   const root = useRef<THREE.Group>(null);
   const refs = {
     pelvis: useRef<THREE.Group>(null), torso: useRef<THREE.Group>(null), head: useRef<THREE.Group>(null),
@@ -116,7 +165,10 @@ export function Worker({ role, look, anim, scale = 1, pace = 1 }: WorkerProps) {
   const phase = ((look % 100) / 100) * Math.PI * 2;
   const build = 0.94 + ((look >> 5) % 7) * 0.02; // height variation 0.94–1.06
   const heavy = 0.92 + ((look >> 2) % 5) * 0.04; // torso width variation
-  const heightState = useRef({ pelvis: PELVIS_Y, root: 0 });
+  const heightState = useRef({ pelvis: PELVIS_Y, root: 0, z: 0 });
+  const clockT = useRef(0);
+  const lastAnim = useRef<WorkerAnim | null>(null);
+  const probe = useRef<THREE.Group>(null);
   const blend = useRef<Pose>({});
   const stride = useRef(0);
 
@@ -140,14 +192,26 @@ export function Worker({ role, look, anim, scale = 1, pace = 1 }: WorkerProps) {
       reflective: new THREE.MeshStandardMaterial({ color: '#d8dde2', roughness: 0.3, metalness: 0.4 }),
       hat: mat(role === 'installer' ? '#f2c230' : '#15181d', 0.8),
       kneePad: mat('#23262a', 0.8),
+      glove: mat('#2f3338', 0.75),
+      pocket: mat(PANTS[role] === '#3a3f46' ? '#353a40' : '#40392f', 0.9),
+      probe: mat('#c4262e', 0.5),
       eye: mat('#1a1511', 0.5),
       screen: new THREE.MeshStandardMaterial({ color: '#8fd9ff', emissive: '#4fb3ff', emissiveIntensity: 0.6, roughness: 0.3 }),
     }),
     [look, role],
   );
 
-  useFrame(({ clock }, dt) => {
-    const t = clock.getElapsedTime() + phase;
+  useFrame((_, dt) => {
+    // Animation time follows the game: paused games freeze the crew, fast-forward brisks them up
+    // (capped so loops never look frantic). Joint blending still settles in real time.
+    const workPace = Math.min(pace, 1.5);
+    // Each clip's loop starts from its beginning when the state changes (diagnosis opens with the survey).
+    if (lastAnim.current !== anim) {
+      lastAnim.current = anim;
+      clockT.current = 0;
+    }
+    clockT.current += dt * workPace;
+    const t = clockT.current + (anim === 'inspect' || anim === 'repair' ? 0 : phase);
     const r = Object.fromEntries(Object.entries(refs).map(([k, v]) => [k, v.current])) as Record<keyof typeof refs, THREE.Group | null>;
     if (Object.values(r).some((v) => !v)) return;
     const pose: Pose = {};
@@ -156,77 +220,174 @@ export function Worker({ role, look, anim, scale = 1, pace = 1 }: WorkerProps) {
     };
     let pelvisY = PELVIS_Y;
     let rootY = 0;
+    let pelvisZ = 0;
     let showBag = false;
     let showMeter = false;
+    let showProbe = false;
     let showWrench = false;
     let showTablet = false;
     let showLoad = false;
+    const s = scale * build;
+    const ik = (side: 1 | -1, x: number, y: number, z: number, torsoPitch: number, pY: number) => {
+      const sol = armIK(side, { x: x / s, y: y / s, z: z / s - pelvisZ }, torsoPitch, pY, heavy);
+      set(side < 0 ? 'armL' : 'armR', sol.arm[0], sol.arm[1], sol.arm[2]);
+      set(side < 0 ? 'foreL' : 'foreR', sol.fore);
+    };
+    const look = (x: number, y: number, z: number, torsoPitch: number, pY: number, twist = 0) => {
+      const hy = pY + 0.06 + 0.72 * Math.cos(torsoPitch);
+      const hz = 0.72 * Math.sin(torsoPitch) + pelvisZ;
+      const dy = y / s - hy;
+      const dz = z / s - hz;
+      const pitch = THREE.MathUtils.clamp(Math.atan2(-dy, Math.max(0.05, Math.hypot(dz, x / s))) - torsoPitch, -0.5, 0.95);
+      set('head', pitch, THREE.MathUtils.clamp(Math.atan2(x / s, dz) - twist, -0.9, 0.9));
+    };
+    // Kneeling stance at the unit: right knee down, left foot planted forward, pelvis low.
+    const kneel = () => {
+      set('legR', 0.05, 0, -0.06);
+      set('shinR', 1.55);
+      set('footR', -0.45);
+      set('legL', -1.45, 0, 0.08);
+      set('shinL', 1.45);
+      set('footL', 0.0);
+      return 0.53;
+    };
+    // Standing with soft knees, feet apart.
+    const stand = (bend = 0) => {
+      set('legL', -bend, 0, 0.05);
+      set('legR', -bend * 0.8, 0, -0.05);
+      set('shinL', bend * 1.6);
+      set('shinR', bend * 1.3);
+      set('footL', -bend * 0.8);
+      set('footR', -bend * 0.6);
+      return PELVIS_Y - bend * 0.12;
+    };
+    const face = work?.face ?? 0.56; // root to the cabinet's service face (m)
+    const top = work?.top ?? 0.96; // cabinet height
+    // Smooth 0..1 window inside a looping cycle.
+    const win = (u: number, a: number, b: number, fade = 0.5) => THREE.MathUtils.smoothstep(u, a - fade, a) * (1 - THREE.MathUtils.smoothstep(u, b, b + fade));
 
     switch (anim) {
       case 'walk':
       case 'carry': {
         // Stride phase advances with the ground speed so the feet do not slide.
         stride.current += dt * 7.2 * pace;
-        const s = Math.sin(stride.current + phase);
+        const sw = Math.sin(stride.current + phase);
         const c = Math.cos(stride.current + phase);
-        set('legL', s * 0.62);
-        set('legR', -s * 0.62);
-        set('shinL', Math.max(0, -c) * 0.95);
-        set('shinR', Math.max(0, c) * 0.95);
-        set('footL', Math.max(0, s) * 0.3);
-        set('footR', Math.max(0, -s) * 0.3);
-        set('armL', -s * 0.45, 0, 0.06);
-        set('foreL', -0.35);
+        set('legL', sw * 0.55 - 0.05);
+        set('legR', -sw * 0.55 - 0.05);
+        set('shinL', Math.max(0, -c) * 0.95 + 0.08);
+        set('shinR', Math.max(0, c) * 0.95 + 0.08);
+        // Heel strike then toe-off.
+        set('footL', Math.max(0, sw) * 0.25 - Math.max(0, -sw) * 0.15);
+        set('footR', Math.max(0, -sw) * 0.25 - Math.max(0, sw) * 0.15);
+        set('armL', -sw * 0.38, 0, 0.07);
+        set('foreL', -0.32 - Math.max(0, -sw) * 0.25);
         if (anim === 'carry') {
-          set('armR', 0.12, 0, -0.14);
-          set('foreR', -0.12);
+          set('armR', 0.1, 0, -0.16);
+          set('foreR', -0.1);
           showBag = true;
         } else {
-          set('armR', s * 0.45, 0, -0.06);
-          set('foreR', -0.35);
+          set('armR', sw * 0.38, 0, -0.07);
+          set('foreR', -0.32 - Math.max(0, sw) * 0.25);
         }
-        set('torso', 0.07, s * 0.06);
-        set('head', -0.05, -s * 0.05);
-        rootY = Math.abs(c) * 0.035;
+        // Counter-rotation of shoulders against hips, a slight forward lean, a level gaze.
+        set('torso', 0.06, sw * 0.08, c * 0.02);
+        set('head', -0.04, -sw * 0.06);
+        rootY = Math.abs(c) * 0.03;
         break;
       }
-      case 'inspect':
-      case 'repair': {
-        // Kneel on the right knee; the left foot is planted in front. The torso leans toward the unit.
-        set('legR', 0.05);
-        set('shinR', 1.55);
-        set('footR', -0.4);
-        set('legL', -1.5);
-        set('shinL', 1.5);
-        set('footL', 0.0);
-        pelvisY = 0.52;
-        set('torso', 0.4, 0.08);
-        set('head', 0.2, -0.1);
-        if (anim === 'inspect') {
-          set('armR', -1.35 + Math.sin(t * 2.5) * 0.08, 0, -0.05);
-          set('foreR', -0.7);
-          set('armL', -1.15 + Math.sin(t * 2.2) * 0.08, 0.2, -0.25);
-          set('foreL', -0.9);
+      case 'inspect': {
+        // Diagnosis, a 12 s loop: look the unit over, kneel at the service panel and take readings with
+        // the meter (probes on the terminals, meter in the other hand), then rise and read the gauges
+        // hung on the cabinet, and kneel again.
+        const u = (t * 0.083) % 1; // 0..1 over ~12 s
+        const reading = win(u, 0.68, 0.9, 0.06);
+        const survey = 1 - THREE.MathUtils.smoothstep(u, 0.0, 0.08);
+        const up = Math.max(reading, survey);
+        // Blend between kneeling and a bent-over standing lean by mixing the two poses.
+        const kY = kneel();
+        const kneelPose = { ...pose };
+        const sY = stand(0.12);
+        const standPose = { ...pose };
+        for (const k of Object.keys(kneelPose) as (keyof typeof refs)[]) {
+          const a = kneelPose[k];
+          const b = standPose[k] ?? [0, 0, 0];
+          pose[k] = [a[0] + (b[0] - a[0]) * up, a[1] + (b[1] - a[1]) * up, a[2] + (b[2] - a[2]) * up];
+        }
+        pelvisY = kY + (sY - kY) * up;
+        pelvisZ = -0.1 * up;
+        const lean = 0.38 * (1 - up) + 0.42 * up;
+        set('torso', lean, 0.05 * (1 - up));
+        if (up < 0.5) {
+          // Probing: tool hand on the panel terminals (small careful moves), meter held up in the other hand.
+          const jitter = Math.sin(t * 2.3) * 0.025;
+          ik(1, 0.14 + jitter, 0.62 + Math.sin(t * 1.7) * 0.03, face - 0.02, lean, pelvisY);
+          ik(-1, -0.12, 0.85, 0.42 + pelvisZ, lean, pelvisY);
           showMeter = true;
+          showProbe = true;
+          // Glance between meter and terminals.
+          const atMeter = Math.sin(t * 0.9) > 0.35;
+          if (atMeter) look(-0.12, 0.85, 0.45, lean, pelvisY);
+          else look(0.14, 0.6, face + 0.05, lean, pelvisY);
         } else {
-          const w = Math.sin(t * 6);
-          set('armR', -1.15 + w * 0.22, 0, -0.1);
-          set('foreR', -0.85 + w * 0.25);
-          set('armL', -0.95, 0.15, -0.3);
-          set('foreL', -1.2);
+          // Reading the gauges on the cabinet top; one hand rests on the cabinet edge.
+          ik(1, 0.22, top + 0.02, face + 0.08, lean, pelvisY);
+          ik(-1, -0.18, 1.0, 0.3, lean, pelvisY);
+          showMeter = true;
+          look(0.0, top + 0.1, face + 0.1, lean, pelvisY);
+        }
+        break;
+      }
+      case 'repair': {
+        // Repair, a 14 s loop: kneel and work in the panel with the wrench (forearm turning, the free
+        // hand braced on the cabinet top), reach down for a part from the bag, work again, then rise
+        // and lean over the fan guard to check the unit.
+        const u = (t * 0.0714) % 1;
+        const fetch = win(u, 0.4, 0.5, 0.04);
+        const check = win(u, 0.84, 0.97, 0.05);
+        const kY = kneel();
+        const kneelPose = { ...pose };
+        const sY = stand(0.18);
+        const standPose = { ...pose };
+        for (const k of Object.keys(kneelPose) as (keyof typeof refs)[]) {
+          const a = kneelPose[k];
+          const b = standPose[k] ?? [0, 0, 0];
+          pose[k] = [a[0] + (b[0] - a[0]) * check, a[1] + (b[1] - a[1]) * check, a[2] + (b[2] - a[2]) * check];
+        }
+        pelvisY = kY + (sY - kY) * check;
+        pelvisZ = -0.12 * check;
+        const lean = 0.42 + 0.12 * check - 0.1 * fetch;
+        const twist = 0.55 * fetch;
+        set('torso', lean, twist);
+        if (check > 0.5) {
+          ik(1, 0.25, top + 0.02, face + 0.25, lean, pelvisY);
+          ik(-1, -0.25, top + 0.02, face + 0.25, lean, pelvisY);
+          look(0, top, face + 0.45, lean, pelvisY);
+        } else if (fetch > 0.5) {
+          // Reach to the bag beside the knee.
+          ik(1, 0.48, 0.12, 0.2, lean, pelvisY);
+          ik(-1, -0.2, top + 0.02, face + 0.1, lean, pelvisY);
+          look(0.5, 0.1, 0.25, lean, pelvisY, twist);
+        } else {
+          // Wrench turns: small arcs at the valve/terminal; the forearm rolls with each pull.
+          const pull = Math.sin(t * 3.2);
+          ik(1, 0.12 + pull * 0.03, 0.5 + pull * 0.035, face - 0.03, lean, pelvisY);
+          ik(-1, -0.2, top + 0.02, face + 0.12, lean, pelvisY);
+          const fr = pose.foreR!;
+          pose.foreR = [fr[0], pull * 0.5, fr[2]];
           showWrench = true;
+          look(0.08, 0.5, face + 0.05, lean, pelvisY);
         }
         break;
       }
       case 'stand-inspect': {
-        set('armR', -0.9, 0, -0.1);
-        set('foreR', -1.3);
-        set('armL', -0.7, 0, 0.15);
-        set('foreL', -1.5);
-        set('head', 0.35);
-        set('torso', 0.08);
-        set('legL', 0, 0, 0.04);
-        set('legR', 0, 0, -0.04);
+        // Waiting on a decision: tablet in both hands, glancing between it and the unit.
+        pelvisY = stand(0.04);
+        set('torso', 0.1);
+        ik(-1, -0.05, 1.05, 0.36, 0.1, pelvisY);
+        ik(1, 0.12, 1.0, 0.33, 0.1, pelvisY);
+        if (Math.sin(t * 0.5) > 0.6) look(0, 0.6, face + 0.4, 0.1, pelvisY);
+        else set('head', 0.55, 0.05);
         showTablet = true;
         break;
       }
@@ -266,22 +427,23 @@ export function Worker({ role, look, anim, scale = 1, pace = 1 }: WorkerProps) {
         break;
       }
       default: {
-        // Idle: breathing, a weight shift every few seconds, a slow head turn.
+        // Idle: breathing, a weight shift every few seconds, a slow head turn, one hand on the belt.
         const shift = Math.sin(t * 0.35);
-        set('legL', 0, 0, 0.03 + shift * 0.02);
-        set('legR', 0, 0, -0.03 + shift * 0.02);
-        set('shinL', 0.02);
-        set('shinR', 0.02);
-        set('armL', Math.sin(t * 1.1) * 0.04, 0, 0.1);
-        set('armR', -Math.sin(t * 1.1) * 0.04, 0, -0.1);
-        set('foreL', -0.3);
-        set('foreR', -0.3);
-        set('torso', Math.sin(t * 1.2) * 0.015, 0, shift * 0.02);
-        set('head', 0.02, Math.sin(t * 0.4) * 0.4);
+        set('legL', 0, 0, 0.05 + shift * 0.025);
+        set('legR', 0, 0, -0.05 + shift * 0.025);
+        set('shinL', 0.03 + Math.max(0, -shift) * 0.06);
+        set('shinR', 0.03 + Math.max(0, shift) * 0.06);
+        set('armL', Math.sin(t * 1.1) * 0.03, 0, 0.12);
+        set('foreL', -0.25);
+        set('armR', 0.15, 0, -0.32);
+        set('foreR', -0.9);
+        set('torso', Math.sin(t * 1.2) * 0.012, 0, shift * 0.025);
+        set('head', 0.03, Math.sin(t * 0.4) * 0.35);
+        pelvisY = PELVIS_Y - Math.abs(shift) * 0.01;
       }
     }
     // Blend every joint toward its target so state changes never pop.
-    const k = Math.min(1, dt * 9);
+    const k = Math.min(1, dt * 7);
     const cur = blend.current;
     for (const name of Object.keys(refs) as (keyof typeof refs)[]) {
       const target = pose[name] ?? [0, 0, 0];
@@ -294,11 +456,14 @@ export function Worker({ role, look, anim, scale = 1, pace = 1 }: WorkerProps) {
     }
     const hs = heightState.current;
     hs.pelvis += (pelvisY - hs.pelvis) * k;
+    hs.z += (pelvisZ - hs.z) * k;
     hs.root += (rootY - hs.root) * Math.min(1, dt * 20);
     r.pelvis!.position.y = hs.pelvis;
+    r.pelvis!.position.z = hs.z;
     if (root.current) root.current.position.y = hs.root;
     if (bag.current) bag.current.visible = showBag;
     if (meter.current) meter.current.visible = showMeter;
+    if (probe.current) probe.current.visible = showProbe;
     if (wrench.current) wrench.current.visible = showWrench;
     if (tablet.current) tablet.current.visible = showTablet;
     if (load.current) load.current.visible = showLoad;
@@ -325,6 +490,7 @@ export function Worker({ role, look, anim, scale = 1, pace = 1 }: WorkerProps) {
         {([-1, 1] as const).map((side) => (
           <group key={side} ref={side < 0 ? refs.legL : refs.legR} position={[side * 0.1, -0.05, 0]}>
             <Limb length={0.46} radius={0.082} color={materials.pants} />
+            {tech && <mesh geometry={GEO.cargo} position={[side * 0.083, -0.25, 0.01]} material={materials.pocket} />}
             <group ref={side < 0 ? refs.shinL : refs.shinR} position={[0, -0.45, 0]}>
               <Limb length={0.42} radius={0.07} color={materials.pants} taper={0.8} />
               {tech && (
@@ -343,15 +509,16 @@ export function Worker({ role, look, anim, scale = 1, pace = 1 }: WorkerProps) {
           <mesh geometry={GEO.torso} position={[0, 0.03, 0]} material={materials.shirt} castShadow scale={[heavy, 1, 1]} />
           <mesh geometry={GEO.hem} position={[0, 0.02, 0]} material={materials.shirt} scale={[heavy, 1, 1]} />
           {role === 'technician' && <mesh position={[0, 0.36, -0.128]} rotation={[0, Math.PI, 0]} material={backPrintMaterial()}><planeGeometry args={[0.26, 0.065]} /></mesh>}
-          {/* Shoulder caps round the silhouette */}
+          {/* Trapezius slope from the collar to each shoulder */}
           {([-1, 1] as const).map((side) => (
-            <mesh key={side} position={[side * 0.24 * heavy, 0.5, 0]} material={materials.shirt}>
-              <sphereGeometry args={[0.085, 10, 8]} />
+            <mesh key={side} position={[side * 0.15 * heavy, 0.535, 0]} rotation={[0, 0, side * -0.42]} scale={[1, 0.55, 0.75]} material={materials.shirt}>
+              <sphereGeometry args={[0.1, 10, 8]} />
             </mesh>
           ))}
           {/* Collar, teal shoulder piping, name patch and back logo */}
-          <mesh position={[0, 0.57, 0.02]} material={role === 'dispatcher' ? materials.white : materials.teal}>
-            <boxGeometry args={[0.2, 0.03, 0.22]} />
+          <mesh geometry={GEO.collar} position={[0, 0.58, 0.005]} material={role === 'dispatcher' ? materials.white : materials.shirt} scale={[1, 1, 0.85]} />
+          <mesh position={[0, 0.53, 0.112]} rotation={[-0.25, 0, 0]} material={role === 'dispatcher' ? materials.white : materials.teal}>
+            <boxGeometry args={[0.026, 0.09, 0.008]} />
           </mesh>
           {([-1, 1] as const).map((side) => (
             <mesh key={side} position={[side * 0.17 * heavy, 0.52, 0.0]} material={materials.teal} rotation={[0, 0, side * 0.3]}>
@@ -415,7 +582,7 @@ export function Worker({ role, look, anim, scale = 1, pace = 1 }: WorkerProps) {
           <mesh position={[0, 0.62, 0]} material={materials.skin}>
             <cylinderGeometry args={[0.055, 0.07, 0.1, 10]} />
           </mesh>
-          <group ref={refs.head} position={[0, 0.78, 0]}>
+          <group ref={refs.head} position={[0, 0.775, 0]} scale={0.92}>
             <mesh material={materials.skin} castShadow scale={[0.95, 1.08, 1]}>
               <sphereGeometry args={[0.125, 18, 14]} />
             </mesh>
@@ -495,13 +662,27 @@ export function Worker({ role, look, anim, scale = 1, pace = 1 }: WorkerProps) {
           {/* Arms: shoulder → elbow → hand with a thumb */}
           {([-1, 1] as const).map((side) => (
             <group key={side} ref={side < 0 ? refs.armL : refs.armR} position={[side * 0.25 * heavy, 0.5, 0]}>
+              {/* Deltoid: part of the arm, so it turns with it instead of standing out as a ball. */}
+              <mesh position={[0, -0.035, 0]} scale={[0.95, 1.25, 1]} material={materials.shirt}>
+                <sphereGeometry args={[0.072, 10, 8]} />
+              </mesh>
               <Limb length={0.3} radius={0.06} color={materials.shirt} />
+              {/* Short sleeve hem: the shirt ends above the elbow. */}
+              <mesh position={[0, -0.2, 0]} material={materials.shirt}>
+                <cylinderGeometry args={[0.068, 0.072, 0.05, 12]} />
+              </mesh>
               <group ref={side < 0 ? refs.foreL : refs.foreR} position={[0, -0.3, 0]}>
                 <Limb length={0.28} radius={0.05} color={materials.skin} taper={0.75} />
-                <mesh geometry={GEO.hand} position={[0, -0.31, 0.01]} material={materials.skin} />
-                <mesh position={[side * -0.04, -0.28, 0.025]} material={materials.skin} rotation={[0, 0, side * 0.5]}>
-                  <boxGeometry args={[0.025, 0.05, 0.025]} />
-                </mesh>
+                {tech ? (
+                  <mesh geometry={GEO.glove[side < 0 ? 0 : 1]} position={[0, -0.27, 0.005]} material={materials.glove} castShadow />
+                ) : (
+                  <>
+                    <mesh geometry={GEO.hand} position={[0, -0.31, 0.01]} material={materials.skin} />
+                    <mesh position={[side * -0.04, -0.28, 0.025]} material={materials.skin} rotation={[0, 0, side * 0.5]}>
+                      <boxGeometry args={[0.025, 0.05, 0.025]} />
+                    </mesh>
+                  </>
+                )}
                 {side < 0 ? (
                   <>
                     <group ref={bag} position={[0, -0.52, 0]} visible={false}>
@@ -518,6 +699,17 @@ export function Worker({ role, look, anim, scale = 1, pace = 1 }: WorkerProps) {
                         <boxGeometry args={[0.02, 0.1, 0.02]} />
                       </mesh>
                     </group>
+                    <group ref={meter} position={[0, -0.33, 0.04]} rotation={[-1.25, 0, 0]} visible={false}>
+                      <mesh material={materials.tool}>
+                        <boxGeometry args={[0.09, 0.17, 0.04]} />
+                      </mesh>
+                      <mesh position={[0, 0.04, 0.021]} material={materials.screen}>
+                        <boxGeometry args={[0.065, 0.05, 0.004]} />
+                      </mesh>
+                      <mesh position={[0, -0.03, 0.021]} material={materials.dark}>
+                        <cylinderGeometry args={[0.02, 0.02, 0.006, 12]} />
+                      </mesh>
+                    </group>
                     <group ref={tablet} position={[0.02, -0.34, 0.08]} rotation={[-0.6, 0, 0]} visible={false}>
                       <mesh material={materials.dark}>
                         <boxGeometry args={[0.2, 0.26, 0.015]} />
@@ -529,21 +721,12 @@ export function Worker({ role, look, anim, scale = 1, pace = 1 }: WorkerProps) {
                   </>
                 ) : (
                   <>
-                    <group ref={meter} position={[0, -0.36, 0.05]} rotation={[-0.4, 0, 0]} visible={false}>
-                      <mesh material={materials.tool}>
-                        <boxGeometry args={[0.09, 0.17, 0.04]} />
+                    <group ref={probe} position={[0, -0.36, 0.03]} rotation={[0.15, 0, 0]} visible={false}>
+                      <mesh material={materials.probe}>
+                        <cylinderGeometry args={[0.007, 0.009, 0.15, 6]} />
                       </mesh>
-                      <mesh position={[0, 0.04, 0.021]} material={materials.screen}>
-                        <boxGeometry args={[0.065, 0.05, 0.004]} />
-                      </mesh>
-                      <mesh position={[0, -0.03, 0.021]} material={materials.dark}>
-                        <cylinderGeometry args={[0.02, 0.02, 0.006, 12]} />
-                      </mesh>
-                      <mesh position={[0.025, -0.16, 0]} material={materials.dark}>
-                        <cylinderGeometry args={[0.005, 0.005, 0.16, 5]} />
-                      </mesh>
-                      <mesh position={[-0.025, -0.16, 0]} material={materials.dark}>
-                        <cylinderGeometry args={[0.005, 0.005, 0.16, 5]} />
+                      <mesh position={[0, -0.09, 0]} material={materials.steel}>
+                        <cylinderGeometry args={[0.0015, 0.003, 0.04, 4]} />
                       </mesh>
                     </group>
                     <group ref={wrench} position={[0, -0.36, 0.05]} rotation={[0.3, 0, 0]} visible={false}>

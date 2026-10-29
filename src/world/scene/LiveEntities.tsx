@@ -192,7 +192,7 @@ function WorkerView({ id }: { id: string }) {
     const e = s.employees[id];
     if (!e) return null;
     const job = e.jobId ? s.jobs[e.jobId] : undefined;
-    return { role: e.role, look: e.look, status: e.status, jobId: e.jobId, jobStatus: job?.status };
+    return { role: e.role, look: e.look, status: e.status, jobId: e.jobId, jobStatus: job?.status, lotId: job ? s.customers[job.customerId]?.lotId : undefined, crew: job ? Math.max(0, [job.technicianId, ...job.crewIds].indexOf(id)) : 0 };
   });
   const pace = useGame((s) => visualPace(s.speed));
   const arrival = useRef<{ jobId: string | null; stage: ArrivalStage; t: number; walked: number; from: { x: number; z: number }; out: { x: number; z: number }; path: { x: number; z: number }[] }>({
@@ -326,11 +326,21 @@ function WorkerView({ id }: { id: string }) {
         : info.status === 'training'
           ? 'train'
           : 'idle';
+  // At a house unit: how far the work spot is from the cabinet's service face, so the rig's IK puts
+  // hands and tools on the cabinet (cityLayout: workPosition and condenserPosition; unit 0.92 m, 1.08 m on premium homes).
+  const workLot = info.lotId ? lotById(info.lotId) : undefined;
+  const work = (() => {
+    if (!workLot || workLot.kind !== 'house') return undefined;
+    const c = condenserPosition(workLot);
+    const w = workPosition(workLot, info.crew);
+    const size = workLot.style === 'premium' ? 1.08 : 0.92;
+    return { face: Math.hypot(c.x - w.x, c.z - w.z) - size / 2, top: size + 0.04 };
+  })();
   return (
     <group ref={group} name={`employee:${id}`}>
       <Selectable selection={{ kind: 'employee', id }} ringRadius={1.1} ringOffset={[0, 0.07, 0]}>
         {/* The rig is modelled at ~1.8 m tall: draw it at true scale next to the 0.96 m condenser. */}
-        <Worker role={info.role} look={info.look} anim={anim} pace={pace} />
+        <Worker role={info.role} look={info.look} anim={anim} pace={pace} work={work} />
         <mesh position={[0, 1.0, 0]} visible={false}>
           <boxGeometry args={[1, 2.1, 1]} />
           <meshBasicMaterial />
