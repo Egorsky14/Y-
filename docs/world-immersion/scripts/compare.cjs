@@ -1,15 +1,21 @@
 // Side-by-side before/after sheets from matched captures: node compare.cjs
 // Writes docs/world-immersion/compare/<name>.jpg (labelled; same seed, clock, camera and game state).
-// The four flagship sheets come first (A-D).
+// The flagship sheets come first: A world, B1-B5 technician work loop, C headquarters, D1-D3 activity.
 const { chromium } = require('@playwright/test');
 const fs = require('fs');
 const path = require('path');
 const root = path.resolve(__dirname, '..');
 const PAIRS = [
   ['A-city-is-not-an-island', 'W01-overview'],
-  ['B-technician-at-work', 'W09b-repair-side'],
+  ['B1-technician-probing', 'W08d-probe-profile'],
+  ['B2-technician-reading-gauges', 'W08e-gauges-profile'],
+  ['B3-technician-wrench', 'W09c-wrench-profile'],
+  ['B4-technician-reach-to-bag', 'W09d-reach-profile'],
+  ['B5-technician-fan-check', 'W09e-fan-check-profile'],
   ['C-headquarters-operational', 'W05-hq'],
-  ['D-neighborhood-alive', 'W04-street'],
+  ['D1-traffic-at-district-edge', 'W03-boundary-sw'],
+  ['D2-night-occupancy', 'W11-night'],
+  ['D3-street-inside-district', 'W04-street'],
   ['01-overview-east', 'W01b-overview-east'],
   ['02-overview-west', 'W01c-overview-west'],
   ['03-boundary-northeast', 'W02-boundary-ne'],
@@ -19,6 +25,7 @@ const PAIRS = [
   ['07-diagnosis', 'W08-diagnosis'],
   ['08-diagnosis-side', 'W08c-diagnosis-side'],
   ['09-repair', 'W09-repair'],
+  ['09b-repair-side', 'W09b-repair-side'],
   ['10-service-site', 'W08b-service-wide'],
   ['11-selected-lot', 'W14-selected-lot'],
   ['12-hq-yard', 'W06-hq-yard'],

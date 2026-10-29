@@ -177,6 +177,14 @@ const PERF_VIEWS = new Set(['W01-overview', 'W02-boundary-ne', 'W03-boundary-sw'
       await ev((lotId) => window.__ego.app.getState().select({ kind: 'lot', id: lotId }), job.lot);
       await shot('W14-selected-lot', { ...wide, distance: 34 });
       await ev(() => window.__ego.app.getState().select(null));
+      // Profile views at fixed points of the work loops (the clip clock only runs while the game runs):
+      // probing about 3 s into diagnosis, then 6 s of play to the gauge reading.
+      const profile = { type: 'focus', target: tech, distance: 5.6, azimuth: az - 1.5, elevation: 0.22, targetY: 1.25 };
+      const play = async (ms) => { await ev(() => window.__ego.dispatch({ type: 'set-speed', speed: 1 })); await sleep(ms); await ev(() => window.__ego.dispatch({ type: 'set-speed', speed: 0 })); };
+      await shot('W08d-probe-profile', profile);
+      await play(6000);
+      metrics.statusAtGauges = await ev((id) => window.__ego.getState().jobs[id].status, job.id);
+      await shot('W08e-gauges-profile', profile);
       // Repair: finish the diagnosis, choose the real fault, quote a repair; the job goes to repairing.
       await page.waitForFunction((id) => { window.__ego.advanceMinutes(1); return window.__ego.getState().jobs[id].status === 'awaiting-diagnosis'; }, job.id, { timeout: 60_000, polling: 30 });
       const status2 = await ev((id) => {
@@ -190,6 +198,15 @@ const PERF_VIEWS = new Set(['W01-overview', 'W02-boundary-ne', 'W03-boundary-sw'
       await ev(() => window.__ego.dispatch({ type: 'set-speed', speed: 0 }));
       await shot('W09-repair', { ...close, azimuth: az + 0.4 });
       await shot('W09b-repair-side', { ...close, azimuth: az - 0.75 });
+      // Repair loop: wrench about 2.5 s in, the reach to the bag about 6 s in, the fan check about 12.5 s in.
+      const profileR = { type: 'focus', target: tech, distance: 5.6, azimuth: az - 1.5, elevation: 0.22, targetY: 1.25 };
+      const playR = async (ms) => { await ev(() => window.__ego.dispatch({ type: 'set-speed', speed: 1 })); await sleep(ms); await ev(() => window.__ego.dispatch({ type: 'set-speed', speed: 0 })); };
+      await shot('W09c-wrench-profile', profileR);
+      await playR(3400);
+      await shot('W09d-reach-profile', profileR);
+      await playR(6400);
+      metrics.statusAtFanCheck = await ev((id) => window.__ego.getState().jobs[id].status, job.id);
+      await shot('W09e-fan-check-profile', profileR);
       metrics.service = { job, geo, tech, statusAtDiagnosis: status1, statusAtRepair: status2 };
     }
   }

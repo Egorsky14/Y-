@@ -1,0 +1,94 @@
+{
+  "label": "before",
+  "size": "1920x1080",
+  "loadMs": 4535,
+  "shots": {
+    "W08-diagnosis": {
+      "calls": 627,
+      "triangles": 1568132,
+      "geometries": 540,
+      "textures": 74
+    },
+    "W08c-diagnosis-side": {
+      "calls": 578,
+      "triangles": 1512876,
+      "geometries": 541,
+      "textures": 75
+    },
+    "W08b-service-wide": {
+      "calls": 649,
+      "triangles": 1631653,
+      "geometries": 541,
+      "textures": 75
+    },
+    "W08d-probe-profile": {
+      "calls": 587,
+      "triangles": 1555814,
+      "geometries": 541,
+      "textures": 76
+    },
+    "W08e-gauges-profile": {
+      "calls": 587,
+      "triangles": 1555814,
+      "geometries": 541,
+      "textures": 76
+    },
+    "W09-repair": {
+      "calls": 621,
+      "triangles": 1579780,
+      "geometries": 545,
+      "textures": 76
+    },
+    "W09b-repair-side": {
+      "calls": 576,
+      "triangles": 1514000,
+      "geometries": 545,
+      "textures": 76
+    },
+    "W09c-wrench-profile": {
+      "calls": 585,
+      "triangles": 1556138,
+      "geometries": 548,
+      "textures": 76
+    },
+    "W09d-reach-profile": {
+      "calls": 585,
+      "triangles": 1556138,
+      "geometries": 548,
+      "textures": 76
+    },
+    "W09e-fan-check-profile": {
+      "calls": 585,
+      "triangles": 1556138,
+      "geometries": 548,
+      "textures": 76
+    }
+  },
+  "errors": [],
+  "statusAtGauges": "diagnosing",
+  "statusAtFanCheck": "repairing",
+  "service": {
+    "job": {
+      "id": "job-8",
+      "lot": "c-n-4"
+    },
+    "geo": {
+      "house": {
+        "x": -21,
+        "z": 25
+      },
+      "van": {
+        "x": -21,
+        "z": -2.6
+      }
+    },
+    "tech": {
+      "x": -11.959999999999999,
+      "z": 20.98,
+      "y": 0,
+      "status": "working"
+    },
+    "statusAtDiagnosis": "diagnosing",
+    "statusAtRepair": "repairing"
+  }
+}
