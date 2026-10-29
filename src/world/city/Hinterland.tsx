@@ -308,7 +308,7 @@ export function Hinterland() {
   const quality = useApp((st) => st.settings.quality);
   const layout = useMemo(() => hinterland(), []);
   const roads = useMemo(() => buildRoads(layout.roads), [layout]);
-  const scrub = quality === 'low' ? 0.3 : quality === 'medium' ? 0.6 : 1;
+  const scrub = quality === 'low' ? 0.15 : quality === 'medium' ? 0.25 : 1;
   const districts = useMemo(() => buildDistricts(layout, scrub), [layout, scrub]);
   const lights = useMemo(() => buildLights(layout), [layout]);
   useEffect(

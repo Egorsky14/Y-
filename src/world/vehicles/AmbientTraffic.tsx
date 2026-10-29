@@ -15,7 +15,7 @@ import { visualPace } from '../scene/serviceCall';
  * full length of each road and pass out of sight where the road sinks under the rising bajada at
  * both ends, so none appears or vanishes in view. Motion follows the game pace (paused: stopped).
  * Drawn as two instanced meshes (bodies tinted per car, glass), plus head and tail lights at night;
- * fewer cars on Medium and none on Battery Saver.
+ * 30 % of the cars on Medium and none on Battery Saver.
  */
 
 const SPAN = 1520; // cars run between -SPAN and SPAN along each road (ends are under the terrain)
@@ -73,13 +73,14 @@ function carGeometry(): { body: THREE.BufferGeometry; glass: THREE.BufferGeometr
 
 export function AmbientTraffic() {
   const quality = useApp((s) => s.settings.quality);
-  const density = quality === 'low' ? 0 : quality === 'medium' ? 0.5 : 1;
+  const density = quality === 'low' ? 0 : quality === 'medium' ? 0.3 : 1;
   const cars = useMemo(() => ambientCars(density), [density]);
   const geo = useMemo(() => carGeometry(), []);
   const mats = useMemo(
     () => ({
-      body: new THREE.MeshStandardMaterial({ roughness: 0.45, metalness: 0.35 }),
-      glass: new THREE.MeshStandardMaterial({ color: '#1c2229', roughness: 0.2, metalness: 0.5 }),
+      // Lambert: the cars are a few pixels long at strategy distance, so specular shading buys nothing.
+      body: new THREE.MeshLambertMaterial(),
+      glass: new THREE.MeshLambertMaterial({ color: '#1c2229' }),
       lights: new THREE.PointsMaterial({ size: 1.1, sizeAttenuation: true, vertexColors: true, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, toneMapped: false }),
     }),
     [],
