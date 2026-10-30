@@ -50,6 +50,8 @@ export interface CondenserOptions {
   panelX?: number;
   /** Brass suction and liquid service valves low on the +z face at these unit-local x positions, each with a service port for gauge hoses. */
   serviceValves?: [number, number];
+  /** Coil guard: horizontal louvers (default) or the vertical wire guard of current units. */
+  guard?: 'louver' | 'wire';
 }
 
 /** Outdoor condensing unit: louvered coil guard on three sides, service panel, top fan grille. */
@@ -67,12 +69,26 @@ export function addCondenser(b: MeshBuilder, origin: V3, yaw = 0, o: CondenserOp
   p.box('darkMetal', [w, 0.08, w], at(base, [0, y0 - base[1] + 0.04, 0], yaw));
   // Corner posts
   for (const sx of [-1, 1]) for (const sz of [-1, 1]) p.box(cab, [0.06, h, 0.06], at(base, [sx * (w / 2 - 0.03), y0 - base[1] + h / 2, sz * (w / 2 - 0.03)], yaw));
-  // Louvered coil guards on -x, +x, -z; the +z face carries the service panel.
-  const slats = 13;
-  for (let i = 0; i < slats; i++) {
-    const y = y0 + 0.14 + (i / (slats - 1)) * (h - 0.36);
-    for (const side of [-1, 1]) p.box('grille', [0.025, 0.018, w - 0.16], at(base, [side * (w / 2 - 0.005), y - base[1], 0], yaw));
-    p.box('grille', [w - 0.16, 0.018, 0.025], at(base, [0, y - base[1], -(w / 2 - 0.005)], yaw));
+  // Coil guards on -x, +x, -z (the +z face carries the service panel): horizontal louvers, or on
+  // current units a vertical wire guard held by three bands.
+  if (o.guard === 'wire') {
+    const wires = Math.round((w - 0.16) / 0.045);
+    for (let i = 0; i <= wires; i++) {
+      const a = -(w - 0.16) / 2 + (i / wires) * (w - 0.16);
+      for (const side of [-1, 1]) p.box('grille', [0.012, h - 0.22, 0.012], at(base, [side * (w / 2 - 0.016), y0 - base[1] + h / 2 - 0.02, a], yaw));
+      p.box('grille', [0.012, h - 0.22, 0.012], at(base, [a, y0 - base[1] + h / 2 - 0.02, -(w / 2 - 0.016)], yaw));
+    }
+    for (const y of [y0 + 0.14, y0 + h / 2, y0 + h - 0.14]) {
+      for (const side of [-1, 1]) p.box(cab, [0.02, 0.03, w - 0.1], at(base, [side * (w / 2 - 0.012), y - base[1], 0], yaw));
+      p.box(cab, [w - 0.1, 0.03, 0.02], at(base, [0, y - base[1], -(w / 2 - 0.012)], yaw));
+    }
+  } else {
+    const slats = 13;
+    for (let i = 0; i < slats; i++) {
+      const y = y0 + 0.14 + (i / (slats - 1)) * (h - 0.36);
+      for (const side of [-1, 1]) p.box('grille', [0.025, 0.018, w - 0.16], at(base, [side * (w / 2 - 0.005), y - base[1], 0], yaw));
+      p.box('grille', [w - 0.16, 0.018, 0.025], at(base, [0, y - base[1], -(w / 2 - 0.005)], yaw));
+    }
   }
   // Dark coil behind the slats
   for (const side of [-1, 1]) p.box('insulation', [0.02, h - 0.3, w - 0.16], at(base, [side * (w / 2 - 0.035), y0 - base[1] + h / 2, 0], yaw));

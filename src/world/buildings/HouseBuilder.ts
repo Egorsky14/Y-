@@ -7,7 +7,6 @@ import { hashLot, propertyPlan, type PropertyPlan } from '../city/propertyPlan';
 import { renderGreenbelt, renderProperty } from './PropertyBuilder';
 import { greenbelts } from '../city/greenbelt';
 import { DRIVEWAYS } from './driveways';
-import { addCondenser } from '../props/hvac';
 import { condenserPosition, condenserSideDir, HOUSE_HALF_WIDTH } from '@/game/world/cityLayout';
 
 /**
@@ -226,7 +225,7 @@ export function houseMaterialResolver(key: string): THREE.Material {
   }
 }
 
-const FACING_ROTATION: Record<Lot['facing'], number> = { north: 0, south: Math.PI, west: Math.PI / 2, east: -Math.PI / 2 };
+export const FACING_ROTATION: Record<Lot['facing'], number> = { north: 0, south: Math.PI, west: Math.PI / 2, east: -Math.PI / 2 };
 
 /** Builds every house lot into one shared builder so the whole neighborhood is a handful of draw calls. */
 export function buildNeighborhood(lots: Lot[]): THREE.Group {
@@ -437,7 +436,7 @@ export function addHouse(shared: MeshBuilder, lot: Lot): void {
     // and the line set runs from the wall into those valves. The technician kneels in front of the
     // panel (workPosition), and the gauge hoses of the job-site kit end at the valve ports.
     const w = style === 'premium' ? 1.08 : 0.92;
-    addCondenser(b as unknown as MeshBuilder, [ux, 0, uz], Math.PI, { pad: true, lineSet: false, fan: false, size: w, height: style === 'premium' ? 1.0 : 0.86, panelX: -0.01, serviceValves: [w * 0.39, w * 0.28] });
+    // The unit itself is a separate layer that shows the customer's system generation (HouseCondensers).
     b.box('galvanized', [0.06, 0.32, 0.22], [half + 0.03, 1.45, uz - 0.3]); // disconnect box
     b.box('galvanized', [0.02, 0.08, 0.1], [half + 0.05, 1.3, uz - 0.3]);
     b.box('galvanized', [0.04, 1.3, 0.04], [half + 0.03, 0.65, uz - 0.3]); // conduit down the wall

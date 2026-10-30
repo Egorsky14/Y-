@@ -9,7 +9,8 @@ import { Ground } from '../city/Ground';
 import { Roads } from '../roads/Roads';
 import { House } from '../buildings/House';
 import { buildNeighborhood } from '../buildings/HouseBuilder';
-import { useMemo } from 'react';
+import { buildHouseCondensers, condenserGeneration, type CondenserGeneration } from '../buildings/HouseCondensers';
+import { useEffect, useMemo } from 'react';
 import { Headquarters } from '../buildings/Headquarters';
 import { CompetitorBuilding, Park, SupplyWarehouse } from '../buildings/Commercial';
 import { Vegetation } from '../city/Vegetation';
@@ -36,9 +37,19 @@ function Houses() {
   );
   const active = new Set(activeLots.split('|'));
   const statics = useMemo(() => buildNeighborhood(HOUSE_LOTS), []);
+  // Outdoor units by system generation, as "lot:generation|…"; changes only when a system is replaced.
+  const generations = useGame((s) =>
+    Object.values(s.customers)
+      .map((c) => `${c.lotId}:${condenserGeneration(c.equipment)}`)
+      .sort()
+      .join('|'),
+  );
+  const condensers = useMemo(() => buildHouseCondensers(HOUSE_LOTS, Object.fromEntries(generations.split('|').filter(Boolean).map((e) => e.split(':') as [string, CondenserGeneration]))), [generations]);
+  useEffect(() => () => condensers.traverse((o) => (o as THREE.Mesh).geometry?.dispose()), [condensers]);
   return (
     <>
       <primitive object={statics} />
+      <primitive object={condensers} />
       {HOUSE_LOTS.map((lot) => (
         <House key={lot.id} lot={lot} hasActiveJob={active.has(lot.id)} />
       ))}

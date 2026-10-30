@@ -80,6 +80,12 @@ export const STATIC_MATERIALS = {
   galvanized: () => cached('galvanized', () => new THREE.MeshStandardMaterial({ color: '#aeb4b9', roughness: 0.35, metalness: 0.8 })),
   unitCabinet: () => cached('unitCabinet', () => new THREE.MeshStandardMaterial({ color: '#c9ccce', roughness: 0.5, metalness: 0.35 })),
   unitCabinetTan: () => cached('unitCabinetTan', () => new THREE.MeshStandardMaterial({ color: '#b9ac92', roughness: 0.55, metalness: 0.3 })),
+  // Condenser generations (props/condenserVariants): graphite current-generation cabinets, rust
+  // bloom on old R-22 units, and the small EGO badge on units EGO installed.
+  unitCabinetGraphite: () => cached('unitCabinetGraphite', () => new THREE.MeshStandardMaterial({ color: '#4f565e', roughness: 0.42, metalness: 0.45 })),
+  unitCabinetFaded: () => cached('unitCabinetFaded', () => new THREE.MeshStandardMaterial({ color: '#c2b8a3', roughness: 0.8, metalness: 0.12 })),
+  corrosion: () => cached('corrosion', () => new THREE.MeshStandardMaterial({ color: '#94755a', roughness: 1, metalness: 0.05 })),
+  badgeTeal: () => cached('badgeTeal', () => new THREE.MeshStandardMaterial({ color: '#0f9c92', roughness: 0.4, metalness: 0.2 })),
   grille: () => cached('grille', () => new THREE.MeshStandardMaterial({ color: '#5a5f64', roughness: 0.7, metalness: 0.45 })),
   copper: () => cached('copper', () => new THREE.MeshStandardMaterial({ color: '#b87333', roughness: 0.35, metalness: 0.9 })),
   insulation: () => cached('insulation', () => new THREE.MeshStandardMaterial({ color: '#1e1f22', roughness: 0.95 })),
