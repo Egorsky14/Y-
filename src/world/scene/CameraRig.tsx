@@ -66,6 +66,14 @@ const SERVICE_MIN_DISTANCE = 2.5;
 const MAX_POLAR = 1.22;
 const SERVICE_MAX_POLAR = 1.38;
 
+/** A camera position pulled back within free-play zoom and tilt limits around its target. */
+function withinFreeLimits(target: THREE.Vector3, pos: THREE.Vector3): THREE.Vector3 {
+  const s = sphericalOf(pos.clone().sub(target));
+  s.distance = Math.max(MIN_DISTANCE, s.distance);
+  s.elevation = Math.max(Math.PI / 2 - MAX_POLAR, s.elevation);
+  return target.clone().add(offsetOf(s));
+}
+
 function easeInOut(t: number): number {
   return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
 }
@@ -146,6 +154,8 @@ export function CameraRig() {
         if (dir.y < 0.45) dir.y = 0.6; // never fly in flat
       }
       toPos = toTarget.clone().add(dir.normalize().multiplyScalar(dist));
+      // Any other focus keeps to free-play zoom and tilt (only the service camera comes closer and lower).
+      if (!command.service && !useApp.getState().photo.on) toPos = withinFreeLimits(toTarget, toPos);
       if (command.watch) {
         const boxes = [...occludersOf(command.watch.lotIds), ...obstaclesNear(command.target.x, command.target.z, 20)];
         watch.current = { target: new THREE.Vector3(command.target.x, 0, command.target.z), points: command.watch.points, boxes, checkAt: null };
@@ -270,9 +280,9 @@ export function CameraRig() {
     if (ph.on) {
       c.minDistance = 1.5;
       c.maxPolarAngle = 1.5;
-    } else if (serviceView || flight.current) {
-      c.minDistance = serviceView ? SERVICE_MIN_DISTANCE : Math.min(MIN_DISTANCE, c.minDistance);
-      c.maxPolarAngle = serviceView ? SERVICE_MAX_POLAR : Math.max(MAX_POLAR, c.maxPolarAngle);
+    } else if (serviceView) {
+      c.minDistance = SERVICE_MIN_DISTANCE;
+      c.maxPolarAngle = SERVICE_MAX_POLAR;
     } else {
       c.minDistance = THREE.MathUtils.clamp(dist - 0.01, SERVICE_MIN_DISTANCE, MIN_DISTANCE);
       c.maxPolarAngle = THREE.MathUtils.clamp(polar + 0.001, MAX_POLAR, SERVICE_MAX_POLAR);

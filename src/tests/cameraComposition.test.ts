@@ -52,7 +52,7 @@ describe('Watch Work', () => {
         // Low or moderate camera, side-on to the technician (never from behind).
         expect(r.elevation, `${lot.id} elevation`).toBeGreaterThanOrEqual(0.2);
         expect(r.elevation, `${lot.id} elevation`).toBeLessThanOrEqual(0.52);
-        expect(r.sideAngle!, `${lot.id} side`).toBeLessThan(2.75);
+        expect(r.sideAngle!, `${lot.id} side`).toBeLessThan(2.35);
         // Close: a few metres from the work, camera at about standing eye height or below.
         const cam = cameraPosition({ target: { x: shot.command.target.x, y: 0, z: shot.command.target.z }, azimuth: shot.command.azimuth, elevation: shot.command.elevation, distance: shot.command.distance });
         const tech = workPosition(lot, 0);

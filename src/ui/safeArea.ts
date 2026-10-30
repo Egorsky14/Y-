@@ -24,12 +24,19 @@ export function measureSafeArea(canvas: HTMLElement | null): SafeArea {
   }
   if (barTop) top = Math.max(top, (barTop.bottom - c.top) / c.height);
   top = Math.min(0.2, top);
-  if (!panel) return { right: 0, bottom: 0, top };
+  // The bottom bars (action bar, world controls, a bottom camera bar) cover a strip along the bottom.
+  let bottom = 0;
+  for (const el of document.querySelectorAll<HTMLElement>('.action-bar, .world-controls, .service-bar')) {
+    const r = visibleRect(el);
+    if (r && r.top - c.top > c.height / 2) bottom = Math.max(bottom, (c.bottom - r.top) / c.height);
+  }
+  bottom = Math.min(0.15, bottom);
+  if (!panel) return { right: 0, bottom, top };
   // A sheet spanning most of the width covers the bottom; otherwise it is a side panel.
-  if (panel.width > c.width * 0.7) return { right: 0, bottom: clamp01((c.bottom - panel.top) / c.height), top };
+  if (panel.width > c.width * 0.7) return { right: 0, bottom: clamp01(Math.max(bottom, (c.bottom - panel.top) / c.height)), top };
   // A side panel collapsed to its header only takes the top corner, above the work: the full width is free.
-  if (panel.height < c.height * 0.3) return { right: 0, bottom: 0, top };
-  return { right: clamp01((c.right - panel.left) / c.width), bottom: 0, top };
+  if (panel.height < c.height * 0.3) return { right: 0, bottom, top };
+  return { right: clamp01((c.right - panel.left) / c.width), bottom, top };
 }
 
 /** The element's box when it is actually drawn (not display:none or visibility:hidden), else null. */

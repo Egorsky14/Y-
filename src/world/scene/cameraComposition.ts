@@ -58,7 +58,7 @@ interface Rules {
 
 const RULES: Record<ServiceMode, Rules> = {
   property: { fill: 0.84, elevations: [0.5, 0.6, 0.72], band: [0.52, 0.68], elevationCost: 2, minDistance: 14, maxDistance: 60, weights: { roof: 0.5, wall: 0.3, plant: 1.6, pole: 2.5, background: 0.1, foreground: 5, sky: 0.5 } },
-  work: { fill: 0.56, elevations: [0.24, 0.32, 0.4, 0.5], band: [0.27, 0.44], elevationCost: 3, minDistance: 3.4, maxDistance: 9, side: [0.8, 2.1], sideReject: 2.75, weights: { roof: 4, wall: 2, plant: 3, pole: 3, background: 0.3, foreground: 6, sky: 0.6 } },
+  work: { fill: 0.56, elevations: [0.24, 0.32, 0.4, 0.5], band: [0.27, 0.44], elevationCost: 3, minDistance: 3.4, maxDistance: 9, side: [0.8, 2.1], sideReject: 2.35, weights: { roof: 4, wall: 2, plant: 3, pole: 3, background: 0.3, foreground: 6, sky: 0.6 } },
   detail: { fill: 0.68, elevations: [0.2, 0.28, 0.36, 0.46], band: [0.22, 0.4], elevationCost: 3, minDistance: 1.9, maxDistance: 5, side: [0.9, 2.0], sideReject: 2.4, weights: { roof: 4, wall: 1.5, plant: 3.5, pole: 3.5, background: 0.3, foreground: 8, sky: 0.6 } },
 };
 
