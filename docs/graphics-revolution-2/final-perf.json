@@ -1,0 +1,235 @@
+{
+  "baseline": "adf3224 (World Immersion 3.1)",
+  "candidate": "1c4c5be (Graphics Revolution 2)",
+  "method": "GPU time per render (EXT_disjoint_timer_query_webgl2), median over 3 s per view, vsync off, High quality, seed 42, same machine and session. Desktop 1920x1080: mean of steady runs (base x2, new x3) in alternating order; the first base run was in a slow GPU state (all views ~25% slower than its own later repeat) and is excluded. Phone 390x844 (DPR 2): base, new, base; the second base overview (5.33 ms) is a drift outlier and is excluded.",
+  "desktop": {
+    "W01-overview": {
+      "baseMs": 6.62,
+      "newMs": 6.72,
+      "changePct": 1.6,
+      "baseRuns": [
+        6.59,
+        6.65
+      ],
+      "newRuns": [
+        6.83,
+        6.67,
+        6.67
+      ],
+      "calls": [
+        1004,
+        1024
+      ],
+      "triangles": [
+        2144435,
+        2148803
+      ]
+    },
+    "W02-boundary-ne": {
+      "baseMs": 4.68,
+      "newMs": 4.52,
+      "changePct": -3.3,
+      "baseRuns": [
+        4.65,
+        4.7
+      ],
+      "newRuns": [
+        4.58,
+        4.52,
+        4.46
+      ],
+      "calls": [
+        540,
+        539
+      ],
+      "triangles": [
+        1901914,
+        1905428
+      ]
+    },
+    "W03-boundary-sw": {
+      "baseMs": 4.35,
+      "newMs": 4.1,
+      "changePct": -5.8,
+      "baseRuns": [
+        4.35,
+        4.35
+      ],
+      "newRuns": [
+        4.21,
+        4.06,
+        4.02
+      ],
+      "calls": [
+        550,
+        477
+      ],
+      "triangles": [
+        1922588,
+        1901576
+      ]
+    },
+    "W04-street": {
+      "baseMs": 5.79,
+      "newMs": 5.95,
+      "changePct": 2.8,
+      "baseRuns": [
+        5.76,
+        5.82
+      ],
+      "newRuns": [
+        6.03,
+        5.92,
+        5.9
+      ],
+      "calls": [
+        557,
+        455
+      ],
+      "triangles": [
+        1983560,
+        1945860
+      ]
+    },
+    "W05-hq": {
+      "baseMs": 6.14,
+      "newMs": 6.38,
+      "changePct": 3.8,
+      "baseRuns": [
+        6.11,
+        6.18
+      ],
+      "newRuns": [
+        6.47,
+        6.36,
+        6.31
+      ],
+      "calls": [
+        843,
+        858
+      ],
+      "triangles": [
+        2108463,
+        2112251
+      ]
+    },
+    "W08-diagnosis": {
+      "baseMs": 4.79,
+      "newMs": 4.83,
+      "changePct": 0.9,
+      "baseRuns": [
+        4.75,
+        4.83
+      ],
+      "newRuns": [
+        4.93,
+        4.83,
+        4.74
+      ],
+      "calls": [
+        681,
+        535
+      ],
+      "triangles": [
+        2020748,
+        1967980
+      ]
+    },
+    "W09-repair": {
+      "baseMs": 4.7,
+      "newMs": 4.77,
+      "changePct": 1.5,
+      "baseRuns": [
+        4.69,
+        4.7
+      ],
+      "newRuns": [
+        4.87,
+        4.72,
+        4.71
+      ],
+      "calls": [
+        677,
+        529
+      ],
+      "triangles": [
+        2036976,
+        1984152
+      ]
+    },
+    "W10-golden": {
+      "baseMs": 6.3,
+      "newMs": 6.37,
+      "changePct": 1,
+      "baseRuns": [
+        6.31,
+        6.3
+      ],
+      "newRuns": [
+        6.49,
+        6.31,
+        6.3
+      ],
+      "calls": [
+        998,
+        1018
+      ],
+      "triangles": [
+        2144379,
+        2148747
+      ]
+    },
+    "W11-night": {
+      "baseMs": 6.07,
+      "newMs": 6.49,
+      "changePct": 6.9,
+      "baseRuns": [
+        6.07,
+        6.07
+      ],
+      "newRuns": [
+        6.53,
+        6.49,
+        6.44
+      ],
+      "calls": [
+        998,
+        1018
+      ],
+      "triangles": [
+        2109187,
+        2113555
+      ]
+    }
+  },
+  "phone": {
+    "W12a-mobile-overview": {
+      "baseMs": 3.32,
+      "newMs": 3.31,
+      "changePct": -0.3,
+      "excludedBaseRun": 5.33,
+      "calls": [
+        938,
+        958
+      ],
+      "triangles": [
+        1952461,
+        1956829
+      ]
+    },
+    "W12b-mobile-street": {
+      "baseMs": 2.82,
+      "newMs": 2.76,
+      "changePct": -2.1,
+      "excludedBaseRun": 2.91,
+      "calls": [
+        626,
+        584
+      ],
+      "triangles": [
+        1801386,
+        1799024
+      ]
+    }
+  }
+}

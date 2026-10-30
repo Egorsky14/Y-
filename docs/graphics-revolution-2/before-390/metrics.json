@@ -1,0 +1,26 @@
+{
+  "label": "before-390",
+  "size": "390x844",
+  "loadMs": 6746,
+  "shots": {
+    "W12a-mobile-overview": {
+      "calls": 938,
+      "triangles": 1952461,
+      "geometries": 611,
+      "textures": 81
+    },
+    "W12b-mobile-street": {
+      "calls": 626,
+      "triangles": 1801386,
+      "geometries": 611,
+      "textures": 81
+    },
+    "W12c-mobile-diagnosis": {
+      "calls": 712,
+      "triangles": 1890846,
+      "geometries": 639,
+      "textures": 83
+    }
+  },
+  "errors": []
+}

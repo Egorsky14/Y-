@@ -1,0 +1,220 @@
+{
+  "label": "perf-base",
+  "size": "1920x1080",
+  "loadMs": 5760,
+  "shots": {
+    "W01-overview": {
+      "calls": 1004,
+      "triangles": 2144435,
+      "geometries": 636,
+      "textures": 82,
+      "gpuMsMedian": 8.33,
+      "frameMsMean": 8.72,
+      "fps": 114.7,
+      "samples": 340
+    },
+    "W01b-overview-east": {
+      "calls": 1023,
+      "triangles": 2132093,
+      "geometries": 644,
+      "textures": 82
+    },
+    "W01c-overview-west": {
+      "calls": 1019,
+      "triangles": 2110991,
+      "geometries": 644,
+      "textures": 82
+    },
+    "W02-boundary-ne": {
+      "calls": 540,
+      "triangles": 1901914,
+      "geometries": 644,
+      "textures": 82,
+      "gpuMsMedian": 6.4,
+      "frameMsMean": 6.93,
+      "fps": 144.3,
+      "samples": 437
+    },
+    "W03-boundary-sw": {
+      "calls": 550,
+      "triangles": 1922588,
+      "geometries": 644,
+      "textures": 82,
+      "gpuMsMedian": 6,
+      "frameMsMean": 6.44,
+      "fps": 155.3,
+      "samples": 465
+    },
+    "W13-horizon-west": {
+      "calls": 650,
+      "triangles": 2002138,
+      "geometries": 644,
+      "textures": 82
+    },
+    "W04-street": {
+      "calls": 557,
+      "triangles": 1983560,
+      "geometries": 646,
+      "textures": 82,
+      "gpuMsMedian": 7.45,
+      "frameMsMean": 8.04,
+      "fps": 124.3,
+      "samples": 380
+    },
+    "W05-hq": {
+      "calls": 843,
+      "triangles": 2108463,
+      "geometries": 646,
+      "textures": 82,
+      "gpuMsMedian": 7.94,
+      "frameMsMean": 8.51,
+      "fps": 117.5,
+      "samples": 355
+    },
+    "W06-hq-yard": {
+      "calls": 566,
+      "triangles": 1932934,
+      "geometries": 646,
+      "textures": 82
+    },
+    "W07-arrival": {
+      "calls": 720,
+      "triangles": 2085341,
+      "geometries": 651,
+      "textures": 82
+    },
+    "W08-diagnosis": {
+      "calls": 681,
+      "triangles": 2020748,
+      "geometries": 672,
+      "textures": 84,
+      "gpuMsMedian": 6.44,
+      "frameMsMean": 6.89,
+      "fps": 145.1,
+      "samples": 435
+    },
+    "W08c-diagnosis-side": {
+      "calls": 633,
+      "triangles": 1965726,
+      "geometries": 672,
+      "textures": 84
+    },
+    "W08b-service-wide": {
+      "calls": 710,
+      "triangles": 2104905,
+      "geometries": 672,
+      "textures": 84
+    },
+    "W14-selected-lot": {
+      "calls": 715,
+      "triangles": 2106941,
+      "geometries": 673,
+      "textures": 84
+    },
+    "W08d-probe-profile": {
+      "calls": 648,
+      "triangles": 2060724,
+      "geometries": 673,
+      "textures": 84
+    },
+    "W08e-gauges-profile": {
+      "calls": 646,
+      "triangles": 2060684,
+      "geometries": 673,
+      "textures": 84
+    },
+    "W09-repair": {
+      "calls": 677,
+      "triangles": 2036976,
+      "geometries": 678,
+      "textures": 84,
+      "gpuMsMedian": 6.46,
+      "frameMsMean": 6.99,
+      "fps": 143.1,
+      "samples": 430
+    },
+    "W09b-repair-side": {
+      "calls": 631,
+      "triangles": 1967250,
+      "geometries": 678,
+      "textures": 84
+    },
+    "W09c-wrench-profile": {
+      "calls": 646,
+      "triangles": 2061888,
+      "geometries": 678,
+      "textures": 84
+    },
+    "W09d-reach-profile": {
+      "calls": 643,
+      "triangles": 2061852,
+      "geometries": 678,
+      "textures": 84
+    },
+    "W09e-fan-check-profile": {
+      "calls": 643,
+      "triangles": 2061852,
+      "geometries": 678,
+      "textures": 84
+    },
+    "W10-golden": {
+      "calls": 998,
+      "triangles": 2144379,
+      "geometries": 673,
+      "textures": 84,
+      "gpuMsMedian": 7.96,
+      "frameMsMean": 8.53,
+      "fps": 117.2,
+      "samples": 354
+    },
+    "W10b-golden-hq": {
+      "calls": 841,
+      "triangles": 2104723,
+      "geometries": 673,
+      "textures": 84
+    },
+    "W11-night": {
+      "calls": 998,
+      "triangles": 2109187,
+      "geometries": 674,
+      "textures": 85,
+      "gpuMsMedian": 7.59,
+      "frameMsMean": 8.11,
+      "fps": 123.3,
+      "samples": 371
+    },
+    "W11b-night-street": {
+      "calls": 650,
+      "triangles": 1966944,
+      "geometries": 674,
+      "textures": 85
+    }
+  },
+  "errors": [],
+  "statusAtGauges": "diagnosing",
+  "statusAtFanCheck": "repairing",
+  "service": {
+    "job": {
+      "id": "job-8",
+      "lot": "c-n-4"
+    },
+    "geo": {
+      "house": {
+        "x": -21,
+        "z": 25
+      },
+      "van": {
+        "x": -21,
+        "z": -2.6
+      }
+    },
+    "tech": {
+      "x": -11.959999999999999,
+      "z": 20.98,
+      "y": 0,
+      "status": "working"
+    },
+    "statusAtDiagnosis": "diagnosing",
+    "statusAtRepair": "repairing"
+  }
+}
