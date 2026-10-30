@@ -2,7 +2,9 @@ import * as THREE from 'three';
 import { condenserPosition, curbParking, HOUSE_HALF_WIDTH, HOUSE_LOTS, lotById, lotLocalToWorld, workPosition, type Lot } from '@/game/world/cityLayout';
 import type { GameState } from '@/game/simulation/types';
 import { collectHouseOccluders } from '../buildings/HouseBuilder';
-import { cameraPosition, NO_SAFE_AREA, registeredOccluders, registerOccluders, solveClearView, type SafeArea } from './cameraOcclusion';
+import { cameraPosition, NO_SAFE_AREA, registeredOccluders, registerOccluders, solveClearView, tagOccluder, type SafeArea } from './cameraOcclusion';
+import { composeView, type Composed, type ServiceMode, type Subject } from './cameraComposition';
+import { obstaclesNear } from './cameraObstacles';
 
 /**
  * Visual pacing of a service call's arrival. The simulation decides that the van has arrived, where
@@ -121,6 +123,166 @@ export function serviceCloseUpCamera(lot: Lot, aspect: number, boxes: THREE.Box3
     clear: view.clear,
     preferredAzimuth: preferred.azimuth,
   };
+}
+
+/** What the technician is doing at the site, which decides what the close shots show. */
+export type ServicePhase = 'arrival' | 'diagnosis' | 'repair';
+
+export interface ServiceViewOptions {
+  phase?: ServicePhase;
+  /** The technician's current position when he is not (yet) at his work spot (walking from the van). */
+  techPos?: { x: number; z: number };
+  /** Kneeling at the unit (default) or standing (walking up to it). */
+  standing?: boolean;
+  /** Keep close to this heading (following the technician as he walks: no swings between updates). */
+  keepAzimuth?: number;
+}
+
+/** Footprint and height of the house itself (body and roof, not the garden walls), from its registered parts. */
+export function houseBounds(lot: Lot): THREE.Box3 {
+  const box = new THREE.Box3();
+  const reach = Math.max(lot.width, lot.depth) / 2;
+  for (const b of occludersOf([lot.id])) {
+    const c = b.getCenter(new THREE.Vector3());
+    if (b.max.y > 2.6 && Math.hypot(c.x - lot.center.x, c.z - lot.center.z) < reach) box.union(b);
+  }
+  if (box.isEmpty()) box.setFromCenterAndSize(new THREE.Vector3(lot.center.x, 2.5, lot.center.z), new THREE.Vector3(12, 5, 12));
+  return box;
+}
+
+/**
+ * What each service camera mode must show, in world space:
+ *  - property: the house, the van at the curb, the unit and the technician (establishing shot);
+ *  - work: the technician and the unit as one group (head to boots, the whole cabinet, the bag);
+ *  - detail: the hands and the service panel, with the meter and leads during diagnosis, the tool
+ *    on the cabinet during repair; the head stays in frame so the shot is never just a pair of hands.
+ */
+export function serviceSubject(lot: Lot, mode: ServiceMode, opts: ServiceViewOptions = {}): Subject {
+  const tech = opts.techPos ?? workPosition(lot, 0);
+  const unit = condenserPosition(lot);
+  const dx = tech.x - unit.x;
+  const dz = tech.z - unit.z;
+  const d = Math.hypot(dx, dz) || 1;
+  const ux = dx / d;
+  const uz = dz / d;
+  // Across the cabinet (perpendicular to the technician's line of work).
+  const px = -uz;
+  const pz = ux;
+  const premium = lot.style === 'premium';
+  const half = (premium ? 1.08 : 0.92) / 2;
+  const top = premium ? 1.1 : 0.96;
+  const facing = Math.atan2(unit.x - tech.x, unit.z - tech.z);
+  const head = opts.standing ? 1.75 : 1.12;
+  const P = (x: number, y: number, z: number) => ({ x, y, z });
+  const corner = (a: number, b: number, y: number) => P(unit.x + ux * half * a + px * half * b, y, unit.z + uz * half * a + pz * half * b);
+  const hands = P(tech.x * 0.6 + unit.x * 0.4, 0.6, tech.z * 0.6 + unit.z * 0.4);
+  const panel = P(unit.x + ux * half, 0.45, unit.z + uz * half);
+  const preferred = closeUpPreferred(lot, 1).azimuth;
+  if (mode === 'property') {
+    const house = houseBounds(lot);
+    const van = curbParking(lot);
+    const vx = Math.sin(van.heading);
+    const vz = Math.cos(van.heading);
+    const frame = [
+      ...[house.min.x, house.max.x].flatMap((x) => [house.min.z, house.max.z].flatMap((z) => [P(x, 0, z), P(x, house.max.y, z)])),
+      P(van.x + vx * 2.8, 0, van.z + vz * 2.8),
+      P(van.x - vx * 2.8, 2.5, van.z - vz * 2.8),
+      P(unit.x, top, unit.z),
+      P(tech.x, head, tech.z),
+    ];
+    const box = new THREE.Box3().setFromPoints(frame.map((p) => new THREE.Vector3(p.x, p.y, p.z)));
+    const c = box.getCenter(new THREE.Vector3());
+    return {
+      frame,
+      key: [P(unit.x, top, unit.z), P(tech.x, head - 0.1, tech.z), P(van.x, 2.2, van.z)],
+      focus: P(c.x, 1.6, c.z),
+      preferredAzimuth: Math.atan2(van.x - house.getCenter(new THREE.Vector3()).x, van.z - house.getCenter(new THREE.Vector3()).z) + 0.35,
+    };
+  }
+  const techFacing = { x: tech.x, z: tech.z, facing };
+  const bag = bagWorldPosition(lot);
+  if (mode === 'work' || opts.phase === 'arrival' || opts.standing) {
+    const frame = [
+      P(tech.x, head + 0.08, tech.z),
+      P(tech.x - ux * 0.55, 0.02, tech.z - uz * 0.55),
+      corner(1, 1, top), corner(1, -1, top), corner(-1, 1, top), corner(-1, -1, top),
+      corner(1, 1, 0.02), corner(1, -1, 0.02), corner(-1, 1, 0.02), corner(-1, -1, 0.02),
+      ...(opts.techPos ? [] : [P(bag.x, 0.25, bag.z)]),
+    ];
+    return { frame, key: [P(tech.x, head, tech.z), hands, P(unit.x, top, unit.z), panel], focus: P((tech.x + unit.x) / 2, 0.55, (tech.z + unit.z) / 2), tech: techFacing, preferredAzimuth: preferred };
+  }
+  if (opts.phase === 'repair') {
+    // The tool works on the cabinet near the technician: frame head, hands, the near top edge and the panel.
+    const topEdge = P(unit.x + ux * half * 0.6, top, unit.z + uz * half * 0.6);
+    const frame = [P(tech.x, head + 0.06, tech.z), hands, topEdge, corner(1, 1, top), corner(1, -1, top), panel, corner(1, 1, 0.1), corner(1, -1, 0.1)];
+    return { frame, key: [hands, panel, topEdge], focus: P(hands.x * 0.5 + topEdge.x * 0.5, 0.7, hands.z * 0.5 + topEdge.z * 0.5), tech: techFacing, preferredAzimuth: preferred };
+  }
+  // Diagnosis: meter in hand, leads and gauge hoses down to the service valves at the panel.
+  const valves = P(unit.x + ux * half + px * half * 0.6, 0.3, unit.z + uz * half + pz * half * 0.6);
+  const frame = [P(tech.x, head + 0.06, tech.z), hands, panel, valves, corner(1, 1, top), corner(1, -1, top), corner(1, 1, 0.1), corner(1, -1, 0.1)];
+  return { frame, key: [hands, panel, valves], focus: P(hands.x * 0.55 + panel.x * 0.45, 0.66, hands.z * 0.55 + panel.z * 0.45), tech: techFacing, preferredAzimuth: preferred };
+}
+
+/** Obstacles a service camera checks at a lot: the lot's and its neighbours' house parts, plus plants and poles nearby. */
+export function serviceObstacles(lot: Lot, mode: ServiceMode, focus: { x: number; z: number }): THREE.Box3[] {
+  const radius = mode === 'property' ? 48 : 20;
+  const houses = siteOccluders(lot).filter((b) => {
+    const dx = Math.max(b.min.x - focus.x, 0, focus.x - b.max.x);
+    const dz = Math.max(b.min.z - focus.z, 0, focus.z - b.max.z);
+    return dx * dx + dz * dz <= radius * radius;
+  });
+  const out = [...houses, ...obstaclesNear(focus.x, focus.z, radius)];
+  if (mode !== 'property') {
+    // The cabinet itself, a touch inside its faces so points on the service panel stay outside it.
+    const unit = condenserPosition(lot);
+    const half = (lot.style === 'premium' ? 1.08 : 0.92) / 2 - 0.03;
+    out.push(tagOccluder(new THREE.Box3(new THREE.Vector3(unit.x - half, 0, unit.z - half), new THREE.Vector3(unit.x + half, (lot.style === 'premium' ? 1.1 : 0.96) - 0.03, unit.z + half)), 'subject'));
+  }
+  return out;
+}
+
+/** A composed view as a camera command (ground orbit target on the same sight line as the aim point). */
+function toCommand(view: Composed, lot: Lot, subject: Subject) {
+  const cam = cameraPosition(view);
+  const s = view.target;
+  const t = cam.y / Math.max(1e-3, cam.y - s.y);
+  const ground = { x: cam.x + (s.x - cam.x) * t, z: cam.z + (s.z - cam.z) * t };
+  const distance = Math.hypot(cam.x - ground.x, cam.y, cam.z - ground.z);
+  return {
+    type: 'focus' as const,
+    target: ground,
+    targetY: 0,
+    distance,
+    azimuth: view.azimuth,
+    elevation: Math.asin(cam.y / distance),
+    orbit: true,
+    service: true,
+    watch: { lotIds: nearbyLotIds(lot), points: subject.key },
+  };
+}
+
+/**
+ * The camera for a service mode at a lot: the best-composed view (cameraComposition.ts) for this
+ * screen shape and free area. Detail falls back to Watch Work when no close-up shows the hands,
+ * tools and panel; Watch Work falls back to the occlusion solver's clear view.
+ */
+export function serviceViewCamera(lot: Lot, mode: ServiceMode, aspect: number, safe: SafeArea = NO_SAFE_AREA, opts: ServiceViewOptions = {}) {
+  const t0 = performance.now();
+  const tryMode = (m: ServiceMode) => {
+    const subject = serviceSubject(lot, m, opts);
+    if (opts.keepAzimuth !== undefined) {
+      subject.preferredAzimuth = opts.keepAzimuth;
+      subject.preferWeight = 3;
+    }
+    const view = composeView(subject, serviceObstacles(lot, m, subject.focus), aspect, m, safe);
+    return view ? { command: toCommand(view, lot, subject), report: view.report } : null;
+  };
+  // Walking up to the unit there is no close work to show yet: Detail waits as Watch Work.
+  const asked = mode === 'detail' && (opts.phase === 'arrival' || opts.standing) ? 'work' : mode;
+  const shot = tryMode(asked) ?? (asked === 'detail' ? tryMode('work') : null);
+  if (shot) return { ...shot, mode: shot.report.mode, ms: performance.now() - t0 };
+  if (mode === 'property') return { command: { ...serviceSiteCamera(lot), service: true }, report: null, mode, ms: performance.now() - t0 };
+  return { command: { ...serviceCloseUpCamera(lot, aspect, undefined, safe), service: true }, report: null, mode: 'work' as ServiceMode, ms: performance.now() - t0 };
 }
 
 /**

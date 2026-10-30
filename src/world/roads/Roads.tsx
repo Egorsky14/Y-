@@ -4,6 +4,7 @@ import { STREETS, ROAD_WIDTH, SIDEWALK_WIDTH, HOUSE_LOTS, inwardDir, HQ_LOT, WAR
 import { MeshBuilder } from '../assets/pbr';
 import { STATIC_MATERIALS, UV_SCALES } from '../buildings/materials';
 import { signTexture } from '../assets/textures';
+import { STREET_LIGHT_HEIGHT, streetLights } from './streetFurniture';
 
 /**
  * Street network as merged static geometry: asphalt with PBR detail, crisp markings,
@@ -12,6 +13,7 @@ import { signTexture } from '../assets/textures';
  */
 
 const CURB_H = 0.15;
+const LIGHTS = streetLights();
 
 function buildRoads(): THREE.Group {
   const t0 = performance.now();
@@ -65,12 +67,10 @@ function buildRoads(): THREE.Group {
       for (const across of [-half * 0.62, -half * 0.28, half * 0.28, half * 0.62]) b.add('wear', new THREE.PlaneGeometry(len, 1.6), pos(a + len / 2, across, 0.047), isX ? [-Math.PI / 2, 0, 0] : [-Math.PI / 2, 0, Math.PI / 2]);
     }
     // Street lights: cobra-head luminaires on tapered poles behind the sidewalk, staggered by side
-    for (let a = s.from + 20, i = 0; a < s.to - 10; a += 44, i++) {
-      if (Math.abs(a) < 9 || Math.abs(Math.abs(a) - (isX ? 130 : 100)) < 9) continue;
-      const side = i % 2 === 0 ? 1 : -1;
+    for (const { along: a, side } of LIGHTS.filter((l) => l.street === s)) {
       const base = pos(a, side * (half + 0.55 + walk + 0.6), 0);
       const arm = (len: number): [number, number, number] => (isX ? [0.14, 0.14, len] : [len, 0.14, 0.14]);
-      b.add('pole', new THREE.CylinderGeometry(0.08, 0.14, 9, 10), [base[0], 4.5, base[2]]);
+      b.add('pole', new THREE.CylinderGeometry(0.08, 0.14, STREET_LIGHT_HEIGHT, 10), [base[0], STREET_LIGHT_HEIGHT / 2, base[2]]);
       b.add('concrete', new THREE.CylinderGeometry(0.3, 0.34, 0.5, 10), [base[0], 0.25, base[2]]);
       const armC = pos(a, side * (half + 0.55 + walk + 0.6 - 1.4), 8.9);
       b.add('pole', new THREE.BoxGeometry(...arm(2.8)), armC);

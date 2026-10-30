@@ -25,6 +25,23 @@ const MIN_WIDTH = 0.16;
 
 const registry = new Map<string, THREE.Box3[]>();
 
+/**
+ * What an occluder is, for composition scoring (cameraComposition.ts): a roof filling the frame or
+ * a palm trunk in front of the lens costs more than a wall behind the work. 'subject' is the unit being
+ * serviced: it hides the hands from the wrong side but is never clutter. Untagged boxes are walls.
+ */
+export type OccluderKind = 'wall' | 'roof' | 'plant' | 'pole' | 'subject';
+const kinds = new WeakMap<THREE.Box3, OccluderKind>();
+
+export function tagOccluder(box: THREE.Box3, kind: OccluderKind): THREE.Box3 {
+  kinds.set(box, kind);
+  return box;
+}
+
+export function occluderKind(box: THREE.Box3): OccluderKind {
+  return kinds.get(box) ?? 'wall';
+}
+
 /** Keeps only parts that can block a view: tall and wide enough, and not a ground cover or the unit's own services. */
 export function solidOccluders(parts: { material: string; box: THREE.Box3 }[]): THREE.Box3[] {
   return parts
@@ -32,7 +49,21 @@ export function solidOccluders(parts: { material: string; box: THREE.Box3 }[]): 
       const b = p.box;
       return !NON_OCCLUDING.test(p.material) && b.max.y - b.min.y >= MIN_HEIGHT && b.max.y > 0.45 && Math.max(b.max.x - b.min.x, b.max.z - b.min.z) >= MIN_WIDTH;
     })
-    .map((p) => p.box);
+    .map((p) => (/^(roof|roofCap|solar)(:|$)/.test(p.material) ? tagOccluder(p.box, 'roof') : p.box));
+}
+
+/** Nearest box a ray from `origin` along unit `dir` enters within `maxDist`, with the distance. */
+export function firstHit(origin: THREE.Vector3, dir: THREE.Vector3, boxes: THREE.Box3[], maxDist: number): { box: THREE.Box3; t: number } | null {
+  _ray.set(origin, dir);
+  let best: { box: THREE.Box3; t: number } | null = null;
+  for (const box of boxes) {
+    if (box.containsPoint(origin)) return { box, t: 0 };
+    const hit = _ray.intersectBox(box, _hit);
+    if (!hit) continue;
+    const t = hit.distanceTo(origin);
+    if (t < maxDist && (!best || t < best.t)) best = { box, t };
+  }
+  return best;
 }
 
 export function registerOccluders(lotId: string, boxes: THREE.Box3[]): void {
