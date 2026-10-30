@@ -14,11 +14,13 @@ import { serviceCloseUpCamera, serviceObstacles, serviceSubject, serviceViewCame
  * the technician side-on, and Detail shows the hands and the panel or is not used.
  */
 
+// Free areas as the game measures them (measureSafeArea): HUD on top, bottom bars, the panel.
 const SCREENS: [string, number, SafeArea][] = [
-  ['desktop', 16 / 9, { right: 0, bottom: 0, top: 0.08 }],
-  ['desktop, inspector open', 16 / 9, { right: 0.2, bottom: 0, top: 0.08 }],
-  ['phone portrait, collapsed sheet', 390 / 844, { right: 0, bottom: 0.2, top: 0.13 }],
-  ['phone landscape, side panel', 844 / 390, { right: 0.45, bottom: 0, top: 0.15 }],
+  ['desktop, panel collapsed', 16 / 9, { right: 0, bottom: 0.079, top: 0.085 }],
+  ['desktop, inspector open', 16 / 9, { right: 0.2, bottom: 0.079, top: 0.085 }],
+  ['desktop, no bars', 16 / 9, { right: 0, bottom: 0, top: 0.08 }],
+  ['phone portrait, collapsed sheet', 390 / 844, { right: 0, bottom: 0.175, top: 0.135 }],
+  ['phone landscape, side panel', 844 / 390, { right: 0.45, bottom: 0.12, top: 0.15 }],
 ];
 const TUTORIAL = lotById('c-n-4')!;
 const STYLES = ['ranch', 'two-story', 'spanish', 'premium', 'modern'];
@@ -127,7 +129,7 @@ describe('Watch Work', () => {
 
 describe('Detail', () => {
   for (const phase of ['diagnosis', 'repair'] as const) {
-    for (const [name, aspect, safe] of [SCREENS[0], SCREENS[2]]) {
+    for (const [name, aspect, safe] of [SCREENS[0], SCREENS[3]]) {
       it(`shows the hands, tools and panel up close on every lot (${phase}, ${name})`, () => {
         for (const lot of HOUSE_LOTS) {
           const shot = serviceViewCamera(lot, 'detail', aspect, safe, { phase });
@@ -159,7 +161,7 @@ describe('Detail', () => {
 });
 
 describe('Property', () => {
-  for (const [name, aspect, safe] of [SCREENS[0], SCREENS[2]]) {
+  for (const [name, aspect, safe] of [SCREENS[0], SCREENS[3]]) {
     it(`shows the house, van, unit and technician together (${name})`, () => {
       for (const lot of HOUSE_LOTS) {
         const shot = serviceViewCamera(lot, 'property', aspect, safe);

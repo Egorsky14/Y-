@@ -269,9 +269,16 @@ export function composeView(subject: Subject, boxes: THREE.Box3[], aspect: numbe
     const v: ViewSpec = { target: subject.focus, azimuth: wrap(azimuth), elevation, distance: probe };
     const fill0 = fillAt(v, subject.frame, f);
     if (!fill0) return;
-    v.distance = THREE.MathUtils.clamp(((probe * fill0) / fill) * scale, rules.minDistance, rules.maxDistance);
-    const report = evaluate(v, subject, boxes, mode, f, fill);
-    if (typeof report !== 'string' && (!best || report.cost < best.report.cost - 1e-9)) best = { ...v, report };
+    const fitted = ((probe * fill0) / fill) * scale;
+    // The fitted distance first; if a wall or trunk is in the way there, a little closer, then farther
+    // (narrow side yards often leave a clear spot either side of the ideal distance).
+    for (const k of [1, 0.85, 1.2, 1.45]) {
+      v.distance = THREE.MathUtils.clamp(fitted * k, rules.minDistance, rules.maxDistance);
+      const report = evaluate(v, subject, boxes, mode, f, fill);
+      if (typeof report === 'string') continue;
+      if (!best || report.cost < best.report.cost - 1e-9) best = { ...v, report };
+      return;
+    }
   };
   for (let i = 0; i < AZ_STEPS; i++) for (const el of rules.elevations) consider(subject.preferredAzimuth + (i / AZ_STEPS) * Math.PI * 2, el);
   const coarse = best as Composed | null;
