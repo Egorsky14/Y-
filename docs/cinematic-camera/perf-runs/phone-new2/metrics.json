@@ -1,0 +1,41 @@
+{
+  "label": "phone-new2",
+  "size": "390x844",
+  "loadMs": 4812,
+  "shots": {
+    "W12a-mobile-overview": {
+      "calls": 985,
+      "triangles": 2129213,
+      "geometries": 623,
+      "textures": 84,
+      "gpuMsMedian": 3.52,
+      "frameMsMean": 4.78,
+      "fps": 209,
+      "samples": 628
+    },
+    "W12b-mobile-street": {
+      "calls": 605,
+      "triangles": 1965752,
+      "geometries": 623,
+      "textures": 84,
+      "gpuMsMedian": 2.9,
+      "frameMsMean": 3.15,
+      "fps": 317.7,
+      "samples": 953
+    },
+    "W12c-mobile-diagnosis": {
+      "calls": 509,
+      "triangles": 1922916,
+      "geometries": 691,
+      "textures": 87
+    },
+    "W12d-mobile-service-ui": {
+      "calls": 509,
+      "triangles": 1922916,
+      "geometries": 691,
+      "textures": 87
+    }
+  },
+  "errors": [],
+  "watchButton": true
+}

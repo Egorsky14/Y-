@@ -1,0 +1,42 @@
+{
+  "label": "before",
+  "size": "1920x1080",
+  "lot": "n-o-1",
+  "shots": {
+    "property": {
+      "camera": [
+        -90.17,
+        23.3,
+        -95.57
+      ],
+      "composition": null
+    },
+    "work": {
+      "camera": [
+        -123.81,
+        4,
+        -122.83
+      ],
+      "composition": null
+    },
+    "work-inspector": {
+      "camera": [
+        -123.81,
+        4,
+        -122.83
+      ],
+      "composition": null
+    },
+    "work-repair": {
+      "camera": [
+        -123.81,
+        4,
+        -122.83
+      ],
+      "composition": null
+    }
+  },
+  "errors": [],
+  "build": "previous",
+  "repairStatus": "repairing"
+}

@@ -1,0 +1,254 @@
+{
+  "label": "after",
+  "size": "1920x1080",
+  "lot": "n-o-1",
+  "shots": {
+    "property": {
+      "camera": [
+        -125.43,
+        33.47,
+        -71.17
+      ],
+      "composition": {
+        "requested": "property",
+        "mode": "property",
+        "phase": "diagnosis",
+        "reason": "mode",
+        "ms": 8.1,
+        "report": {
+          "mode": "property",
+          "fill": 0.8700105748166046,
+          "center": [
+            -0.02425884169667822,
+            -0.0008559558833999281
+          ],
+          "roof": 0.12698412698412698,
+          "wall": 0.047619047619047616,
+          "background": 0.015873015873015872,
+          "plant": 0.09523809523809523,
+          "pole": 0,
+          "sky": 0.15873015873015872,
+          "foreground": 0.07936507936507936,
+          "azimuth": -0.38527435816435796,
+          "elevation": 0.5599999999999999,
+          "distance": 60,
+          "cost": 0.7898258060861345
+        },
+        "aspect": 1.778,
+        "safe": {
+          "right": 0,
+          "bottom": 0.0787037037037037,
+          "top": 0.08518518518518518
+        }
+      }
+    },
+    "work": {
+      "camera": [
+        -122.19,
+        2.37,
+        -119.34
+      ],
+      "composition": {
+        "requested": "work",
+        "mode": "work",
+        "phase": "diagnosis",
+        "reason": "mode",
+        "ms": 2.7,
+        "report": {
+          "mode": "work",
+          "fill": 0.5520566752369356,
+          "center": [
+            -0.06297648331361899,
+            0.03823371942320858
+          ],
+          "roof": 0,
+          "wall": 0.47619047619047616,
+          "background": 0,
+          "plant": 0,
+          "pole": 0,
+          "sky": 0,
+          "foreground": 0,
+          "azimuth": -1.0480169489644826,
+          "elevation": 0.4,
+          "distance": 4.665395032228258,
+          "sideAngle": 2.1281346678481086,
+          "cost": 1.1659315918866064
+        },
+        "aspect": 1.778,
+        "safe": {
+          "right": 0,
+          "bottom": 0.0787037037037037,
+          "top": 0.08518518518518518
+        }
+      }
+    },
+    "work-inspector": {
+      "camera": [
+        -122.37,
+        1.94,
+        -119.92
+      ],
+      "composition": {
+        "requested": "work",
+        "mode": "work",
+        "phase": "diagnosis",
+        "reason": "layout",
+        "ms": 2.6,
+        "report": {
+          "mode": "work",
+          "fill": 0.5531026704313688,
+          "center": [
+            -0.10252540190486911,
+            0.004152659575161033
+          ],
+          "roof": 0,
+          "wall": 0.4603174603174603,
+          "background": 0,
+          "plant": 0,
+          "pole": 0,
+          "sky": 0,
+          "foreground": 0,
+          "azimuth": -1.1874564592038022,
+          "elevation": 0.32,
+          "distance": 4.4312145449960285,
+          "sideAngle": 1.9779196994735513,
+          "cost": 1.0838321705509062
+        },
+        "aspect": 1.778,
+        "safe": {
+          "right": 0.20104166666666667,
+          "bottom": 0.0787037037037037,
+          "top": 0.08518518518518518
+        }
+      }
+    },
+    "detail": {
+      "camera": [
+        -120.96,
+        1.76,
+        -119.88
+      ],
+      "composition": {
+        "requested": "detail",
+        "mode": "detail",
+        "phase": "diagnosis",
+        "reason": "mode",
+        "ms": 2,
+        "report": {
+          "mode": "detail",
+          "fill": 0.6799156838024538,
+          "center": [
+            -0.013667149467962589,
+            -0.09657510842233036
+          ],
+          "roof": 0,
+          "wall": 0.47619047619047616,
+          "background": 0,
+          "plant": 0,
+          "pole": 0,
+          "sky": 0,
+          "foreground": 0,
+          "azimuth": -1.0130169489644827,
+          "elevation": 0.36,
+          "distance": 3.1209332963694387,
+          "sideAngle": 2.1353850479745566,
+          "cost": 1.056576495829095
+        },
+        "aspect": 1.778,
+        "safe": {
+          "right": 0,
+          "bottom": 0.0787037037037037,
+          "top": 0.08518518518518518
+        }
+      }
+    },
+    "work-repair": {
+      "camera": [
+        -122.19,
+        2.37,
+        -119.34
+      ],
+      "composition": {
+        "requested": "work",
+        "mode": "work",
+        "phase": "repair",
+        "reason": "mode",
+        "ms": 2,
+        "report": {
+          "mode": "work",
+          "fill": 0.5520566752369356,
+          "center": [
+            -0.06297648331361899,
+            0.03823371942320858
+          ],
+          "roof": 0,
+          "wall": 0.47619047619047616,
+          "background": 0,
+          "plant": 0,
+          "pole": 0,
+          "sky": 0,
+          "foreground": 0,
+          "azimuth": -1.0480169489644826,
+          "elevation": 0.4,
+          "distance": 4.665395032228258,
+          "sideAngle": 2.1281346678481086,
+          "cost": 1.1659315918866064
+        },
+        "aspect": 1.778,
+        "safe": {
+          "right": 0,
+          "bottom": 0.0787037037037037,
+          "top": 0.08518518518518518
+        }
+      }
+    },
+    "detail-repair": {
+      "camera": [
+        -120.9,
+        1.94,
+        -119.89
+      ],
+      "composition": {
+        "requested": "detail",
+        "mode": "detail",
+        "phase": "repair",
+        "reason": "mode",
+        "ms": 2,
+        "report": {
+          "mode": "detail",
+          "fill": 0.6808465697809296,
+          "center": [
+            0.03182171314434851,
+            -0.1574139878964883
+          ],
+          "roof": 0,
+          "wall": 0.47619047619047616,
+          "background": 0,
+          "plant": 0,
+          "pole": 0,
+          "sky": 0,
+          "foreground": 0,
+          "azimuth": -0.9780169489644827,
+          "elevation": 0.39999999999999997,
+          "distance": 3.1937256487220083,
+          "sideAngle": 2.1392258608923678,
+          "cost": 1.130997402767999
+        },
+        "aspect": 1.778,
+        "safe": {
+          "right": 0,
+          "bottom": 0.0787037037037037,
+          "top": 0.08518518518518518
+        }
+      }
+    }
+  },
+  "errors": [],
+  "build": "cinematic",
+  "repairStatus": "repairing",
+  "control": {
+    "orbitHeldDrift": 0.324,
+    "afterExitLayoutDrift": 0,
+    "serviceViewAfterExit": null
+  }
+}

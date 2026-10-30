@@ -1,0 +1,34 @@
+{
+  "label": "before-390",
+  "size": "390x844",
+  "lot": "a-s-1",
+  "shots": {
+    "property": {
+      "camera": [
+        -90.8,
+        23.3,
+        5.72
+      ],
+      "composition": null
+    },
+    "work": {
+      "camera": [
+        -121.93,
+        2.83,
+        -22.73
+      ],
+      "composition": null
+    },
+    "work-repair": {
+      "camera": [
+        -121.93,
+        2.83,
+        -22.73
+      ],
+      "composition": null
+    }
+  },
+  "errors": [],
+  "build": "previous",
+  "repairStatus": "repairing"
+}
