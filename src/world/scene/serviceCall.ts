@@ -74,22 +74,22 @@ export function workSitePoints(lot: Lot): { x: number; y: number; z: number }[] 
 export function closeUpPreferred(lot: Lot, aspect: number) {
   const tech = workPosition(lot, 0);
   const unit = condenserPosition(lot);
-  // Lot-local +x is the condenser side (away from the house wall), -z the street.
+  // Lot-local +x is the condenser side (away from the house wall), -z the street: look in from the side.
   const ux = HOUSE_HALF_WIDTH[lot.style ?? 'ranch'] + 0.9;
   const a = lotLocalToWorld(lot, ux, -3);
-  const b = lotLocalToWorld(lot, ux + 1, -4.2);
+  const b = lotLocalToWorld(lot, ux + 1, -3 + 0.25);
   return { target: { x: (tech.x + unit.x) / 2, y: 0, z: (tech.z + unit.z) / 2 }, azimuth: Math.atan2(b.x - a.x, b.z - a.z), elevation: 0.42, distance: aspect < 1 ? 5.6 : 6.5 };
 }
 
 /**
  * Close view of the technician working at the unit (diagnosis and repair). The preferred framing
- * is a three-quarter view from the open, street-side corner of the unit, in the lot's own frame (away
- * from the house and toward the street), 6.5 m away on landscape screens and 5.6 m on portrait phones
- * (whose horizontal view matches landscape's, see verticalFovFor),
- * 24° up. A fixed turn from the curb heading (the old close camera) points into the house on mirrored
- * lots, which was the P1 defect. When the house, a porch post or a garden wall would
- * stand in the way, the nearest clear angle, height or distance that keeps the technician, unit,
- * panel and bag in frame is used instead (cameraOcclusion.solveClearView).
+ * is a near-profile view from the unit's open side, in the lot's own frame (away from the house
+ * wall), so the technician's hands on the panel, the meter and leads, the gauges and the bag all
+ * read at once: 6.5 m away on landscape screens, 5.6 m on portrait phones (whose horizontal view
+ * matches landscape's, see verticalFovFor), 24° up. A fixed turn from the curb heading (the old
+ * close camera) points into the house on mirrored lots, which was the P1 defect. When the house, a
+ * porch post or a garden wall would stand in the way, the nearest clear angle, height or distance
+ * that keeps the technician, unit, panel and bag in frame is used instead (solveClearView).
  *
  * The look-at point stays on the ground (CameraRig keeps the orbit target at y 0), so the solver
  * checks exactly the pose the camera ends in.

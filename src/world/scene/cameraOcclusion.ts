@@ -96,7 +96,8 @@ export function cameraPosition(v: ViewSpec): THREE.Vector3 {
 /** Fraction of key points the camera sees (1 = every point clear); 0 when the camera is inside geometry. */
 export function visibility(v: ViewSpec, points: V3[], boxes: THREE.Box3[]): number {
   const cam = cameraPosition(v);
-  if (cam.y < 0.6 || insideOccluder(cam, boxes)) return 0;
+  // A metre of clearance round the camera keeps walls and eaves out of the foreground, not just out of the lens.
+  if (cam.y < 0.6 || insideOccluder(cam, boxes, 1.0)) return 0;
   let seen = 0;
   for (const p of points) if (!segmentBlocked(cam, new THREE.Vector3(p.x, p.y, p.z), boxes)) seen++;
   return seen / points.length;

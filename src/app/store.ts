@@ -64,6 +64,8 @@ interface AppState {
   version: number;
   screen: 'menu' | 'game' | 'summary';
   selection: Selection | null;
+  /** Inspector collapsed to its header (more of the scene visible, e.g. while watching the work). */
+  inspectorCompact: boolean;
   panel: PanelId;
   cameraCommand: CameraCommand | null;
   followVehicleId: string | null;
@@ -90,6 +92,7 @@ interface AppState {
   /** inline: the caller shows the result itself, so a failure does not also raise the error banner. */
   dispatch: (action: GameAction, opts?: { inline?: boolean }) => ActionResult;
   select: (selection: Selection | null) => void;
+  setInspectorCompact: (compact: boolean) => void;
   openPanel: (panel: PanelId) => void;
   togglePanel: (panel: Exclude<PanelId, null>) => void;
   camera: (cmd: Omit<CameraCommand, 'id'>) => void;
@@ -139,6 +142,7 @@ export const useApp = create<AppState>((set, get) => ({
   version: 0,
   screen: 'menu',
   selection: null,
+  inspectorCompact: false,
   panel: null,
   cameraCommand: null,
   followVehicleId: null,
@@ -190,7 +194,8 @@ export const useApp = create<AppState>((set, get) => ({
     get().bump();
     return result;
   },
-  select: (selection) => set({ selection }),
+  select: (selection) => set({ selection, inspectorCompact: false }),
+  setInspectorCompact: (inspectorCompact) => set({ inspectorCompact }),
   openPanel: (panel) => set({ panel }),
   togglePanel: (panel) => set((s) => ({ panel: s.panel === panel ? null : panel })),
   camera: (cmd) => set({ cameraCommand: { ...cmd, id: cameraCommandId++ }, followVehicleId: cmd.type === 'follow' ? (cmd.vehicleId ?? null) : null }),

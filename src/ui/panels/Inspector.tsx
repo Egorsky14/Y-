@@ -18,9 +18,10 @@ const ON_SITE = new Set<JobStatus>(['diagnosing', 'awaiting-diagnosis', 'quoted'
 export function Inspector() {
   const selection = useApp((s) => s.selection);
   const select = useApp((s) => s.select);
+  const compact = useApp((s) => s.inspectorCompact);
   if (!selection) return null;
   return (
-    <aside className="glass inspector" data-testid="inspector">
+    <aside className={`glass inspector${compact ? ' compact' : ''}`} data-testid="inspector">
       {selection.kind === 'lot' && <LotInspector lotId={selection.id} onClose={() => select(null)} />}
       {selection.kind === 'job' && <JobInspector jobId={selection.id} onClose={() => select(null)} />}
       {selection.kind === 'vehicle' && <VehicleInspector vehicleId={selection.id} onClose={() => select(null)} />}
@@ -37,10 +38,24 @@ function Head({ title, subtitle, onClose, tag }: { title: string; subtitle?: str
         {subtitle && <div className="subtitle">{subtitle}</div>}
         {tag && <div style={{ marginTop: 6 }}>{tag}</div>}
       </div>
-      <button className="close" onClick={onClose} aria-label="Close">
-        <Icon name="close" />
-      </button>
+      <div className="row" style={{ gap: 2 }}>
+        <CompactToggle />
+        <button className="close" onClick={onClose} aria-label="Close">
+          <Icon name="close" />
+        </button>
+      </div>
     </div>
+  );
+}
+
+/** Collapses the panel to its header so more of the scene shows (the camera recentres on the freed space). */
+function CompactToggle() {
+  const compact = useApp((s) => s.inspectorCompact);
+  const setCompact = useApp((s) => s.setInspectorCompact);
+  return (
+    <button className="close" onClick={() => setCompact(!compact)} aria-label={compact ? 'Expand panel' : 'Collapse panel'} aria-pressed={compact} data-testid="inspector-compact" title={compact ? 'Show details' : 'Show more of the scene'}>
+      <span style={{ display: 'inline-block', transform: compact ? 'rotate(180deg)' : 'none', fontSize: 15, lineHeight: 1 }}>▾</span>
+    </button>
   );
 }
 
@@ -138,7 +153,7 @@ function CustomerInspector({ lotId, onClose, preferredJobId }: { lotId: string; 
           </Section>
         )}
         {active && ON_SITE.has(active.status) && (
-          <button className="btn small" onClick={() => { const canvas = mainCanvas(); camera(serviceCloseUpCamera(lot, (canvas?.clientWidth ?? window.innerWidth) / Math.max(1, canvas?.clientHeight ?? window.innerHeight), undefined, measureSafeArea(canvas))); }} data-testid="watch-technician">
+          <button className="btn small" onClick={() => { const canvas = mainCanvas(); if (canvas && canvas.clientWidth < canvas.clientHeight) useApp.getState().setInspectorCompact(true); camera(serviceCloseUpCamera(lot, (canvas?.clientWidth ?? window.innerWidth) / Math.max(1, canvas?.clientHeight ?? window.innerHeight), undefined, measureSafeArea(canvas))); }} data-testid="watch-technician">
             Watch technician
           </button>
         )}
