@@ -26,3 +26,6 @@ for (const a of ASSETS) {
 const previous = JSON.parse(await readFile('public/models/manifest.json', 'utf8').catch(() => '{"assets":[]}'));
 manifest.assets.push(...previous.assets.filter((a) => !a.source.startsWith('procedural')));
 await writeFile('public/models/manifest.json', JSON.stringify(manifest, null, 2));
+
+// Weld and meshopt-compress every listed GLB (vehicles above and the Blender props).
+await import('./compress.mjs');
