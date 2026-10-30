@@ -54,7 +54,11 @@ previewed). Local only: nothing pushed, merged or deployed.
   cylinder, owned Supply Depot equipment), fleet vehicles and the technician.
 - Ambient-occlusion bands along the foot of every house wall and garden wall, as one merged mesh.
 
-## Next
+## Status
 
-Neighbourhood variety, distant city, materials, final evidence, performance and the regression
-suite.
+Done and committed: camera, technician, contact shading, world dressing, compact inspector,
+evidence (31 comparison sheets), unit tests, 6 browser cases. See FINAL_REPORT.md.
+
+Open: paired GPU timing of this branch. The low-memory guard stopped the background run before the
+first candidate run finished; only the baseline runs completed. Re-run with
+scripts/run-evidence.ps1 <base dist> <new dist> perf.

@@ -1,0 +1,6 @@
+﻿desktop-1080p|gameplay.spec.ts exit=0 passed=1 failed= secs=90 freeRamMBatStart=5014
+desktop-1080p|graphics.spec.ts exit=0 passed=1 failed= secs=28 freeRamMBatStart=4802
+iphone-portrait|mobile.spec.ts exit=0 passed=1 failed= secs=39 freeRamMBatStart=4968
+desktop-1080p|supply.spec.ts exit=0 passed=1 failed= secs=25 freeRamMBatStart=5022
+phone-390x844|banking-layout.spec.ts exit=0 passed=1 failed= secs=11 freeRamMBatStart=4997
+small-1024|banking-layout.spec.ts exit=0 passed=1 failed= secs=11 freeRamMBatStart=5012

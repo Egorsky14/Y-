@@ -1,0 +1,47 @@
+{
+  "label": "after-390",
+  "size": "390x844",
+  "lot": "a-s-2",
+  "equipment": {
+    "type": "heat-pump",
+    "brand": "Carrier",
+    "tonnage": 2,
+    "ageYears": 11,
+    "refrigerant": "R-410A",
+    "condition": 51,
+    "seer": 15
+  },
+  "geo": {
+    "house": {
+      "x": -79,
+      "z": -25
+    },
+    "van": {
+      "x": -79,
+      "z": -2.6
+    },
+    "tech": {
+      "x": -89.54,
+      "z": -20.98
+    },
+    "status": "diagnosing"
+  },
+  "shots": {
+    "legacy": {
+      "camera": [
+        -84.47588951462485,
+        2.9673637553038605,
+        -15.54405138585524
+      ]
+    },
+    "watch": {
+      "camera": [
+        -94.14636236075289,
+        3.2620836244765608,
+        -15.878365167096536
+      ]
+    }
+  },
+  "errors": [],
+  "watchButton": true
+}

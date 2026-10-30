@@ -1,0 +1,40 @@
+{
+  "label": "before",
+  "size": "1920x1080",
+  "lot": "c-n-4",
+  "equipment": {
+    "type": "split-ac-gas-furnace",
+    "brand": "Goodman",
+    "tonnage": 5,
+    "ageYears": 20,
+    "refrigerant": "R-22",
+    "condition": 15,
+    "seer": 11
+  },
+  "geo": {
+    "house": {
+      "x": -21,
+      "z": 25
+    },
+    "van": {
+      "x": -21,
+      "z": -2.6
+    },
+    "tech": {
+      "x": -11.959999999999999,
+      "z": 20.98
+    },
+    "status": "diagnosing"
+  },
+  "shots": {
+    "legacy": {
+      "camera": [
+        -16.074589769367307,
+        2.4109830511843917,
+        16.563291751007384
+      ]
+    }
+  },
+  "errors": [],
+  "watchButton": false
+}

@@ -1,0 +1,40 @@
+{
+  "label": "before-390",
+  "size": "390x844",
+  "lot": "a-n-2",
+  "equipment": {
+    "type": "split-ac-gas-furnace",
+    "brand": "York",
+    "tonnage": 3.5,
+    "ageYears": 6,
+    "refrigerant": "R-410A",
+    "condition": 76,
+    "seer": 15
+  },
+  "geo": {
+    "house": {
+      "x": -79,
+      "z": -75
+    },
+    "van": {
+      "x": -79,
+      "z": -102.6
+    },
+    "tech": {
+      "x": -70.96,
+      "z": -79.02
+    },
+    "status": "diagnosing"
+  },
+  "shots": {
+    "legacy": {
+      "camera": [
+        -76.02411048537515,
+        2.9673637553038605,
+        -84.45594861414476
+      ]
+    }
+  },
+  "errors": [],
+  "watchButton": false
+}

@@ -1,0 +1,15 @@
+{
+  "label": "after-390",
+  "size": "390x844",
+  "loadMs": 4764,
+  "shots": {
+    "W12c-mobile-diagnosis": {
+      "calls": 514,
+      "triangles": 1956662,
+      "geometries": 635,
+      "textures": 87
+    }
+  },
+  "errors": [],
+  "watchButton": true
+}

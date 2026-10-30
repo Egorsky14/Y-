@@ -1,0 +1,40 @@
+{
+  "label": "before-390",
+  "size": "390x844",
+  "lot": "b-n-2",
+  "equipment": {
+    "type": "split-ac-gas-furnace",
+    "brand": "Day & Night",
+    "tonnage": 2.5,
+    "ageYears": 19,
+    "refrigerant": "R-22",
+    "condition": 15,
+    "seer": 12
+  },
+  "geo": {
+    "house": {
+      "x": 51,
+      "z": -75
+    },
+    "van": {
+      "x": 51,
+      "z": -97.4
+    },
+    "tech": {
+      "x": 60.54,
+      "z": -79.02
+    },
+    "status": "diagnosing"
+  },
+  "shots": {
+    "legacy": {
+      "camera": [
+        55.47588951462485,
+        2.9673637553038605,
+        -84.45594861414476
+      ]
+    }
+  },
+  "errors": [],
+  "watchButton": false
+}
