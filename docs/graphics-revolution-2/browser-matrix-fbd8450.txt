@@ -1,0 +1,22 @@
+﻿desktop-1080p|gameplay.spec.ts exit=0 passed=1 failed= secs=87 minFreeRamMB=2766 leftover=0
+desktop-1080p|graphics.spec.ts exit=0 passed=1 failed= secs=30 minFreeRamMB=2948 leftover=0
+desktop-1080p|automation.spec.ts exit=0 passed=1 failed= secs=24 minFreeRamMB=2932 leftover=0
+desktop-1080p|banking.spec.ts exit=0 passed=1 failed= secs=19 minFreeRamMB=3009 leftover=0
+desktop-1080p|banking-layout.spec.ts exit=0 passed=1 failed= secs=15 minFreeRamMB=3038 leftover=0
+desktop-1080p|supply.spec.ts exit=0 passed=1 failed= secs=26 minFreeRamMB=2950 leftover=0
+laptop-768p|graphics.spec.ts exit=0 passed=1 failed= secs=28 minFreeRamMB=3267 leftover=0
+small-1024|graphics.spec.ts exit=0 passed=1 failed= secs=28 minFreeRamMB=3428 leftover=0
+small-1024|banking-layout.spec.ts exit=0 passed=1 failed= secs=13 minFreeRamMB=3444 leftover=0
+small-1024|supply.spec.ts exit=0 passed=1 failed= secs=24 minFreeRamMB=3152 leftover=0
+small-1024|automation.spec.ts exit=0 passed=1 failed= secs=21 minFreeRamMB=3274 leftover=0
+iphone-portrait|mobile.spec.ts exit=0 passed=1 failed= secs=41 minFreeRamMB=3342 leftover=0
+iphone-portrait|banking-layout.spec.ts exit=0 passed=1 failed= secs=13 minFreeRamMB=3411 leftover=0
+phone-390x844|banking-layout.spec.ts exit=0 passed=1 failed= secs=13 minFreeRamMB=3388 leftover=0
+phone-390x844|supply.spec.ts exit=0 passed=1 failed= secs=34 minFreeRamMB=3227 leftover=0
+phone-390x844|automation.spec.ts exit=0 passed=1 failed= secs=24 minFreeRamMB=3438 leftover=0
+iphone-landscape|mobile.spec.ts exit=0 passed=1 failed= secs=37 minFreeRamMB=3466 leftover=0
+iphone-landscape|supply.spec.ts exit=0 passed=1 failed= secs=24 minFreeRamMB=3337 leftover=0
+android-portrait|mobile.spec.ts exit=0 passed=1 failed= secs=41 minFreeRamMB=3515 leftover=0
+android-landscape|mobile.spec.ts exit=0 passed=1 failed= secs=37 minFreeRamMB=3472 leftover=0
+tablet-portrait|mobile.spec.ts exit=0 passed=1 failed= secs=37 minFreeRamMB=3450 leftover=0
+done

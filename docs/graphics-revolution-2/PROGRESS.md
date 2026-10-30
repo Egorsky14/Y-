@@ -24,9 +24,14 @@ Environment Revolution and World Immersion milestones, so they are not repeated 
 - [x] Phone paired performance: base, new, base. The second base overview was excluded as drift.
 - [x] `after/` desktop captures (25 views, 0 console errors). A first attempt was killed at 19/25 by the low-memory guard (exit 137) and redone in full.
 - [x] `after-390/` phone captures (3 views, 0 console errors).
-- [ ] Comparison sheets.
-- [ ] Production build, full unit run, browser matrix (21 cases, one at a time).
-- [ ] Final report.
+- [x] Comparison sheets (34 in `compare/`, including the condenser-generations sheet).
+- [x] tsc, lint, production build, vitest 135 passed / 3 skipped; browser matrix 21/21, exit 0 (`browser-matrix-fbd8450.txt`).
+- [x] Final report: `FINAL_REPORT.md`.
+
+## Checkpoint
+
+Graphics Revolution 2 is complete and validated. Nothing is pushed, merged or deployed; a Vercel
+Preview or merge needs the owner's authorization.
 
 ## Environment notes
 

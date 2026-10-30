@@ -69,3 +69,30 @@
   Atmosphere eases per frame but snaps when the clock jumps so captures show the right hour.
 - Photo Mode previews time and weather purely in presentation state; the regression asserts
   cash is unchanged across enter and exit.
+
+## Graphics Revolution 2 (branch `feature/v3-graphics-revolution-2`)
+
+- **Shadow camera fit:** the sun's shadow box now follows the view, with a stepped radius and a
+  texel-snapped center.
+  - Close views draw up to 22% fewer calls and get much sharper shadows.
+  - GPU time is about flat, since the map resolution is the cost.
+- **Night grading:** the brown night came from the daytime environment map (sun hot spot
+  included) still lighting the scene, a white ambient, and a "moon" that was the sun clamped at
+  4°.
+  - Added a moonlit PMREM map, a fixed high moon, a cool ambient, and a moon disc and stars.
+  - Both the direction swap and the map swap happen where their intensities are zero.
+  - Bug: the environment maps first went into a module global. The fleet preview's second
+    canvas would have overwritten the game's maps with textures from another WebGL context.
+    They are now kept per scene in `userData`.
+- **Condenser generations:** the units follow customer equipment (legacy R-22, standard,
+  current, EGO install), in a separate merged layer.
+  - The first wire guard and rating plates stood 8 mm and 2 cm proud of the cabinet, where the
+    technician's hands go. They were inset after a bounds test caught it.
+  - The first rust pass read as brown trim and was toned down to drips and a thin base band.
+- **GLB compression:** weld plus lossless meshopt, 7.4 MB → 2.1 MB. A trial with glTF-Transform's
+  `prune` was smaller, but it strips UVs from untextured meshes, which would break the runtime
+  van livery. Pruning is not used.
+- **Validation:** captures ran one preview server at a time. The low-memory guard killed one
+  desktop after-capture at 19/25 shots (exit 137), and the session terminal closed once. Both
+  were resumed from saved results without repeating finished runs. The first baseline
+  performance run was in a cold GPU state and is excluded from the record.

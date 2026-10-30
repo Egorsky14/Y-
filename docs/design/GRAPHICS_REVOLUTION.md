@@ -123,3 +123,10 @@ calls are mostly the parked cars (one instanced mesh per material per model, plu
 3. Condenser variants (sizes and cabinet styles by system age) and visible tool use per phase.
 4. Shadow-pass cost (about 2 ms): fit the sun shadow camera to the view.
 5. Vehicle GLB size: index tires and alloys, or Draco/meshopt compression.
+
+Status (Graphics Revolution 2, `feature/v3-graphics-revolution-2`, see
+`docs/graphics-revolution-2/FINAL_REPORT.md`):
+
+- Items 1, 3 (condenser generations), 4 and 5 are done.
+- Item 2 and the tool-use half of item 3 were delivered earlier, by the Environment Revolution and
+  World Immersion.
