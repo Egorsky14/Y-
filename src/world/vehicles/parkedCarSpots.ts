@@ -1,4 +1,4 @@
-import { HOUSE_LOTS, HQ_LOT, lotLocalHeading, lotLocalToWorld } from '@/game/world/cityLayout';
+import { COMPETITOR_LOT, HOUSE_LOTS, HQ_LOT, lotLocalHeading, lotLocalToWorld } from '@/game/world/cityLayout';
 import { hashLot } from '../city/yardLayout';
 import { DRIVEWAYS } from '../buildings/driveways';
 
@@ -20,6 +20,9 @@ export interface ParkedCarSpot {
 function hqSpot(x: number, z: number, heading: number, seed: number): ParkedCarSpot {
   return { x: HQ_LOT.center.x + x, z: HQ_LOT.center.z + z, heading, model: CIVILIAN_MODELS[seed % 2], paint: PAINTS[(seed >> 2) % PAINTS.length] };
 }
+
+/** Competitor (Desert Chill Air) front row, lot-local: stalls 2.8 m apart, clear of its parked vans (x -20..8). */
+export const COMPETITOR_CARS = [0, 2, 3, 6, 10, 11, 25, 27, 30].map((i) => ({ x: -46.2 + (i + 0.5) * 2.8, z: -34, seed: 7 + i * 11 }));
 
 /** HQ visitor row (nose to the north curb) and staff row (nose to the south curb), lot-local. */
 export const HQ_VISITOR_CARS = [0, 2, 3, 5, 1].map((i) => ({ x: -24.5 + (i + 0.5) * 2.8, z: -30.7, seed: 11 + i * 7 }));
@@ -44,6 +47,8 @@ export function parkedCarSpots(staff: number, businessHours = true): ParkedCarSp
     });
   }
   for (const v of HQ_VISITOR_CARS.slice(0, businessHours ? 5 : 1)) out.push(hqSpot(v.x, v.z, Math.PI, v.seed));
+  // The competitor's front row: staff and customers, nose to the store (same cars day and night).
+  for (const c of COMPETITOR_CARS) out.push({ x: COMPETITOR_LOT.center.x + c.x, z: COMPETITOR_LOT.center.z + c.z, heading: 0, model: CIVILIAN_MODELS[c.seed % 2], paint: PAINTS[(c.seed >> 2) % PAINTS.length] });
   for (const s of HQ_STAFF_ROW.slice(0, Math.max(0, Math.min(9, staff)))) out.push(hqSpot(s.x, s.z, 0, s.seed));
   return out;
 }

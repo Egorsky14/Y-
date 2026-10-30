@@ -247,6 +247,48 @@ function wall(c: Ctx, x0: number, z0: number, x1: number, z1: number, h = 1.8) {
   c.out.boxes.push({ x: (x0 + x1) / 2, z: (z0 + z1) / 2, w: alongX ? len : 0.3, d: alongX ? 0.3 : len, h, color: WALL });
 }
 
+const CAR = [0xe9e9e6, 0xd7d9db, 0x2b2e33, 0x8d9297, 0x5c6168, 0x7a1f22, 0x24406b, 0xb9b2a2, 0x3b4a3a, 0xc8c2b4];
+const GLASS = 0x2a3036;
+
+/**
+ * Parking across an asphalt lot: double-loaded stall rows along the lot's long side with white
+ * stall stripes, and parked cars (body and cabin) in about `fill` of the stalls. Stalls under or
+ * against `avoid` (buildings, pads) are left out. Cars are plain boxes, so the valley's parking
+ * costs only instances of the existing box mesh.
+ */
+function parking(c: Ctx, x0: number, z0: number, x1: number, z1: number, fill: number, avoid: { x: number; z: number; w: number; d: number }[] = []) {
+  const { rnd, out } = c;
+  const alongX = x1 - x0 >= z1 - z0;
+  const L0 = (alongX ? x0 : z0) + 3;
+  const L1 = (alongX ? x1 : z1) - 3;
+  const S0 = (alongX ? z0 : x0) + 2;
+  const S1 = (alongX ? z1 : x1) - 2;
+  const P = (l: number, sx: number) => (alongX ? { x: l, z: sx } : { x: sx, z: l });
+  const blocked = (x: number, z: number) => avoid.some((b) => Math.abs(x - b.x) < b.w / 2 + 3.5 && Math.abs(z - b.z) < b.d / 2 + 3.5);
+  const STALL = 2.75;
+  const DEPTH = 5.4;
+  for (let s0 = S0; s0 + 2 * DEPTH <= S1; s0 += 2 * DEPTH + 7) {
+    for (const half of [0, 1]) {
+      const sc = s0 + DEPTH * (half + 0.5);
+      for (let l = L0; l + STALL <= L1; l += STALL) {
+        const mid = P(l + STALL / 2, sc);
+        if (blocked(mid.x, mid.z)) continue;
+        // Stripe at the stall's leading edge (nearer lots only: far away they are sub-pixel and shimmer).
+        const st = P(l, sc);
+        if (c.density > 0.45) out.flats.push({ x: st.x, z: st.z, w: alongX ? 0.14 : DEPTH - 0.6, d: alongX ? DEPTH - 0.6 : 0.14, color: 0xe4e3dd, layer: 2 });
+        if (rnd() > fill * (0.45 + 0.55 * c.density)) continue;
+        const col = pick(rnd, CAR);
+        const len = 4.3 + rnd() * 0.6;
+        const big = rnd() < 0.35;
+        const off = (rnd() - 0.5) * 0.25;
+        const car = P(l + STALL / 2 + off, sc + (half ? -1 : 1) * 0.2);
+        out.boxes.push({ x: car.x, z: car.z, w: alongX ? 1.8 : len, d: alongX ? len : 1.8, h: big ? 1.0 : 0.82, y: 0.28, color: col });
+        out.boxes.push({ x: car.x, z: car.z, w: alongX ? 1.6 : len * 0.52, d: alongX ? len * 0.52 : 1.6, h: big ? 0.62 : 0.5, y: big ? 1.28 : 1.1, color: GLASS });
+      }
+    }
+  }
+}
+
 /** One house facing a street; `dir` is the unit vector from the house toward its street. */
 function house(c: Ctx, x: number, z: number, dir: { x: number; z: number }, lotW: number, lotD: number, style: 'tract' | 'estate' | 'modern') {
   const { rnd, out } = c;
@@ -268,7 +310,8 @@ function house(c: Ctx, x: number, z: number, dir: { x: number; z: number }, lotW
   const wallColor = look ? pick(rnd, look.stucco) : style === 'modern' ? pick(rnd, STUCCO_MODERN) : pick(rnd, STUCCO);
   out.boxes.push({ x, z, w: W, d: D, h, color: wallColor });
   if (style === 'modern') {
-    out.boxes.push({ x, z, w: W + 0.6, d: D + 0.6, h: 0.35, y: h, color: 0x3a3a3c });
+    out.boxes.push({ x, z, w: W + 0.6, d: D + 0.6, h: 0.35, y: h, color: pick(rnd, [0x3a3a3c, 0x6d6c69, 0x8f8c86, 0xb8b5ae]) });
+    out.boxes.push({ x: x + (rnd() - 0.5) * W * 0.4, z: z + (rnd() - 0.5) * D * 0.4, w: 1.4, d: 1.1, h: 0.9, y: h + 0.35, color: 0xb9bcbf });
   } else {
     const roof = look ? pick(rnd, look.roofs) : rnd() < 0.7 ? pick(rnd, TILE) : pick(rnd, SHINGLE);
     out.roofs.push({ x, z, w: W + 0.9, d: D + 0.9, h: (twoStory ? 2.0 : 2.2) + rnd() * 0.5, y: h, turn: !alongX, color: roof });
@@ -311,6 +354,9 @@ function house(c: Ctx, x: number, z: number, dir: { x: number; z: number }, lotW
 /** Walled subdivision: local streets parallel to the long side, a spine street to the arterial, back-to-back rows. */
 function subdivision(c: Ctx, x0: number, z0: number, x1: number, z1: number, style: 'tract' | 'estate' | 'modern') {
   const { rnd, out } = c;
+  // Where this tract's output starts: a tract that a wash leaves empty is rolled back to desert.
+  const mark = { boxes: out.boxes.length, roofs: out.roofs.length, flats: out.flats.length, trees: out.trees.length };
+  let built = 0;
   c.look = makeLook(rnd, style === 'modern');
   // Tracts close to the district are established (mature landscaping); the valley edge has the new ones.
   if (c.density > 0.6) c.look.age = 0.45 + 0.55 * c.look.age;
@@ -340,9 +386,9 @@ function subdivision(c: Ctx, x0: number, z0: number, x1: number, z1: number, sty
     ? [[a.x, a.z, gapA, a.z], [gapB, a.z, b.x, a.z], [a.x, b.z, gapA, b.z], [gapB, b.z, b.x, b.z], [a.x, a.z, a.x, b.z], [b.x, a.z, b.x, b.z]]
     : [[a.x, a.z, a.x, gapA], [a.x, gapB, a.x, b.z], [b.x, a.z, b.x, gapA], [b.x, gapB, b.x, b.z], [a.x, a.z, b.x, a.z], [a.x, b.z, b.x, b.z]];
   for (const [p, q, r, s] of edges) wall(c, p, q, r, s);
-  // Spine street across all rows.
-  const sp = P(spine, (S0 + S1) / 2);
-  out.flats.push({ x: sp.x, z: sp.z, w: rowsAlongX ? street : S1 - S0, d: rowsAlongX ? S1 - S0 : street, color: ASPHALT, layer: 1 });
+  // The spine street is added after the rows, from the entrance to the farthest row with houses.
+  let spineFrom = Infinity;
+  let spineTo = -Infinity;
   // A neighbourhood park in the middle of larger tracts: rounded turf, a tree grove, a pool.
   const parkHalf = 26 + rnd() * 14;
   const parkRow = rows >= 3 && rnd() < 0.45 && L1 - L0 > 2 * parkHalf + 40 ? Math.floor(rows / 2) : -1;
@@ -360,8 +406,8 @@ function subdivision(c: Ctx, x0: number, z0: number, x1: number, z1: number, sty
   }
   for (let r = 0; r < rows; r++) {
     const sc = start + r * pitch + lotD + street / 2; // street centre
-    const st = P((L0 + L1) / 2, sc);
-    out.flats.push({ x: st.x, z: st.z, w: rowsAlongX ? L1 - L0 - 4 : street, d: rowsAlongX ? street : L1 - L0 - 4, color: ASPHALT, layer: 1 });
+    let rowFrom = Infinity;
+    let rowTo = -Infinity;
     // Rear wall between this row's back yards and the next row's.
     if (r > 0) {
       const back = start + r * pitch;
@@ -380,9 +426,37 @@ function subdivision(c: Ctx, x0: number, z0: number, x1: number, z1: number, sty
         // Thin the far edge of the valley: a few vacant lots and lower build-out with distance.
         if (rnd() > 0.8 + 0.2 * c.density) continue;
         house(c, p.x, p.z, dirToStreet, lotW, lotD, style);
+        built++;
+        rowFrom = Math.min(rowFrom, l - lotW / 2);
+        rowTo = Math.max(rowTo, l + lotW / 2);
       }
     }
+    // The row's street runs past the houses it serves (and to the spine), not across empty ground.
+    if (rowTo > rowFrom) {
+      const a0 = Math.max(L0 + 2, Math.min(rowFrom, spine) - 4);
+      const a1 = Math.min(L1 - 2, Math.max(rowTo, spine) + 4);
+      const st = P((a0 + a1) / 2, sc);
+      out.flats.push({ x: st.x, z: st.z, w: rowsAlongX ? a1 - a0 : street, d: rowsAlongX ? street : a1 - a0, color: ASPHALT, layer: 1 });
+      spineFrom = Math.min(spineFrom, sc);
+      spineTo = Math.max(spineTo, sc);
+    }
   }
+  if (built < 6) {
+    // A wash left (almost) nothing buildable: no walls or streets round a handful of houses, just desert.
+    out.boxes.length = mark.boxes;
+    out.roofs.length = mark.roofs;
+    out.flats.length = mark.flats;
+    out.trees.length = mark.trees;
+    c.look = undefined;
+    desertParcel(c, x0, z0, x1, z1, 600);
+    return;
+  }
+  // The spine from the tract edge nearest the built rows (the entrance) to the farthest built row.
+  const fromStart = spineFrom - S0 <= S1 - spineTo;
+  const s0 = fromStart ? S0 : spineFrom - street / 2;
+  const s1 = fromStart ? spineTo + street / 2 : S1;
+  const sp = P(spine, (s0 + s1) / 2);
+  out.flats.push({ x: sp.x, z: sp.z, w: rowsAlongX ? street : s1 - s0, d: rowsAlongX ? s1 - s0 : street, color: ASPHALT, layer: 1 });
   c.look = undefined;
 }
 
@@ -431,6 +505,7 @@ function corridor(c: Ctx, x0: number, z0: number, x1: number, z1: number, front:
     const mid = l + w / 2;
     const lot = P(mid, park / 2 + 1);
     out.flats.push({ x: lot.x, z: lot.z, w: alongX ? w : park, d: alongX ? park : w, color: ASPHALT, layer: 1 });
+    parking(c, lot.x - (alongX ? w : park) / 2, lot.z - (alongX ? park : w) / 2, lot.x + (alongX ? w : park) / 2, lot.z + (alongX ? park : w) / 2, 0.25 + rnd() * 0.45);
     const bp = P(mid, park + bd / 2 + 1);
     const h = 5 + rnd() * 4;
     const col = pick(rnd, COMMERCIAL);
@@ -498,8 +573,6 @@ function estateRow(c: Ctx, x0: number, z0: number, x1: number, z1: number) {
 function retail(c: Ctx, x0: number, z0: number, x1: number, z1: number, corner: { x: number; z: number }) {
   const { rnd, out } = c;
   out.flats.push({ x: (x0 + x1) / 2, z: (z0 + z1) / 2, w: x1 - x0, d: z1 - z0, color: ASPHALT, layer: 1 });
-  // Stall rows as faint light stripes.
-  for (let z = z0 + 14; z < z1 - 26; z += 17) out.flats.push({ x: (x0 + x1) / 2, z, w: (x1 - x0) * 0.62, d: 0.4, color: 0x9a9a96, layer: 2 });
   // Anchor and in-line shops at the back corner (away from the intersection), pad building at the front.
   const bx = corner.x < (x0 + x1) / 2 ? x1 : x0;
   const bz = corner.z < (z0 + z1) / 2 ? z1 : z0;
@@ -516,6 +589,7 @@ function retail(c: Ctx, x0: number, z0: number, x1: number, z1: number, corner: 
   const pad = { x: corner.x + (Math.sign((x0 + x1) / 2 - corner.x) || 1) * 18, z: corner.z + (Math.sign((z0 + z1) / 2 - corner.z) || 1) * 16 };
   out.boxes.push({ x: pad.x, z: pad.z, w: 16, d: 12, h: 5.5, color: pick(rnd, COMMERCIAL) });
   out.boxes.push({ x: pad.x, z: pad.z, w: 16.6, d: 12.6, h: 0.35, y: 5.5, color: pick(rnd, ROOF_FLAT) });
+  parking(c, x0 + 4, z0 + 4, x1 - 4, z1 - 4, 0.35 + rnd() * 0.35, [{ x: main.x, z: main.z, w: mainW, d: mainD + 6 }, { x: pad.x, z: pad.z, w: 16, d: 12 }]);
   // Parking-island trees and a landscape strip along the arterials.
   for (let x = x0 + 10; x < x1 - 6; x += 22) out.trees.push({ x, z: (z0 + z1) / 2 + (rnd() - 0.5) * 6, r: 2 + rnd(), h: 2, palm: rnd() < 0.4, color: pick(rnd, TREE) });
   c.out.lights.push({ x: (x0 + x1) / 2, z: (z0 + z1) / 2, warm: false }, { x: main.x, z: main.z + sz * (mainD / 2 + 5), warm: true });
@@ -542,6 +616,7 @@ function business(c: Ctx, x0: number, z0: number, x1: number, z1: number) {
     const col = pick(rnd, COMMERCIAL);
     out.boxes.push({ x: cx, z: cz, w: bw, d: bd, h, color: col });
     out.boxes.push({ x: cx, z: cz, w: bw + 0.5, d: bd + 0.5, h: 0.4, y: h, color: pick(rnd, ROOF_FLAT) });
+    parking(c, bx0 + 2, bz0 + 2, bx1 - 2, bz1 - 2, 0.2 + rnd() * 0.4, [{ x: cx, z: cz, w: bw, d: bd }]);
     for (let k = 0; k < 3; k++) out.boxes.push({ x: cx + (rnd() - 0.5) * bw * 0.7, z: cz + (rnd() - 0.5) * bd * 0.7, w: 2.4, d: 1.8, h: 1.3, y: h + 0.4, color: 0xb9bcbf });
     for (let k = 0; k < 4; k++) out.trees.push({ x: bx0 + (bx1 - bx0) * (k + 0.5) / 4, z: bz0 + 2, r: 2.2, h: 2, palm: false, color: pick(rnd, TREE) });
     out.lights.push({ x: (bx0 + bx1) / 2, z: bz0 + 6, warm: false });
@@ -584,6 +659,7 @@ function school(c: Ctx, x0: number, z0: number, x1: number, z1: number) {
   out.boxes.push({ x: cx - (x1 - x0) * 0.2, z: cz, w: 60, d: 34, h: 8, color: 0xcbb592 });
   out.boxes.push({ x: cx - (x1 - x0) * 0.2, z: cz, w: 60.6, d: 34.6, h: 0.4, y: 8, color: 0xd9d8d3 });
   out.flats.push({ x: cx - (x1 - x0) * 0.2, z: cz + 34, w: 60, d: 26, color: ASPHALT, layer: 1 });
+  parking(c, cx - (x1 - x0) * 0.2 - 30, cz + 21, cx - (x1 - x0) * 0.2 + 30, cz + 47, 0.5);
   for (let i = 0; i < 10; i++) out.trees.push({ x: x0 + 10 + rnd() * (x1 - x0 - 20), z: z0 + 8 + rnd() * 6, r: 2.4, h: 2, palm: false, color: pick(rnd, TREE) });
 }
 

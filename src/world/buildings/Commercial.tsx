@@ -1,4 +1,6 @@
 import { Suspense, useMemo } from 'react';
+import * as THREE from 'three';
+import * as BGU from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { COMPETITOR_LOT, PARK_LOT, WAREHOUSE_LOT } from '@/game/world/cityLayout';
 import { PALETTE } from '../assets/palette';
 import { asphaltTexture, signTexture } from '../assets/textures';
@@ -92,6 +94,9 @@ function DepotForecourt() {
 export function CompetitorBuilding() {
   const asphalt = useMemo(() => asphaltTexture(), []);
   const lot = COMPETITOR_LOT;
+  // 34 stall stripes merged into one mesh (one draw call, no shadow).
+  const stripes = useMemo(() => BGU.mergeGeometries(Array.from({ length: 34 }, (_, i) => new THREE.BoxGeometry(0.13, 0.012, 4.8).translate(-46.2 + i * 2.8, 0, 0)), false)!, []);
+  const stripeMaterial = useMemo(() => new THREE.MeshStandardMaterial({ color: '#e4e3dd', roughness: 0.7 }), []);
   return (
     <group position={[lot.center.x, 0, lot.center.z]}>
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.02, 0]} receiveShadow>
@@ -101,7 +106,20 @@ export function CompetitorBuilding() {
       <Selectable selection={{ kind: 'lot', id: lot.id }} bracket={[lot.width - 2, lot.depth - 2]} ringOffset={[0, 0.09, 0]}>
         <group position={[0, 0, 8]}>
           <Box size={[60, 7, 36]} position={[0, 3.5, 0]} color="#eef1f4" roughness={0.6} />
-          <Box size={[60.6, 0.6, 36.6]} position={[0, 7.3, 0]} color="#2e6fd8" />
+          {/* Roof: a light membrane inside a blue brand coping (the whole roof used to be painted blue), with rooftop units. */}
+          <Box size={[59.6, 0.3, 35.6]} position={[0, 7.15, 0]} color="#d3d6d8" roughness={0.85} />
+          {([[0, -18, 60.6, 0.7], [0, 18, 60.6, 0.7]] as const).map(([x, z, w, d]) => (
+            <Box key={`c${z}`} size={[w, 0.75, d]} position={[x, 7.3, z]} color="#2e6fd8" />
+          ))}
+          {([[-30, 0], [30, 0]] as const).map(([x, z]) => (
+            <Box key={`s${x}`} size={[0.7, 0.75, 36.6]} position={[x, 7.3, z]} color="#2e6fd8" />
+          ))}
+          {([[-18, -6], [-6, 4], [8, -8], [20, 5]] as const).map(([x, z]) => (
+            <group key={`r${x}`} position={[x, 7.3, z]}>
+              <Box size={[2.6, 1.3, 1.8]} position={[0, 0.65, 0]} color="#b9bcbf" roughness={0.5} />
+              <Box size={[1.4, 0.05, 1.4]} position={[0.3, 1.32, 0]} color="#5a5f64" />
+            </group>
+          ))}
           <Box size={[60.2, 0.5, 36.2]} position={[0, 4.4, 0]} color="#2e6fd8" />
           {[-22, -14, -6, 2, 10, 18].map((x) => (
             <Window key={x} position={[x, 2.3, -18.02]} size={[3.2, 2]} />
@@ -111,6 +129,8 @@ export function CompetitorBuilding() {
             <planeGeometry args={[28, 2.8]} />
             <meshStandardMaterial map={signTexture('DESERT CHILL AIR', '#9cc8ff', '#1d4fa3')} />
           </mesh>
+          {/* Front stall row: stripes (the staff and customer cars are in parkedCarSpots). */}
+          <mesh geometry={stripes} position={[0, 0.03, -42]} material={stripeMaterial} />
           {/* Their fleet: blue vans parked out front */}
           {[-18, -10, -2, 6].map((x) => (
             <group key={x} position={[x, 0, -26]}>
