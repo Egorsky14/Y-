@@ -152,5 +152,5 @@ What the numbers show:
 - **Night cost:** night is +6.9% GPU against the baseline. The cheapest lever would be a lower night environment intensity or a smaller night shadow box.
 - **Condenser variants:** cabinet style and wear vary, but footprint and height are fixed by the technician animation. There is no size variation by tonnage.
 - **Distant ground:** outer-valley ground (Lambert materials) still reads slightly warm at night; it takes no environment light.
-- **Diagnosis close view (`W08`):** for the seed-42 tutorial lot, the camera sits behind the porch wall in both builds. This is a framing issue that predates this milestone.
+- **Diagnosis close view (`W08`, `W12c`), P1:** on the seed-42 tutorial lot the close camera is blocked by the porch wall and post, in both builds. The camera has no occlusion handling. This is the priority defect for the next local fix; see `DEFECTS.md`.
 - **Phone street:** still about +12% against `ef407c7`, as recorded in World Immersion 3.1. This milestone is −2.1% against 3.1.

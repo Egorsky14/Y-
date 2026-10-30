@@ -29,6 +29,12 @@
 
 ## Pending
 
+### Priority defect: tutorial diagnosis camera obstruction (P1, next local fix)
+
+On the seed-42 tutorial call (lot `c-n-4`), a close camera on the kneeling technician from the
+street-side quarter is blocked by the porch wall and post, on desktop and on phones. The camera has
+no occlusion handling. Reproduction, cause and suggested fix: `docs/graphics-revolution-2/DEFECTS.md`.
+
 ### Milestone 4 — World expansion ❌
 - Additional districts (Spring Valley, Henderson, North Las Vegas, Enterprise), more building styles, ambient traffic, weather effects beyond the HUD readout, visible competitor vans on the road, bigger HQ campus options.
 - Performance work for a larger world: LOD, texture atlases, merged static geometry, further instancing.
