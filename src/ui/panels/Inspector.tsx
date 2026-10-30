@@ -9,28 +9,21 @@ import { Bar, Icon, KV, Money, Section, Stars, initials, minutesLabel, roleAvata
 import { JobFlow } from './JobFlow';
 import { faultById } from '@/game/jobs/faults';
 import type { JobStatus } from '@/game/simulation/types';
-import { serviceCloseUpCamera } from '@/world/scene/serviceCall';
-import { mainCanvas, measureSafeArea } from '../safeArea';
-
 /**
- * Fly to the clear close-up of the work. On an upright phone the sheet collapses first, and the view
- * is solved against the collapsed layout on the next frame (solving against the full sheet hid the
- * lower half of the screen from the foreground check).
+ * Watch the work: the panel collapses to its header so the scene gets the screen, and the service
+ * camera (ServiceDirector) frames the technician and the unit in the space left free, after the
+ * layout has settled. The camera bar switches to the property view or the detail close-up.
  */
-function watchTechnician(lot: NonNullable<ReturnType<typeof lotById>>) {
-  const canvas = mainCanvas();
-  const go = () => {
-    const c = mainCanvas();
-    useApp.getState().camera(serviceCloseUpCamera(lot, (c?.clientWidth ?? window.innerWidth) / Math.max(1, c?.clientHeight ?? window.innerHeight), undefined, measureSafeArea(c)));
-  };
-  if (canvas && canvas.clientWidth < canvas.clientHeight && !useApp.getState().inspectorCompact) {
-    useApp.getState().setInspectorCompact(true);
-    requestAnimationFrame(() => requestAnimationFrame(go));
-  } else go();
+function watchTechnician(jobId: string, lotId: string) {
+  useApp.getState().setInspectorCompact(true);
+  useApp.getState().setServiceView({ jobId, lotId, mode: 'work' });
 }
 
-/** Phases in which the lead technician is at the outdoor unit (diagnosis, quoting and repair). */
-const ON_SITE = new Set<JobStatus>(['diagnosing', 'awaiting-diagnosis', 'quoted', 'awaiting-authorization', 'repairing', 'installing']);
+/** Phases in which the lead technician is at the site: walking up, diagnosis, quoting and repair. */
+const ON_SITE = new Set<JobStatus>(['arriving', 'diagnosing', 'awaiting-diagnosis', 'quoted', 'awaiting-authorization', 'repairing', 'installing']);
+
+/** Decisions the player makes in the panel: a collapsed panel says so in its header. */
+const DECISION: Partial<Record<JobStatus, string>> = { 'awaiting-diagnosis': 'Diagnosis ready: expand to choose', quoted: 'Quote ready: expand to present' };
 
 export function Inspector() {
   const selection = useApp((s) => s.selection);
@@ -47,13 +40,19 @@ export function Inspector() {
   );
 }
 
-function Head({ title, subtitle, onClose, tag }: { title: string; subtitle?: string; onClose: () => void; tag?: React.ReactNode }) {
+function Head({ title, subtitle, onClose, tag, notice }: { title: string; subtitle?: string; onClose: () => void; tag?: React.ReactNode; notice?: string }) {
+  const compact = useApp((s) => s.inspectorCompact);
   return (
     <div className="inspector-head">
       <div>
         <div className="title">{title}</div>
         {subtitle && <div className="subtitle">{subtitle}</div>}
         {tag && <div style={{ marginTop: 6 }}>{tag}</div>}
+        {compact && notice && (
+          <div className="tag amber inspector-notice" role="button" tabIndex={0} data-testid="inspector-notice" onClick={() => useApp.getState().setInspectorCompact(false)}>
+            {notice}
+          </div>
+        )}
       </div>
       <div className="row" style={{ gap: 2 }}>
         <CompactToggle />
@@ -107,6 +106,7 @@ function CustomerInspector({ lotId, onClose, preferredJobId }: { lotId: string; 
         title={customer.name}
         subtitle={`${customer.address} · ${lot.style?.replace('-', ' ')} home`}
         onClose={onClose}
+        notice={active ? DECISION[active.status] : undefined}
         tag={
           <span className="row" style={{ gap: 6 }}>
             <span className={`tag ${customer.channel === 'direct' ? 'teal' : 'blue'}`}>{customer.channel === 'direct' ? 'Direct customer' : customer.warrantyCompany}</span>
@@ -170,7 +170,7 @@ function CustomerInspector({ lotId, onClose, preferredJobId }: { lotId: string; 
           </Section>
         )}
         {active && ON_SITE.has(active.status) && (
-          <button className="btn small" onClick={() => watchTechnician(lot)} data-testid="watch-technician">
+          <button className="btn small" onClick={() => watchTechnician(active.id, lot.id)} data-testid="watch-technician">
             Watch technician
           </button>
         )}

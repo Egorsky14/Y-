@@ -15,7 +15,15 @@ export function WorldControls() {
   const [saved, setSaved] = useState(false);
   return (
     <div className="glass world-controls">
-      <button onClick={() => camera({ type: 'reset' })} title="Reset camera (Home)" data-testid="cam-reset">
+      <button
+        onClick={() => {
+          camera({ type: 'reset' });
+          // From the city overview an open job panel only needs its header (expand it again with ▾).
+          if (useApp.getState().selection) useApp.getState().setInspectorCompact(true);
+        }}
+        title="Reset camera (Home)"
+        data-testid="cam-reset"
+      >
         <Icon name="camera" /> <span className="lbl">Overview</span>
       </button>
       <button onClick={() => camera({ type: 'hq' })} title="Jump to headquarters (H)" data-testid="cam-hq">

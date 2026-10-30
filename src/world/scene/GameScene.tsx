@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import { Canvas } from '@react-three/fiber';
 import { useApp, useGame } from '@/app/store';
 import { CameraRig, DEFAULT_OFFSET, DEFAULT_TARGET } from './CameraRig';
+import { ServiceDirector } from './ServiceDirector';
 import { Atmosphere } from './Atmosphere';
 import { NightLights } from './NightLights';
 import { Ground } from '../city/Ground';
@@ -112,6 +113,7 @@ export function GameScene() {
         <JobSiteProps />
         <JobMarkers />
         <CameraRig />
+        <ServiceDirector />
         <LabelProjector />
         <RenderProbe />
       </Suspense>

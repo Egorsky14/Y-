@@ -35,6 +35,19 @@ export interface CameraCommand {
    * the target, a blocked view eases to the nearest clear one (cameraOcclusion.ts).
    */
   watch?: { lotIds: string[]; points: { x: number; y: number; z: number }[] };
+  /** Issued by the service camera itself (ServiceDirector); any other command ends the service view. */
+  service?: boolean;
+}
+
+/** Service camera modes: the property establishing shot, watching the work, the close-up of the hands and tools. */
+export type ServiceCameraMode = 'property' | 'work' | 'detail';
+
+/** The service camera the player is using at a job (ServiceDirector frames it); rev bumps on every request. */
+export interface ServiceView {
+  jobId: string;
+  lotId: string;
+  mode: ServiceCameraMode;
+  rev: number;
 }
 
 export type Quality = 'low' | 'medium' | 'high' | 'ultra';
@@ -66,6 +79,7 @@ interface AppState {
   selection: Selection | null;
   /** Inspector collapsed to its header (more of the scene visible, e.g. while watching the work). */
   inspectorCompact: boolean;
+  serviceView: ServiceView | null;
   panel: PanelId;
   cameraCommand: CameraCommand | null;
   followVehicleId: string | null;
@@ -93,6 +107,8 @@ interface AppState {
   dispatch: (action: GameAction, opts?: { inline?: boolean }) => ActionResult;
   select: (selection: Selection | null) => void;
   setInspectorCompact: (compact: boolean) => void;
+  /** Enter or change the service camera (null leaves it; the camera stays where it is). */
+  setServiceView: (view: Omit<ServiceView, 'rev'> | null) => void;
   openPanel: (panel: PanelId) => void;
   togglePanel: (panel: Exclude<PanelId, null>) => void;
   camera: (cmd: Omit<CameraCommand, 'id'>) => void;
@@ -143,6 +159,7 @@ export const useApp = create<AppState>((set, get) => ({
   screen: 'menu',
   selection: null,
   inspectorCompact: false,
+  serviceView: null,
   panel: null,
   cameraCommand: null,
   followVehicleId: null,
@@ -159,7 +176,7 @@ export const useApp = create<AppState>((set, get) => ({
   newGame: (seed) => {
     const engine = GameEngine.newGame({ seed: seed ?? Math.floor(Math.random() * 1_000_000) });
     attachEngine(engine);
-    set({ engine, screen: 'game', selection: null, panel: null, toasts: [], celebrations: [], sceneReady: false, lastEventId: 0, followVehicleId: null, version: 0 });
+    set({ engine, screen: 'game', selection: null, panel: null, toasts: [], celebrations: [], sceneReady: false, lastEventId: 0, followVehicleId: null, version: 0, serviceView: null });
     saveToStorage(engine.state, SAVE_KEY);
     get().camera({ type: 'reset' });
   },
@@ -170,7 +187,7 @@ export const useApp = create<AppState>((set, get) => ({
     const engine = new GameEngine(state);
     attachEngine(engine);
     const lastEventId = state.events.length ? state.events[state.events.length - 1].id : 0;
-    set({ engine, screen: state.campaignComplete ? 'summary' : 'game', selection: null, panel: null, toasts: [], celebrations: [], sceneReady: false, lastEventId, followVehicleId: null, version: 0 });
+    set({ engine, screen: state.campaignComplete ? 'summary' : 'game', selection: null, panel: null, toasts: [], celebrations: [], sceneReady: false, lastEventId, followVehicleId: null, version: 0, serviceView: null });
     get().camera({ type: 'reset' });
     return true;
   },
@@ -194,11 +211,18 @@ export const useApp = create<AppState>((set, get) => ({
     get().bump();
     return result;
   },
-  select: (selection) => set({ selection, inspectorCompact: false }),
+  // Picking something else ends the service view; closing the inspector or re-picking the same job or lot keeps it.
+  select: (selection) =>
+    set((s) => {
+      const v = s.serviceView;
+      const keep = !selection || (v && ((selection.kind === 'job' && selection.id === v.jobId) || (selection.kind === 'lot' && selection.id === v.lotId)));
+      return { selection, inspectorCompact: keep && v ? s.inspectorCompact : false, serviceView: keep ? v : null };
+    }),
   setInspectorCompact: (inspectorCompact) => set({ inspectorCompact }),
+  setServiceView: (view) => set((s) => ({ serviceView: view ? { ...view, rev: (s.serviceView?.rev ?? 0) + 1 } : null })),
   openPanel: (panel) => set({ panel }),
   togglePanel: (panel) => set((s) => ({ panel: s.panel === panel ? null : panel })),
-  camera: (cmd) => set({ cameraCommand: { ...cmd, id: cameraCommandId++ }, followVehicleId: cmd.type === 'follow' ? (cmd.vehicleId ?? null) : null }),
+  camera: (cmd) => set((s) => ({ cameraCommand: { ...cmd, id: cameraCommandId++ }, followVehicleId: cmd.type === 'follow' ? (cmd.vehicleId ?? null) : null, serviceView: cmd.service ? s.serviceView : null })),
   setPhoto: (patch) => set((st) => ({ photo: { ...st.photo, ...patch } })),
   setFollow: (vehicleId) => set({ followVehicleId: vehicleId }),
   setSettings: (patch) => {

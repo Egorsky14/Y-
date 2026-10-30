@@ -488,3 +488,21 @@ h4 { font-size: 13px; color: var(--muted); text-transform: uppercase; letter-spa
 @media (max-width: 900px), (max-height: 560px) {
   .automation-row input[type='checkbox'] { width: 24px; height: 24px; }
 }
+
+/* Service camera bar: Property / Watch work / Detail. Desktop: bottom centre, between the action bar
+   and the world controls. Phones and short screens: under the top HUD (landscape: centred on the part
+   the side panel leaves free). */
+.service-bar { position: absolute; bottom: 14px; left: 50%; transform: translateX(-50%); display: flex; gap: 4px; padding: 5px; z-index: 3; }
+.service-bar button { height: 38px; padding: 0 14px; border-radius: 10px; font-size: 12.5px; font-weight: 700; color: var(--muted); white-space: nowrap; }
+.service-bar button:hover { background: var(--panel-3); color: var(--text); }
+.service-bar button.active { background: var(--teal-soft); color: var(--teal); }
+.service-bar .service-bar-exit { width: 38px; padding: 0; font-size: 14px; }
+@media (max-width: 900px), (max-height: 560px) {
+  .service-bar { top: calc(max(8px, env(safe-area-inset-top)) + 56px); bottom: auto; left: calc((100% - min(380px, 50vw)) / 2); gap: 2px; padding: 4px; }
+  .service-bar button { height: 40px; padding: 0 10px; font-size: 12px; }
+  .service-bar .service-bar-exit { width: 40px; }
+}
+@media (max-width: 600px) and (orientation: portrait) {
+  .service-bar { left: 50%; }
+}
+.inspector-notice { margin-top: 6px; cursor: pointer; }

@@ -5,6 +5,7 @@ import { GameScene } from '@/world/scene/GameScene';
 import { TopHud } from '@/ui/hud/TopHud';
 import { ActionBar } from '@/ui/hud/ActionBar';
 import { WorldControls } from '@/ui/hud/WorldControls';
+import { ServiceCameraBar } from '@/ui/hud/ServiceCameraBar';
 import { Inspector } from '@/ui/panels/Inspector';
 import { JobsPanel } from '@/ui/panels/JobsPanel';
 import { EmployeesPanel } from '@/ui/panels/EmployeesPanel';
@@ -122,6 +123,7 @@ export function App() {
         <Inspector />
         <ActionBar />
         <WorldControls />
+        <ServiceCameraBar />
         <TutorialHint />
         {panel === 'jobs' && <JobsPanel />}
         {panel === 'employees' && <EmployeesPanel />}

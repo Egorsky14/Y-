@@ -120,6 +120,13 @@ test('mobile: a complete job by touch, touch camera, save and continue', async (
     await page.getByTestId('watch-technician').tap();
     await expect(page.getByTestId('inspector')).toHaveClass(/compact/);
     await expect(page.locator('.inspector-body')).toBeHidden();
+    // The service camera bar sits under the HUD, on screen and finger-sized; Detail and back by tap.
+    await expect(page.getByTestId('service-camera-bar')).toBeVisible();
+    await auditLayout(page, 'watching the work');
+    await page.getByTestId('service-view-detail').tap();
+    await page.waitForTimeout(1500);
+    expect(await page.evaluate(() => (window.__egoServiceView as { mode: string }).mode)).toBe('detail');
+    await page.getByTestId('service-view-work').tap();
     await page.getByTestId('inspector-compact').tap();
     await expect(page.getByTestId('inspector')).not.toHaveClass(/compact/);
     await expect(page.getByTestId(`diagnosis-${faultId}`)).toBeVisible();

@@ -146,24 +146,45 @@ test('full gameplay loop: dispatch, diagnose, repair, grow, train, save and relo
   await page.waitForFunction(() => (window.__egoRender?.kits ?? 0) >= 1, null, { timeout: 20_000 });
   await page.screenshot({ path: SHOT('04-technician-diagnosing') });
 
-  // 5b. "Watch technician" flies to a clear close-up of the work at the unit (camera occlusion fix,
-  // docs/graphics-revolution-2/DEFECTS.md): it ends a few metres from the technician at eye height
-  // and never changes the job.
+  // 5b. "Watch technician" (Cinematic Service Camera, docs/cinematic-camera): the panel collapses to
+  // its header and the camera flies to a composed close-up of the work, a few metres off at a low or
+  // moderate height, the technician and unit filling a good part of the screen with nothing in front.
+  // The camera bar switches to Detail and Property and back. None of it changes the job.
   await page.evaluate((id) => window.__ego!.app.getState().select({ kind: 'job', id }), leadId);
   await page.getByTestId('watch-technician').click();
+  await expect(page.getByTestId('inspector')).toHaveClass(/compact/);
+  await expect(page.getByTestId('service-camera-bar')).toBeVisible();
   await page.waitForTimeout(1800);
+  type Framing = { mode: string; report: { fill: number; foreground: number; roof: number } | null };
+  const framing = () => page.evaluate(() => window.__egoServiceView as Framing);
+  const work = await framing();
+  expect(work.mode).toBe('work');
+  expect(work.report!.fill).toBeGreaterThan(0.45);
+  expect(work.report!.foreground).toBeLessThanOrEqual(0.05);
+  expect(work.report!.roof).toBeLessThanOrEqual(0.05);
   const watched = await page.evaluate(() => window.__egoRender!.cam);
   const tech = await state(page, (s) => s.employees['emp-owner'].position);
-  expect(Math.hypot(watched[0] - tech.x, watched[2] - tech.z)).toBeGreaterThan(4.5);
-  expect(Math.hypot(watched[0] - tech.x, watched[2] - tech.z)).toBeLessThan(9.5);
-  expect(watched[1]).toBeGreaterThan(1.5);
-  expect(watched[1]).toBeLessThan(4.5);
+  expect(Math.hypot(watched[0] - tech.x, watched[2] - tech.z)).toBeGreaterThan(1.5);
+  expect(Math.hypot(watched[0] - tech.x, watched[2] - tech.z)).toBeLessThan(7.5);
+  expect(watched[1]).toBeGreaterThan(1);
+  expect(watched[1]).toBeLessThan(3.6);
+  await page.getByTestId('service-view-detail').click();
+  await page.waitForTimeout(1600);
+  expect((await framing()).mode).toBe('detail');
+  await page.getByTestId('service-view-property').click();
+  await page.waitForTimeout(1600);
+  expect((await framing()).mode).toBe('property');
+  await page.getByTestId('service-view-work').click();
+  await page.waitForTimeout(1600);
+  expect((await framing()).mode).toBe('work');
   expect(await state(page, (s, id) => s.jobs[id].status, leadId)).toMatch(/diagnosing|awaiting-diagnosis/);
 
-  // 6. Diagnose the system.
+  // 6. Diagnose the system. The collapsed panel says a decision is waiting; tapping it brings the findings back.
   await page.getByTestId('speed-5').click();
   await waitForJobStatus(page, leadId, ['awaiting-diagnosis']);
   await page.getByTestId('speed-1').click();
+  await page.getByTestId('inspector-notice').click();
+  await expect(page.getByTestId('inspector')).not.toHaveClass(/compact/);
   await expect(page.getByTestId('evidence')).toBeVisible();
   await expect(page.getByTestId('evidence').locator('.evidence-item')).toHaveCount(3);
   await page.screenshot({ path: SHOT('05-findings') });

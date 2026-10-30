@@ -7,6 +7,7 @@ import { getGameState, useApp } from '@/app/store';
 import { HQ_LOT } from '@/game/world/cityLayout';
 import { solveClearView, verticalFovFor, viewOffsetFor, visibility, type SafeArea, type V3 } from './cameraOcclusion';
 import { occludersOf } from './serviceCall';
+import { obstaclesNear } from './cameraObstacles';
 import { measureSafeArea } from '@/ui/safeArea';
 
 export const DEFAULT_TARGET = new THREE.Vector3(22, 0, 14);
@@ -52,6 +53,19 @@ function offsetOf(s: Sph): THREE.Vector3 {
 /** Watched views settle back to a clear angle only while the target stays this close to the watched site. */
 const WATCH_RADIUS = 8;
 
+/**
+ * The player's hands on the camera: dragging now, and when they last dragged, zoomed or used the
+ * keys (performance.now() ms). The service camera (ServiceDirector) never reframes during a drag
+ * and holds off for a while after one, so it never fights the player.
+ */
+export const cameraInput = { dragging: false, lastInput: -Infinity };
+
+/** Closest zoom and lowest angle: tighter while a service camera frames the work (Detail shots sit 2-3 m off, 12° up). */
+const MIN_DISTANCE = 5;
+const SERVICE_MIN_DISTANCE = 2.5;
+const MAX_POLAR = 1.22;
+const SERVICE_MAX_POLAR = 1.38;
+
 function easeInOut(t: number): number {
   return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
 }
@@ -62,7 +76,6 @@ function easeInOut(t: number): number {
  */
 export function CameraRig() {
   const controls = useRef<MapControlsImpl>(null);
-  const photo = useApp((s) => s.photo.on);
   const { camera } = useThree();
   const size = useThree((s) => s.size);
 
@@ -134,7 +147,7 @@ export function CameraRig() {
       }
       toPos = toTarget.clone().add(dir.normalize().multiplyScalar(dist));
       if (command.watch) {
-        const boxes = occludersOf(command.watch.lotIds);
+        const boxes = [...occludersOf(command.watch.lotIds), ...obstaclesNear(command.target.x, command.target.z, 20)];
         watch.current = { target: new THREE.Vector3(command.target.x, 0, command.target.z), points: command.watch.points, boxes, checkAt: null };
       } else {
         watch.current = null;
@@ -203,6 +216,7 @@ export function CameraRig() {
       if (k.size > 0) {
         // Keyboard orbit or pan of a watched view: check it once the keys are released.
         if (watch.current) watch.current.checkAt = performance.now() + 450;
+        cameraInput.lastInput = performance.now();
         const speed = (c.target.distanceTo(camera.position) * 0.9 + 10) * dt;
         const forward = new THREE.Vector3();
         camera.getWorldDirection(forward);
@@ -237,10 +251,33 @@ export function CameraRig() {
       c.target.add(correction);
       camera.position.add(correction);
     }
+    applyLimits(c);
     c.update();
     applySafeArea(dt);
     settleWatchedView(c);
   });
+
+  /**
+   * Zoom and tilt limits. A service camera may come closer and lower than free play allows; after
+   * it ends, the limits relax back only as far as the camera already is (they tighten again as the
+   * player zooms out or tilts up), so leaving a close-up never makes the view jump.
+   */
+  function applyLimits(c: MapControlsImpl) {
+    const { photo: ph, serviceView } = useApp.getState();
+    const offset = camera.position.clone().sub(c.target);
+    const dist = offset.length();
+    const polar = Math.acos(THREE.MathUtils.clamp(offset.y / Math.max(dist, 1e-6), -1, 1));
+    if (ph.on) {
+      c.minDistance = 1.5;
+      c.maxPolarAngle = 1.5;
+    } else if (serviceView || flight.current) {
+      c.minDistance = serviceView ? SERVICE_MIN_DISTANCE : Math.min(MIN_DISTANCE, c.minDistance);
+      c.maxPolarAngle = serviceView ? SERVICE_MAX_POLAR : Math.max(MAX_POLAR, c.maxPolarAngle);
+    } else {
+      c.minDistance = THREE.MathUtils.clamp(dist - 0.01, SERVICE_MIN_DISTANCE, MIN_DISTANCE);
+      c.maxPolarAngle = THREE.MathUtils.clamp(polar + 0.001, MAX_POLAR, SERVICE_MAX_POLAR);
+    }
+  }
 
   /**
    * Centre the scene in the part of the view the inspector leaves free: shift the projection centre
@@ -281,7 +318,9 @@ export function CameraRig() {
     const w = watch.current;
     if (!w || flight.current || interacting.current || useApp.getState().photo.on) return;
     if (Math.hypot(c.target.x - w.target.x, c.target.z - w.target.z) > WATCH_RADIUS) {
+      // The player panned away from the site: the watch ends, and so does the service camera (it will not pull them back).
       watch.current = null;
+      if (useApp.getState().serviceView) useApp.getState().setServiceView(null);
       return;
     }
     if (w.checkAt === null || performance.now() < w.checkAt) return;
@@ -303,21 +342,23 @@ export function CameraRig() {
       target={DEFAULT_TARGET}
       enableDamping
       dampingFactor={0.12}
-      minDistance={photo ? 1.5 : 5}
       maxDistance={340}
       minPolarAngle={0.2}
-      maxPolarAngle={photo ? 1.5 : 1.22}
       zoomSpeed={1.1}
       panSpeed={1.0}
       rotateSpeed={0.6}
       screenSpacePanning={false}
       onStart={() => {
         interacting.current = true;
+        cameraInput.dragging = true;
+        cameraInput.lastInput = performance.now();
         flight.current = null;
         if (useApp.getState().followVehicleId) useApp.getState().setFollow(null);
       }}
       onEnd={() => {
         interacting.current = false;
+        cameraInput.dragging = false;
+        cameraInput.lastInput = performance.now();
         // Let damping settle before checking whether the watched view is blocked.
         if (watch.current) watch.current.checkAt = performance.now() + 450;
       }}

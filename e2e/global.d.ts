@@ -15,4 +15,6 @@ interface Window {
   __egoAtmo?: { minute: number; weather: string; elevation: number; sunIntensity: number; exposure: number; fogNear: number; rain: number };
   __egoBayDoors?: Record<number, number>;
   __egoWorkers?: Record<string, { x: number; z: number; y: number; status: string }>;
+  /** The last service camera framing (src/world/scene/ServiceDirector.tsx). */
+  __egoServiceView?: unknown;
 }
