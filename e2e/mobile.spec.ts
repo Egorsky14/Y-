@@ -114,6 +114,16 @@ test('mobile: a complete job by touch, touch camera, save and continue', async (
   await page.getByTestId('speed-5').tap();
   await waitForJob(page, leadId, ['awaiting-diagnosis']);
   await page.getByTestId('speed-1').tap();
+  // Watching the work collapses the inspector sheet to its header on an upright phone; the toggle
+  // brings the full sheet (and the diagnosis choices) back.
+  if ((page.viewportSize()?.width ?? 0) < (page.viewportSize()?.height ?? 0)) {
+    await page.getByTestId('watch-technician').tap();
+    await expect(page.getByTestId('inspector')).toHaveClass(/compact/);
+    await expect(page.locator('.inspector-body')).toBeHidden();
+    await page.getByTestId('inspector-compact').tap();
+    await expect(page.getByTestId('inspector')).not.toHaveClass(/compact/);
+    await expect(page.getByTestId(`diagnosis-${faultId}`)).toBeVisible();
+  }
   await page.getByTestId(`diagnosis-${faultId}`).tap();
   await page.getByTestId('confirm-diagnosis').tap();
   expect(await state(page, (s, id) => s.jobs[id].diagnosisCorrect, leadId)).toBe(true);

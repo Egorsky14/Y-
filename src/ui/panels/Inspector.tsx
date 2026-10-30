@@ -12,6 +12,23 @@ import type { JobStatus } from '@/game/simulation/types';
 import { serviceCloseUpCamera } from '@/world/scene/serviceCall';
 import { mainCanvas, measureSafeArea } from '../safeArea';
 
+/**
+ * Fly to the clear close-up of the work. On an upright phone the sheet collapses first, and the view
+ * is solved against the collapsed layout on the next frame (solving against the full sheet hid the
+ * lower half of the screen from the foreground check).
+ */
+function watchTechnician(lot: NonNullable<ReturnType<typeof lotById>>) {
+  const canvas = mainCanvas();
+  const go = () => {
+    const c = mainCanvas();
+    useApp.getState().camera(serviceCloseUpCamera(lot, (c?.clientWidth ?? window.innerWidth) / Math.max(1, c?.clientHeight ?? window.innerHeight), undefined, measureSafeArea(c)));
+  };
+  if (canvas && canvas.clientWidth < canvas.clientHeight && !useApp.getState().inspectorCompact) {
+    useApp.getState().setInspectorCompact(true);
+    requestAnimationFrame(() => requestAnimationFrame(go));
+  } else go();
+}
+
 /** Phases in which the lead technician is at the outdoor unit (diagnosis, quoting and repair). */
 const ON_SITE = new Set<JobStatus>(['diagnosing', 'awaiting-diagnosis', 'quoted', 'awaiting-authorization', 'repairing', 'installing']);
 
@@ -153,7 +170,7 @@ function CustomerInspector({ lotId, onClose, preferredJobId }: { lotId: string; 
           </Section>
         )}
         {active && ON_SITE.has(active.status) && (
-          <button className="btn small" onClick={() => { const canvas = mainCanvas(); if (canvas && canvas.clientWidth < canvas.clientHeight) useApp.getState().setInspectorCompact(true); camera(serviceCloseUpCamera(lot, (canvas?.clientWidth ?? window.innerWidth) / Math.max(1, canvas?.clientHeight ?? window.innerHeight), undefined, measureSafeArea(canvas))); }} data-testid="watch-technician">
+          <button className="btn small" onClick={() => watchTechnician(lot)} data-testid="watch-technician">
             Watch technician
           </button>
         )}

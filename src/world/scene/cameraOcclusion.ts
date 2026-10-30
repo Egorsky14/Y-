@@ -152,6 +152,41 @@ export function inFrame(v: ViewSpec, points: V3[], aspect: number, margin = 0.9,
   return true;
 }
 
+/** Screen points (NDC) across the lower part of the free area, sampled for foreground clutter. */
+const FOREGROUND_SAMPLES: [number, number][] = [[-0.6, -0.75], [0, -0.75], [0.6, -0.75], [-0.6, -0.35], [0, -0.35], [0.6, -0.35]];
+
+/**
+ * The lower part of the frame shows ground, not a wall or eave right in front of the lens: rays
+ * through sample points across it must reach the ground without hitting solid geometry (at most
+ * `allowed` may). Sight lines to the subject can all pass over a garden wall that still fills half
+ * the screen; this catches that.
+ */
+export function foregroundClear(v: ViewSpec, boxes: THREE.Box3[], aspect: number, safe: SafeArea = NO_SAFE_AREA, allowed = 1): boolean {
+  const cam = new THREE.PerspectiveCamera(verticalFovFor(aspect), aspect, 1, 3000);
+  const W = 1000 * aspect;
+  const H = 1000;
+  const off = viewOffsetFor(safe, W, H);
+  if (off.x || off.y) cam.setViewOffset(W, H, off.x, off.y, W, H);
+  cam.position.copy(cameraPosition(v));
+  cam.lookAt(v.target.x, v.target.y, v.target.z);
+  cam.updateMatrixWorld();
+  const top = safe.top ?? 0;
+  const xMax = 1 - 2 * safe.right;
+  const yMin = -1 + 2 * safe.bottom;
+  const yMax = 1 - 2 * top;
+  let blocked = 0;
+  const p = new THREE.Vector3();
+  for (const [sx, sy] of FOREGROUND_SAMPLES) {
+    // Map the sample into the free area, then unproject to a ray and follow it to the ground.
+    p.set(-1 + ((sx + 1) / 2) * (xMax + 1), yMin + ((sy + 1) / 2) * (yMax - yMin), 0.5).unproject(cam);
+    const dir = p.sub(cam.position).normalize();
+    if (dir.y >= -1e-3) continue;
+    const ground = cam.position.clone().addScaledVector(dir, -cam.position.y / dir.y);
+    if (segmentBlocked(cam.position, ground, boxes, 0.3)) blocked++;
+  }
+  return blocked <= allowed;
+}
+
 export interface Solved extends ViewSpec {
   /** Every key point is visible. */
   clear: boolean;
@@ -181,10 +216,10 @@ export function solveClearView(preferred: ViewSpec, points: V3[], boxes: THREE.B
         for (const s of scales) {
           const distance = Math.max(minDistance, preferred.distance * s);
           const v: ViewSpec = { target: preferred.target, azimuth: wrap(preferred.azimuth + dAz), elevation, distance };
-          const cost = Math.abs(dAz) + (elevation - preferred.elevation) * 0.9 + (1 - distance / preferred.distance) * 0.6;
+          const cost = Math.abs(dAz) + (elevation - preferred.elevation) * 2.0 + (1 - distance / preferred.distance) * 0.6;
           if (cost >= bestCost) continue;
           const seen = visibility(v, points, boxes);
-          if (seen === 1 && inFrame(v, points, aspect, 0.9, opts.safe)) {
+          if (seen === 1 && inFrame(v, points, aspect, 0.9, opts.safe) && foregroundClear(v, boxes, aspect, opts.safe)) {
             best = { ...v, clear: true, visible: 1 };
             bestCost = cost;
           } else if (!fallback || seen > fallback.visible) {

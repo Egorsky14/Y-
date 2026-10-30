@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { condenserPosition, curbParking, HOUSE_HALF_WIDTH, HOUSE_LOTS, lotById, lotLocalToWorld, workPosition, type Lot } from '@/game/world/cityLayout';
 import type { GameState } from '@/game/simulation/types';
 import { collectHouseOccluders } from '../buildings/HouseBuilder';
-import { NO_SAFE_AREA, registeredOccluders, registerOccluders, solveClearView, type SafeArea } from './cameraOcclusion';
+import { cameraPosition, NO_SAFE_AREA, registeredOccluders, registerOccluders, solveClearView, type SafeArea } from './cameraOcclusion';
 
 /**
  * Visual pacing of a service call's arrival. The simulation decides that the van has arrived, where
@@ -70,7 +70,10 @@ export function workSitePoints(lot: Lot): { x: number; y: number; z: number }[] 
   ];
 }
 
-/** The close-up's preferred view before occlusion checks (see serviceCloseUpCamera). */
+/** Height of the work (kneeling technician's hands, the unit's middle) the close-up centres on. */
+const SUBJECT_Y = 0.55;
+
+/** The close-up's preferred view before occlusion checks (see serviceCloseUpCamera), aimed at the work itself. */
 export function closeUpPreferred(lot: Lot, aspect: number) {
   const tech = workPosition(lot, 0);
   const unit = condenserPosition(lot);
@@ -78,7 +81,7 @@ export function closeUpPreferred(lot: Lot, aspect: number) {
   const ux = HOUSE_HALF_WIDTH[lot.style ?? 'ranch'] + 0.9;
   const a = lotLocalToWorld(lot, ux, -3);
   const b = lotLocalToWorld(lot, ux + 1, -3 + 0.25);
-  return { target: { x: (tech.x + unit.x) / 2, y: 0, z: (tech.z + unit.z) / 2 }, azimuth: Math.atan2(b.x - a.x, b.z - a.z), elevation: 0.42, distance: aspect < 1 ? 5.6 : 6.5 };
+  return { target: { x: (tech.x + unit.x) / 2, y: SUBJECT_Y, z: (tech.z + unit.z) / 2 }, azimuth: Math.atan2(b.x - a.x, b.z - a.z), elevation: 0.42, distance: aspect < 1 ? 5.6 : 6.5 };
 }
 
 /**
@@ -97,15 +100,22 @@ export function closeUpPreferred(lot: Lot, aspect: number) {
 export function serviceCloseUpCamera(lot: Lot, aspect: number, boxes: THREE.Box3[] = siteOccluders(lot), safe: SafeArea = NO_SAFE_AREA) {
   const preferred = closeUpPreferred(lot, aspect);
   const points = workSitePoints(lot);
-  const target = preferred.target;
   const view = solveClearView(preferred, points, boxes, aspect, { safe });
+  // The solver aims at the work (SUBJECT_Y up); CameraRig keeps its orbit target on the ground, so
+  // hand it the point where that same sight line meets the ground: the work lands mid-frame instead
+  // of in the upper third (most visible on tall phone screens).
+  const cam = cameraPosition(view);
+  const s = view.target;
+  const t = cam.y / (cam.y - s.y);
+  const ground = { x: cam.x + (s.x - cam.x) * t, z: cam.z + (s.z - cam.z) * t };
+  const distance = Math.hypot(cam.x - ground.x, cam.y, cam.z - ground.z);
   return {
     type: 'focus' as const,
-    target: { x: target.x, z: target.z },
+    target: ground,
     targetY: 0,
-    distance: view.distance,
+    distance,
     azimuth: view.azimuth,
-    elevation: view.elevation,
+    elevation: Math.asin(cam.y / distance),
     orbit: true,
     watch: { lotIds: nearbyLotIds(lot), points },
     clear: view.clear,

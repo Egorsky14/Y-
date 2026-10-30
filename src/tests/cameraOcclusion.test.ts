@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import * as THREE from 'three';
 import { condenserPosition, curbParking, HOUSE_LOTS, lotById, workPosition } from '@/game/world/cityLayout';
-import { cameraPosition, inFrame, segmentBlocked, solveClearView, visibility } from '@/world/scene/cameraOcclusion';
+import { cameraPosition, foregroundClear, inFrame, segmentBlocked, solveClearView, visibility } from '@/world/scene/cameraOcclusion';
 import { closeUpPreferred, serviceCloseUpCamera, siteOccluders, workSitePoints } from '@/world/scene/serviceCall';
 
 /**
@@ -64,6 +64,20 @@ describe('camera occlusion', () => {
         const view = { target: { x: cmd.target.x, y: 0, z: cmd.target.z }, azimuth: cmd.azimuth, elevation: cmd.elevation, distance: cmd.distance };
         expect(cmd.clear, `${lot.id} ${aspect.toFixed(2)}`).toBe(true);
         expect(inFrame(view, points, aspect, 0.9, safe), lot.id).toBe(true);
+      }
+    }
+  });
+
+  it('keeps the foreground clear and the camera at a natural height on every lot', () => {
+    // Sight lines can all pass over a garden wall that still fills half the screen; the solver also
+    // requires the lower frame to show ground. It may rise to see over a wall, but never toward top-down.
+    for (const lot of HOUSE_LOTS) {
+      const boxes = siteOccluders(lot);
+      for (const aspect of [DESKTOP, PHONE]) {
+        const cmd = serviceCloseUpCamera(lot, aspect, boxes);
+        const view = { target: { x: cmd.target.x, y: 0, z: cmd.target.z }, azimuth: cmd.azimuth, elevation: cmd.elevation, distance: cmd.distance };
+        expect(foregroundClear(view, boxes, aspect), `${lot.id} ${aspect.toFixed(2)}`).toBe(true);
+        expect(cmd.elevation, lot.id).toBeLessThanOrEqual(0.6);
       }
     }
   });

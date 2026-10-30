@@ -1,0 +1,350 @@
+{
+  "baseline": "f6d86f0",
+  "candidate": "ae03a5a",
+  "method": "GPU time per render (EXT_disjoint_timer_query_webgl2), median over 3 s per view, vsync off, High quality, seed 42, same machine. Run order: perf-base (earlier session), perf-new, phone-new, phone-base2, perf-base2, perf-new2, phone-new2 (phone-base in the earlier session). Means of all runs; per-run values listed.",
+  "desktop": {
+    "W01-overview": {
+      "baseRuns": [
+        6.63,
+        6.62
+      ],
+      "newRuns": [
+        6.78,
+        6.9
+      ],
+      "baseMs": 6.63,
+      "newMs": 6.84,
+      "changePct": 3.2,
+      "calls": [
+        1024,
+        1062
+      ],
+      "triangles": [
+        2148803,
+        2321651
+      ],
+      "frameMs": [
+        [
+          7.17,
+          7.12
+        ],
+        [
+          7.31,
+          7.43
+        ]
+      ]
+    },
+    "W02-boundary-ne": {
+      "baseRuns": [
+        4.49,
+        4.5
+      ],
+      "newRuns": [
+        4.62,
+        4.67
+      ],
+      "baseMs": 4.5,
+      "newMs": 4.64,
+      "changePct": 3.3,
+      "calls": [
+        539,
+        556
+      ],
+      "triangles": [
+        1905428,
+        2079812
+      ],
+      "frameMs": [
+        [
+          4.86,
+          4.98
+        ],
+        [
+          5.03,
+          5.09
+        ]
+      ]
+    },
+    "W03-boundary-sw": {
+      "baseRuns": [
+        4.08,
+        4.06
+      ],
+      "newRuns": [
+        4.29,
+        4.3
+      ],
+      "baseMs": 4.07,
+      "newMs": 4.29,
+      "changePct": 5.5,
+      "calls": [
+        477,
+        509
+      ],
+      "triangles": [
+        1901576,
+        2061676
+      ],
+      "frameMs": [
+        [
+          4.48,
+          4.49
+        ],
+        [
+          4.69,
+          4.75
+        ]
+      ]
+    },
+    "W04-street": {
+      "baseRuns": [
+        5.89,
+        5.96
+      ],
+      "newRuns": [
+        5.98,
+        6.04
+      ],
+      "baseMs": 5.92,
+      "newMs": 6.01,
+      "changePct": 1.4,
+      "calls": [
+        455,
+        463
+      ],
+      "triangles": [
+        1945860,
+        2096302
+      ],
+      "frameMs": [
+        [
+          6.28,
+          6.46
+        ],
+        [
+          6.45,
+          6.52
+        ]
+      ]
+    },
+    "W05-hq": {
+      "baseRuns": [
+        6.29,
+        6.38
+      ],
+      "newRuns": [
+        6.38,
+        6.51
+      ],
+      "baseMs": 6.33,
+      "newMs": 6.45,
+      "changePct": 1.7,
+      "calls": [
+        858,
+        874
+      ],
+      "triangles": [
+        2112251,
+        2274405
+      ],
+      "frameMs": [
+        [
+          6.68,
+          6.94
+        ],
+        [
+          6.89,
+          6.99
+        ]
+      ]
+    },
+    "W08-diagnosis": {
+      "baseRuns": [
+        4.84,
+        4.84
+      ],
+      "newRuns": [
+        4.7,
+        4.73
+      ],
+      "baseMs": 4.84,
+      "newMs": 4.71,
+      "changePct": -2.6,
+      "calls": [
+        535,
+        515
+      ],
+      "triangles": [
+        1965940,
+        2183166
+      ],
+      "frameMs": [
+        [
+          5.32,
+          5.26
+        ],
+        [
+          5.13,
+          5.24
+        ]
+      ]
+    },
+    "W09-repair": {
+      "baseRuns": [
+        5.11,
+        4.72
+      ],
+      "newRuns": [
+        4.57,
+        4.5
+      ],
+      "baseMs": 4.92,
+      "newMs": 4.54,
+      "changePct": -7.7,
+      "calls": [
+        529,
+        505
+      ],
+      "triangles": [
+        1983752,
+        2181730
+      ],
+      "frameMs": [
+        [
+          5.84,
+          5.09
+        ],
+        [
+          5,
+          4.88
+        ]
+      ]
+    },
+    "W10-golden": {
+      "baseRuns": [
+        6.84,
+        6.31
+      ],
+      "newRuns": [
+        6.55,
+        6.51
+      ],
+      "baseMs": 6.57,
+      "newMs": 6.53,
+      "changePct": -0.7,
+      "calls": [
+        1018,
+        1056
+      ],
+      "triangles": [
+        2148747,
+        2321595
+      ],
+      "frameMs": [
+        [
+          7.27,
+          6.82
+        ],
+        [
+          7.1,
+          7.02
+        ]
+      ]
+    },
+    "W11-night": {
+      "baseRuns": [
+        6.99,
+        6.45
+      ],
+      "newRuns": [
+        6.73,
+        6.71
+      ],
+      "baseMs": 6.72,
+      "newMs": 6.72,
+      "changePct": 0,
+      "calls": [
+        1018,
+        1056
+      ],
+      "triangles": [
+        2113555,
+        2286403
+      ],
+      "frameMs": [
+        [
+          7.38,
+          6.95
+        ],
+        [
+          7.18,
+          7.23
+        ]
+      ]
+    }
+  },
+  "phone": {
+    "W12a-mobile-overview": {
+      "baseRuns": [
+        4.17,
+        3.33
+      ],
+      "newRuns": [
+        3.57,
+        3.53
+      ],
+      "baseMs": 3.75,
+      "newMs": 3.55,
+      "changePct": -5.3,
+      "calls": [
+        958,
+        985
+      ],
+      "triangles": [
+        1956829,
+        2129213
+      ],
+      "frameMs": [
+        [
+          5.84,
+          4.5
+        ],
+        [
+          5.01,
+          4.81
+        ]
+      ]
+    },
+    "W12b-mobile-street": {
+      "baseRuns": [
+        2.92,
+        2.76
+      ],
+      "newRuns": [
+        3.02,
+        2.91
+      ],
+      "baseMs": 2.84,
+      "newMs": 2.96,
+      "changePct": 4.4,
+      "calls": [
+        584,
+        605
+      ],
+      "triangles": [
+        1799024,
+        1965752
+      ],
+      "frameMs": [
+        [
+          4.38,
+          3.02
+        ],
+        [
+          4.13,
+          3.14
+        ]
+      ]
+    }
+  }
+}
