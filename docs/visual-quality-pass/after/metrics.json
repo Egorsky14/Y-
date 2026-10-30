@@ -1,91 +1,169 @@
 {
   "label": "after",
   "size": "1920x1080",
-  "loadMs": 5695,
+  "loadMs": 5419,
   "shots": {
+    "W01-overview": {
+      "calls": 1062,
+      "triangles": 2321651,
+      "geometries": 648,
+      "textures": 85
+    },
+    "W01b-overview-east": {
+      "calls": 1079,
+      "triangles": 2319383,
+      "geometries": 656,
+      "textures": 85
+    },
+    "W01c-overview-west": {
+      "calls": 1076,
+      "triangles": 2314025,
+      "geometries": 656,
+      "textures": 85
+    },
+    "W02-boundary-ne": {
+      "calls": 556,
+      "triangles": 2079812,
+      "geometries": 656,
+      "textures": 85
+    },
+    "W03-boundary-sw": {
+      "calls": 509,
+      "triangles": 2061676,
+      "geometries": 656,
+      "textures": 85
+    },
+    "W13-horizon-west": {
+      "calls": 593,
+      "triangles": 2134386,
+      "geometries": 656,
+      "textures": 85
+    },
+    "W04-street": {
+      "calls": 463,
+      "triangles": 2096302,
+      "geometries": 658,
+      "textures": 85
+    },
+    "W05-hq": {
+      "calls": 874,
+      "triangles": 2274405,
+      "geometries": 658,
+      "textures": 85
+    },
+    "W06-hq-yard": {
+      "calls": 479,
+      "triangles": 2078563,
+      "geometries": 658,
+      "textures": 85
+    },
     "W07-arrival": {
       "calls": 581,
-      "triangles": 2192283,
-      "geometries": 559,
-      "textures": 78
+      "triangles": 2191883,
+      "geometries": 664,
+      "textures": 85
     },
     "W08-diagnosis": {
-      "calls": 515,
-      "triangles": 2183166,
-      "geometries": 588,
-      "textures": 81
+      "calls": 518,
+      "triangles": 2182486,
+      "geometries": 693,
+      "textures": 87
     },
     "W16-service-ui": {
-      "calls": 517,
-      "triangles": 2166882,
-      "geometries": 588,
-      "textures": 81
+      "calls": 523,
+      "triangles": 2166242,
+      "geometries": 693,
+      "textures": 87
     },
     "W15-tools": {
-      "calls": 536,
-      "triangles": 2186318,
-      "geometries": 604,
-      "textures": 83
+      "calls": 535,
+      "triangles": 2186308,
+      "geometries": 693,
+      "textures": 87
     },
     "W08c-diagnosis-side": {
       "calls": 511,
       "triangles": 2069254,
-      "geometries": 606,
-      "textures": 84
+      "geometries": 693,
+      "textures": 87
     },
     "W08b-service-wide": {
       "calls": 601,
       "triangles": 2234961,
-      "geometries": 606,
-      "textures": 84
+      "geometries": 693,
+      "textures": 87
     },
     "W14-selected-lot": {
       "calls": 617,
       "triangles": 2255537,
-      "geometries": 607,
-      "textures": 84
+      "geometries": 694,
+      "textures": 87
     },
     "W08d-probe-profile": {
       "calls": 521,
       "triangles": 2185636,
-      "geometries": 607,
-      "textures": 84
+      "geometries": 694,
+      "textures": 87
     },
     "W08e-gauges-profile": {
       "calls": 514,
       "triangles": 2185244,
-      "geometries": 607,
-      "textures": 84
+      "geometries": 694,
+      "textures": 87
     },
     "W09-repair": {
-      "calls": 505,
-      "triangles": 2181730,
-      "geometries": 611,
-      "textures": 84
+      "calls": 508,
+      "triangles": 2179010,
+      "geometries": 698,
+      "textures": 87
     },
     "W09b-repair-side": {
-      "calls": 499,
-      "triangles": 2075582,
-      "geometries": 611,
-      "textures": 84
+      "calls": 498,
+      "triangles": 2075572,
+      "geometries": 698,
+      "textures": 87
     },
     "W09c-wrench-profile": {
       "calls": 510,
       "triangles": 2186628,
-      "geometries": 611,
-      "textures": 84
+      "geometries": 698,
+      "textures": 87
     },
     "W09d-reach-profile": {
       "calls": 506,
       "triangles": 2186188,
-      "geometries": 611,
-      "textures": 84
+      "geometries": 698,
+      "textures": 87
     },
     "W09e-fan-check-profile": {
       "calls": 505,
       "triangles": 2186164,
-      "geometries": 611,
-      "textures": 84
+      "geometries": 698,
+      "textures": 87
+    },
+    "W10-golden": {
+      "calls": 1056,
+      "triangles": 2321595,
+      "geometries": 693,
+      "textures": 87
+    },
+    "W10b-golden-hq": {
+      "calls": 860,
+      "triangles": 2270861,
+      "geometries": 693,
+      "textures": 87
+    },
+    "W11-night": {
+      "calls": 1056,
+      "triangles": 2286403,
+      "geometries": 694,
+      "textures": 88
+    },
+    "W11b-night-street": {
+      "calls": 587,
+      "triangles": 2096720,
+      "geometries": 694,
+      "textures": 88
     }
   },
   "errors": [],

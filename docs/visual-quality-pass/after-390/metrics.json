@@ -1,12 +1,30 @@
 {
   "label": "after-390",
   "size": "390x844",
-  "loadMs": 4764,
+  "loadMs": 4772,
   "shots": {
+    "W12a-mobile-overview": {
+      "calls": 985,
+      "triangles": 2129213,
+      "geometries": 623,
+      "textures": 84
+    },
+    "W12b-mobile-street": {
+      "calls": 605,
+      "triangles": 1965752,
+      "geometries": 623,
+      "textures": 84
+    },
     "W12c-mobile-diagnosis": {
-      "calls": 514,
-      "triangles": 1956662,
-      "geometries": 635,
+      "calls": 522,
+      "triangles": 1966752,
+      "geometries": 691,
+      "textures": 87
+    },
+    "W12d-mobile-service-ui": {
+      "calls": 521,
+      "triangles": 1966464,
+      "geometries": 691,
       "textures": 87
     }
   },

@@ -56,9 +56,6 @@ previewed). Local only: nothing pushed, merged or deployed.
 
 ## Status
 
-Done and committed: camera, technician, contact shading, world dressing, compact inspector,
-evidence (31 comparison sheets), unit tests, 6 browser cases. See FINAL_REPORT.md.
-
-Open: paired GPU timing of this branch. The low-memory guard stopped the background run before the
-first candidate run finished; only the baseline runs completed. Re-run with
-scripts/run-evidence.ps1 <base dist> <new dist> perf.
+Complete. In-game framing reviewed on five lot types (desktop and phone) and fixed: clear
+foreground, height capped at 0.56 rad, aimed at the work, sheet collapsed before solving. Paired GPU
+timing done (all views within the 10% budget). Browser matrix 21/21 at b00467f. See FINAL_REPORT.md.
