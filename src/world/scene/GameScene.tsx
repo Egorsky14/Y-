@@ -83,7 +83,7 @@ export function GameScene() {
       <Suspense fallback={null}>
         <Atmosphere />
         <NightLights />
-        <StudioEnvironment />
+        <StudioEnvironment withNight />
         <Ground />
         <Hinterland />
         <AmbientTraffic />

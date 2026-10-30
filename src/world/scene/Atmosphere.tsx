@@ -5,6 +5,7 @@ import { getGameState, useApp } from '@/app/store';
 import { sunAngles, weatherForDay, type WeatherKind } from '@/game/simulation/weather';
 import { STATIC_MATERIALS } from '../buildings/materials';
 import { fitSunShadow } from './shadowFit';
+import { MOON_DIR, type EnvMaps } from './StudioEnvironment';
 
 /**
  * Time-of-day and weather driven lighting: a sun that follows the game clock, hemisphere
@@ -25,10 +26,13 @@ interface Look {
   exposure: number;
   rain: number;
   envIntensity: number;
+  ambientColor: THREE.Color;
 }
 
+/** `night` at the moment the sun crosses the horizon (elevation 0). */
+const NIGHT_SWAP = 1 - 0.12 / 0.26;
 
-function lookFor(minute: number, weather: WeatherKind): Look {
+export function lookFor(minute: number, weather: WeatherKind): Look {
   const { elevation } = sunAngles(minute);
   const day = THREE.MathUtils.clamp(elevation / 0.32, 0, 1); // 0 night → 1 full day
   // Sun strength also falls with sun height (atmospheric path length), so late afternoon reads
@@ -49,10 +53,16 @@ function lookFor(minute: number, weather: WeatherKind): Look {
   const horizonGolden = new THREE.Color('#f1b07a');
   const horizonTwilight = new THREE.Color('#c97482');
 
+  // After sunset the directional light becomes the moon (MOON_DIR, high in the south-east). It and
+  // the moonlit environment map fade in from zero at the horizon crossing, where the sun and the
+  // day map have faded out, so the direction and map swaps never show.
+  const moon = THREE.MathUtils.smoothstep(night, NIGHT_SWAP, 0.9);
+  const dayEnv = 1 - THREE.MathUtils.smoothstep(night, 0.2, NIGHT_SWAP);
+
   let look: Look = {
-    // Night keeps a cool moon so forms stay readable; day is a strong warm sun with real contrast.
-    sunIntensity: 3.0 * daylight + 0.42 * night,
-    sunColor: sunDay.clone().lerp(new THREE.Color('#6a8de6'), night),
+    // Night keeps a cool silver moon so forms stay readable; day is a strong warm sun with real contrast.
+    sunIntensity: 3.0 * daylight + 0.36 * moon,
+    sunColor: elevation >= 0 ? sunDay : new THREE.Color('#9db2e6'),
     skyZenith: zenithDay.clone().lerp(new THREE.Color('#4a74a8'), golden * 0.35).lerp(new THREE.Color('#3b5f8e'), twilight * 0.6).lerp(zenithNight, night),
     skyHorizon: horizonDay.clone().lerp(horizonGolden, golden * 0.8).lerp(horizonTwilight, twilight * 0.7).lerp(horizonNight, night),
     ground: new THREE.Color('#c4a47a').lerp(new THREE.Color('#b0805a'), golden * 0.45).lerp(new THREE.Color('#18233a'), night),
@@ -62,7 +72,8 @@ function lookFor(minute: number, weather: WeatherKind): Look {
     fogFar: 2900,
     exposure: 0.98 - night * 0.22 + golden * 0.05 - (1 - sunHeight) * day * 0.05,
     rain: 0,
-    envIntensity: 0.55 * (0.2 + 0.8 * day),
+    envIntensity: elevation >= 0 ? 0.55 * (0.2 + 0.8 * day) * dayEnv : 0.75 * moon,
+    ambientColor: new THREE.Color('#ffffff').lerp(new THREE.Color('#7f98d0'), night),
   };
   switch (weather) {
     case 'heat-wave':
@@ -113,9 +124,14 @@ function cloudTexture(): THREE.Texture {
 }
 
 const SKY_VERT = `varying vec3 vWorld; void main(){ vec4 w = modelMatrix * vec4(position,1.0); vWorld = w.xyz; gl_Position = projectionMatrix * viewMatrix * w; }`;
-const SKY_FRAG = `uniform vec3 zenith; uniform vec3 horizon; uniform vec3 sunDir; uniform vec3 sunTint; uniform float sunGlow; varying vec3 vWorld;
+const SKY_FRAG = `uniform vec3 zenith; uniform vec3 horizon; uniform vec3 sunDir; uniform vec3 sunTint; uniform float sunGlow; uniform float night; varying vec3 vWorld;
 void main(){ vec3 d = normalize(vWorld - cameraPosition); float h = clamp(d.y, 0.0, 1.0); float t = pow(h, 0.55);
-vec3 col = mix(horizon, zenith, t); float s = max(dot(d, sunDir), 0.0); col += sunTint * (pow(s, 180.0) * 1.2 + pow(s, 8.0) * 0.12) * sunGlow;
+vec3 col = mix(horizon, zenith, t); float s = max(dot(d, sunDir), 0.0);
+col += sunTint * (pow(s, 180.0) * 1.2 + pow(s, 8.0) * 0.12) * sunGlow * (1.0 - night);
+// Night: a small bright moon with a soft halo, and a sparse star field above the horizon haze.
+col += vec3(0.85, 0.9, 1.0) * (smoothstep(0.99988, 0.99993, s) * 1.6 + pow(s, 400.0) * 0.25 + pow(s, 24.0) * 0.05) * night;
+vec3 q = floor(d * 1100.0); float r = fract(sin(dot(q, vec3(12.9898, 78.233, 37.719))) * 43758.5453);
+col += vec3(0.8, 0.86, 1.0) * step(0.9994, r) * (0.35 + 0.65 * fract(r * 977.0)) * smoothstep(0.06, 0.3, d.y) * night;
 gl_FragColor = vec4(col, 1.0); }`;
 
 const DEFAULT_SHADOW_TARGET = new THREE.Vector3(0, 0, 0);
@@ -147,7 +163,7 @@ export function Atmosphere() {
   const skyMaterial = useMemo(
     () =>
       new THREE.ShaderMaterial({
-        uniforms: { zenith: { value: new THREE.Color('#5f9fd8') }, horizon: { value: new THREE.Color('#d8e6ee') }, sunDir: { value: new THREE.Vector3(0, 1, 0) }, sunTint: { value: new THREE.Color('#fff0d0') }, sunGlow: { value: 1 } },
+        uniforms: { zenith: { value: new THREE.Color('#5f9fd8') }, horizon: { value: new THREE.Color('#d8e6ee') }, sunDir: { value: new THREE.Vector3(0, 1, 0) }, sunTint: { value: new THREE.Color('#fff0d0') }, sunGlow: { value: 1 }, night: { value: 0 } },
         vertexShader: SKY_VERT,
         fragmentShader: SKY_FRAG,
         side: THREE.BackSide,
@@ -183,11 +199,15 @@ export function Atmosphere() {
     c.skyZenith.lerp(target.skyZenith, k);
     c.skyHorizon.lerp(target.skyHorizon, k);
     c.ground.lerp(target.ground, k);
+    c.ambientColor.lerp(target.ambientColor, k);
 
     const { elevation, azimuth } = sunAngles(minute);
     const day = THREE.MathUtils.clamp(elevation / 0.32, 0, 1);
     const el = Math.max(elevation, 0.07);
-    const dir = new THREE.Vector3(Math.cos(azimuth) * Math.cos(el), Math.sin(el), Math.sin(azimuth) * Math.cos(el));
+    const dir = elevation >= 0 ? new THREE.Vector3(Math.cos(azimuth) * Math.cos(el), Math.sin(el), Math.sin(azimuth) * Math.cos(el)) : MOON_DIR.clone();
+    const maps = scene.userData.envMaps as EnvMaps | undefined;
+    const envMap = elevation < 0 && maps?.night ? maps.night : maps?.day;
+    if (envMap && scene.environment !== envMap) scene.environment = envMap;
     if (sun.current) {
       const fit = fitSunShadow(controls?.target ?? DEFAULT_SHADOW_TARGET, camera.position, dir, shadowRadius, mapSize);
       sun.current.position.copy(fit.center).addScaledVector(dir, 320);
@@ -207,12 +227,19 @@ export function Atmosphere() {
       hemi.current.color.copy(c.skyHorizon).lerp(c.skyZenith, 0.35);
       hemi.current.groundColor.copy(c.ground);
     }
-    if (ambient.current) ambient.current.intensity = c.ambient;
+    if (ambient.current) {
+      ambient.current.intensity = c.ambient;
+      ambient.current.color.copy(c.ambientColor);
+    }
     skyMaterial.uniforms.zenith.value.copy(c.skyZenith);
     skyMaterial.uniforms.horizon.value.copy(c.skyHorizon);
     skyMaterial.uniforms.sunDir.value.copy(dir);
     skyMaterial.uniforms.sunTint.value.copy(c.sunColor);
-    skyMaterial.uniforms.sunGlow.value = weather === 'overcast' || weather === 'monsoon' ? 0.15 : 1;
+    const clearSky = weather !== 'overcast' && weather !== 'monsoon';
+    skyMaterial.uniforms.sunGlow.value = clearSky ? 1 : 0.15;
+    // Moon disc and stars fade in with the moonlight; cloud decks hide them.
+    const moonUp = elevation < 0 ? THREE.MathUtils.smoothstep(1 - THREE.MathUtils.clamp((elevation + 0.12) / 0.26, 0, 1), NIGHT_SWAP, 0.9) : 0;
+    skyMaterial.uniforms.night.value = moonUp * (clearSky ? 1 : 0.1);
     fog.color.copy(c.skyHorizon);
     fog.near = c.fogNear;
     fog.far = c.fogFar;
