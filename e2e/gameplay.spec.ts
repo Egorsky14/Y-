@@ -146,6 +146,20 @@ test('full gameplay loop: dispatch, diagnose, repair, grow, train, save and relo
   await page.waitForFunction(() => (window.__egoRender?.kits ?? 0) >= 1, null, { timeout: 20_000 });
   await page.screenshot({ path: SHOT('04-technician-diagnosing') });
 
+  // 5b. "Watch technician" flies to a clear close-up of the work at the unit (camera occlusion fix,
+  // docs/graphics-revolution-2/DEFECTS.md): it ends a few metres from the technician at eye height
+  // and never changes the job.
+  await page.evaluate((id) => window.__ego!.app.getState().select({ kind: 'job', id }), leadId);
+  await page.getByTestId('watch-technician').click();
+  await page.waitForTimeout(1800);
+  const watched = await page.evaluate(() => window.__egoRender!.cam);
+  const tech = await state(page, (s) => s.employees['emp-owner'].position);
+  expect(Math.hypot(watched[0] - tech.x, watched[2] - tech.z)).toBeGreaterThan(4.5);
+  expect(Math.hypot(watched[0] - tech.x, watched[2] - tech.z)).toBeLessThan(9.5);
+  expect(watched[1]).toBeGreaterThan(1.5);
+  expect(watched[1]).toBeLessThan(4.5);
+  expect(await state(page, (s, id) => s.jobs[id].status, leadId)).toMatch(/diagnosing|awaiting-diagnosis/);
+
   // 6. Diagnose the system.
   await page.getByTestId('speed-5').click();
   await waitForJobStatus(page, leadId, ['awaiting-diagnosis']);

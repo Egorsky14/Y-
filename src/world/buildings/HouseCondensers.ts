@@ -5,6 +5,7 @@ import { MeshBuilder } from '../assets/pbr';
 import { addCondenser } from '../props/hvac';
 import { FACING_ROTATION } from './HouseBuilder';
 import { STATIC_MATERIALS, UV_SCALES } from './materials';
+import { contactMaterial } from '../assets/contactShadow';
 
 /**
  * Each house's outdoor unit shows the customer's actual system: a faded, rust-streaked R-22 unit
@@ -35,6 +36,8 @@ export function houseCondenserLocal(lot: Lot): { x: number; z: number; size: num
 }
 
 function resolve(key: string): THREE.Material {
+  if (key === 'contact:pad') return contactMaterial('blob', 0.6);
+  if (key === 'contact:ground') return contactMaterial('blob', 0.32);
   const m = (STATIC_MATERIALS as unknown as Record<string, () => THREE.Material>)[key];
   if (!m) throw new Error(`Unknown condenser material ${key}`);
   return m();
@@ -52,6 +55,9 @@ function addUnit(b: MeshBuilder, lot: Lot, gen: CondenserGeneration): void {
   b.setFrame(lotFrame.clone().multiply(new THREE.Matrix4().compose(new THREE.Vector3(u.x, 0, u.z), new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI), new THREE.Vector3(1, 1, 1))));
   const y0 = 0.1;
   const face = w / 2 - 0.002;
+  // Contact shading: under the cabinet on the pad, and round the pad on the ground.
+  b.add('contact:pad', new THREE.PlaneGeometry(w + 0.28, w + 0.28).rotateX(-Math.PI / 2), [0, y0 + 0.004, 0]);
+  b.add('contact:ground', new THREE.PlaneGeometry(w + 1.2, w + 1.2).rotateX(-Math.PI / 2), [0, 0.014, 0]);
   if (gen === 'legacy') {
     // Rust bloom along the base rail and the bottom of each guard, streaks from the top deck corners,
     // and a sun-bleached rating plate.

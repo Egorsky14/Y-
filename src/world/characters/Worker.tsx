@@ -1,4 +1,4 @@
-import { useMemo, useRef } from 'react';
+import { useImperativeHandle, useMemo, useRef } from 'react';
 import * as THREE from 'three';
 import { useFrame } from '@react-three/fiber';
 import type { EmployeeRole } from '@/game/employees/roles';
@@ -38,6 +38,99 @@ const lathe = (pts: [number, number][], segs = 20, depth = 0.62) => {
   g.computeVertexNormals();
   return g;
 };
+/**
+ * A gloved hand in the forearm frame (wrist at the origin, fingers toward -y, palm facing +z):
+ * a broad palm with a knuckle ridge, four two-segment fingers of natural lengths fanned slightly
+ * apart, and a two-segment thumb opposed across the palm. `grip` 0 is relaxed, 1 closes the hand
+ * round a handle. Earlier gloves were a single mitten block, which read as a paddle up close.
+ */
+function buildGlove(side: -1 | 1, grip: number): THREE.BufferGeometry {
+  const parts: THREE.BufferGeometry[] = [];
+  const up = new THREE.Vector3(0, 1, 0);
+  const seg = (from: THREE.Vector3, dir: THREE.Vector3, length: number, radius: number) => {
+    const g = new THREE.CapsuleGeometry(radius, Math.max(0.001, length - radius * 2), 3, 7);
+    g.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(up, dir.clone().normalize()));
+    g.translate(from.x + (dir.x * length) / 2, from.y + (dir.y * length) / 2, from.z + (dir.z * length) / 2);
+    parts.push(g);
+    return from.clone().addScaledVector(dir.clone().normalize(), length);
+  };
+  // Palm and back of the hand, with the cuff over the wrist.
+  parts.push(new THREE.CapsuleGeometry(0.031, 0.04, 3, 9).scale(1.32, 1, 0.6).translate(0, -0.042, 0));
+  parts.push(new THREE.CapsuleGeometry(0.011, 0.07, 2, 6).rotateZ(Math.PI / 2).translate(0, -0.07, 0.004));
+  parts.push(new THREE.CylinderGeometry(0.046, 0.041, 0.045, 12).translate(0, 0.012, 0));
+  // Fingers from the thumb side outward: index, middle, ring, little.
+  const len = [0.05, 0.055, 0.052, 0.042];
+  for (let i = 0; i < 4; i++) {
+    const x = -side * (0.026 - i * 0.0175);
+    const knuckle = new THREE.Vector3(x, -0.072, 0.004);
+    const c1 = -(0.22 + grip * 0.95) - i * 0.03 * (1 - grip);
+    const c2 = c1 - (0.25 + grip * 1.05);
+    const spread = -side * (0.06 - i * 0.04) * (1 - grip);
+    const d1 = new THREE.Vector3(Math.sin(spread), -Math.cos(c1), -Math.sin(c1));
+    const d2 = new THREE.Vector3(Math.sin(spread), -Math.cos(c2), -Math.sin(c2));
+    const mid = seg(knuckle, d1, len[i] * 0.55, 0.0092);
+    seg(mid, d2, len[i] * 0.5, 0.0085);
+  }
+  // Thumb: from the heel of the palm, out and forward, its tip curling across the palm in a grip.
+  const base = new THREE.Vector3(-side * 0.03, -0.03, 0.012);
+  const t1 = new THREE.Vector3(-side * (0.55 - grip * 0.2), -0.62, 0.55 + grip * 0.15);
+  const t2 = new THREE.Vector3(side * (0.15 + grip * 0.55), -0.75, 0.4 + grip * 0.25);
+  seg(seg(base, t1, 0.038, 0.011), t2, 0.032, 0.0095);
+  const flat = parts.map((p) => (p.index ? p.toNonIndexed() : p));
+  for (const p of flat) for (const k of Object.keys(p.attributes)) if (!['position', 'normal'].includes(k)) p.deleteAttribute(k);
+  return BGU.mergeGeometries(flat, false)!;
+}
+
+/**
+ * Clamp meter in the left hand's frame: a yellow-and-graphite body with the jaw arc on top, the
+ * display, rotary dial and buttons on the face, and the test-lead sockets at the bottom (where the
+ * leads attach, LEAD_SOCKET).
+ */
+const METER = {
+  body: (() => {
+    const sh = new THREE.Shape();
+    const w = 0.04;
+    const h = 0.095;
+    const r = 0.012;
+    sh.moveTo(-w + r, -h);
+    sh.lineTo(w - r, -h);
+    sh.quadraticCurveTo(w, -h, w, -h + r);
+    sh.lineTo(w * 0.86, h - r);
+    sh.quadraticCurveTo(w * 0.86, h, w * 0.86 - r, h);
+    sh.lineTo(-w * 0.86 + r, h);
+    sh.quadraticCurveTo(-w * 0.86, h, -w * 0.86, h - r);
+    sh.lineTo(-w, -h + r);
+    sh.quadraticCurveTo(-w, -h, -w + r, -h);
+    const g = new THREE.ExtrudeGeometry(sh, { depth: 0.032, bevelEnabled: true, bevelThickness: 0.004, bevelSize: 0.004, bevelSegments: 2, curveSegments: 6 });
+    g.translate(0, 0, -0.016);
+    return g;
+  })(),
+  face: new THREE.BoxGeometry(0.062, 0.15, 0.004),
+  jaw: new THREE.TorusGeometry(0.036, 0.0095, 8, 20, Math.PI * 1.7).rotateZ(Math.PI * 0.65),
+  dial: new THREE.CylinderGeometry(0.016, 0.017, 0.008, 16).rotateX(Math.PI / 2),
+  screen: new THREE.BoxGeometry(0.046, 0.032, 0.003),
+  button: new THREE.BoxGeometry(0.011, 0.007, 0.004),
+};
+/** Meter-frame position of the lead sockets (bottom of the body). */
+const LEAD_SOCKET = new THREE.Vector3(0, -0.1, 0.0);
+
+/** Adjustable wrench in the right hand's frame: tapered handle, open jaw and knurled worm. */
+const WRENCH = {
+  handle: (() => {
+    const sh = new THREE.Shape();
+    sh.moveTo(-0.011, -0.13);
+    sh.quadraticCurveTo(0, -0.142, 0.011, -0.13);
+    sh.lineTo(0.015, 0.1);
+    sh.lineTo(-0.015, 0.1);
+    sh.lineTo(-0.011, -0.13);
+    const g = new THREE.ExtrudeGeometry(sh, { depth: 0.01, bevelEnabled: true, bevelThickness: 0.002, bevelSize: 0.002, bevelSegments: 1 });
+    g.translate(0, 0, -0.005);
+    return g;
+  })(),
+  head: new THREE.TorusGeometry(0.03, 0.012, 6, 14, Math.PI * 1.4).rotateZ(-Math.PI * 0.2),
+  worm: new THREE.CylinderGeometry(0.007, 0.007, 0.03, 10).rotateZ(Math.PI / 2),
+};
+
 const GEO = {
   torso: lathe([[0.001, 0], [0.165, 0.0], [0.168, 0.1], [0.178, 0.22], [0.198, 0.36], [0.205, 0.44], [0.19, 0.5], [0.15, 0.55], [0.08, 0.58], [0.001, 0.585]]),
   hem: lathe([[0.17, 0], [0.172, 0.035]], 20, 0.64),
@@ -67,16 +160,24 @@ const GEO = {
     g.scale(0.85, 1.25, 0.6);
     return g;
   })(),
-  /** Work glove (per side): palm, a slightly curled four-finger block and an opposed thumb. */
-  glove: ([-1, 1] as const).map((side) => {
-    const palm = new THREE.CapsuleGeometry(0.03, 0.045, 3, 8).scale(1.3, 1, 0.62).translate(0, -0.035, 0);
-    const fingers = new THREE.CapsuleGeometry(0.028, 0.05, 3, 8).scale(1.25, 1, 0.55).rotateX(-0.35).translate(0, -0.1, 0.012);
-    const thumb = new THREE.CapsuleGeometry(0.013, 0.04, 3, 6).rotateZ(side * 0.7).rotateX(-0.4).translate(-side * 0.036, -0.045, 0.018);
-    const cuff = new THREE.CylinderGeometry(0.046, 0.042, 0.04, 10).translate(0, 0.012, 0);
-    const parts = [palm, fingers, thumb, cuff].map((p) => (p.index ? p.toNonIndexed() : p));
-    for (const p of parts) for (const k of Object.keys(p.attributes)) if (!['position', 'normal'].includes(k)) p.deleteAttribute(k);
-    return BGU.mergeGeometries(parts, false)!;
-  }),
+  /** Work gloves (per side): relaxed, and closed in a grip for the hand that holds a tool. */
+  glove: ([-1, 1] as const).map((side) => buildGlove(side, 0)),
+  gloveGrip: ([-1, 1] as const).map((side) => buildGlove(side, 1)),
+  /** Cap peak: a thin, gently curved half-ellipse projecting forward from the crown's rim. */
+  visor: (() => {
+    const sh = new THREE.Shape();
+    sh.moveTo(-0.1, 0);
+    sh.quadraticCurveTo(-0.098, 0.085, 0, 0.1);
+    sh.quadraticCurveTo(0.098, 0.085, 0.1, 0);
+    sh.quadraticCurveTo(0, 0.022, -0.1, 0);
+    const g = new THREE.ExtrudeGeometry(sh, { depth: 0.008, bevelEnabled: true, bevelThickness: 0.002, bevelSize: 0.002, bevelSegments: 1, curveSegments: 10 });
+    g.rotateX(Math.PI / 2);
+    // Curve the sides down slightly, as a broken-in cap peak.
+    const pos = g.attributes.position;
+    for (let i = 0; i < pos.count; i++) pos.setY(i, pos.getY(i) - pos.getX(i) * pos.getX(i) * 1.4);
+    g.computeVertexNormals();
+    return g;
+  })(),
   cargo: new THREE.BoxGeometry(0.035, 0.13, 0.12),
   collar: new THREE.CylinderGeometry(0.07, 0.098, 0.055, 14, 1, true),
   belt: lathe([[0.176, 0], [0.18, 0.05]], 20, 0.66),
@@ -107,6 +208,89 @@ function Limb({ length, radius, color, taper = 0.85 }: { length: number; radius:
     </group>
   );
 }
+
+interface LeadsHandle {
+  update: (socket: THREE.Vector3, probeEnd: THREE.Vector3, clip: THREE.Vector3) => void;
+  hide: () => void;
+}
+
+const LEAD_SEGMENTS = 14;
+const LEAD_GEO = new THREE.CylinderGeometry(0.0042, 0.0042, 1, 5, 1, true);
+const LEAD_RED = new THREE.MeshStandardMaterial({ color: '#c4262e', roughness: 0.55 });
+const LEAD_BLACK = new THREE.MeshStandardMaterial({ color: '#16171a', roughness: 0.55 });
+
+/**
+ * The clamp meter's test leads, in the worker's root frame: red from the meter's sockets to the
+ * probe in the other hand, black to an alligator clip on the cabinet's panel edge. Each lead sags
+ * as a cable would (quadratic curve dropped by slack), drawn as instanced segments and recomputed
+ * every frame while probing, so meter, probe and unit stay physically connected as the hands move.
+ */
+function TestLeads({ ref }: { ref: React.Ref<LeadsHandle> }) {
+  const red = useRef<THREE.InstancedMesh>(null);
+  const black = useRef<THREE.InstancedMesh>(null);
+  const clip = useRef<THREE.Group>(null);
+  useImperativeHandle(ref, () => {
+    const m = new THREE.Matrix4();
+    const q = new THREE.Quaternion();
+    const up = new THREE.Vector3(0, 1, 0);
+    const p0 = new THREE.Vector3();
+    const p1 = new THREE.Vector3();
+    const dir = new THREE.Vector3();
+    const mid = new THREE.Vector3();
+    const sc = new THREE.Vector3();
+    const draw = (mesh: THREE.InstancedMesh, a: THREE.Vector3, b: THREE.Vector3) => {
+      const span = a.distanceTo(b);
+      const ctrl = a.clone().add(b).multiplyScalar(0.5);
+      ctrl.y -= 0.05 + span * 0.45;
+      const at = (t: number, out: THREE.Vector3) => {
+        const u = 1 - t;
+        return out.set(u * u * a.x + 2 * u * t * ctrl.x + t * t * b.x, Math.max(0.012, u * u * a.y + 2 * u * t * ctrl.y + t * t * b.y), u * u * a.z + 2 * u * t * ctrl.z + t * t * b.z);
+      };
+      for (let i = 0; i < LEAD_SEGMENTS; i++) {
+        at(i / LEAD_SEGMENTS, p0);
+        at((i + 1) / LEAD_SEGMENTS, p1);
+        dir.subVectors(p1, p0);
+        const len = dir.length();
+        q.setFromUnitVectors(up, dir.divideScalar(Math.max(len, 1e-6)));
+        mid.addVectors(p0, p1).multiplyScalar(0.5);
+        m.compose(mid, q, sc.set(1, len * 1.02, 1));
+        mesh.setMatrixAt(i, m);
+      }
+      mesh.instanceMatrix.needsUpdate = true;
+      mesh.visible = true;
+    };
+    return {
+      update: (socket, probeEnd, clipAt) => {
+        if (red.current) draw(red.current, socket, probeEnd);
+        if (black.current) draw(black.current, socket.clone().add(new THREE.Vector3(0.012, 0, 0)), clipAt);
+        if (clip.current) {
+          clip.current.position.copy(clipAt);
+          clip.current.visible = true;
+        }
+      },
+      hide: () => {
+        if (red.current) red.current.visible = false;
+        if (black.current) black.current.visible = false;
+        if (clip.current) clip.current.visible = false;
+      },
+    };
+  }, []);
+  return (
+    <>
+      <instancedMesh ref={red} args={[LEAD_GEO, LEAD_RED, LEAD_SEGMENTS]} visible={false} frustumCulled={false} />
+      <instancedMesh ref={black} args={[LEAD_GEO, LEAD_BLACK, LEAD_SEGMENTS]} visible={false} frustumCulled={false} />
+      <group ref={clip} visible={false}>
+        <mesh material={LEAD_BLACK}>
+          <boxGeometry args={[0.014, 0.032, 0.012]} />
+        </mesh>
+        <mesh position={[0, 0.02, 0]} material={LEAD_GEO_STEEL}>
+          <boxGeometry args={[0.01, 0.012, 0.016]} />
+        </mesh>
+      </group>
+    </>
+  );
+}
+const LEAD_GEO_STEEL = new THREE.MeshStandardMaterial({ color: '#b9bfc5', roughness: 0.4, metalness: 0.7 });
 
 /** Joint rotation targets for one pose; everything not named returns to zero. */
 type Pose = Record<string, [number, number, number]>;
@@ -191,6 +375,9 @@ export function Worker({ role, look, anim, scale = 1, pace = 1, work }: WorkerPr
   const clockT = useRef(0);
   const lastAnim = useRef<WorkerAnim | null>(null);
   const probe = useRef<THREE.Group>(null);
+  const hands = { relaxedL: useRef<THREE.Mesh>(null), relaxedR: useRef<THREE.Mesh>(null), gripL: useRef<THREE.Mesh>(null), gripR: useRef<THREE.Mesh>(null) };
+  const anchors = { socket: useRef<THREE.Group>(null), probeEnd: useRef<THREE.Group>(null) };
+  const leads = useRef<LeadsHandle>(null);
   const blend = useRef<Pose>({});
   const stride = useRef(0);
 
@@ -497,6 +684,22 @@ export function Worker({ role, look, anim, scale = 1, pace = 1, work }: WorkerPr
     if (wrench.current) wrench.current.visible = showWrench;
     if (tablet.current) tablet.current.visible = showTablet;
     if (load.current) load.current.visible = showLoad;
+    // A hand holding a tool closes round it; free hands stay relaxed.
+    const gripL = showMeter || showTablet || showBag;
+    const gripR = showProbe || showWrench;
+    if (hands.relaxedL.current && hands.gripL.current) { hands.relaxedL.current.visible = !gripL; hands.gripL.current.visible = gripL; }
+    if (hands.relaxedR.current && hands.gripR.current) { hands.relaxedR.current.visible = !gripR; hands.gripR.current.visible = gripR; }
+    // Test leads while probing: red from the meter to the probe, black to a clip on the panel edge.
+    const rootObj = root.current;
+    if (leads.current && rootObj) {
+      if (showMeter && showProbe && anchors.socket.current && anchors.probeEnd.current) {
+        rootObj.updateMatrixWorld(true);
+        const a = rootObj.worldToLocal(anchors.socket.current.getWorldPosition(new THREE.Vector3()));
+        const b = rootObj.worldToLocal(anchors.probeEnd.current.getWorldPosition(new THREE.Vector3()));
+        const clip = new THREE.Vector3(-0.2 / s, 0.55 / s, (face - 0.01) / s);
+        leads.current.update(a, b, clip);
+      } else leads.current.hide();
+    }
   });
 
   const tech = role === 'technician' || role === 'installer';
@@ -514,6 +717,7 @@ export function Worker({ role, look, anim, scale = 1, pace = 1, work }: WorkerPr
 
   return (
     <group ref={root} scale={scale * build}>
+      {tech && <TestLeads ref={leads} />}
       <group ref={refs.pelvis} position={[0, PELVIS_Y, 0]}>
         <mesh geometry={GEO.hips} position={[0, -0.02, 0]} material={materials.pants} castShadow scale={[heavy, 1, 1]} />
         {/* Legs: thigh → knee → shin → ankle/foot */}
@@ -646,9 +850,7 @@ export function Worker({ role, look, anim, scale = 1, pace = 1, work }: WorkerPr
                 <mesh material={materials.hat}>
                   <sphereGeometry args={[0.135, 16, 10, 0, Math.PI * 2, 0, Math.PI / 2]} />
                 </mesh>
-                <mesh position={[0, 0.0, 0.15]} material={materials.hat}>
-                  <boxGeometry args={[0.2, 0.015, 0.14]} />
-                </mesh>
+                <mesh geometry={GEO.visor} position={[0, -0.004, 0.105]} rotation={[0.16, 0, 0]} material={materials.hat} castShadow />
                 <mesh position={[0, 0.06, 0.12]} material={materials.teal}>
                   <boxGeometry args={[0.04, 0.05, 0.01]} />
                 </mesh>
@@ -704,7 +906,10 @@ export function Worker({ role, look, anim, scale = 1, pace = 1, work }: WorkerPr
               <group ref={side < 0 ? refs.foreL : refs.foreR} position={[0, -0.3, 0]}>
                 <Limb length={0.28} radius={0.05} color={materials.skin} taper={0.75} />
                 {tech ? (
-                  <mesh geometry={GEO.glove[side < 0 ? 0 : 1]} position={[0, -0.27, 0.005]} material={materials.glove} castShadow />
+                  <>
+                    <mesh ref={side < 0 ? hands.relaxedL : hands.relaxedR} geometry={GEO.glove[side < 0 ? 0 : 1]} position={[0, -0.27, 0.005]} material={materials.glove} castShadow />
+                    <mesh ref={side < 0 ? hands.gripL : hands.gripR} geometry={GEO.gloveGrip[side < 0 ? 0 : 1]} position={[0, -0.27, 0.005]} material={materials.glove} castShadow visible={false} />
+                  </>
                 ) : (
                   <>
                     <mesh geometry={GEO.hand} position={[0, -0.31, 0.01]} material={materials.skin} />
@@ -729,16 +934,16 @@ export function Worker({ role, look, anim, scale = 1, pace = 1, work }: WorkerPr
                         <boxGeometry args={[0.02, 0.1, 0.02]} />
                       </mesh>
                     </group>
-                    <group ref={meter} position={[0, -0.33, 0.04]} rotation={[-1.25, 0, 0]} visible={false}>
-                      <mesh material={materials.tool}>
-                        <boxGeometry args={[0.09, 0.17, 0.04]} />
-                      </mesh>
-                      <mesh position={[0, 0.04, 0.021]} material={materials.screen}>
-                        <boxGeometry args={[0.065, 0.05, 0.004]} />
-                      </mesh>
-                      <mesh position={[0, -0.03, 0.021]} material={materials.dark}>
-                        <cylinderGeometry args={[0.02, 0.02, 0.006, 12]} />
-                      </mesh>
+                    <group ref={meter} position={[0, -0.36, 0.035]} rotation={[-1.25, 0, 0]} visible={false}>
+                      <mesh geometry={METER.body} material={materials.tool} castShadow />
+                      <mesh geometry={METER.face} position={[0, -0.005, 0.0205]} material={materials.dark} />
+                      <mesh geometry={METER.jaw} position={[0, 0.125, 0]} material={materials.dark} />
+                      <mesh geometry={METER.screen} position={[0, 0.045, 0.0232]} material={materials.screen} />
+                      <mesh geometry={METER.dial} position={[0, -0.01, 0.0245]} material={materials.steel} />
+                      {[-0.018, 0, 0.018].map((x) => (
+                        <mesh key={x} geometry={METER.button} position={[x, -0.055, 0.0232]} material={materials.white} />
+                      ))}
+                      <group ref={anchors.socket} position={[LEAD_SOCKET.x, LEAD_SOCKET.y, LEAD_SOCKET.z]} />
                     </group>
                     <group ref={tablet} position={[0.02, -0.34, 0.08]} rotation={[-0.6, 0, 0]} visible={false}>
                       <mesh material={materials.dark}>
@@ -753,21 +958,22 @@ export function Worker({ role, look, anim, scale = 1, pace = 1, work }: WorkerPr
                   <>
                     <group ref={probe} position={[0, -0.36, 0.03]} rotation={[0.15, 0, 0]} visible={false}>
                       <mesh material={materials.probe}>
-                        <cylinderGeometry args={[0.007, 0.009, 0.15, 6]} />
+                        <cylinderGeometry args={[0.007, 0.009, 0.15, 8]} />
                       </mesh>
+                      <mesh position={[0, -0.05, 0]} material={materials.probe}>
+                        <cylinderGeometry args={[0.013, 0.013, 0.008, 10]} />
+                      </mesh>
+                      <group ref={anchors.probeEnd} position={[0, 0.075, 0]} />
                       <mesh position={[0, -0.09, 0]} material={materials.steel}>
                         <cylinderGeometry args={[0.0015, 0.003, 0.04, 4]} />
                       </mesh>
                     </group>
-                    <group ref={wrench} position={[0, -0.36, 0.05]} rotation={[0.3, 0, 0]} visible={false}>
-                      <mesh material={materials.steel}>
-                        <boxGeometry args={[0.03, 0.28, 0.02]} />
-                      </mesh>
-                      <mesh position={[0, 0.15, 0]} material={materials.steel}>
-                        <boxGeometry args={[0.07, 0.06, 0.025]} />
-                      </mesh>
-                      <mesh position={[0, -0.05, 0]} material={materials.dark}>
-                        <boxGeometry args={[0.035, 0.12, 0.025]} />
+                    <group ref={wrench} position={[0, -0.33, 0.04]} rotation={[0.3, 0, 0]} visible={false}>
+                      <mesh geometry={WRENCH.handle} material={materials.steel} castShadow />
+                      <mesh geometry={WRENCH.head} position={[0, 0.13, 0]} material={materials.steel} />
+                      <mesh geometry={WRENCH.worm} position={[0, 0.105, 0.004]} material={materials.dark} />
+                      <mesh position={[0, -0.04, 0]} material={materials.probe}>
+                        <boxGeometry args={[0.034, 0.1, 0.016]} />
                       </mesh>
                     </group>
                   </>

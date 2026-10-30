@@ -4,6 +4,7 @@ import { useFrame } from '@react-three/fiber';
 import { useGLTF } from '@react-three/drei';
 import { getGameState, useApp, useGame } from '@/app/store';
 import { VehicleGltf, WHEEL_RADIUS, type VehicleRig } from '../vehicles/VehicleGltf';
+import { contactBlob } from '../assets/contactShadow';
 import { useCallback } from 'react';
 import { WORKDAY_END } from '@/game/simulation/time';
 import { Worker, type WorkerAnim } from '../characters/Worker';
@@ -160,6 +161,7 @@ function VehicleView({ id }: { id: string }) {
   void status;
   return (
     <group ref={group} name={`vehicle:${id}`}>
+      <VanContactShadow classId={classId} />
       <Selectable selection={{ kind: 'vehicle', id }} ringRadius={4.2} ringOffset={[0, 0.07, 0]}>
         <VehicleGltf classId={classId as never} paint={paint as never} upgrades={(upgrades ? upgrades.split(',') : []) as never} wear={Number(wear) || 0} onRig={onRig} />
         <mesh position={[0, 1.2, 0]} visible={false}>
@@ -169,6 +171,12 @@ function VehicleView({ id }: { id: string }) {
       </Selectable>
     </group>
   );
+}
+
+/** Soft ground contact under a fleet vehicle (the sun shadow leaves the tyres floating otherwise). */
+function VanContactShadow({ classId }: { classId: string }) {
+  const blob = useMemo(() => contactBlob(2.75, classId === 'box-truck' ? 8.2 : classId === 'pickup' ? 6.2 : 6.4, 0.5, [0, 0.02, 0]), [classId]);
+  return <primitive object={blob} />;
 }
 
 /** Employees: at HQ when idle/training, next to the unit when working, hidden while riding. */
@@ -200,6 +208,8 @@ function WorkerView({ id }: { id: string }) {
   });
   // The stage drives the animation clip, so it is React state; it changes a handful of times per job.
   const [stage, setStage] = useState<ArrivalStage | null>(null);
+  // Soft ground contact under the crew member (kneeling or standing).
+  const contact = useMemo(() => contactBlob(0.95, 0.85, 0.34, [0, 0.022, 0.05]), []);
 
   useFrame((_, dt) => {
     const s = getGameState();
@@ -338,6 +348,7 @@ function WorkerView({ id }: { id: string }) {
   })();
   return (
     <group ref={group} name={`employee:${id}`}>
+      <primitive object={contact} />
       <Selectable selection={{ kind: 'employee', id }} ringRadius={1.1} ringOffset={[0, 0.07, 0]}>
         {/* The rig is modelled at ~1.8 m tall: draw it at true scale next to the 0.96 m condenser. */}
         <Worker role={info.role} look={info.look} anim={anim} pace={pace} work={work} />
@@ -356,6 +367,29 @@ function bagInKit(lot: NonNullable<ReturnType<typeof lotById>>, origin: { x: num
   const dx = wb.x - origin.x;
   const dz = wb.z - origin.z;
   return { x: dx * Math.cos(rot) - dz * Math.sin(rot), z: dx * Math.sin(rot) + dz * Math.cos(rot) };
+}
+
+/**
+ * A contact shadow under each named part that stands on the ground, as its child so it shows and
+ * hides with the part. Sized from the part's footprint in its own frame.
+ */
+export function addPartContactShadows(root: THREE.Object3D, names: string[]): void {
+  root.updateMatrixWorld(true);
+  for (const name of names) {
+    const part = root.getObjectByName(name);
+    if (!part || part.getObjectByName('contact-shadow')) continue;
+    const inv = new THREE.Matrix4().copy(part.matrixWorld).invert();
+    const box = new THREE.Box3();
+    part.traverse((o) => {
+      const m = o as THREE.Mesh;
+      if (!m.isMesh) return;
+      m.geometry.computeBoundingBox();
+      box.union(m.geometry.boundingBox!.clone().applyMatrix4(new THREE.Matrix4().multiplyMatrices(inv, m.matrixWorld)));
+    });
+    if (box.isEmpty()) continue;
+    const c = box.getCenter(new THREE.Vector3());
+    part.add(contactBlob((box.max.x - box.min.x) * 1.5 + 0.12, (box.max.z - box.min.z) * 1.5 + 0.12, 0.5, [c.x, box.min.y + 0.006, c.z]));
+  }
 }
 
 /** Blender-authored job-site kit (tools/blender/jobsite_kit.py): bag, gauge manifold with hoses, recovery cylinder. */
@@ -377,6 +411,7 @@ function JobSiteKit({ jobId, install, bagAt }: { jobId: string; install: boolean
       o.receiveShadow = true;
     });
     root.visible = false;
+    addPartContactShadows(root, ['bag', 'cylinder']);
     // The bag is set down where the technician reaches for it (serviceCall.ts BAG_LOCAL).
     const bag = root.getObjectByName('bag');
     if (bag && bagAt) bag.position.set(bagAt.x, bag.position.y, bagAt.z);
@@ -420,6 +455,7 @@ const EQUIPMENT_FLAGS: Record<string, string> = { 'tool-case': 'c', 'vacuum-pump
 /** Supply Depot equipment staged in the unit frame (tools/blender/supply_tools.py), shown once the technician is set up. */
 function JobSiteEquipment({ jobId, flags }: { jobId: string; flags: string }) {
   const kit = useSupplyKit();
+  useMemo(() => addPartContactShadows(kit, Object.keys(EQUIPMENT_FLAGS)), [kit]);
   useFrame(() => {
     const arrived = (siteVisuals.get(jobId)?.arrived.size ?? 0) > 0;
     for (const [name, flag] of Object.entries(EQUIPMENT_FLAGS)) {

@@ -8,6 +8,12 @@ import { HQ_UPGRADES } from '@/game/progression/hqUpgrades';
 import { Bar, Icon, KV, Money, Section, Stars, initials, minutesLabel, roleAvatarClass } from '../components/common';
 import { JobFlow } from './JobFlow';
 import { faultById } from '@/game/jobs/faults';
+import type { JobStatus } from '@/game/simulation/types';
+import { serviceCloseUpCamera } from '@/world/scene/serviceCall';
+import { mainCanvas, measureSafeArea } from '../safeArea';
+
+/** Phases in which the lead technician is at the outdoor unit (diagnosis, quoting and repair). */
+const ON_SITE = new Set<JobStatus>(['diagnosing', 'awaiting-diagnosis', 'quoted', 'awaiting-authorization', 'repairing', 'installing']);
 
 export function Inspector() {
   const selection = useApp((s) => s.selection);
@@ -130,6 +136,11 @@ function CustomerInspector({ lotId, onClose, preferredJobId }: { lotId: string; 
               ))}
             </div>
           </Section>
+        )}
+        {active && ON_SITE.has(active.status) && (
+          <button className="btn small" onClick={() => { const canvas = mainCanvas(); camera(serviceCloseUpCamera(lot, (canvas?.clientWidth ?? window.innerWidth) / Math.max(1, canvas?.clientHeight ?? window.innerHeight), undefined, measureSafeArea(canvas))); }} data-testid="watch-technician">
+            Watch technician
+          </button>
         )}
         <button className="btn small ghost" onClick={() => camera({ type: 'focus', target: lot.center, distance: 55 })}>
           Center camera on property

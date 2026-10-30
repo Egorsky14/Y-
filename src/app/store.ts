@@ -28,6 +28,13 @@ export interface CameraCommand {
   elevation?: number;
   /** Height of the look-at point above the ground (default 0). */
   targetY?: number;
+  /** Fly around the target (azimuth, elevation and distance eased) instead of in a straight line, so a swing to the far side of a house goes over it rather than through it. */
+  orbit?: boolean;
+  /**
+   * Close view of a work site: points that must stay visible. After the player stops orbiting near
+   * the target, a blocked view eases to the nearest clear one (cameraOcclusion.ts).
+   */
+  watch?: { lotIds: string[]; points: { x: number; y: number; z: number }[] };
 }
 
 export type Quality = 'low' | 'medium' | 'high' | 'ultra';

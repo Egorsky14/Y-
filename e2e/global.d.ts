@@ -4,7 +4,7 @@ interface EgoTestHook {
   dispatch: (action: unknown) => { ok: boolean; reason?: string };
   advanceMinutes: (minutes: number) => void;
   spawnLead: (opts: { channel?: 'warranty' | 'direct'; preferredLotId?: string; faultId?: string }) => string | null;
-  app: { getState: () => { camera: (cmd: { type: 'focus' | 'reset' | 'hq' | 'follow'; target?: { x: number; z: number }; vehicleId?: string; distance?: number; azimuth?: number; elevation?: number; targetY?: number }) => void; photo: { on: boolean }; setPhoto: (p: { on?: boolean; minute?: number | null; weather?: string | null }) => void; sceneReady: boolean; settings: { quality: 'low' | 'medium' | 'high' | 'ultra' } } };
+  app: { getState: () => { camera: (cmd: { type: 'focus' | 'reset' | 'hq' | 'follow'; target?: { x: number; z: number }; vehicleId?: string; distance?: number; azimuth?: number; elevation?: number; targetY?: number }) => void; photo: { on: boolean }; setPhoto: (p: { on?: boolean; minute?: number | null; weather?: string | null }) => void; sceneReady: boolean; settings: { quality: 'low' | 'medium' | 'high' | 'ultra' }; select: (sel: { kind: string; id: string } | null) => void } };
 }
 interface Window {
   __ego?: EgoTestHook;

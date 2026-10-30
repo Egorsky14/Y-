@@ -6,6 +6,8 @@ import { DOOR_COLORS, groundMaterial, hardMaterial, LANDSCAPE_MATERIALS, roofMat
 import { hashLot, propertyPlan, type PropertyPlan } from '../city/propertyPlan';
 import { renderGreenbelt, renderProperty } from './PropertyBuilder';
 import { greenbelts } from '../city/greenbelt';
+import { registerOccluders, solidOccluders } from '../scene/cameraOcclusion';
+import { contactMaterial, wallBands } from '../assets/contactShadow';
 import { DRIVEWAYS } from './driveways';
 import { condenserPosition, condenserSideDir, HOUSE_HALF_WIDTH } from '@/game/world/cityLayout';
 
@@ -231,19 +233,46 @@ export const FACING_ROTATION: Record<Lot['facing'], number> = { north: 0, south:
 export function buildNeighborhood(lots: Lot[]): THREE.Group {
   const t0 = performance.now();
   const shared = new MeshBuilder(houseMaterialResolver, UV_SCALES);
+  const footings: THREE.Box3[] = [];
   for (const lot of lots) {
     const m = new THREE.Matrix4().compose(new THREE.Vector3(lot.center.x, 0, lot.center.z), new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), FACING_ROTATION[lot.facing]), new THREE.Vector3(1, 1, 1));
     shared.setFrame(m);
+    const parts: { material: string; box: THREE.Box3 }[] = [];
+    shared.recordBounds(parts);
     addHouse(shared, lot);
+    shared.recordBounds(null);
+    registerOccluders(lot.id, solidOccluders(parts));
+    for (const part of parts) if (/^(wall|block|stoneVeneer)(:|$)/.test(part.material) && part.box.min.y < 0.08 && part.box.max.y - part.box.min.y > 0.8) footings.push(part.box);
   }
   shared.setFrame(null);
   // Common-area greenbelts between the back walls of facing rows (only when the whole neighbourhood is built).
   if (lots.length > 8) for (const gb of greenbelts()) renderGreenbelt(shared, gb);
   const g = shared.build('houses');
+  // Ambient-occlusion bands where house walls and garden walls meet the ground.
+  const bands = wallBands(footings);
+  if (bands) {
+    const m = new THREE.Mesh(bands, contactMaterial('band', 0.5));
+    m.name = 'houses:contact';
+    m.renderOrder = 1;
+    g.add(m);
+  }
   // Beds first, then zone ground, then everything else (see PropertyBuilder).
   for (const m of g.children) m.renderOrder = m.name.startsWith('houses:bed:') ? -2 : m.name.startsWith('houses:ground:') ? -1 : 0;
   if (import.meta.env.DEV) console.debug(`[build] neighborhood ${(performance.now() - t0).toFixed(0)} ms`);
   return g;
+}
+
+/**
+ * World-space bounds of a lot's solid parts, without building meshes (no materials or canvas
+ * needed). The game registers these while building the neighbourhood; tests call this directly.
+ */
+export function collectHouseOccluders(lot: Lot): THREE.Box3[] {
+  const b = new MeshBuilder(houseMaterialResolver, UV_SCALES);
+  const parts: { material: string; box: THREE.Box3 }[] = [];
+  b.setFrame(new THREE.Matrix4().compose(new THREE.Vector3(lot.center.x, 0, lot.center.z), new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), FACING_ROTATION[lot.facing]), new THREE.Vector3(1, 1, 1)));
+  b.recordBounds(parts);
+  addHouse(b, lot);
+  return solidOccluders(parts);
 }
 
 /** Single-lot build (used by tests and previews). */

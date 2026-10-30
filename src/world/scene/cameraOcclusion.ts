@@ -1,0 +1,199 @@
+import * as THREE from 'three';
+
+/**
+ * Camera occlusion for close views of a service site. Houses are merged into shared meshes, so
+ * occluders are the world-space bounds of their solid parts (walls, roofs, porch posts, garden
+ * walls, chimneys...), recorded per lot while the neighbourhood is built (HouseBuilder). A view is
+ * clear when the segments from the camera to the subject's key points (technician, unit, panel,
+ * tool bag) miss every occluder and the camera itself sits outside all of them.
+ *
+ * Boxes are conservative (a sloped roof counts as its bounding box), so the solver errs toward
+ * views with more clearance rather than views that clip an eave.
+ */
+
+export type V3 = { x: number; y: number; z: number };
+
+/**
+ * Ground covers and beds, plus the unit's own wall-side services (line set and its cover,
+ * disconnect, conduit) and lamps: none of these hide the technician.
+ */
+const NON_OCCLUDING = /^(ground|bed|lawn|gravel|mulch|water|stripe|stoneEdge|dark|galvanized|copper|insulation|unitCabinet|lamp)(:|$)/;
+/** Parts shorter than this (paving, edging, slabs) never block a camera looking down at a person. */
+const MIN_HEIGHT = 0.3;
+/** Pipes and rods thinner than this (downspouts, conduit) only hide a sliver; porch posts (0.22 m) count. */
+const MIN_WIDTH = 0.16;
+
+const registry = new Map<string, THREE.Box3[]>();
+
+/** Keeps only parts that can block a view: tall and wide enough, and not a ground cover or the unit's own services. */
+export function solidOccluders(parts: { material: string; box: THREE.Box3 }[]): THREE.Box3[] {
+  return parts
+    .filter((p) => {
+      const b = p.box;
+      return !NON_OCCLUDING.test(p.material) && b.max.y - b.min.y >= MIN_HEIGHT && b.max.y > 0.45 && Math.max(b.max.x - b.min.x, b.max.z - b.min.z) >= MIN_WIDTH;
+    })
+    .map((p) => p.box);
+}
+
+export function registerOccluders(lotId: string, boxes: THREE.Box3[]): void {
+  registry.set(lotId, boxes);
+}
+
+export function registeredOccluders(lotId: string): THREE.Box3[] | undefined {
+  return registry.get(lotId);
+}
+
+/**
+ * Same vertical field of view rule as CameraRig: 38° on landscape screens; portrait widens the
+ * vertical angle (to at most 75°) so the horizontal view stays close to a landscape screen's.
+ */
+export function verticalFovFor(aspect: number): number {
+  return aspect >= 1 ? 38 : Math.min(75, THREE.MathUtils.radToDeg(2 * Math.atan((Math.tan(THREE.MathUtils.degToRad(19)) * 1.6) / aspect)));
+}
+
+const _dir = new THREE.Vector3();
+const _ray = new THREE.Ray();
+const _hit = new THREE.Vector3();
+
+/** True when the segment from `a` to `b` passes through any box (ends shortened by `margin`). */
+export function segmentBlocked(a: THREE.Vector3, b: THREE.Vector3, boxes: THREE.Box3[], margin = 0.12): boolean {
+  _dir.subVectors(b, a);
+  const len = _dir.length();
+  if (len < 1e-6) return false;
+  _dir.divideScalar(len);
+  _ray.set(a, _dir);
+  for (const box of boxes) {
+    // The subject's own point may sit on a part's surface (a hand on a wall-mounted disconnect): ignore boxes holding the end point.
+    if (box.containsPoint(b)) continue;
+    const hit = _ray.intersectBox(box, _hit);
+    if (hit && hit.distanceTo(a) < len - margin && hit.distanceTo(a) > 0) return true;
+    if (box.containsPoint(a)) return true;
+  }
+  return false;
+}
+
+/** The camera itself is inside (or within `pad` of) solid geometry. */
+export function insideOccluder(p: THREE.Vector3, boxes: THREE.Box3[], pad = 0.35): boolean {
+  for (const box of boxes) if (p.x > box.min.x - pad && p.x < box.max.x + pad && p.y > box.min.y - pad && p.y < box.max.y + pad && p.z > box.min.z - pad && p.z < box.max.z + pad) return true;
+  return false;
+}
+
+export interface ViewSpec {
+  target: V3;
+  azimuth: number;
+  elevation: number;
+  distance: number;
+}
+
+export function cameraPosition(v: ViewSpec): THREE.Vector3 {
+  return new THREE.Vector3(
+    v.target.x + Math.sin(v.azimuth) * Math.cos(v.elevation) * v.distance,
+    v.target.y + Math.sin(v.elevation) * v.distance,
+    v.target.z + Math.cos(v.azimuth) * Math.cos(v.elevation) * v.distance,
+  );
+}
+
+/** Fraction of key points the camera sees (1 = every point clear); 0 when the camera is inside geometry. */
+export function visibility(v: ViewSpec, points: V3[], boxes: THREE.Box3[]): number {
+  const cam = cameraPosition(v);
+  if (cam.y < 0.6 || insideOccluder(cam, boxes)) return 0;
+  let seen = 0;
+  for (const p of points) if (!segmentBlocked(cam, new THREE.Vector3(p.x, p.y, p.z), boxes)) seen++;
+  return seen / points.length;
+}
+
+/**
+ * Part of the screen covered by UI, as fractions of the canvas: the inspector panel on the right
+ * (or its bottom sheet on an upright phone) and the top HUD bar. CameraRig shifts the projection
+ * centre into the free area (setViewOffset), so the orbit target appears in the middle of what
+ * the player can see.
+ */
+export interface SafeArea {
+  right: number;
+  bottom: number;
+  /** Top HUD bar; optional so older callers (right/bottom only) keep working. */
+  top?: number;
+}
+
+export const NO_SAFE_AREA: SafeArea = { right: 0, bottom: 0, top: 0 };
+
+/** The view offset (pixels) CameraRig applies for a covered area: to the centre of the free part. */
+export function viewOffsetFor(safe: SafeArea, width: number, height: number): { x: number; y: number } {
+  return { x: (safe.right * width) / 2, y: ((safe.bottom - (safe.top ?? 0)) * height) / 2 };
+}
+
+/**
+ * Every key point projects inside the free part of the screen (with a margin), using the same
+ * field of view and view offset as CameraRig for this aspect and covered area.
+ */
+export function inFrame(v: ViewSpec, points: V3[], aspect: number, margin = 0.9, safe: SafeArea = NO_SAFE_AREA): boolean {
+  const cam = new THREE.PerspectiveCamera(verticalFovFor(aspect), aspect, 1, 3000);
+  const W = 1000 * aspect;
+  const H = 1000;
+  const off = viewOffsetFor(safe, W, H);
+  if (off.x || off.y) cam.setViewOffset(W, H, off.x, off.y, W, H);
+  cam.position.copy(cameraPosition(v));
+  cam.lookAt(v.target.x, v.target.y, v.target.z);
+  cam.updateMatrixWorld();
+  // Free area in NDC: x from -1 to 1 - 2·right, y from -1 + 2·bottom to 1 - 2·top.
+  const top = safe.top ?? 0;
+  const xMax = 1 - 2 * safe.right;
+  const yMin = -1 + 2 * safe.bottom;
+  const yMax = 1 - 2 * top;
+  const cx = (xMax - 1) / 2;
+  const cy = (yMin + yMax) / 2;
+  const hx = (1 - safe.right) * margin;
+  const hy = (1 - safe.bottom - top) * margin;
+  for (const p of points) {
+    const n = new THREE.Vector3(p.x, p.y, p.z).project(cam);
+    if (Math.abs(n.x - cx) > hx || Math.abs(n.y - cy) > hy || n.z > 1) return false;
+  }
+  return true;
+}
+
+export interface Solved extends ViewSpec {
+  /** Every key point is visible. */
+  clear: boolean;
+  visible: number;
+}
+
+const wrap = (a: number) => Math.atan2(Math.sin(a), Math.cos(a));
+
+/**
+ * Nearest clear view to `preferred`: azimuth steps of 10° alternating either side, then a little
+ * higher, then a little closer. The cheapest fully clear, fully framed candidate wins; if none is
+ * clear, the one that sees most. Deterministic, so the same request always gives the same view
+ * (no oscillation between frames).
+ */
+export function solveClearView(preferred: ViewSpec, points: V3[], boxes: THREE.Box3[], aspect: number, opts: { minDistance?: number; maxElevation?: number; safe?: SafeArea } = {}): Solved {
+  const minDistance = opts.minDistance ?? 5.2;
+  const maxElevation = opts.maxElevation ?? 1.05;
+  let best: Solved | null = null;
+  let bestCost = Infinity;
+  let fallback: Solved | null = null;
+  const lifts = [0, 0.14, 0.28].map((d) => Math.min(maxElevation, preferred.elevation + d));
+  const scales = [1, 0.85];
+  for (let step = 0; step <= 18; step++) {
+    for (const side of step === 0 ? [0] : [1, -1]) {
+      const dAz = side * step * THREE.MathUtils.degToRad(10);
+      for (const elevation of lifts) {
+        for (const s of scales) {
+          const distance = Math.max(minDistance, preferred.distance * s);
+          const v: ViewSpec = { target: preferred.target, azimuth: wrap(preferred.azimuth + dAz), elevation, distance };
+          const cost = Math.abs(dAz) + (elevation - preferred.elevation) * 0.9 + (1 - distance / preferred.distance) * 0.6;
+          if (cost >= bestCost) continue;
+          const seen = visibility(v, points, boxes);
+          if (seen === 1 && inFrame(v, points, aspect, 0.9, opts.safe)) {
+            best = { ...v, clear: true, visible: 1 };
+            bestCost = cost;
+          } else if (!fallback || seen > fallback.visible) {
+            fallback = { ...v, clear: false, visible: seen };
+          }
+        }
+      }
+    }
+    // Nothing cheaper can exist beyond this azimuth step.
+    if (best && THREE.MathUtils.degToRad(10) * (step + 1) >= bestCost) break;
+  }
+  return best ?? fallback ?? { ...preferred, clear: false, visible: 0 };
+}

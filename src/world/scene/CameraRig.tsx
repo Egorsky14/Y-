@@ -5,6 +5,9 @@ import { MapControls } from '@react-three/drei';
 import type { MapControls as MapControlsImpl } from 'three-stdlib';
 import { getGameState, useApp } from '@/app/store';
 import { HQ_LOT } from '@/game/world/cityLayout';
+import { solveClearView, verticalFovFor, viewOffsetFor, visibility, type SafeArea, type V3 } from './cameraOcclusion';
+import { occludersOf } from './serviceCall';
+import { measureSafeArea } from '@/ui/safeArea';
 
 export const DEFAULT_TARGET = new THREE.Vector3(22, 0, 14);
 export const DEFAULT_OFFSET = new THREE.Vector3(-74, 54, 92);
@@ -18,7 +21,36 @@ interface Flight {
   toPos: THREE.Vector3;
   t: number;
   duration: number;
+  /** Orbit flight: ease azimuth, elevation and distance around the moving target instead of a straight line. */
+  orbit?: { from: Sph; to: Sph };
 }
+
+interface Sph {
+  azimuth: number;
+  elevation: number;
+  distance: number;
+}
+
+/** A close view being watched: the points that must stay visible and what can hide them. */
+interface Watch {
+  target: THREE.Vector3;
+  points: V3[];
+  boxes: THREE.Box3[];
+  /** Clock time at which to check the view after the player lets go (damping settles first). */
+  checkAt: number | null;
+}
+
+function sphericalOf(offset: THREE.Vector3): Sph {
+  const distance = offset.length();
+  return { azimuth: Math.atan2(offset.x, offset.z), elevation: Math.asin(THREE.MathUtils.clamp(offset.y / Math.max(distance, 1e-6), -1, 1)), distance };
+}
+
+function offsetOf(s: Sph): THREE.Vector3 {
+  return new THREE.Vector3(Math.sin(s.azimuth) * Math.cos(s.elevation), Math.sin(s.elevation), Math.cos(s.azimuth) * Math.cos(s.elevation)).multiplyScalar(s.distance);
+}
+
+/** Watched views settle back to a clear angle only while the target stays this close to the watched site. */
+const WATCH_RADIUS = 8;
 
 function easeInOut(t: number): number {
   return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
@@ -40,7 +72,7 @@ export function CameraRig() {
   useEffect(() => {
     if (!(camera instanceof THREE.PerspectiveCamera) || size.height === 0) return;
     const aspect = size.width / size.height;
-    const fov = aspect >= 1 ? 38 : Math.min(75, THREE.MathUtils.radToDeg(2 * Math.atan((Math.tan(THREE.MathUtils.degToRad(19)) * 1.6) / aspect)));
+    const fov = verticalFovFor(aspect);
     if (Math.abs(camera.fov - fov) > 0.01) {
       camera.fov = fov;
       camera.updateProjectionMatrix();
@@ -50,6 +82,13 @@ export function CameraRig() {
   const flight = useRef<Flight | null>(null);
   const keys = useRef<Set<string>>(new Set());
   const followLast = useRef<THREE.Vector3 | null>(null);
+  const watch = useRef<Watch | null>(null);
+  const interacting = useRef(false);
+  const gl = useThree((s) => s.gl);
+  // UI-covered part of the view (open inspector), measured a few times a second and eased.
+  const safe = useRef<Required<SafeArea>>({ right: 0, bottom: 0, top: 0 });
+  const safeTarget = useRef<SafeArea>({ right: 0, bottom: 0, top: 0 });
+  const safeTick = useRef(0);
 
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
@@ -94,6 +133,20 @@ export function CameraRig() {
         if (dir.y < 0.45) dir.y = 0.6; // never fly in flat
       }
       toPos = toTarget.clone().add(dir.normalize().multiplyScalar(dist));
+      if (command.watch) {
+        const boxes = occludersOf(command.watch.lotIds);
+        watch.current = { target: new THREE.Vector3(command.target.x, 0, command.target.z), points: command.watch.points, boxes, checkAt: null };
+      } else {
+        watch.current = null;
+      }
+      if (command.orbit) {
+        const from = sphericalOf(offset);
+        const to = sphericalOf(toPos.clone().sub(toTarget));
+        // Swing the short way round.
+        to.azimuth = from.azimuth + Math.atan2(Math.sin(to.azimuth - from.azimuth), Math.cos(to.azimuth - from.azimuth));
+        flight.current = { fromTarget, toTarget, fromPos, toPos, t: 0, duration: 1.1, orbit: { from, to } };
+        return;
+      }
     } else if (command.type === 'follow' && command.vehicleId) {
       const v = getGameState()?.vehicles[command.vehicleId];
       if (!v) return;
@@ -103,6 +156,7 @@ export function CameraRig() {
     } else {
       return;
     }
+    if (command.type !== 'focus') watch.current = null;
     flight.current = { fromTarget, toTarget, fromPos, toPos, t: 0, duration: 0.9 };
   }, [command, camera]);
 
@@ -115,7 +169,20 @@ export function CameraRig() {
       f.t = Math.min(1, f.t + dt / f.duration);
       const k = easeInOut(f.t);
       c.target.lerpVectors(f.fromTarget, f.toTarget, k);
-      camera.position.lerpVectors(f.fromPos, f.toPos, k);
+      if (f.orbit) {
+        const { from, to } = f.orbit;
+        // Wide swings rise and pull back a little mid-flight so the camera passes over the roof, not through it.
+        const swing = Math.min(1, Math.abs(to.azimuth - from.azimuth) / Math.PI);
+        const arc = Math.sin(Math.PI * k) * swing;
+        const sph = {
+          azimuth: from.azimuth + (to.azimuth - from.azimuth) * k,
+          elevation: Math.min(1.25, from.elevation + (to.elevation - from.elevation) * k + arc * 0.35),
+          distance: (from.distance + (to.distance - from.distance) * k) * (1 + arc * 0.3),
+        };
+        camera.position.copy(c.target).add(offsetOf(sph));
+      } else {
+        camera.position.lerpVectors(f.fromPos, f.toPos, k);
+      }
       if (f.t >= 1) flight.current = null;
     } else if (follow) {
       const v = getGameState()?.vehicles[follow];
@@ -134,6 +201,8 @@ export function CameraRig() {
       // Keyboard pan/rotate relative to the camera heading.
       const k = keys.current;
       if (k.size > 0) {
+        // Keyboard orbit or pan of a watched view: check it once the keys are released.
+        if (watch.current) watch.current.checkAt = performance.now() + 450;
         const speed = (c.target.distanceTo(camera.position) * 0.9 + 10) * dt;
         const forward = new THREE.Vector3();
         camera.getWorldDirection(forward);
@@ -169,7 +238,63 @@ export function CameraRig() {
       camera.position.add(correction);
     }
     c.update();
+    applySafeArea(dt);
+    settleWatchedView(c);
   });
+
+  /**
+   * Centre the scene in the part of the view the inspector leaves free: shift the projection centre
+   * by half the covered width (or sheet height). Eased, so opening or closing the panel glides.
+   * Picking and label projection use the same projection matrix, so they stay aligned.
+   */
+  function applySafeArea(dt: number) {
+    if (!(camera instanceof THREE.PerspectiveCamera)) return;
+    if ((safeTick.current += dt) > 0.2) {
+      safeTick.current = 0;
+      safeTarget.current = useApp.getState().photo.on ? { right: 0, bottom: 0, top: 0 } : measureSafeArea(gl.domElement);
+    }
+    const k = Math.min(1, dt * 6);
+    const cur = safe.current;
+    const tgt = safeTarget.current;
+    const sized = !camera.view || (camera.view.fullWidth === size.width && camera.view.fullHeight === size.height);
+    const tTop = tgt.top ?? 0;
+    if (cur.right === tgt.right && cur.bottom === tgt.bottom && cur.top === tTop && sized) return;
+    cur.right += (tgt.right - cur.right) * k;
+    cur.bottom += (tgt.bottom - cur.bottom) * k;
+    cur.top += (tTop - cur.top) * k;
+    if (Math.abs(cur.right - tgt.right) < 1e-4) cur.right = tgt.right;
+    if (Math.abs(cur.bottom - tgt.bottom) < 1e-4) cur.bottom = tgt.bottom;
+    if (Math.abs(cur.top - tTop) < 1e-4) cur.top = tTop;
+    const w = size.width;
+    const h = size.height;
+    const off = viewOffsetFor(cur, w, h);
+    if (off.x === 0 && off.y === 0) camera.clearViewOffset();
+    else camera.setViewOffset(w, h, off.x, off.y, w, h);
+  }
+
+  /**
+   * A watched close view (serviceCloseUpCamera) that the player has orbited or zoomed into a blocked
+   * angle eases to the nearest clear one, once, shortly after they let go: never during a drag, and
+   * never in Photo Mode. Panning away from the site ends the watch.
+   */
+  function settleWatchedView(c: MapControlsImpl) {
+    const w = watch.current;
+    if (!w || flight.current || interacting.current || useApp.getState().photo.on) return;
+    if (Math.hypot(c.target.x - w.target.x, c.target.z - w.target.z) > WATCH_RADIUS) {
+      watch.current = null;
+      return;
+    }
+    if (w.checkAt === null || performance.now() < w.checkAt) return;
+    w.checkAt = null;
+    const current = { target: { x: c.target.x, y: c.target.y, z: c.target.z }, ...sphericalOf(camera.position.clone().sub(c.target)) };
+    if (visibility(current, w.points, w.boxes) === 1) return;
+    const solved = solveClearView(current, w.points, w.boxes, size.width / Math.max(1, size.height));
+    if (!solved.clear) return;
+    const from = sphericalOf(camera.position.clone().sub(c.target));
+    const to = { azimuth: from.azimuth + Math.atan2(Math.sin(solved.azimuth - from.azimuth), Math.cos(solved.azimuth - from.azimuth)), elevation: solved.elevation, distance: solved.distance };
+    const toPos = c.target.clone().add(offsetOf(to));
+    flight.current = { fromTarget: c.target.clone(), toTarget: c.target.clone(), fromPos: camera.position.clone(), toPos, t: 0, duration: 0.8, orbit: { from, to } };
+  }
 
   return (
     <MapControls
@@ -187,8 +312,14 @@ export function CameraRig() {
       rotateSpeed={0.6}
       screenSpacePanning={false}
       onStart={() => {
+        interacting.current = true;
         flight.current = null;
         if (useApp.getState().followVehicleId) useApp.getState().setFollow(null);
+      }}
+      onEnd={() => {
+        interacting.current = false;
+        // Let damping settle before checking whether the watched view is blocked.
+        if (watch.current) watch.current.checkAt = performance.now() + 450;
       }}
     />
   );

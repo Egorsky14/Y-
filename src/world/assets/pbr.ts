@@ -627,6 +627,14 @@ export class MeshBuilder {
   private frame: THREE.Matrix4 | null = null;
   constructor(private materials: MaterialResolver, private uvScale: Record<string, number> = {}) {}
 
+  /** When set, every added part's world-space bounds are appended here (camera occluders, see cameraOcclusion.ts). */
+  private bounds: { material: string; box: THREE.Box3 }[] | null = null;
+
+  recordBounds(list: { material: string; box: THREE.Box3 }[] | null): this {
+    this.bounds = list;
+    return this;
+  }
+
   setFrame(matrix: THREE.Matrix4 | null): this {
     this.frame = matrix;
     return this;
@@ -652,6 +660,10 @@ export class MeshBuilder {
     else if (!g.attributes.uv) g.setAttribute('uv', new THREE.BufferAttribute(new Float32Array(g.attributes.position.count * 2), 2));
     for (const key of Object.keys(g.attributes)) if (!['position', 'normal', 'uv'].includes(key)) g.deleteAttribute(key);
     g.clearGroups();
+    if (this.bounds) {
+      g.computeBoundingBox();
+      this.bounds.push({ material, box: g.boundingBox!.clone() });
+    }
     (this.parts.get(material) ?? this.parts.set(material, []).get(material)!).push(g);
     return this;
   }
