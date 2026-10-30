@@ -4,6 +4,7 @@ import { useFrame, useThree } from '@react-three/fiber';
 import { getGameState, useApp } from '@/app/store';
 import { sunAngles, weatherForDay, type WeatherKind } from '@/game/simulation/weather';
 import { STATIC_MATERIALS } from '../buildings/materials';
+import { fitSunShadow } from './shadowFit';
 
 /**
  * Time-of-day and weather driven lighting: a sun that follows the game clock, hemisphere
@@ -117,6 +118,8 @@ void main(){ vec3 d = normalize(vWorld - cameraPosition); float h = clamp(d.y, 0
 vec3 col = mix(horizon, zenith, t); float s = max(dot(d, sunDir), 0.0); col += sunTint * (pow(s, 180.0) * 1.2 + pow(s, 8.0) * 0.12) * sunGlow;
 gl_FragColor = vec4(col, 1.0); }`;
 
+const DEFAULT_SHADOW_TARGET = new THREE.Vector3(0, 0, 0);
+
 declare global {
   interface Window {
     __egoAtmo?: { minute: number; weather: string; elevation: number; sunIntensity: number; exposure: number; fogNear: number; rain: number };
@@ -129,6 +132,7 @@ export function Atmosphere() {
   const gl = useThree((s) => s.gl);
   const scene = useThree((s) => s.scene);
   const camera = useThree((s) => s.camera);
+  const controls = useThree((s) => s.controls) as unknown as { target?: THREE.Vector3 } | null;
   const sun = useRef<THREE.DirectionalLight>(null);
   const hemi = useRef<THREE.HemisphereLight>(null);
   const ambient = useRef<THREE.AmbientLight>(null);
@@ -138,6 +142,7 @@ export function Atmosphere() {
   const clouds = useRef<THREE.Mesh>(null);
   const cloudMaterial = useMemo(() => new THREE.MeshBasicMaterial({ map: cloudTexture(), transparent: true, depthWrite: false, opacity: 0.4, color: '#ffffff', fog: false }), []);
   const mapSize = quality === 'ultra' ? 4096 : quality === 'high' ? 4096 : quality === 'medium' ? 2048 : 1024;
+  // Largest shadow box (the overview); closer views shrink it to fit the view (shadowFit.ts).
   const shadowRadius = quality === 'ultra' ? 180 : quality === 'high' ? 230 : 260;
   const skyMaterial = useMemo(
     () =>
@@ -184,11 +189,18 @@ export function Atmosphere() {
     const el = Math.max(elevation, 0.07);
     const dir = new THREE.Vector3(Math.cos(azimuth) * Math.cos(el), Math.sin(el), Math.sin(azimuth) * Math.cos(el));
     if (sun.current) {
-      sun.current.position.copy(dir.clone().multiplyScalar(320));
+      const fit = fitSunShadow(controls?.target ?? DEFAULT_SHADOW_TARGET, camera.position, dir, shadowRadius, mapSize);
+      sun.current.position.copy(fit.center).addScaledVector(dir, 320);
       sun.current.intensity = c.sunIntensity;
       sun.current.color.copy(c.sunColor);
-      sun.current.target.position.set(0, 0, 0);
+      sun.current.target.position.copy(fit.center);
       sun.current.target.updateMatrixWorld();
+      const cam = sun.current.shadow.camera;
+      if (cam.right !== fit.radius) {
+        cam.left = cam.bottom = -fit.radius;
+        cam.right = cam.top = fit.radius;
+        cam.updateProjectionMatrix();
+      }
     }
     if (hemi.current) {
       hemi.current.intensity = c.hemi;
