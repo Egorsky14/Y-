@@ -1,0 +1,179 @@
+SHOTS: requested/shown mode, reason, fill, foreground, roof, plant, distance to tech, elevation, inspector compact, mask tech visible/height/underUi, kit visible
+
+desktop c-n-4 (1920x1080) errors=0 failed=0 repair=repairing viewAfterRepair=work
+  work-walking           work/work phase    fill=0.55 fg=0 roof=0 plant=0 d=3.8 el=19.9 compact=true | tech vis=0 h=0 ui=0 | kit vis=0 ui=0
+  work                   work/work arrived  fill=0.55 fg=0 roof=0 plant=0 d=3.78 el=19.8 compact=true | tech vis=0.952 h=0.654 ui=0 | kit vis=0.454 ui=0.119
+  property               property/property mode     fill=0.75 fg=0.06 roof=0.13 plant=0.17 d=52.73 el=32.4 compact=true | tech vis=0.952 h=0.046 ui=0 | kit vis=0.59 ui=0
+  work-from-property     work/work mode     fill=0.55 fg=0 roof=0 plant=0 d=3.78 el=19.8 compact=true | tech vis=0.952 h=0.654 ui=0 | kit vis=0.454 ui=0.119
+  detail                 detail/detail mode     fill=0.68 fg=0 roof=0 plant=0 d=3.07 el=14.5 compact=true | tech vis=0.913 h=0.8 ui=0 | kit vis=0.534 ui=0.115
+  property-from-detail   property/property mode     fill=0.75 fg=0.06 roof=0.13 plant=0.17 d=52.73 el=32.4 compact=true | tech vis=0.952 h=0.046 ui=0 | kit vis=0.59 ui=0
+  detail-from-property   detail/detail mode     fill=0.68 fg=0 roof=0 plant=0 d=3.07 el=14.5 compact=true | tech vis=0.913 h=0.8 ui=0 | kit vis=0.534 ui=0.115
+  work-again             work/work mode     fill=0.55 fg=0 roof=0 plant=0 d=3.78 el=19.8 compact=true | tech vis=0.952 h=0.654 ui=0 | kit vis=0.454 ui=0.119
+  work-inspector         work/work layout   fill=0.55 fg=0 roof=0 plant=0 d=3.78 el=19.8 compact=false | tech vis=0.952 h=0.654 ui=0 | kit vis=0.454 ui=0.078
+  repair-auto            work/work phase    fill=0.55 fg=0 roof=0 plant=0 d=3.78 el=19.8 compact=true | tech vis=0.954 h=0.66 ui=0 | kit vis=0.453 ui=0.119
+  work-repair            work/work mode     fill=0.55 fg=0 roof=0 plant=0 d=3.78 el=19.8 compact=true | tech vis=0.954 h=0.66 ui=0 | kit vis=0.453 ui=0.119
+  detail-repair          detail/detail mode     fill=0.69 fg=0 roof=0 plant=0 d=2.98 el=15.6 compact=true | tech vis=0.93 h=0.844 ui=0.004 | kit vis=0.544 ui=0.13
+  work-repair-2          work/work mode     fill=0.55 fg=0 roof=0 plant=0 d=3.78 el=19.8 compact=true | tech vis=0.954 h=0.66 ui=0 | kit vis=0.453 ui=0.119
+  after-controls         work/work mode     fill=0.55 fg=0 roof=0 plant=0 d=4.38 el=16.1 compact=true | tech vis=0.81 h=0.564 ui=0 | kit vis=0.443 ui=0
+
+desktop n-o-1 (1920x1080) errors=0 failed=0 repair=repairing viewAfterRepair=work
+  work-walking           work/work phase    fill=0.55 fg=0 roof=0 plant=0 d=4.27 el=19.1 compact=true | tech vis=0 h=0 ui=0 | kit vis=0 ui=0
+  work                   work/work arrived  fill=0.55 fg=0 roof=0 plant=0 d=4.23 el=18.9 compact=true | tech vis=0.899 h=0.594 ui=0 | kit vis=0.521 ui=0.089
+  property               property/property mode     fill=0.87 fg=0.08 roof=0.13 plant=0.1 d=59.86 el=32.9 compact=true | tech vis=0.945 h=0.041 ui=0 | kit vis=0.55 ui=0
+  work-from-property     work/work mode     fill=0.55 fg=0 roof=0 plant=0 d=4.23 el=18.9 compact=true | tech vis=0.899 h=0.594 ui=0 | kit vis=0.521 ui=0.089
+  detail                 detail/detail mode     fill=0.68 fg=0 roof=0 plant=0 d=2.76 el=16 compact=true | tech vis=0.9 h=0.906 ui=0.018 | kit vis=0.674 ui=0.113
+  property-from-detail   property/property mode     fill=0.87 fg=0.08 roof=0.13 plant=0.1 d=59.86 el=32.9 compact=true | tech vis=0.945 h=0.041 ui=0 | kit vis=0.55 ui=0
+  detail-from-property   detail/detail mode     fill=0.68 fg=0 roof=0 plant=0 d=2.76 el=16 compact=true | tech vis=0.9 h=0.906 ui=0.018 | kit vis=0.674 ui=0.113
+  work-again             work/work mode     fill=0.55 fg=0 roof=0 plant=0 d=4.23 el=18.9 compact=true | tech vis=0.899 h=0.594 ui=0 | kit vis=0.521 ui=0.089
+  work-inspector         work/work layout   fill=0.55 fg=0 roof=0 plant=0 d=4.08 el=13.3 compact=false | tech vis=0.909 h=0.613 ui=0 | kit vis=0.485 ui=0.035
+  repair-auto            work/work phase    fill=0.55 fg=0 roof=0 plant=0 d=4.23 el=18.9 compact=true | tech vis=0.905 h=0.601 ui=0 | kit vis=0.512 ui=0.089
+  work-repair            work/work mode     fill=0.55 fg=0 roof=0 plant=0 d=4.23 el=18.9 compact=true | tech vis=0.905 h=0.601 ui=0 | kit vis=0.512 ui=0.089
+  detail-repair          detail/detail mode     fill=0.68 fg=0 roof=0 plant=0 d=2.76 el=19.9 compact=true | tech vis=0.897 h=0.867 ui=0.025 | kit vis=0.692 ui=0.027
+  work-repair-2          work/work mode     fill=0.55 fg=0 roof=0 plant=0 d=4.23 el=18.9 compact=true | tech vis=0.905 h=0.601 ui=0 | kit vis=0.512 ui=0.089
+  after-controls         work/work mode     fill=0.55 fg=0 roof=0 plant=0 d=6.14 el=35.8 compact=true | tech vis=0.895 h=0.385 ui=0 | kit vis=0.492 ui=0
+
+landscape c-n-4 (844x390) errors=0 failed=0 repair=repairing viewAfterRepair=work
+  work-walking           work/work phase    fill=0.55 fg=0 roof=0 plant=0 d=4.57 el=14.1 compact=true | tech vis=0 h=0 ui=0 | kit vis=0 ui=0
+  work                   work/work arrived  fill=0.55 fg=0 roof=0 plant=0 d=4.55 el=14 compact=true | tech vis=0.982 h=0.546 ui=0.039 | kit vis=0.507 ui=0
+  property               property/property mode     fill=0.8 fg=0 roof=0.13 plant=0.17 d=58.78 el=29.5 compact=true | tech vis=1.195 h=0.041 ui=0 | kit vis=0.461 ui=0
+  work-from-property     work/work mode     fill=0.55 fg=0 roof=0 plant=0 d=4.55 el=14 compact=true | tech vis=0.982 h=0.546 ui=0.039 | kit vis=0.507 ui=0
+  detail                 detail/detail mode     fill=0.67 fg=0 roof=0 plant=0 d=3.92 el=16.1 compact=true | tech vis=0.925 h=0.614 ui=0.062 | kit vis=0.437 ui=0
+  property-from-detail   property/property mode     fill=0.8 fg=0 roof=0.13 plant=0.17 d=58.78 el=29.5 compact=true | tech vis=1.195 h=0.041 ui=0 | kit vis=0.461 ui=0
+  detail-from-property   detail/detail mode     fill=0.67 fg=0 roof=0 plant=0 d=3.92 el=16.1 compact=true | tech vis=0.925 h=0.614 ui=0.062 | kit vis=0.437 ui=0
+  work-again             work/work mode     fill=0.55 fg=0 roof=0 plant=0 d=4.55 el=14 compact=true | tech vis=0.982 h=0.546 ui=0.039 | kit vis=0.507 ui=0
+  work-inspector         work/work layout   fill=0.56 fg=0 roof=0 plant=0 d=4.82 el=19 compact=false | tech vis=0.976 h=0.511 ui=0.024 | kit vis=0.483 ui=0.129
+  repair-auto            work/work phase    fill=0.55 fg=0 roof=0 plant=0 d=4.55 el=14 compact=true | tech vis=0.982 h=0.548 ui=0.028 | kit vis=0.506 ui=0
+  work-repair            work/work mode     fill=0.55 fg=0 roof=0 plant=0 d=4.55 el=14 compact=true | tech vis=0.982 h=0.548 ui=0.028 | kit vis=0.506 ui=0
+  detail-repair          detail/detail mode     fill=0.67 fg=0 roof=0 plant=0 d=3.85 el=16.8 compact=true | tech vis=0.935 h=0.639 ui=0.08 | kit vis=0.436 ui=0
+  work-repair-2          work/work mode     fill=0.55 fg=0 roof=0 plant=0 d=4.55 el=14 compact=true | tech vis=0.982 h=0.548 ui=0.028 | kit vis=0.506 ui=0
+  after-controls         work/work mode     fill=0.55 fg=0 roof=0 plant=0 d=9.19 el=11.1 compact=true | tech vis=0.98 h=0.292 ui=0.002 | kit vis=0.529 ui=0
+
+landscape n-o-1 (844x390) errors=0 failed=0 repair=repairing viewAfterRepair=work
+  work-walking           work/work follow   fill=- fg=- roof=- plant=- d=4.5 el=9.2 compact=true | tech vis=0 h=0 ui=0 | kit vis=0 ui=0
+  work                   work/work arrived  fill=0.6 fg=0 roof=0 plant=0.1 d=4.49 el=9.2 compact=true | tech vis=0.929 h=0.55 ui=0.063 | kit vis=0.532 ui=0
+  property               property/property mode     fill=- fg=- roof=- plant=- d=41.99 el=32.1 compact=true | tech vis=0.631 h=0.057 ui=0 | kit vis=0.255 ui=0
+  work-from-property     work/work mode     fill=0.6 fg=0 roof=0 plant=0.1 d=4.49 el=9.2 compact=true | tech vis=0.929 h=0.55 ui=0.063 | kit vis=0.532 ui=0
+  detail                 detail/detail mode     fill=0.68 fg=0 roof=0 plant=0 d=3.7 el=17.2 compact=true | tech vis=0.905 h=0.684 ui=0.048 | kit vis=0.65 ui=0
+  property-from-detail   property/property mode     fill=- fg=- roof=- plant=- d=41.99 el=32.1 compact=true | tech vis=0.631 h=0.057 ui=0 | kit vis=0.255 ui=0
+  detail-from-property   detail/detail mode     fill=0.68 fg=0 roof=0 plant=0 d=3.7 el=17.2 compact=true | tech vis=0.905 h=0.684 ui=0.048 | kit vis=0.65 ui=0
+  work-again             work/work mode     fill=0.6 fg=0 roof=0 plant=0.1 d=4.49 el=9.2 compact=true | tech vis=0.929 h=0.55 ui=0.063 | kit vis=0.532 ui=0
+  work-inspector         work/work layout   fill=0.56 fg=0 roof=0 plant=0 d=5.28 el=14.7 compact=false | tech vis=0.916 h=0.47 ui=0.004 | kit vis=0.532 ui=0.156
+  repair-auto            work/work phase    fill=0.6 fg=0 roof=0 plant=0.1 d=4.49 el=9.2 compact=true | tech vis=0.933 h=0.55 ui=0.064 | kit vis=0.52 ui=0
+  work-repair            work/work mode     fill=0.6 fg=0 roof=0 plant=0.1 d=4.49 el=9.2 compact=true | tech vis=0.933 h=0.55 ui=0.064 | kit vis=0.52 ui=0
+  detail-repair          detail/detail mode     fill=0.68 fg=0 roof=0 plant=0 d=3.73 el=18.1 compact=true | tech vis=0.908 h=0.684 ui=0.082 | kit vis=0.64 ui=0
+  work-repair-2          work/work mode     fill=0.6 fg=0 roof=0 plant=0.1 d=4.49 el=9.2 compact=true | tech vis=0.933 h=0.55 ui=0.064 | kit vis=0.52 ui=0
+  after-controls         work/work mode     fill=0.6 fg=0 roof=0 plant=0.1 d=20.63 el=9.4 compact=true | tech vis=1.039 h=0.138 ui=0 | kit vis=0.694 ui=0
+
+TRANSITIONS: settle ms, path m, peak m/s, reversals, overshoot m, frame dt p50/p95/max ms, frames > 50 ms
+
+desktop c-n-4
+  watch-press            settle=16297 path=225.55 peak=628.81 rev=3 over=6.329 dt=16.7/16.8/100 long=2
+  idle                   settle=0 path=0 peak=0 rev=0 over=0 dt=16.7/16.8/200 long=1
+  property               settle=1177 path=62.61 peak=161.63 rev=0 over=0 dt=16.7/16.8/200.1 long=1
+  work-from-property     settle=1177 path=62.62 peak=160.6 rev=0 over=0 dt=16.7/16.8/149.9 long=1
+  detail                 settle=1145 path=1.22 peak=2.93 rev=0 over=0 dt=16.7/16.8/149.9 long=1
+  property-from-detail   settle=1194 path=67.25 peak=173.4 rev=0 over=0 dt=16.7/16.8/216.6 long=1
+  detail-from-property   settle=1198 path=67.25 peak=168.94 rev=0 over=0 dt=16.7/16.8/150.1 long=1
+  work-again             settle=1145 path=1.22 peak=2.83 rev=0 over=0 dt=16.7/16.8/133.3 long=1
+  inspector-expand       settle=0 path=0 peak=0 rev=0 over=0 dt=16.7/16.8/133.4 long=1
+  inspector-collapse     settle=0 path=0 peak=0 rev=0 over=0 dt=16.7/16.8/16.9 long=0
+  phase-repair           settle=0 path=0 peak=0 rev=0 over=0 dt=16.7/16.8/133.3 long=1
+  work-repair            settle=0 path=0 peak=0 rev=0 over=0 dt=16.7/16.8/200 long=1
+  detail-repair          settle=1147 path=1.07 peak=2.66 rev=0 over=0 dt=16.7/16.8/149.9 long=1
+  work-repair-2          settle=1095 path=1.07 peak=2.57 rev=0 over=0 dt=16.7/16.8/133.4 long=1
+  orbit                  settle=955 path=2.71 peak=4.32 rev=0 over=0 dt=16.7/16.8/16.9 long=0
+  zoom-in                settle=403 path=1.08 peak=5.89 rev=0 over=0 dt=16.7/16.8/17.4 long=0
+  zoom-out               settle=1887 path=2.52 peak=7.45 rev=1 over=0.655 dt=16.7/16.8/17.1 long=0
+  pan-away               settle=2071 path=2.33 peak=2.76 rev=1 over=0.663 dt=16.7/16.8/149.9 long=1
+
+desktop n-o-1
+  watch-press            settle=14602 path=260.93 peak=748.32 rev=3 over=5.618 dt=16.7/16.8/100.2 long=2
+  idle                   settle=0 path=0 peak=0 rev=0 over=0 dt=16.7/16.8/183.3 long=1
+  property               settle=1173 path=60.84 peak=157.89 rev=0 over=0 dt=16.7/16.8/116.6 long=1
+  work-from-property     settle=1201 path=60.84 peak=152.32 rev=0 over=0 dt=16.7/16.8/116.7 long=1
+  detail                 settle=1152 path=1.48 peak=3.52 rev=0 over=0 dt=16.7/16.8/149.9 long=1
+  property-from-detail   settle=1216 path=61.46 peak=153.3 rev=0 over=0 dt=16.7/16.8/133.3 long=1
+  detail-from-property   settle=1176 path=61.46 peak=159.01 rev=0 over=0 dt=16.7/16.8/150 long=1
+  work-again             settle=1131 path=1.48 peak=3.65 rev=0 over=0 dt=16.7/16.8/133.2 long=1
+  inspector-expand       settle=1132 path=0.77 peak=1.88 rev=0 over=0 dt=16.7/16.8/133.4 long=1
+  inspector-collapse     settle=1149 path=0.77 peak=1.86 rev=0 over=0 dt=16.7/16.8/17.5 long=0
+  phase-repair           settle=0 path=0 peak=0 rev=0 over=0 dt=16.7/16.8/149.9 long=1
+  work-repair            settle=0 path=0 peak=0 rev=0 over=0 dt=16.7/16.8/116.7 long=1
+  detail-repair          settle=1133 path=1.47 peak=3.6 rev=0 over=0 dt=16.7/16.8/150 long=1
+  work-repair-2          settle=1148 path=1.47 peak=3.55 rev=0 over=0 dt=16.7/16.8/133.5 long=1
+  orbit                  settle=1953 path=4.44 peak=4.98 rev=1 over=0.415 dt=16.7/16.8/17.5 long=0
+  zoom-in                settle=1653 path=2.02 peak=6.69 rev=1 over=0.059 dt=16.7/16.8/17.8 long=0
+  zoom-out               settle=624 path=2.1 peak=4.53 rev=0 over=0 dt=16.7/16.8/17.2 long=0
+  pan-away               settle=1024 path=2.03 peak=2.91 rev=0 over=0 dt=16.7/16.8/116.6 long=1
+
+landscape c-n-4
+  watch-press            settle=16118 path=250.4 peak=523.43 rev=4 over=6.174 dt=16.7/16.8/616.6 long=4
+  idle                   settle=0 path=0 peak=0 rev=0 over=0 dt=16.7/16.8/50.1 long=1
+  property               settle=1165 path=65.5 peak=171.72 rev=0 over=0 dt=16.7/16.8/33.4 long=0
+  work-from-property     settle=1156 path=65.5 peak=173.03 rev=0 over=0 dt=16.7/16.8/33.3 long=0
+  detail                 settle=1103 path=2.52 peak=5.8 rev=0 over=0 dt=16.7/16.8/33.3 long=0
+  property-from-detail   settle=1158 path=75.24 peak=195.01 rev=0 over=0 dt=16.7/16.8/33.3 long=0
+  detail-from-property   settle=1168 path=75.24 peak=195.33 rev=0 over=0 dt=16.7/16.8/50 long=0
+  work-again             settle=1112 path=2.52 peak=5.82 rev=0 over=0 dt=16.7/16.8/33.4 long=0
+  inspector-expand       settle=1276 path=0.85 peak=2.07 rev=0 over=0 dt=16.7/16.8/33.3 long=0
+  inspector-collapse     settle=1190 path=0.85 peak=2.04 rev=0 over=0 dt=16.7/16.8/17 long=0
+  phase-repair           settle=0 path=0 peak=0 rev=0 over=0 dt=16.7/16.8/33.3 long=0
+  work-repair            settle=0 path=0 peak=0 rev=0 over=0 dt=16.7/16.8/33.2 long=0
+  detail-repair          settle=1112 path=2.29 peak=5.48 rev=0 over=0 dt=16.7/16.8/66.6 long=1
+  work-repair-2          settle=1141 path=2.29 peak=5.11 rev=0 over=0 dt=16.7/16.8/66.6 long=1
+  orbit                  settle=2208 path=11.43 peak=11.24 rev=1 over=2.186 dt=16.7/16.8/17.5 long=0
+  pinch-in               settle=936 path=3.21 peak=10.92 rev=0 over=0 dt=16.7/16.8/17.3 long=0
+  pinch-out              settle=988 path=6.34 peak=24.07 rev=1 over=0 dt=16.7/16.8/16.8 long=0
+  pan-away               settle=1273 path=5.96 peak=7.88 rev=0 over=0 dt=16.7/16.8/66.6 long=1
+
+landscape n-o-1
+  watch-press            settle=14552 path=266.76 peak=591.73 rev=3 over=5.39 dt=16.7/16.8/66.7 long=1
+  idle                   settle=0 path=0 peak=0 rev=0 over=0 dt=16.7/16.8/99.9 long=1
+  property               settle=986 path=41.5 peak=119.72 rev=0 over=0 dt=16.7/16.8/66.6 long=1
+  work-from-property     settle=1158 path=48.08 peak=123.53 rev=0 over=0 dt=16.7/16.8/66.7 long=1
+  detail                 settle=1125 path=1.06 peak=2.64 rev=0 over=0 dt=16.7/16.8/66.6 long=1
+  property-from-detail   settle=956 path=41.55 peak=121.52 rev=0 over=0 dt=16.7/16.8/66.7 long=1
+  detail-from-property   settle=1173 path=48.71 peak=127.76 rev=0 over=0 dt=16.7/16.8/783.1 long=2
+  work-again             settle=1091 path=1.06 peak=2.52 rev=0 over=0 dt=16.7/16.8/33.3 long=0
+  inspector-expand       settle=1259 path=0.96 peak=2.41 rev=0 over=0 dt=16.7/16.8/33.4 long=0
+  inspector-collapse     settle=7833 path=1.09 peak=2.47 rev=1 over=0.062 dt=16.7/16.8/33.2 long=0
+  phase-repair           settle=0 path=0 peak=0 rev=0 over=0 dt=16.7/16.8/83.3 long=1
+  work-repair            settle=0 path=0 peak=0 rev=0 over=0 dt=16.7/16.8/66.7 long=1
+  detail-repair          settle=1116 path=1.1 peak=2.72 rev=0 over=0 dt=16.7/16.8/49.9 long=0
+  work-repair-2          settle=1103 path=1.1 peak=2.74 rev=0 over=0 dt=16.7/16.8/66.6 long=1
+  orbit                  settle=2071 path=10.42 peak=12.9 rev=0 over=0 dt=16.7/16.8/17 long=0
+  pinch-in               settle=2110 path=6.35 peak=11.8 rev=1 over=2.512 dt=16.7/16.8/16.9 long=0
+  pinch-out              settle=2159 path=37.1 peak=75.81 rev=4 over=3.477 dt=16.7/16.9/17 long=0
+  pan-away               settle=1293 path=12.39 peak=16.44 rev=0 over=0 dt=16.7/16.8/33.3 long=0
+
+CONTROLS: moved m, dist/azimuth before -> released, drift in the next 10 s, service view after
+
+desktop c-n-4
+  orbit    moved=2.67 d 3.78->4.33 az 92->52.3 y 2.28->2.28 drift10s=0 view=work
+  zoomIn   moved=1.082 d 4.33->3.31 az 52.3->47.5 y 2.28->1.82 drift10s=0 view=work
+  zoomOut  moved=1.555 d 3.31->4.78 az 47.5->53.7 y 1.82->2.48 drift10s=0.627 view=work
+  panAway  moved=1.37 d 4.18->4.43 az 51.7->70.5 y 2.21->2.26 drift10s=0.737 view=work
+
+desktop n-o-1
+  orbit    moved=3.001 d 4.23->4.8 az -65.9->-106.2 y 2.37->2.48 drift10s=1.138 view=work
+  zoomIn   moved=1.174 d 4.52->3.39 az -96.3->-101.4 y 3.12->2.63 drift10s=0.649 view=work
+  zoomOut  moved=2.095 d 3.66->5.71 az -102.1->-94.8 y 3.27->4.59 drift10s=0 view=work
+  panAway  moved=2.032 d 5.71->6.14 az -94.8->-70.8 y 4.59->4.59 drift10s=0 view=work
+
+landscape c-n-4
+  orbit    moved=7.26 d 4.56->6.48 az 110.4->28 y 2.1->2.18 drift10s=2.994 view=work
+  zoomIn   moved=3.182 d 4.6->2.04 az 53->20.8 y 1.79->0.79 drift10s=0 view=work
+  zoomOut  moved=6.31 d 2.04->7.59 az 20.8->61.3 y 0.79->2.77 drift10s=0 view=work
+  panAway  moved=5.957 d 7.59->9.19 az 61.3->102.4 y 2.77->2.77 drift10s=0 view=work
+
+landscape n-o-1
+  orbit    moved=8.277 d 4.49->7.08 az -61->-150.3 y 1.72->1.73 drift10s=1.464 view=work
+  zoomIn   moved=3.386 d 6.54->3.77 az -161.7->177.7 y 1.46->0.65 drift10s=2.453 view=work
+  zoomOut  moved=13.635 d 5.71->18.54 az -165.3->-141.3 y 1.24->5.03 drift10s=19.303 view=work
+  panAway  moved=12.39 d 15.74->20.62 az -71.4->-34 y 4.36->4.36 drift10s=0 view=null
+
+WALK-UP: reframes after Watch technician (t ms, reason, mode, fill) and technician path
+desktop c-n-4: 47:mode/work 831:phase/work 3631:follow/work 4730:follow/work 5797:follow/work 6864:follow/work 7930:follow/work 8997:follow/work 10064:follow/work 11147:follow/work 12230:follow/work 13313:follow/work 14397:follow/work 15197:arrived/work | tech moving 247-914 ms statuses walking,working
+desktop n-o-1: 36:mode/work 836:phase/work 1919:follow/work 3103:follow/work 4169:follow/work 5236:follow/work 6302:follow/work 7369:follow/work 8436:follow/work 9502:follow/work 10569:follow/work 11636:follow/work 12702:follow/work 13502:arrived/work | tech moving 370-853 ms statuses walking,working
+landscape c-n-4: 52:mode/work 852:phase/work 3519:follow/work 4686:follow/work 6202:follow/work 7269:follow/work 8335:follow/work 9402:follow/work 10469:follow/work 11535:follow/work 12602:follow/work 13668:follow/work 14735:follow/work 15002:arrived/work | tech moving 302-902 ms statuses walking,working
+landscape n-o-1: 52:mode/work 836:phase/work 1919:follow/work 3019:follow/work 4086:follow/work 5152:follow/work 6219:follow/work 7302:follow/work 8369:follow/work 9452:follow/work 10519:follow/work 11585:follow/work 12652:follow/work 13452:arrived/work | tech moving 336-936 ms statuses walking,working

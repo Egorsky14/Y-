@@ -1,0 +1,695 @@
+SHOTS: requested/shown mode, reason, fill, foreground, roof, plant, distance to tech, elevation, inspector compact
+
+desktop a-s-1 (1920x1080) errors=0 failed=0 repair=repairing viewAfterRepair=work
+  work-walking           work/work follow   fill=- fg=- roof=- plant=- d=3.87 el=14.7 compact=true
+  work                   work/work arrived  fill=0.57 fg=0 roof=0 plant=0.05 d=3.88 el=14.5 compact=true
+  property               property/property mode     fill=0.81 fg=0.06 roof=0.06 plant=0.16 d=58.29 el=40 compact=true
+  work-from-property     work/work mode     fill=0.57 fg=0 roof=0 plant=0.05 d=3.88 el=14.5 compact=true
+  detail                 detail/detail mode     fill=0.69 fg=0 roof=0 plant=0 d=2.52 el=15.2 compact=true
+  property-from-detail   property/property mode     fill=0.81 fg=0.06 roof=0.06 plant=0.16 d=58.29 el=40 compact=true
+  detail-from-property   detail/detail mode     fill=0.69 fg=0 roof=0 plant=0 d=2.52 el=15.2 compact=true
+  work-again             work/work mode     fill=0.57 fg=0 roof=0 plant=0.05 d=3.88 el=14.5 compact=true
+  work-inspector         work/work layout   fill=0.55 fg=0 roof=0 plant=0 d=3.66 el=17.8 compact=false
+  repair-auto            work/work phase    fill=0.57 fg=0 roof=0 plant=0.05 d=3.88 el=14.5 compact=true
+  work-repair            work/work mode     fill=0.57 fg=0 roof=0 plant=0.05 d=3.88 el=14.5 compact=true
+  detail-repair          detail/detail mode     fill=0.69 fg=0 roof=0 plant=0 d=2.59 el=16.1 compact=true
+  work-repair-2          work/work mode     fill=0.57 fg=0 roof=0 plant=0.05 d=3.88 el=14.5 compact=true
+  after-controls         work/work mode     fill=0.57 fg=0 roof=0 plant=0.05 d=4.47 el=11.2 compact=true
+
+desktop a-s-2 (1920x1080) errors=0 failed=0 repair=repairing viewAfterRepair=work
+  work-walking           work/work follow   fill=- fg=- roof=- plant=- d=4.23 el=18.9 compact=true
+  work                   work/work arrived  fill=0.55 fg=0 roof=0 plant=0 d=4.23 el=18.9 compact=true
+  property               property/property mode     fill=0.83 fg=0.1 roof=0.13 plant=0.17 d=62.05 el=33.8 compact=true
+  work-from-property     work/work mode     fill=0.55 fg=0 roof=0 plant=0 d=4.23 el=18.9 compact=true
+  detail                 detail/detail mode     fill=0.68 fg=0 roof=0 plant=0 d=2.76 el=16 compact=true
+  property-from-detail   property/property mode     fill=0.83 fg=0.1 roof=0.13 plant=0.17 d=62.05 el=33.8 compact=true
+  detail-from-property   detail/detail mode     fill=0.68 fg=0 roof=0 plant=0 d=2.76 el=16 compact=true
+  work-again             work/work mode     fill=0.55 fg=0 roof=0 plant=0 d=4.23 el=18.9 compact=true
+  work-inspector         work/work layout   fill=0.55 fg=0 roof=0 plant=0 d=4.08 el=13.3 compact=false
+  repair-auto            work/work phase    fill=0.55 fg=0 roof=0 plant=0 d=4.23 el=18.9 compact=true
+  work-repair            work/work mode     fill=0.55 fg=0 roof=0 plant=0 d=4.23 el=18.9 compact=true
+  detail-repair          detail/detail mode     fill=0.68 fg=0 roof=0 plant=0 d=2.76 el=19.9 compact=true
+  work-repair-2          work/work mode     fill=0.55 fg=0 roof=0 plant=0 d=4.23 el=18.9 compact=true
+  after-controls         work/work mode     fill=0.55 fg=0 roof=0 plant=0 d=6.26 el=35 compact=true
+
+desktop c-n-4 (1920x1080) errors=0 failed=0 repair=repairing viewAfterRepair=work
+  work-walking           work/work phase    fill=0.55 fg=0 roof=0 plant=0 d=3.79 el=19.8 compact=true
+  work                   work/work arrived  fill=0.55 fg=0 roof=0 plant=0 d=3.78 el=19.8 compact=true
+  property               property/property mode     fill=0.75 fg=0.06 roof=0.13 plant=0.17 d=52.73 el=32.4 compact=true
+  work-from-property     work/work mode     fill=0.55 fg=0 roof=0 plant=0 d=3.78 el=19.8 compact=true
+  detail                 detail/detail mode     fill=0.68 fg=0 roof=0 plant=0 d=3.07 el=14.5 compact=true
+  property-from-detail   property/property mode     fill=0.75 fg=0.06 roof=0.13 plant=0.17 d=52.73 el=32.4 compact=true
+  detail-from-property   detail/detail mode     fill=0.68 fg=0 roof=0 plant=0 d=3.07 el=14.5 compact=true
+  work-again             work/work mode     fill=0.55 fg=0 roof=0 plant=0 d=3.78 el=19.8 compact=true
+  work-inspector         work/work layout   fill=0.55 fg=0 roof=0 plant=0 d=3.78 el=19.8 compact=false
+  repair-auto            work/work phase    fill=0.55 fg=0 roof=0 plant=0 d=3.78 el=19.8 compact=true
+  work-repair            work/work mode     fill=0.55 fg=0 roof=0 plant=0 d=3.78 el=19.8 compact=true
+  detail-repair          detail/detail mode     fill=0.69 fg=0 roof=0 plant=0 d=2.98 el=15.6 compact=true
+  work-repair-2          work/work mode     fill=0.55 fg=0 roof=0 plant=0 d=3.78 el=19.8 compact=true
+  after-controls         work/work mode     fill=0.55 fg=0 roof=0 plant=0 d=4.38 el=16.1 compact=true
+
+desktop n-o-1 (1920x1080) errors=0 failed=0 repair=repairing viewAfterRepair=work
+  work-walking           work/work follow   fill=- fg=- roof=- plant=- d=4.24 el=18.9 compact=true
+  work                   work/work arrived  fill=0.55 fg=0 roof=0 plant=0 d=4.23 el=18.9 compact=true
+  property               property/property mode     fill=0.87 fg=0.08 roof=0.13 plant=0.1 d=59.86 el=32.9 compact=true
+  work-from-property     work/work mode     fill=0.55 fg=0 roof=0 plant=0 d=4.23 el=18.9 compact=true
+  detail                 detail/detail mode     fill=0.68 fg=0 roof=0 plant=0 d=2.76 el=16 compact=true
+  property-from-detail   property/property mode     fill=0.87 fg=0.08 roof=0.13 plant=0.1 d=59.86 el=32.9 compact=true
+  detail-from-property   detail/detail mode     fill=0.68 fg=0 roof=0 plant=0 d=2.76 el=16 compact=true
+  work-again             work/work mode     fill=0.55 fg=0 roof=0 plant=0 d=4.23 el=18.9 compact=true
+  work-inspector         work/work layout   fill=0.55 fg=0 roof=0 plant=0 d=4.08 el=13.3 compact=false
+  repair-auto            work/work phase    fill=0.55 fg=0 roof=0 plant=0 d=4.23 el=18.9 compact=true
+  work-repair            work/work mode     fill=0.55 fg=0 roof=0 plant=0 d=4.23 el=18.9 compact=true
+  detail-repair          detail/detail mode     fill=0.68 fg=0 roof=0 plant=0 d=2.76 el=19.9 compact=true
+  work-repair-2          work/work mode     fill=0.55 fg=0 roof=0 plant=0 d=4.23 el=18.9 compact=true
+  after-controls         work/work mode     fill=0.55 fg=0 roof=0 plant=0 d=6.14 el=35.8 compact=true
+
+laptop a-s-1 (1366x768) errors=0 failed=0 repair=repairing viewAfterRepair=work
+  work-walking           work/work follow   fill=- fg=- roof=- plant=- d=3.98 el=18.6 compact=true
+  work                   work/work arrived  fill=0.55 fg=0 roof=0 plant=0.02 d=3.98 el=18.5 compact=true
+  property               property/property mode     fill=0.8 fg=0.1 roof=0.06 plant=0.19 d=60.88 el=37.8 compact=true
+  work-from-property     work/work mode     fill=0.55 fg=0 roof=0 plant=0.02 d=3.98 el=18.5 compact=true
+  detail                 detail/detail mode     fill=0.69 fg=0 roof=0 plant=0 d=2.75 el=15.8 compact=true
+  property-from-detail   property/property mode     fill=0.8 fg=0.1 roof=0.06 plant=0.19 d=60.88 el=37.8 compact=true
+  detail-from-property   detail/detail mode     fill=0.69 fg=0 roof=0 plant=0 d=2.75 el=15.8 compact=true
+  work-again             work/work mode     fill=0.55 fg=0 roof=0 plant=0.02 d=3.98 el=18.5 compact=true
+  work-inspector         work/work layout   fill=0.55 fg=0 roof=0 plant=0 d=4.09 el=20.9 compact=false
+  repair-auto            work/work phase    fill=0.55 fg=0 roof=0 plant=0.02 d=3.98 el=18.5 compact=true
+  work-repair            work/work mode     fill=0.55 fg=0 roof=0 plant=0.02 d=3.98 el=18.5 compact=true
+  detail-repair          detail/detail mode     fill=0.69 fg=0 roof=0 plant=0 d=2.79 el=16.7 compact=true
+  work-repair-2          work/work mode     fill=0.55 fg=0 roof=0 plant=0.02 d=3.98 el=18.5 compact=true
+  after-controls         work/work mode     fill=0.55 fg=0 roof=0 plant=0.02 d=4.88 el=12.1 compact=true
+
+laptop a-s-2 (1366x768) errors=0 failed=0 repair=repairing viewAfterRepair=work
+  work-walking           work/work phase    fill=0.55 fg=0 roof=0 plant=0 d=4.68 el=19.6 compact=true
+  work                   work/work arrived  fill=0.55 fg=0 roof=0 plant=0 d=4.63 el=19.2 compact=true
+  property               property/property mode     fill=0.87 fg=0.08 roof=0.13 plant=0.17 d=62.04 el=31.6 compact=true
+  work-from-property     work/work mode     fill=0.55 fg=0 roof=0 plant=0 d=4.63 el=19.2 compact=true
+  detail                 detail/detail mode     fill=0.68 fg=0 roof=0 plant=0 d=3.07 el=16.3 compact=true
+  property-from-detail   property/property mode     fill=0.87 fg=0.08 roof=0.13 plant=0.17 d=62.04 el=31.6 compact=true
+  detail-from-property   detail/detail mode     fill=0.68 fg=0 roof=0 plant=0 d=3.07 el=16.3 compact=true
+  work-again             work/work mode     fill=0.55 fg=0 roof=0 plant=0 d=4.63 el=19.2 compact=true
+  work-inspector         work/work layout   fill=0.55 fg=0 roof=0 plant=0 d=4.45 el=13.8 compact=false
+  repair-auto            work/work phase    fill=0.55 fg=0 roof=0 plant=0 d=4.63 el=19.2 compact=true
+  work-repair            work/work mode     fill=0.55 fg=0 roof=0 plant=0 d=4.63 el=19.2 compact=true
+  detail-repair          detail/detail mode     fill=0.68 fg=0 roof=0 plant=0 d=3.04 el=20.2 compact=true
+  work-repair-2          work/work mode     fill=0.55 fg=0 roof=0 plant=0 d=4.63 el=19.2 compact=true
+  after-controls         work/work mode     fill=0.55 fg=0 roof=0 plant=0 d=6.78 el=32 compact=true
+
+laptop c-n-4 (1366x768) errors=0 failed=0 repair=repairing viewAfterRepair=work
+  work-walking           work/work phase    fill=0.55 fg=0 roof=0 plant=0 d=4.04 el=18.5 compact=true
+  work                   work/work arrived  fill=0.55 fg=0 roof=0 plant=0 d=3.98 el=18.5 compact=true
+  property               property/property mode     fill=0.81 fg=0.06 roof=0.14 plant=0.16 d=54.7 el=34.7 compact=true
+  work-from-property     work/work mode     fill=0.55 fg=0 roof=0 plant=0 d=3.98 el=18.5 compact=true
+  detail                 detail/detail mode     fill=0.68 fg=0 roof=0 plant=0 d=3.33 el=15.1 compact=true
+  property-from-detail   property/property mode     fill=0.81 fg=0.06 roof=0.14 plant=0.16 d=54.7 el=34.7 compact=true
+  detail-from-property   detail/detail mode     fill=0.68 fg=0 roof=0 plant=0 d=3.33 el=15.1 compact=true
+  work-again             work/work mode     fill=0.55 fg=0 roof=0 plant=0 d=3.98 el=18.5 compact=true
+  work-inspector         work/work layout   fill=0.55 fg=0 roof=0 plant=0 d=4.09 el=20.9 compact=false
+  repair-auto            work/work phase    fill=0.55 fg=0 roof=0 plant=0 d=3.98 el=18.5 compact=true
+  work-repair            work/work mode     fill=0.55 fg=0 roof=0 plant=0 d=3.98 el=18.5 compact=true
+  detail-repair          detail/detail mode     fill=0.68 fg=0 roof=0 plant=0 d=3.24 el=15.9 compact=true
+  work-repair-2          work/work mode     fill=0.55 fg=0 roof=0 plant=0 d=3.98 el=18.5 compact=true
+  after-controls         work/work mode     fill=0.55 fg=0 roof=0 plant=0 d=4.88 el=12.1 compact=true
+
+laptop n-o-1 (1366x768) errors=0 failed=0 repair=repairing viewAfterRepair=work
+  work-walking           work/work phase    fill=0.55 fg=0 roof=0 plant=0 d=4.45 el=14.3 compact=true
+  work                   work/work arrived  fill=0.55 fg=0 roof=0 plant=0 d=4.39 el=14 compact=true
+  property               property/property mode     fill=0.85 fg=0.13 roof=0.14 plant=0.13 d=62.03 el=30.5 compact=true
+  work-from-property     work/work mode     fill=0.55 fg=0 roof=0 plant=0 d=4.39 el=14 compact=true
+  detail                 detail/detail mode     fill=0.68 fg=0 roof=0 plant=0 d=3.07 el=16.3 compact=true
+  property-from-detail   property/property mode     fill=0.85 fg=0.13 roof=0.14 plant=0.13 d=62.03 el=30.5 compact=true
+  detail-from-property   detail/detail mode     fill=0.68 fg=0 roof=0 plant=0 d=3.07 el=16.3 compact=true
+  work-again             work/work mode     fill=0.55 fg=0 roof=0 plant=0 d=4.39 el=14 compact=true
+  work-inspector         work/work layout   fill=0.55 fg=0 roof=0 plant=0 d=4.45 el=13.8 compact=false
+  repair-auto            work/work phase    fill=0.55 fg=0 roof=0 plant=0 d=4.39 el=14 compact=true
+  work-repair            work/work mode     fill=0.55 fg=0 roof=0 plant=0 d=4.39 el=14 compact=true
+  detail-repair          detail/detail mode     fill=0.68 fg=0 roof=0 plant=0 d=3.04 el=20.2 compact=true
+  work-repair-2          work/work mode     fill=0.55 fg=0 roof=0 plant=0 d=4.39 el=14 compact=true
+  after-controls         work/work mode     fill=0.55 fg=0 roof=0 plant=0 d=6.42 el=11.8 compact=true
+
+portrait a-s-1 (390x844) errors=0 failed=0 repair=repairing viewAfterRepair=work
+  work-walking           work/work follow   fill=- fg=- roof=- plant=- d=3.42 el=17.3 compact=true
+  work                   work/work arrived  fill=0.7 fg=0 roof=0 plant=0 d=3.42 el=17.4 compact=true
+  property               property/property mode     fill=0.83 fg=0.05 roof=0 plant=0.16 d=55.35 el=30.9 compact=true
+  work-from-property     work/work mode     fill=0.7 fg=0 roof=0 plant=0 d=3.42 el=17.4 compact=true
+  detail                 detail/detail mode     fill=0.68 fg=0 roof=0 plant=0 d=1.63 el=6.7 compact=true
+  property-from-detail   property/property mode     fill=0.83 fg=0.05 roof=0 plant=0.16 d=55.35 el=30.9 compact=true
+  detail-from-property   detail/detail mode     fill=0.68 fg=0 roof=0 plant=0 d=1.63 el=6.7 compact=true
+  work-again             work/work mode     fill=0.7 fg=0 roof=0 plant=0 d=3.42 el=17.4 compact=true
+  work-sheet             work/work layout   fill=0.69 fg=0 roof=0 plant=0 d=4.28 el=21.1 compact=false
+  repair-auto            work/work phase    fill=0.7 fg=0 roof=0 plant=0 d=3.42 el=17.4 compact=true
+  work-repair            work/work mode     fill=0.7 fg=0 roof=0 plant=0 d=3.42 el=17.4 compact=true
+  detail-repair          detail/detail mode     fill=0.68 fg=0 roof=0 plant=0 d=1.66 el=2.8 compact=true
+  work-repair-2          work/work mode     fill=0.7 fg=0 roof=0 plant=0 d=3.42 el=17.4 compact=true
+  after-controls         work/work mode     fill=0.7 fg=0 roof=0 plant=0 d=9.16 el=15.4 compact=true
+
+portrait a-s-2 (390x844) errors=0 failed=0 repair=repairing viewAfterRepair=work
+  work-walking           work/work follow   fill=- fg=- roof=- plant=- d=3.57 el=18.1 compact=true
+  work                   work/work arrived  fill=0.7 fg=0 roof=0 plant=0 d=3.57 el=18.1 compact=true
+  property               property/property mode     fill=0.83 fg=0.08 roof=0.13 plant=0.11 d=50.29 el=28.9 compact=true
+  work-from-property     work/work mode     fill=0.7 fg=0 roof=0 plant=0 d=3.57 el=18.1 compact=true
+  detail                 detail/detail mode     fill=0.68 fg=0 roof=0 plant=0 d=1.65 el=9.1 compact=true
+  property-from-detail   property/property mode     fill=0.83 fg=0.08 roof=0.13 plant=0.11 d=50.29 el=28.9 compact=true
+  detail-from-property   detail/detail mode     fill=0.68 fg=0 roof=0 plant=0 d=1.65 el=9.1 compact=true
+  work-again             work/work mode     fill=0.7 fg=0 roof=0 plant=0 d=3.57 el=18.1 compact=true
+  work-sheet             work/work layout   fill=0.7 fg=0 roof=0 plant=0 d=4.8 el=16.6 compact=false
+  repair-auto            work/work phase    fill=0.7 fg=0 roof=0 plant=0 d=3.57 el=18.1 compact=true
+  work-repair            work/work mode     fill=0.7 fg=0 roof=0 plant=0 d=3.57 el=18.1 compact=true
+  detail-repair          detail/detail mode     fill=0.68 fg=0 roof=0 plant=0 d=1.64 el=8.1 compact=true
+  work-repair-2          work/work mode     fill=0.7 fg=0 roof=0 plant=0 d=3.57 el=18.1 compact=true
+  after-controls         work/work mode     fill=0.7 fg=0 roof=0 plant=0 d=8.82 el=16 compact=true
+
+portrait c-n-4 (390x844) errors=0 failed=0 repair=repairing viewAfterRepair=work
+  work-walking           work/work phase    fill=0.69 fg=0 roof=0 plant=0 d=3.38 el=17.6 compact=true
+  work                   work/work arrived  fill=0.69 fg=0 roof=0 plant=0 d=3.37 el=17.6 compact=true
+  property               property/property mode     fill=0.83 fg=0.05 roof=0.08 plant=0.11 d=42.38 el=32 compact=true
+  work-from-property     work/work mode     fill=0.69 fg=0 roof=0 plant=0 d=3.37 el=17.6 compact=true
+  detail                 detail/detail mode     fill=0.68 fg=0 roof=0 plant=0 d=1.65 el=6.6 compact=true
+  property-from-detail   property/property mode     fill=0.83 fg=0.05 roof=0.08 plant=0.11 d=42.38 el=32 compact=true
+  detail-from-property   detail/detail mode     fill=0.68 fg=0 roof=0 plant=0 d=1.65 el=6.6 compact=true
+  work-again             work/work mode     fill=0.69 fg=0 roof=0 plant=0 d=3.37 el=17.6 compact=true
+  work-sheet             work/work layout   fill=0.69 fg=0 roof=0 plant=0 d=4.28 el=21.1 compact=false
+  repair-auto            work/work phase    fill=0.69 fg=0 roof=0 plant=0 d=3.37 el=17.6 compact=true
+  work-repair            work/work mode     fill=0.69 fg=0 roof=0 plant=0 d=3.37 el=17.6 compact=true
+  detail-repair          detail/detail mode     fill=0.73 fg=0 roof=0 plant=0 d=1.51 el=14.2 compact=true
+  work-repair-2          work/work mode     fill=0.69 fg=0 roof=0 plant=0 d=3.37 el=17.6 compact=true
+  after-controls         work/work mode     fill=0.69 fg=0 roof=0 plant=0 d=9.11 el=15.5 compact=true
+
+portrait n-o-1 (390x844) errors=0 failed=0 repair=repairing viewAfterRepair=work
+  work-walking           work/work phase    fill=0.69 fg=0 roof=0 plant=0 d=3.58 el=13.1 compact=true
+  work                   work/work arrived  fill=0.69 fg=0 roof=0 plant=0 d=3.58 el=12.9 compact=true
+  property               property/property mode     fill=0.78 fg=0.08 roof=0.06 plant=0.13 d=64.02 el=34.7 compact=true
+  work-from-property     work/work mode     fill=0.69 fg=0 roof=0 plant=0 d=3.58 el=12.9 compact=true
+  detail                 detail/detail mode     fill=0.68 fg=0 roof=0 plant=0 d=1.65 el=9.1 compact=true
+  property-from-detail   property/property mode     fill=0.78 fg=0.08 roof=0.06 plant=0.13 d=64.02 el=34.7 compact=true
+  detail-from-property   detail/detail mode     fill=0.68 fg=0 roof=0 plant=0 d=1.65 el=9.1 compact=true
+  work-again             work/work mode     fill=0.69 fg=0 roof=0 plant=0 d=3.58 el=12.9 compact=true
+  work-sheet             work/work layout   fill=0.7 fg=0 roof=0 plant=0 d=4.8 el=16.6 compact=false
+  repair-auto            work/work phase    fill=0.69 fg=0 roof=0 plant=0 d=3.58 el=12.9 compact=true
+  work-repair            work/work mode     fill=0.69 fg=0 roof=0 plant=0 d=3.58 el=12.9 compact=true
+  detail-repair          detail/detail mode     fill=0.68 fg=0 roof=0 plant=0 d=1.64 el=13 compact=true
+  work-repair-2          work/work mode     fill=0.69 fg=0 roof=0 plant=0 d=3.58 el=12.9 compact=true
+  after-controls         work/work mode     fill=0.69 fg=0 roof=0 plant=0 d=8.58 el=11.9 compact=true
+
+landscape a-s-1 (844x390) errors=0 failed=0 repair=repairing viewAfterRepair=work
+  work-walking           work/work follow   fill=- fg=- roof=- plant=- d=4.71 el=16.5 compact=true
+  work                   work/work arrived  fill=0.56 fg=0 roof=0 plant=0.05 d=4.7 el=16.4 compact=true
+  property               property/property mode     fill=0.81 fg=0.08 roof=0.08 plant=0.14 d=61.36 el=32.4 compact=true
+  work-from-property     work/work mode     fill=0.56 fg=0 roof=0 plant=0.05 d=4.7 el=16.4 compact=true
+  detail                 detail/detail mode     fill=0.67 fg=0 roof=0 plant=0.05 d=3.88 el=16.1 compact=true
+  property-from-detail   property/property mode     fill=0.81 fg=0.08 roof=0.08 plant=0.14 d=61.36 el=32.4 compact=true
+  detail-from-property   detail/detail mode     fill=0.67 fg=0 roof=0 plant=0.05 d=3.88 el=16.1 compact=true
+  work-again             work/work mode     fill=0.56 fg=0 roof=0 plant=0.05 d=4.7 el=16.4 compact=true
+  work-inspector         work/work layout   fill=0.56 fg=0 roof=0 plant=0 d=4.91 el=21.6 compact=false
+  repair-auto            work/work phase    fill=0.56 fg=0 roof=0 plant=0.05 d=4.7 el=16.4 compact=true
+  work-repair            work/work mode     fill=0.56 fg=0 roof=0 plant=0.05 d=4.7 el=16.4 compact=true
+  detail-repair          detail/detail mode     fill=0.67 fg=0 roof=0 plant=0.03 d=3.9 el=19 compact=true
+  work-repair-2          work/work mode     fill=0.56 fg=0 roof=0 plant=0.05 d=4.7 el=16.4 compact=true
+  after-controls         work/work mode     fill=0.56 fg=0 roof=0 plant=0.05 d=10.01 el=12.1 compact=true
+
+landscape a-s-2 (844x390) errors=0 failed=0 repair=repairing viewAfterRepair=work
+  work-walking           work/work follow   fill=- fg=- roof=- plant=- d=5.84 el=27.3 compact=true
+  work                   work/work arrived  fill=0.56 fg=0.02 roof=0 plant=0.02 d=5.84 el=27.3 compact=true
+  property               property/property mode     fill=- fg=- roof=- plant=- d=41.99 el=32.1 compact=true
+  work-from-property     work/work mode     fill=0.56 fg=0.02 roof=0 plant=0.02 d=5.84 el=27.3 compact=true
+  detail                 detail/detail mode     fill=0.68 fg=0 roof=0 plant=0 d=3.7 el=17.2 compact=true
+  property-from-detail   property/property mode     fill=- fg=- roof=- plant=- d=41.99 el=32.1 compact=true
+  detail-from-property   detail/detail mode     fill=0.68 fg=0 roof=0 plant=0 d=3.7 el=17.2 compact=true
+  work-again             work/work mode     fill=0.56 fg=0.02 roof=0 plant=0.02 d=5.84 el=27.3 compact=true
+  work-inspector         work/work layout   fill=0.56 fg=0 roof=0 plant=0 d=5.28 el=14.7 compact=false
+  repair-auto            work/work phase    fill=0.56 fg=0.02 roof=0 plant=0.02 d=5.84 el=27.3 compact=true
+  work-repair            work/work mode     fill=0.56 fg=0.02 roof=0 plant=0.02 d=5.84 el=27.3 compact=true
+  detail-repair          detail/detail mode     fill=0.68 fg=0 roof=0 plant=0 d=3.73 el=18.1 compact=true
+  work-repair-2          work/work mode     fill=0.56 fg=0.02 roof=0 plant=0.02 d=5.84 el=27.3 compact=true
+  after-controls         work/work mode     fill=0.56 fg=0.02 roof=0 plant=0.02 d=22.08 el=22.4 compact=true
+
+landscape c-n-4 (844x390) errors=0 failed=0 repair=repairing viewAfterRepair=work
+  work-walking           work/work phase    fill=0.55 fg=0 roof=0 plant=0 d=4.55 el=14 compact=true
+  work                   work/work arrived  fill=0.55 fg=0 roof=0 plant=0 d=4.55 el=14 compact=true
+  property               property/property mode     fill=0.8 fg=0 roof=0.13 plant=0.17 d=58.78 el=29.5 compact=true
+  work-from-property     work/work mode     fill=0.55 fg=0 roof=0 plant=0 d=4.55 el=14 compact=true
+  detail                 detail/detail mode     fill=0.67 fg=0 roof=0 plant=0 d=3.92 el=16.1 compact=true
+  property-from-detail   property/property mode     fill=0.8 fg=0 roof=0.13 plant=0.17 d=58.78 el=29.5 compact=true
+  detail-from-property   detail/detail mode     fill=0.67 fg=0 roof=0 plant=0 d=3.92 el=16.1 compact=true
+  work-again             work/work mode     fill=0.55 fg=0 roof=0 plant=0 d=4.55 el=14 compact=true
+  work-inspector         work/work layout   fill=0.56 fg=0 roof=0 plant=0 d=4.82 el=19 compact=false
+  repair-auto            work/work phase    fill=0.55 fg=0 roof=0 plant=0 d=4.55 el=14 compact=true
+  work-repair            work/work mode     fill=0.55 fg=0 roof=0 plant=0 d=4.55 el=14 compact=true
+  detail-repair          detail/detail mode     fill=0.67 fg=0 roof=0 plant=0 d=3.85 el=16.8 compact=true
+  work-repair-2          work/work mode     fill=0.55 fg=0 roof=0 plant=0 d=4.55 el=14 compact=true
+  after-controls         work/work mode     fill=0.55 fg=0 roof=0 plant=0 d=9.19 el=11.1 compact=true
+
+landscape n-o-1 (844x390) errors=0 failed=0 repair=repairing viewAfterRepair=work
+  work-walking           work/work follow   fill=- fg=- roof=- plant=- d=4.5 el=9.2 compact=true
+  work                   work/work arrived  fill=0.6 fg=0 roof=0 plant=0.1 d=4.49 el=9.2 compact=true
+  property               property/property mode     fill=- fg=- roof=- plant=- d=41.99 el=32.1 compact=true
+  work-from-property     work/work mode     fill=0.6 fg=0 roof=0 plant=0.1 d=4.49 el=9.2 compact=true
+  detail                 detail/detail mode     fill=0.68 fg=0 roof=0 plant=0 d=3.7 el=17.2 compact=true
+  property-from-detail   property/property mode     fill=- fg=- roof=- plant=- d=41.99 el=32.1 compact=true
+  detail-from-property   detail/detail mode     fill=0.68 fg=0 roof=0 plant=0 d=3.7 el=17.2 compact=true
+  work-again             work/work mode     fill=0.6 fg=0 roof=0 plant=0.1 d=4.49 el=9.2 compact=true
+  work-inspector         work/work layout   fill=0.56 fg=0 roof=0 plant=0 d=5.28 el=14.7 compact=false
+  repair-auto            work/work phase    fill=0.6 fg=0 roof=0 plant=0.1 d=4.49 el=9.2 compact=true
+  work-repair            work/work mode     fill=0.6 fg=0 roof=0 plant=0.1 d=4.49 el=9.2 compact=true
+  detail-repair          detail/detail mode     fill=0.68 fg=0 roof=0 plant=0 d=3.73 el=18.1 compact=true
+  work-repair-2          work/work mode     fill=0.6 fg=0 roof=0 plant=0.1 d=4.49 el=9.2 compact=true
+  after-controls         work/work mode     fill=0.6 fg=0 roof=0 plant=0.1 d=20.63 el=9.4 compact=true
+
+TRANSITIONS: settle ms, path m, peak m/s, reversals, overshoot m, frame dt p50/p95/max ms, frames > 50 ms
+
+desktop a-s-1
+  watch-press            settle=14552 path=186.88 peak=405.76 rev=3 over=9.52 dt=16.7/16.8/100 long=1
+  idle                   settle=0 path=0 peak=0 rev=0 over=0 dt=16.7/16.8/33.4 long=0
+  property               settle=1171 path=68.4 peak=177.85 rev=0 over=0 dt=16.7/16.8/33.4 long=0
+  work-from-property     settle=1218 path=68.42 peak=177.23 rev=0 over=0 dt=16.7/16.8/17.1 long=0
+  detail                 settle=1155 path=2.17 peak=5.06 rev=0 over=0 dt=16.7/16.8/16.9 long=0
+  property-from-detail   settle=1186 path=61.97 peak=161.37 rev=0 over=0 dt=16.7/16.8/17.5 long=0
+  detail-from-property   settle=1187 path=61.96 peak=160.48 rev=0 over=0 dt=16.7/16.8/16.9 long=0
+  work-again             settle=1136 path=2.17 peak=4.93 rev=0 over=0 dt=16.7/16.8/16.8 long=0
+  inspector-expand       settle=1239 path=1.79 peak=3.97 rev=0 over=0 dt=16.7/16.8/16.9 long=0
+  inspector-collapse     settle=1175 path=1.79 peak=4 rev=0 over=0 dt=16.7/16.8/17.5 long=0
+  phase-repair           settle=0 path=0 peak=0 rev=0 over=0 dt=16.7/16.8/16.9 long=0
+  work-repair            settle=0 path=0 peak=0 rev=0 over=0 dt=16.7/16.8/16.9 long=0
+  detail-repair          settle=1142 path=1.86 peak=4.37 rev=0 over=0 dt=16.7/16.8/17.1 long=0
+  work-repair-2          settle=1119 path=1.86 peak=4.28 rev=0 over=0 dt=16.7/16.8/16.9 long=0
+  orbit                  settle=904 path=2.92 peak=6.4 rev=0 over=0 dt=16.7/16.8/17.2 long=0
+  zoom-in                settle=386 path=1.13 peak=9.17 rev=0 over=0 dt=16.7/16.8/17.5 long=0
+  zoom-out               settle=653 path=1.8 peak=5.18 rev=0 over=0 dt=16.7/16.8/16.9 long=0
+  pan-away               settle=2087 path=3.12 peak=4.45 rev=1 over=0.574 dt=16.7/16.8/16.9 long=0
+
+desktop a-s-2
+  watch-press            settle=14602 path=161.99 peak=315.24 rev=2 over=5.284 dt=16.7/16.8/99.9 long=1
+  idle                   settle=0 path=0 peak=0 rev=0 over=0 dt=16.7/16.8/16.9 long=0
+  property               settle=1167 path=65.61 peak=163.7 rev=0 over=0 dt=16.7/33.3/33.5 long=0
+  work-from-property     settle=1162 path=65.6 peak=199.38 rev=0 over=0 dt=16.7/16.8/33.4 long=0
+  detail                 settle=1154 path=1.48 peak=3.52 rev=0 over=0 dt=16.7/16.8/17.1 long=0
+  property-from-detail   settle=1201 path=66.01 peak=172.55 rev=0 over=0 dt=16.7/16.8/33.3 long=0
+  detail-from-property   settle=1156 path=66.01 peak=171.43 rev=0 over=0 dt=16.7/16.8/33.4 long=0
+  work-again             settle=1119 path=1.48 peak=3.66 rev=0 over=0 dt=16.7/16.8/16.9 long=0
+  inspector-expand       settle=1150 path=0.77 peak=1.83 rev=0 over=0 dt=16.7/16.8/33.4 long=0
+  inspector-collapse     settle=1205 path=0.77 peak=1.87 rev=0 over=0 dt=16.7/16.8/33.3 long=0
+  phase-repair           settle=0 path=0 peak=0 rev=0 over=0 dt=16.7/16.8/16.9 long=0
+  work-repair            settle=0 path=0 peak=0 rev=0 over=0 dt=16.7/16.8/16.9 long=0
+  detail-repair          settle=1137 path=1.47 peak=3.65 rev=0 over=0 dt=16.7/16.8/16.9 long=0
+  work-repair-2          settle=1125 path=1.47 peak=3.68 rev=0 over=0 dt=16.7/16.8/16.9 long=0
+  orbit                  settle=1953 path=3.98 peak=6.83 rev=0 over=0 dt=16.7/16.8/17 long=0
+  zoom-in                settle=1672 path=2.02 peak=5.01 rev=1 over=0.06 dt=16.7/16.8/17.2 long=0
+  zoom-out               settle=640 path=2.09 peak=9.03 rev=0 over=0 dt=16.7/16.8/16.9 long=0
+  pan-away               settle=1036 path=2.03 peak=2.55 rev=0 over=0 dt=16.7/16.8/17.5 long=0
+
+desktop c-n-4
+  watch-press            settle=16183 path=225.32 peak=629.3 rev=3 over=6.321 dt=16.7/16.8/100.1 long=2
+  idle                   settle=0 path=0 peak=0 rev=0 over=0 dt=16.7/33.4/33.6 long=0
+  property               settle=1195 path=62.58 peak=162.46 rev=0 over=0 dt=16.7/33.4/33.4 long=0
+  work-from-property     settle=1170 path=62.58 peak=169.61 rev=0 over=0 dt=16.7/33.4/33.4 long=0
+  detail                 settle=1075 path=1.22 peak=3.43 rev=0 over=0 dt=16.7/33.4/33.5 long=0
+  property-from-detail   settle=1141 path=67.2 peak=219.99 rev=0 over=0 dt=16.7/33.4/33.5 long=0
+  detail-from-property   settle=1194 path=67.19 peak=161.62 rev=0 over=0 dt=16.7/33.4/49.9 long=0
+  work-again             settle=1091 path=1.22 peak=2.91 rev=0 over=0 dt=16.7/33.4/33.5 long=0
+  inspector-expand       settle=0 path=0 peak=0 rev=0 over=0 dt=16.7/33.4/33.5 long=0
+  inspector-collapse     settle=0 path=0 peak=0 rev=0 over=0 dt=16.7/33.3/33.4 long=0
+  phase-repair           settle=0 path=0 peak=0 rev=0 over=0 dt=16.7/33.3/33.4 long=0
+  work-repair            settle=0 path=0 peak=0 rev=0 over=0 dt=16.7/33.3/33.4 long=0
+  detail-repair          settle=1096 path=1.07 peak=3.2 rev=0 over=0 dt=16.7/33.4/33.5 long=0
+  work-repair-2          settle=1084 path=1.07 peak=3.02 rev=0 over=0 dt=16.7/33.3/33.5 long=0
+  orbit                  settle=827 path=2.71 peak=6.48 rev=0 over=0 dt=16.7/33.3/33.6 long=0
+  zoom-in                settle=390 path=1.08 peak=4.43 rev=0 over=0 dt=16.7/16.9/33.5 long=0
+  zoom-out               settle=1845 path=2.52 peak=7.4 rev=1 over=0.655 dt=16.7/16.8/33.4 long=0
+  pan-away               settle=1928 path=2.32 peak=3.17 rev=1 over=0.663 dt=16.7/16.8/33.5 long=0
+
+desktop n-o-1
+  watch-press            settle=14577 path=262.7 peak=756.14 rev=2 over=5.672 dt=16.7/16.8/83.5 long=1
+  idle                   settle=0 path=0 peak=0 rev=0 over=0 dt=16.7/16.8/16.8 long=0
+  property               settle=1171 path=60.84 peak=158.14 rev=0 over=0 dt=16.7/16.8/17 long=0
+  work-from-property     settle=1188 path=60.84 peak=151.14 rev=0 over=0 dt=16.7/16.8/16.9 long=0
+  detail                 settle=1122 path=1.48 peak=3.63 rev=0 over=0 dt=16.7/16.8/16.9 long=0
+  property-from-detail   settle=1173 path=61.46 peak=161.21 rev=0 over=0 dt=16.7/16.8/16.9 long=0
+  detail-from-property   settle=1212 path=61.46 peak=153.06 rev=0 over=0 dt=16.7/16.8/16.8 long=0
+  work-again             settle=1101 path=1.48 peak=3.59 rev=0 over=0 dt=16.7/16.8/17.3 long=0
+  inspector-expand       settle=1226 path=0.77 peak=1.9 rev=0 over=0 dt=16.7/16.8/33.4 long=0
+  inspector-collapse     settle=1280 path=0.77 peak=1.96 rev=0 over=0 dt=16.7/16.8/33.4 long=0
+  phase-repair           settle=0 path=0 peak=0 rev=0 over=0 dt=16.7/16.8/16.9 long=0
+  work-repair            settle=0 path=0 peak=0 rev=0 over=0 dt=16.7/16.8/17.3 long=0
+  detail-repair          settle=1133 path=1.47 peak=3.66 rev=0 over=0 dt=16.7/16.8/17.2 long=0
+  work-repair-2          settle=1135 path=1.47 peak=3.6 rev=0 over=0 dt=16.7/16.8/17.6 long=0
+  orbit                  settle=2006 path=4.44 peak=4.48 rev=1 over=0.412 dt=16.7/16.8/17.5 long=0
+  zoom-in                settle=1637 path=2.02 peak=10.04 rev=1 over=0.059 dt=16.7/16.8/16.9 long=0
+  zoom-out               settle=654 path=2.1 peak=6.05 rev=0 over=0 dt=16.7/16.8/17.2 long=0
+  pan-away               settle=1088 path=2.03 peak=2.55 rev=0 over=0 dt=16.7/16.8/16.9 long=0
+
+laptop a-s-1
+  watch-press            settle=14483 path=180.43 peak=382.45 rev=2 over=7.731 dt=16.7/16.8/33.3 long=0
+  idle                   settle=0 path=0 peak=0 rev=0 over=0 dt=16.7/16.8/16.9 long=0
+  property               settle=1207 path=64.26 peak=164.62 rev=0 over=0 dt=16.7/16.8/33.2 long=0
+  work-from-property     settle=1205 path=64.26 peak=160.44 rev=0 over=0 dt=16.7/16.8/16.8 long=0
+  detail                 settle=1118 path=1.24 peak=3.06 rev=0 over=0 dt=16.7/16.8/16.9 long=0
+  property-from-detail   settle=1172 path=65.13 peak=171.67 rev=0 over=0 dt=16.7/16.8/16.9 long=0
+  detail-from-property   settle=1173 path=65.13 peak=168.79 rev=0 over=0 dt=16.7/16.8/16.9 long=0
+  work-again             settle=1122 path=1.24 peak=3.04 rev=0 over=0 dt=16.7/16.8/16.8 long=0
+  inspector-expand       settle=1284 path=0.36 peak=0.86 rev=0 over=0 dt=16.7/16.8/17.1 long=0
+  inspector-collapse     settle=1233 path=0.36 peak=0.88 rev=0 over=0 dt=16.7/16.8/17.1 long=0
+  phase-repair           settle=0 path=0 peak=0 rev=0 over=0 dt=16.7/16.8/16.9 long=0
+  work-repair            settle=0 path=0 peak=0 rev=0 over=0 dt=16.7/16.8/17.3 long=0
+  detail-repair          settle=1117 path=1.24 peak=3.05 rev=0 over=0 dt=16.7/16.8/16.9 long=0
+  work-repair-2          settle=1108 path=1.24 peak=3.08 rev=0 over=0 dt=16.7/16.8/16.9 long=0
+  orbit                  settle=1908 path=4.79 peak=9.88 rev=1 over=0 dt=16.7/16.8/17 long=0
+  zoom-in                settle=419 path=1.05 peak=4.28 rev=0 over=0 dt=16.7/16.8/17 long=0
+  zoom-out               settle=1836 path=2.29 peak=7.21 rev=1 over=0.621 dt=16.7/16.8/16.9 long=0
+  pan-away               settle=2036 path=3.83 peak=5.71 rev=0 over=0 dt=16.7/16.8/17.6 long=0
+
+laptop a-s-2
+  watch-press            settle=14601 path=164.27 peak=319.21 rev=3 over=4.947 dt=16.7/16.8/83.3 long=1
+  idle                   settle=0 path=0 peak=0 rev=0 over=0 dt=16.7/16.8/16.8 long=0
+  property               settle=1171 path=65.61 peak=168.73 rev=0 over=0 dt=16.7/16.8/16.9 long=0
+  work-from-property     settle=1169 path=65.61 peak=170.72 rev=0 over=0 dt=16.7/16.8/16.9 long=0
+  detail                 settle=1121 path=1.58 peak=3.84 rev=0 over=0 dt=16.7/16.8/16.9 long=0
+  property-from-detail   settle=1172 path=66.52 peak=173.52 rev=0 over=0 dt=16.7/16.8/16.9 long=0
+  detail-from-property   settle=1169 path=66.52 peak=173.58 rev=0 over=0 dt=16.7/16.8/16.9 long=0
+  work-again             settle=1121 path=1.58 peak=3.96 rev=0 over=0 dt=16.7/16.8/16.9 long=0
+  inspector-expand       settle=1122 path=0.7 peak=1.72 rev=0 over=0 dt=16.7/16.8/16.8 long=0
+  inspector-collapse     settle=1267 path=0.69 peak=1.67 rev=0 over=0 dt=16.7/16.8/16.9 long=0
+  phase-repair           settle=0 path=0 peak=0 rev=0 over=0 dt=16.7/16.8/16.8 long=0
+  work-repair            settle=0 path=0 peak=0 rev=0 over=0 dt=16.7/16.8/16.8 long=0
+  detail-repair          settle=1123 path=1.6 peak=3.93 rev=0 over=0 dt=16.7/16.8/16.8 long=0
+  work-repair-2          settle=1125 path=1.6 peak=4 rev=0 over=0 dt=16.7/16.8/16.8 long=0
+  orbit                  settle=1935 path=5.6 peak=9.16 rev=1 over=0 dt=16.7/16.8/17.4 long=0
+  zoom-in                settle=1588 path=2.04 peak=10.66 rev=1 over=0 dt=16.7/16.8/16.9 long=0
+  zoom-out               settle=604 path=2.09 peak=6.04 rev=0 over=0 dt=16.7/16.8/466.7 long=2
+  pan-away               settle=1070 path=2.86 peak=3.59 rev=0 over=0 dt=16.7/16.8/17.5 long=0
+
+laptop c-n-4
+  watch-press            settle=16058 path=246.47 peak=540.23 rev=3 over=6.443 dt=16.7/16.8/33.4 long=0
+  idle                   settle=0 path=0 peak=0 rev=0 over=0 dt=16.7/16.8/16.9 long=0
+  property               settle=1192 path=60.1 peak=153.88 rev=0 over=0 dt=16.7/16.8/16.9 long=0
+  work-from-property     settle=1174 path=60.1 peak=159.26 rev=0 over=0 dt=16.7/16.8/16.9 long=0
+  detail                 settle=1134 path=2.32 peak=5.29 rev=0 over=0 dt=16.7/16.8/16.9 long=0
+  property-from-detail   settle=1175 path=69.12 peak=177.05 rev=0 over=0 dt=16.7/16.8/16.9 long=0
+  detail-from-property   settle=1171 path=69.12 peak=180.6 rev=0 over=0 dt=16.7/16.8/16.9 long=0
+  work-again             settle=1123 path=2.32 peak=5.28 rev=0 over=0 dt=16.7/16.8/16.9 long=0
+  inspector-expand       settle=1073 path=0.37 peak=0.87 rev=0 over=0 dt=16.7/16.8/16.8 long=0
+  inspector-collapse     settle=1286 path=0.36 peak=0.87 rev=0 over=0 dt=16.7/16.8/17.6 long=0
+  phase-repair           settle=0 path=0 peak=0 rev=0 over=0 dt=16.7/16.8/17.2 long=0
+  work-repair            settle=0 path=0 peak=0 rev=0 over=0 dt=16.7/16.8/16.9 long=0
+  detail-repair          settle=1119 path=2.01 peak=4.71 rev=0 over=0 dt=16.7/16.8/17.6 long=0
+  work-repair-2          settle=1124 path=2.01 peak=4.68 rev=0 over=0 dt=16.7/16.8/16.9 long=0
+  orbit                  settle=1922 path=4.79 peak=7.94 rev=1 over=0 dt=16.7/16.8/17.5 long=0
+  zoom-in                settle=389 path=1.05 peak=8.56 rev=0 over=0 dt=16.7/16.8/16.9 long=0
+  zoom-out               settle=1853 path=2.29 peak=4.81 rev=1 over=0.621 dt=16.7/16.8/16.9 long=0
+  pan-away               settle=2071 path=3.83 peak=5.44 rev=0 over=0 dt=16.7/16.8/16.9 long=0
+
+laptop n-o-1
+  watch-press            settle=14553 path=263.84 peak=591.8 rev=4 over=5.4 dt=16.7/16.8/33.4 long=0
+  idle                   settle=0 path=0 peak=0 rev=0 over=0 dt=16.7/16.8/16.8 long=0
+  property               settle=1202 path=66.05 peak=163.94 rev=0 over=0 dt=16.7/16.8/16.9 long=0
+  work-from-property     settle=1187 path=66.05 peak=166.15 rev=0 over=0 dt=16.7/16.8/583.2 long=2
+  detail                 settle=1103 path=1.34 peak=3.24 rev=0 over=0 dt=16.7/16.8/16.9 long=0
+  property-from-detail   settle=1187 path=66.63 peak=169.37 rev=0 over=0 dt=16.7/16.8/17.5 long=0
+  detail-from-property   settle=1172 path=66.63 peak=171.78 rev=0 over=0 dt=16.7/16.8/16.9 long=0
+  work-again             settle=1105 path=1.34 peak=3.29 rev=0 over=0 dt=16.7/16.8/16.9 long=0
+  inspector-expand       settle=1187 path=0.53 peak=1.17 rev=0 over=0 dt=16.7/16.8/16.8 long=0
+  inspector-collapse     settle=1120 path=0.53 peak=1.19 rev=0 over=0 dt=16.7/16.8/17.5 long=0
+  phase-repair           settle=0 path=0 peak=0 rev=0 over=0 dt=16.7/16.8/16.9 long=0
+  work-repair            settle=0 path=0 peak=0 rev=0 over=0 dt=16.7/16.8/16.9 long=0
+  detail-repair          settle=1109 path=1.43 peak=3.56 rev=0 over=0 dt=16.7/16.8/17 long=0
+  work-repair-2          settle=1086 path=1.43 peak=3.48 rev=0 over=0 dt=16.7/16.8/16.9 long=0
+  orbit                  settle=1768 path=9.57 peak=15.12 rev=1 over=4.129 dt=16.7/16.8/17.5 long=0
+  zoom-in                settle=1585 path=2.24 peak=10.76 rev=1 over=0 dt=16.7/16.8/17.1 long=0
+  zoom-out               settle=609 path=2.11 peak=6.09 rev=0 over=0 dt=16.7/16.8/516.6 long=2
+  pan-away               settle=1052 path=2.87 peak=4.93 rev=0 over=0 dt=16.7/16.8/16.9 long=0
+
+portrait a-s-1
+  watch-press            settle=14634 path=178.38 peak=372.73 rev=2 over=7.759 dt=16.7/16.8/216.6 long=3
+  idle                   settle=0 path=0 peak=0 rev=0 over=0 dt=16.7/16.8/16.9 long=0
+  property               settle=1221 path=69.56 peak=179.29 rev=0 over=0 dt=16.7/16.8/33.5 long=0
+  work-from-property     settle=1175 path=69.56 peak=181.71 rev=0 over=0 dt=16.7/16.8/16.8 long=0
+  detail                 settle=1135 path=1.84 peak=4.56 rev=0 over=0 dt=16.7/16.8/16.9 long=0
+  property-from-detail   settle=1204 path=69.11 peak=173.46 rev=0 over=0 dt=16.7/16.8/16.8 long=0
+  detail-from-property   settle=1167 path=69.1 peak=182.89 rev=0 over=0 dt=16.7/16.8/16.9 long=0
+  work-again             settle=1122 path=1.84 peak=4.55 rev=0 over=0 dt=16.7/16.8/16.8 long=0
+  inspector-expand       settle=1288 path=0.93 peak=2.36 rev=0 over=0 dt=16.7/16.8/33.4 long=0
+  inspector-collapse     settle=1188 path=0.93 peak=2.29 rev=0 over=0 dt=16.7/16.8/17.1 long=0
+  phase-repair           settle=0 path=0 peak=0 rev=0 over=0 dt=16.7/16.8/17.4 long=0
+  work-repair            settle=0 path=0 peak=0 rev=0 over=0 dt=16.7/16.8/16.8 long=0
+  detail-repair          settle=1168 path=1.89 peak=4.57 rev=0 over=0 dt=16.7/16.8/16.9 long=0
+  work-repair-2          settle=1119 path=1.89 peak=4.76 rev=0 over=0 dt=16.7/16.8/16.9 long=0
+  orbit                  settle=773 path=2.77 peak=6.85 rev=0 over=0 dt=16.7/16.8/16.9 long=0
+  pinch-in               settle=569 path=2.69 peak=9.99 rev=0 over=0 dt=16.7/16.8/649.9 long=2
+  pinch-out              settle=902 path=6.32 peak=24.07 rev=0 over=0 dt=16.7/16.8/16.9 long=0
+  pan-away               settle=1209 path=3.24 peak=4.29 rev=0 over=0 dt=16.7/16.8/16.9 long=0
+
+portrait a-s-2
+  watch-press            settle=14668 path=163.03 peak=346.98 rev=2 over=6.275 dt=16.7/16.8/183.4 long=3
+  idle                   settle=0 path=0 peak=0 rev=0 over=0 dt=16.7/16.8/16.8 long=0
+  property               settle=1217 path=52.2 peak=129.82 rev=0 over=0 dt=16.7/16.8/17.2 long=0
+  work-from-property     settle=1168 path=52.2 peak=135.42 rev=0 over=0 dt=16.7/16.8/16.8 long=0
+  detail                 settle=1136 path=2.05 peak=5.03 rev=0 over=0 dt=16.7/16.8/16.8 long=0
+  property-from-detail   settle=1189 path=55.12 peak=141.36 rev=0 over=0 dt=16.7/16.8/16.9 long=0
+  detail-from-property   settle=1153 path=55.11 peak=144.28 rev=0 over=0 dt=16.7/16.8/16.9 long=0
+  work-again             settle=1134 path=2.05 peak=5.23 rev=0 over=0 dt=16.7/16.8/16.8 long=0
+  inspector-expand       settle=1138 path=1.35 peak=3.28 rev=0 over=0 dt=16.7/16.8/33.2 long=0
+  inspector-collapse     settle=1234 path=1.35 peak=3.28 rev=0 over=0 dt=16.7/16.8/17 long=0
+  phase-repair           settle=0 path=0 peak=0 rev=0 over=0 dt=16.7/16.8/33.3 long=0
+  work-repair            settle=0 path=0 peak=0 rev=0 over=0 dt=16.7/16.8/16.9 long=0
+  detail-repair          settle=1119 path=2.12 peak=5.4 rev=0 over=0 dt=16.7/16.8/16.8 long=0
+  work-repair-2          settle=1140 path=2.12 peak=5.21 rev=0 over=0 dt=16.7/16.8/16.8 long=0
+  orbit                  settle=2090 path=6.64 peak=11.86 rev=1 over=2.699 dt=16.7/16.8/16.9 long=0
+  pinch-in               settle=586 path=2.92 peak=10.4 rev=0 over=0 dt=16.7/16.8/16.8 long=0
+  pinch-out              settle=971 path=6.33 peak=24.13 rev=0 over=0 dt=16.7/16.8/17.3 long=0
+  pan-away               settle=1236 path=3.24 peak=4.1 rev=0 over=0 dt=16.7/16.8/483.3 long=3
+
+portrait c-n-4
+  watch-press            settle=16202 path=237.57 peak=410.62 rev=3 over=7.705 dt=16.7/16.8/216.6 long=3
+  idle                   settle=0 path=0 peak=0 rev=0 over=0 dt=16.7/16.8/16.9 long=0
+  property               settle=1200 path=46.34 peak=116.6 rev=0 over=0 dt=16.7/16.8/17.6 long=0
+  work-from-property     settle=1200 path=46.34 peak=117.63 rev=0 over=0 dt=16.7/16.8/16.8 long=0
+  detail                 settle=1106 path=1.83 peak=4.38 rev=0 over=0 dt=16.7/16.8/16.9 long=0
+  property-from-detail   settle=1173 path=48.09 peak=127.07 rev=0 over=0 dt=16.7/16.8/16.9 long=0
+  detail-from-property   settle=1186 path=48.09 peak=123.48 rev=0 over=0 dt=16.7/16.8/16.9 long=0
+  work-again             settle=1104 path=1.83 peak=4.56 rev=0 over=0 dt=16.7/16.8/16.9 long=0
+  inspector-expand       settle=1272 path=0.96 peak=2.36 rev=0 over=0 dt=16.7/16.8/33.4 long=0
+  inspector-collapse     settle=1119 path=0.96 peak=2.36 rev=0 over=0 dt=16.7/16.8/17.3 long=0
+  phase-repair           settle=0 path=0 peak=0 rev=0 over=0 dt=16.7/16.8/33.3 long=0
+  work-repair            settle=0 path=0 peak=0 rev=0 over=0 dt=16.7/16.8/17 long=0
+  detail-repair          settle=1120 path=1.87 peak=4.68 rev=0 over=0 dt=16.7/16.8/16.9 long=0
+  work-repair-2          settle=1139 path=1.87 peak=4.56 rev=0 over=0 dt=16.7/16.8/16.8 long=0
+  orbit                  settle=802 path=2.77 peak=6.94 rev=0 over=0 dt=16.7/16.8/16.9 long=0
+  pinch-in               settle=352 path=2.68 peak=12.61 rev=0 over=0 dt=16.7/16.8/16.8 long=0
+  pinch-out              settle=620 path=6.32 peak=24.13 rev=0 over=0 dt=16.7/16.8/16.9 long=0
+  pan-away               settle=1169 path=3.24 peak=4.38 rev=0 over=0 dt=16.7/16.8/16.9 long=0
+
+portrait n-o-1
+  watch-press            settle=14651 path=262.72 peak=588.16 rev=2 over=6.455 dt=16.7/16.8/166.7 long=2
+  idle                   settle=0 path=0 peak=0 rev=0 over=0 dt=16.7/16.8/16.8 long=0
+  property               settle=1200 path=71.04 peak=183.34 rev=0 over=0 dt=16.7/16.8/16.9 long=0
+  work-from-property     settle=1200 path=71.04 peak=185.64 rev=0 over=0 dt=16.7/16.8/16.9 long=0
+  detail                 settle=1158 path=2.05 peak=5 rev=0 over=0 dt=16.7/16.8/16.8 long=0
+  property-from-detail   settle=1188 path=74.11 peak=197.51 rev=0 over=0 dt=16.7/16.8/16.9 long=0
+  detail-from-property   settle=1153 path=74.11 peak=198.13 rev=0 over=0 dt=16.7/16.8/16.9 long=0
+  work-again             settle=1119 path=2.05 peak=5.13 rev=0 over=0 dt=16.7/16.8/16.9 long=0
+  inspector-expand       settle=1170 path=1.34 peak=2.18 rev=0 over=0 dt=16.7/16.8/416.6 long=3
+  inspector-collapse     settle=1122 path=1.35 peak=3.37 rev=0 over=0 dt=16.7/16.8/17 long=0
+  phase-repair           settle=0 path=0 peak=0 rev=0 over=0 dt=16.7/16.8/16.8 long=0
+  work-repair            settle=0 path=0 peak=0 rev=0 over=0 dt=16.7/16.8/16.8 long=0
+  detail-repair          settle=1105 path=2.16 peak=5.35 rev=0 over=0 dt=16.7/16.8/16.9 long=0
+  work-repair-2          settle=1119 path=2.16 peak=5.36 rev=0 over=0 dt=16.7/16.8/16.9 long=0
+  orbit                  settle=1824 path=7.26 peak=13.37 rev=1 over=2.948 dt=16.7/16.8/16.8 long=0
+  pinch-in               settle=401 path=3.24 peak=19.98 rev=0 over=0 dt=16.7/16.8/16.8 long=0
+  pinch-out              settle=624 path=6.32 peak=25.44 rev=0 over=0 dt=16.7/16.8/16.9 long=0
+  pan-away               settle=1188 path=3.24 peak=4.31 rev=0 over=0 dt=16.7/16.8/16.9 long=0
+
+landscape a-s-1
+  watch-press            settle=14533 path=181.26 peak=379.97 rev=5 over=6.816 dt=16.7/16.8/50 long=0
+  idle                   settle=0 path=0 peak=0 rev=0 over=0 dt=16.7/16.8/16.8 long=0
+  property               settle=1167 path=69.84 peak=180.9 rev=0 over=0 dt=16.7/16.8/17 long=0
+  work-from-property     settle=1166 path=69.84 peak=181.99 rev=0 over=0 dt=16.7/16.8/16.8 long=0
+  detail                 settle=1121 path=2.07 peak=4.83 rev=0 over=0 dt=16.7/16.8/16.8 long=0
+  property-from-detail   settle=1186 path=77.7 peak=198.02 rev=0 over=0 dt=16.7/16.8/16.8 long=0
+  detail-from-property   settle=1187 path=77.7 peak=197.45 rev=0 over=0 dt=16.7/16.8/17.6 long=0
+  work-again             settle=1151 path=2.07 peak=4.81 rev=0 over=0 dt=16.7/16.8/16.8 long=0
+  inspector-expand       settle=1153 path=0.48 peak=1.19 rev=0 over=0 dt=16.7/16.8/16.8 long=0
+  inspector-collapse     settle=7592 path=0.52 peak=1.19 rev=1 over=0 dt=16.7/16.8/17.5 long=0
+  phase-repair           settle=0 path=0 peak=0 rev=0 over=0 dt=16.7/16.8/16.8 long=0
+  work-repair            settle=0 path=0 peak=0 rev=0 over=0 dt=16.7/16.8/16.8 long=0
+  detail-repair          settle=1117 path=2.32 peak=5.46 rev=0 over=0 dt=16.7/16.8/17.2 long=0
+  work-repair-2          settle=1120 path=2.32 peak=5.47 rev=0 over=0 dt=16.7/16.8/16.8 long=0
+  orbit                  settle=872 path=7.79 peak=19.47 rev=0 over=0 dt=16.7/16.8/16.8 long=0
+  pinch-in               settle=903 path=4.14 peak=12.75 rev=0 over=0 dt=16.7/16.8/17.3 long=0
+  pinch-out              settle=972 path=6.34 peak=24.08 rev=1 over=0 dt=16.7/16.8/16.9 long=0
+  pan-away               settle=1168 path=5.96 peak=7.99 rev=0 over=0 dt=16.7/16.8/599.7 long=2
+
+landscape a-s-2
+  watch-press            settle=14468 path=171.83 peak=406.4 rev=2 over=6.48 dt=16.7/16.8/50 long=0
+  idle                   settle=0 path=0 peak=0 rev=0 over=0 dt=16.7/16.8/16.9 long=0
+  property               settle=970 path=43.25 peak=128.19 rev=0 over=0 dt=16.7/16.8/16.9 long=0
+  work-from-property     settle=1187 path=55.59 peak=137.14 rev=0 over=0 dt=16.7/16.8/16.9 long=0
+  detail                 settle=1153 path=3.52 peak=8.49 rev=0 over=0 dt=16.7/16.8/16.9 long=0
+  property-from-detail   settle=971 path=41.55 peak=124.21 rev=0 over=0 dt=16.7/16.8/16.9 long=0
+  detail-from-property   settle=1187 path=48.71 peak=124.52 rev=0 over=0 dt=16.7/16.8/16.8 long=0
+  work-again             settle=1104 path=3.52 peak=8.74 rev=0 over=0 dt=16.7/16.8/16.9 long=0
+  inspector-expand       settle=1323 path=3.58 peak=8.56 rev=0 over=0 dt=16.7/16.8/16.8 long=0
+  inspector-collapse     settle=1370 path=3.58 peak=8.41 rev=0 over=0 dt=16.7/16.8/16.9 long=0
+  phase-repair           settle=1187 path=0.29 peak=1.28 rev=1 over=0.133 dt=16.7/16.8/16.9 long=0
+  work-repair            settle=0 path=0 peak=0 rev=0 over=0 dt=16.7/16.8/16.9 long=0
+  detail-repair          settle=1118 path=3.41 peak=8.45 rev=0 over=0 dt=16.7/16.8/16.9 long=0
+  work-repair-2          settle=1136 path=3.41 peak=8.46 rev=0 over=0 dt=16.7/16.8/17.1 long=0
+  orbit                  settle=888 path=7.7 peak=19.31 rev=0 over=0 dt=16.7/16.8/16.8 long=0
+  pinch-in               settle=1803 path=7.64 peak=20.35 rev=1 over=1.315 dt=16.7/16.8/16.9 long=0
+  pinch-out              settle=820 path=13.16 peak=50.08 rev=1 over=0 dt=16.7/16.8/783.2 long=2
+  pan-away               settle=1336 path=12.39 peak=16.46 rev=0 over=0 dt=16.7/16.8/19.1 long=0
+
+landscape c-n-4
+  watch-press            settle=16374 path=248.82 peak=603.2 rev=4 over=6.354 dt=16.7/16.8/33.4 long=0
+  idle                   settle=0 path=0 peak=0 rev=0 over=0 dt=16.7/16.8/16.9 long=0
+  property               settle=1200 path=65.5 peak=162.95 rev=0 over=0 dt=16.7/16.8/16.9 long=0
+  work-from-property     settle=1170 path=65.5 peak=171.61 rev=0 over=0 dt=16.7/16.8/16.8 long=0
+  detail                 settle=1118 path=2.52 peak=5.77 rev=0 over=0 dt=16.7/16.8/16.9 long=0
+  property-from-detail   settle=1172 path=75.25 peak=192.34 rev=0 over=0 dt=16.7/16.8/16.8 long=0
+  detail-from-property   settle=1186 path=75.24 peak=188.29 rev=0 over=0 dt=16.7/16.8/16.8 long=0
+  work-again             settle=1104 path=2.52 peak=5.65 rev=0 over=0 dt=16.7/16.8/16.9 long=0
+  inspector-expand       settle=1270 path=0.85 peak=2.04 rev=0 over=0 dt=16.7/16.8/16.8 long=0
+  inspector-collapse     settle=1122 path=0.85 peak=2.06 rev=0 over=0 dt=16.7/16.8/17.4 long=0
+  phase-repair           settle=0 path=0 peak=0 rev=0 over=0 dt=16.7/16.8/33.3 long=0
+  work-repair            settle=0 path=0 peak=0 rev=0 over=0 dt=16.7/16.8/16.9 long=0
+  detail-repair          settle=1135 path=2.29 peak=5.24 rev=0 over=0 dt=16.7/16.8/16.9 long=0
+  work-repair-2          settle=1105 path=2.29 peak=5.34 rev=0 over=0 dt=16.7/16.8/16.9 long=0
+  orbit                  settle=1756 path=11.42 peak=20.03 rev=1 over=2.129 dt=16.7/16.8/666.6 long=2
+  pinch-in               settle=719 path=3.19 peak=11.31 rev=0 over=0 dt=16.7/16.8/17 long=0
+  pinch-out              settle=1070 path=6.36 peak=24.07 rev=1 over=0 dt=16.7/16.8/17.7 long=0
+  pan-away               settle=1254 path=5.96 peak=7.95 rev=0 over=0 dt=16.7/16.8/583.4 long=1
+
+landscape n-o-1
+  watch-press            settle=14550 path=267.05 peak=588.18 rev=5 over=5.484 dt=16.7/16.8/33.3 long=0
+  idle                   settle=0 path=0 peak=0 rev=0 over=0 dt=16.7/16.8/17 long=0
+  property               settle=984 path=41.5 peak=121.91 rev=0 over=0 dt=16.7/16.8/17.3 long=0
+  work-from-property     settle=1190 path=48.08 peak=125.23 rev=0 over=0 dt=16.7/16.8/16.8 long=0
+  detail                 settle=1134 path=1.04 peak=1.2 rev=0 over=0 dt=16.7/16.8/716.7 long=1
+  property-from-detail   settle=935 path=41.55 peak=119.67 rev=0 over=0 dt=16.7/16.8/16.8 long=0
+  detail-from-property   settle=1189 path=48.71 peak=122.27 rev=0 over=0 dt=16.7/16.8/783.1 long=2
+  work-again             settle=1104 path=1.06 peak=2.59 rev=0 over=0 dt=16.7/16.8/16.8 long=0
+  inspector-expand       settle=1221 path=0.96 peak=2.42 rev=0 over=0 dt=16.7/16.8/16.8 long=0
+  inspector-collapse     settle=7818 path=1.08 peak=2.48 rev=1 over=0.058 dt=16.7/16.8/18.1 long=0
+  phase-repair           settle=0 path=0 peak=0 rev=0 over=0 dt=16.7/16.8/16.9 long=0
+  work-repair            settle=0 path=0 peak=0 rev=0 over=0 dt=16.7/16.8/16.9 long=0
+  detail-repair          settle=1118 path=1.1 peak=2.72 rev=0 over=0 dt=16.7/16.8/17 long=0
+  work-repair-2          settle=1086 path=1.1 peak=2.66 rev=0 over=0 dt=16.7/16.8/17.1 long=0
+  orbit                  settle=1850 path=10.41 peak=21.75 rev=0 over=0 dt=16.7/16.8/16.9 long=0
+  pinch-in               settle=1817 path=6.35 peak=14.52 rev=1 over=2.511 dt=16.7/16.8/16.9 long=0
+  pinch-out              settle=2168 path=37.12 peak=79.17 rev=3 over=3.481 dt=16.7/16.8/17.3 long=0
+  pan-away               settle=1304 path=12.39 peak=16.41 rev=0 over=0 dt=16.7/16.8/17 long=0
+
+CONTROLS: moved m, dist/azimuth before -> released, drift in the next 10 s, service view after
+
+desktop a-s-1
+  orbit    moved=2.884 d 3.88->4.5 az -99.9->-140.4 y 1.97->1.97 drift10s=0 view=work
+  zoomIn   moved=1.129 d 4.5->3.44 az -140.4->-145.4 y 1.97->1.57 drift10s=0 view=work
+  zoomOut  moved=1.797 d 3.44->5.14 az -145.4->-138.3 y 1.57->2.2 drift10s=0 view=work
+  panAway  moved=1.661 d 5.14->5.42 az -138.3->-120 y 2.2->2.21 drift10s=1.25 view=work
+
+desktop a-s-2
+  orbit    moved=3.077 d 4.23->4.79 az -65.9->-107.3 y 2.37->2.45 drift10s=0.76 view=work
+  zoomIn   moved=1.187 d 4.74->3.6 az -108.5->-113.9 y 3.12->2.59 drift10s=0.687 view=work
+  zoomOut  moved=2.095 d 3.86->5.89 az -114.6->-106.9 y 3.27->4.59 drift10s=0 view=work
+  panAway  moved=2.032 d 5.89->6.26 az -106.9->-83.6 y 4.59->4.59 drift10s=0 view=work
+
+desktop c-n-4
+  orbit    moved=2.67 d 3.78->4.33 az 92->52.3 y 2.28->2.28 drift10s=0 view=work
+  zoomIn   moved=1.082 d 4.33->3.31 az 52.3->47.5 y 2.28->1.82 drift10s=0 view=work
+  zoomOut  moved=1.569 d 3.31->4.8 az 47.5->53.8 y 1.82->2.49 drift10s=0.642 view=work
+  panAway  moved=1.394 d 4.18->4.43 az 51.7->70.9 y 2.21->2.24 drift10s=0.762 view=work
+
+desktop n-o-1
+  orbit    moved=3.02 d 4.23->4.8 az -65.9->-106.4 y 2.37->2.45 drift10s=1.167 view=work
+  zoomIn   moved=1.179 d 4.52->3.38 az -96.3->-101.4 y 3.12->2.61 drift10s=0.665 view=work
+  zoomOut  moved=2.095 d 3.66->5.71 az -102.1->-94.8 y 3.27->4.59 drift10s=0 view=work
+  panAway  moved=2.032 d 5.71->6.14 az -94.8->-70.8 y 4.59->4.59 drift10s=0 view=work
+
+laptop a-s-1
+  orbit    moved=4.063 d 3.98->4.84 az -70.5->-126.7 y 2.26->2.23 drift10s=0.531 view=work
+  zoomIn   moved=1.051 d 4.34->3.38 az -128.8->-134.4 y 2.02->1.62 drift10s=0 view=work
+  zoomOut  moved=1.574 d 3.38->4.83 az -134.4->-126.8 y 1.62->2.23 drift10s=0.523 view=work
+  panAway  moved=2.214 d 4.34->4.74 az -128.8->-100.2 y 2.02->2.11 drift10s=1.496 view=work
+
+laptop a-s-2
+  orbit    moved=4.56 d 4.63->5.52 az -65.4->-120.7 y 2.52->2.58 drift10s=0.842 view=work
+  zoomIn   moved=1.311 d 5.44->4.19 az -122->-127.1 y 3.33->2.76 drift10s=0.611 view=work
+  zoomOut  moved=2.095 d 4.17->6.17 az -129.2->-121.6 y 3.27->4.59 drift10s=0 view=work
+  panAway  moved=2.857 d 6.17->6.78 az -121.6->-91.8 y 4.59->4.59 drift10s=0 view=work
+
+laptop c-n-4
+  orbit    moved=4.071 d 3.98->4.86 az 109.5->53.3 y 2.26->2.24 drift10s=0.554 view=work
+  zoomIn   moved=1.051 d 4.34->3.38 az 51.2->45.6 y 2.02->1.62 drift10s=0 view=work
+  zoomOut  moved=1.557 d 3.38->4.82 az 45.6->53.2 y 1.62->2.22 drift10s=0.506 view=work
+  panAway  moved=2.155 d 4.34->4.72 az 51.2->79.1 y 2.02->2.08 drift10s=1.552 view=work
+
+laptop n-o-1
+  orbit    moved=4.353 d 4.4->5.46 az -65.5->-118.1 y 2.06->2.27 drift10s=3.838 view=work
+  zoomIn   moved=1.29 d 4.46->3.17 az -72.7->-72.7 y 2.06->1.72 drift10s=0.706 view=work
+  zoomOut  moved=2.107 d 3.04->5.14 az -59.5->-57.7 y 1.65->2.31 drift10s=0 view=work
+  panAway  moved=2.874 d 5.14->6.42 az -57.7->-31.3 y 2.31->2.31 drift10s=0 view=work
+
+portrait a-s-1
+  orbit    moved=2.732 d 3.42->4.06 az -78.1->-121.5 y 2.02->2.02 drift10s=0 view=work
+  zoomIn   moved=2.681 d 4.06->1.76 az -121.5->-147.4 y 2.02->0.97 drift10s=0 view=work
+  zoomOut  moved=6.31 d 1.76->7.58 az -147.4->-113.1 y 0.97->3.43 drift10s=0 view=work
+  panAway  moved=3.237 d 7.58->9.16 az -113.1->-93 y 3.43->3.43 drift10s=0 view=work
+
+portrait a-s-2
+  orbit    moved=2.684 d 3.56->4.19 az -66.9->-108.4 y 2.11->2.19 drift10s=3.244 view=work
+  zoomIn   moved=2.907 d 3.51->0.68 az -57->-71.6 y 2.11->0.97 drift10s=0 view=work
+  zoomOut  moved=6.31 d 0.68->6.91 az -71.6->-55.2 y 0.97->3.43 drift10s=0 view=work
+  panAway  moved=3.237 d 6.91->8.83 az -55.2->-35.6 y 3.43->3.43 drift10s=0 view=work
+
+portrait c-n-4
+  orbit    moved=2.731 d 3.37->4.01 az 108.3->64.2 y 2.02->2.02 drift10s=0 view=work
+  zoomIn   moved=2.679 d 4.01->1.72 az 64.2->37.3 y 2.02->0.97 drift10s=0 view=work
+  zoomOut  moved=6.31 d 1.72->7.53 az 37.3->72.8 y 0.97->3.43 drift10s=0 view=work
+  panAway  moved=3.237 d 7.53->9.11 az 72.8->93 y 3.43->3.43 drift10s=0 view=work
+
+portrait n-o-1
+  orbit    moved=2.807 d 3.58->4.31 az -66.7->-108.2 y 1.8->1.96 drift10s=3.422 view=work
+  zoomIn   moved=3.23 d 3.53->0.46 az -56.2->-78.7 y 1.8->0.79 drift10s=0 view=work
+  zoomOut  moved=6.31 d 0.46->6.6 az -78.7->-54.9 y 0.79->2.77 drift10s=0 view=work
+  panAway  moved=3.237 d 6.6->8.58 az -54.9->-35.1 y 2.77->2.77 drift10s=0 view=work
+
+landscape a-s-1
+  orbit    moved=7.291 d 4.7->6.49 az -73.7->-156.2 y 2.33->2.33 drift10s=0 view=work
+  zoomIn   moved=4.127 d 6.49->2.85 az -156.2->-178.4 y 2.33->0.88 drift10s=0 view=work
+  zoomOut  moved=6.31 d 2.85->8.59 az -178.4->-152.3 y 0.88->3.1 drift10s=0 view=work
+  panAway  moved=5.957 d 8.59->10.01 az -152.3->-115 y 3.1->3.1 drift10s=0 view=work
+
+landscape a-s-2
+  orbit    moved=7.211 d 5.84->6.95 az -97.7->-173.7 y 3.68->3.68 drift10s=0 view=work
+  zoomIn   moved=4.328 d 6.95->2.81 az -173.7->175.1 y 3.68->1.48 drift10s=2.582 view=work
+  zoomOut  moved=13.126 d 4.71->17.7 az -158.2->-148 y 2.67->9.42 drift10s=0 view=work
+  panAway  moved=12.39 d 17.7->22.08 az -148->-110.7 y 9.42->9.42 drift10s=0 view=null
+
+landscape c-n-4
+  orbit    moved=7.194 d 4.56->6.45 az 110.4->28.6 y 2.1->2.21 drift10s=2.93 view=work
+  zoomIn   moved=3.182 d 4.6->2.04 az 53->20.8 y 1.79->0.79 drift10s=0 view=work
+  zoomOut  moved=6.31 d 2.04->7.59 az 20.8->61.3 y 0.79->2.77 drift10s=0 view=work
+  panAway  moved=5.957 d 7.59->9.19 az 61.3->102.4 y 2.77->2.77 drift10s=0 view=work
+
+landscape n-o-1
+  orbit    moved=8.296 d 4.49->7.07 az -61->-150.8 y 1.72->1.74 drift10s=1.412 view=work
+  zoomIn   moved=3.384 d 6.54->3.77 az -161.7->177.7 y 1.46->0.65 drift10s=2.451 view=work
+  zoomOut  moved=13.74 d 5.71->18.58 az -165.3->-140.3 y 1.24->5.16 drift10s=19.076 view=work
+  panAway  moved=12.39 d 15.74->20.62 az -71.4->-34 y 4.36->4.36 drift10s=0 view=null
+
+WALK-UP: reframes after Watch technician (t ms, reason, mode, fill) and technician path
+desktop a-s-1: 53:mode/work 819:phase/work 1903:follow/work 3003:follow/work 4069:follow/work 5136:follow/work 6202:follow/work 7269:follow/work 8336:follow/work 9419:follow/work 10485:follow/work 11552:follow/work 12619:follow/work 13419:arrived/work | tech moving 286-986 ms statuses walking,working
+desktop a-s-2: 52:mode/work 869:phase/work 1986:follow/work 3069:follow/work 4135:follow/work 5202:follow/work 6269:follow/work 7335:follow/work 8402:follow/work 9485:follow/work 10552:follow/work 11635:follow/work 12718:follow/work 13518:arrived/work | tech moving 452-969 ms statuses walking,working
+desktop c-n-4: 51:mode/work 851:phase/work 3584:follow/work 4668:follow/work 5734:follow/work 6817:follow/work 7884:follow/work 8951:follow/work 10017:follow/work 11100:follow/work 12167:follow/work 13234:follow/work 14300:follow/work 15100:arrived/work | tech moving 518-984 ms statuses walking,working
+desktop n-o-1: 45:mode/work 812:phase/work 1912:follow/work 3012:follow/work 4095:follow/work 5162:follow/work 6228:follow/work 7295:follow/work 8361:follow/work 9445:follow/work 10511:follow/work 11595:follow/work 12661:follow/work 13461:arrived/work | tech moving 262-795 ms statuses walking,working
+laptop a-s-1: 34:mode/work 817:phase/work 1901:follow/work 2967:follow/work 4034:follow/work 5100:follow/work 6167:follow/work 7234:follow/work 8300:follow/work 9367:follow/work 10434:follow/work 11500:follow/work 12567:follow/work 13367:arrived/work | tech moving 234-851 ms statuses walking,working
+laptop a-s-2: 35:mode/work 851:phase/work 1935:follow/work 3018:follow/work 4084:follow/work 5151:follow/work 6218:follow/work 7284:follow/work 8351:follow/work 9434:follow/work 10501:follow/work 11584:follow/work 12667:follow/work 13467:arrived/work | tech moving 368-851 ms statuses walking,working
+laptop c-n-4: 25:mode/work 825:phase/work 3492:follow/work 4559:follow/work 5625:follow/work 6692:follow/work 7758:follow/work 8825:follow/work 9892:follow/work 10975:follow/work 12042:follow/work 13108:follow/work 14175:follow/work 14975:arrived/work | tech moving 342-942 ms statuses walking,working
+laptop n-o-1: 53:mode/work 837:phase/work 1920:follow/work 3003:follow/work 4086:follow/work 5153:follow/work 6220:follow/work 7286:follow/work 8353:follow/work 9420:follow/work 10486:follow/work 11569:follow/work 12653:follow/work 13453:arrived/work | tech moving 337-937 ms statuses walking,working
+portrait a-s-1: 51:mode/work 818:phase/work 1934:follow/work 3068:follow/work 4134:follow/work 5201:follow/work 6267:follow/work 7334:follow/work 8401:follow/work 9467:follow/work 10534:follow/work 11617:follow/work 12700:follow/work 13500:arrived/work | tech moving 234-801 ms statuses walking,working
+portrait a-s-2: 36:mode/work 836:phase/work 1936:follow/work 3119:follow/work 4186:follow/work 5252:follow/work 6319:follow/work 7385:follow/work 8452:follow/work 9519:follow/work 10585:follow/work 11668:follow/work 12752:follow/work 13568:arrived/work | tech moving 286-852 ms statuses walking,working
+portrait c-n-4: 52:mode/work 1052:phase/work 3569:follow/work 4652:follow/work 5718:follow/work 6785:follow/work 7852:follow/work 8918:follow/work 9985:follow/work 11068:follow/work 12135:follow/work 13218:follow/work 14285:follow/work 15085:arrived/work | tech moving 552-952 ms statuses walking,working
+portrait n-o-1: 35:mode/work 952:phase/work 2019:follow/work 3085:follow/work 4152:follow/work 5219:follow/work 6285:follow/work 7352:follow/work 8418:follow/work 9502:follow/work 10568:follow/work 11652:follow/work 12735:follow/work 13552:arrived/work | tech moving 485-886 ms statuses walking,working
+landscape a-s-1: 51:mode/work 835:phase/work 1918:follow/work 3001:follow/work 4068:follow/work 5134:follow/work 6201:follow/work 7268:follow/work 8334:follow/work 9401:follow/work 10467:follow/work 11534:follow/work 12601:follow/work 13401:arrived/work | tech moving 402-801 ms statuses walking,working
+landscape a-s-2: 34:mode/work 818:phase/work 1901:follow/work 2968:follow/work 4034:follow/work 5101:follow/work 6168:follow/work 7234:follow/work 8301:follow/work 9367:follow/work 10434:follow/work 11501:follow/work 12567:follow/work 13367:arrived/work | tech moving 318-918 ms statuses walking,working
+landscape c-n-4: 24:mode/work 807:phase/work 3541:follow/work 4607:follow/work 5674:follow/work 6740:follow/work 7807:follow/work 8874:follow/work 9940:follow/work 11007:follow/work 12074:follow/work 13140:follow/work 14207:follow/work 15273:arrived/work | tech moving 357-957 ms statuses walking,working
+landscape n-o-1: 34:mode/work 817:phase/work 1917:follow/work 3001:follow/work 4067:follow/work 5151:follow/work 6217:follow/work 7284:follow/work 8350:follow/work 9417:follow/work 10500:follow/work 11567:follow/work 12634:follow/work 13433:arrived/work | tech moving 317-917 ms statuses walking,working

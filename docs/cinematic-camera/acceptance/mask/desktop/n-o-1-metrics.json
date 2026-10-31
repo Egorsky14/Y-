@@ -1,0 +1,3682 @@
+{
+ "profile": "desktop",
+ "size": "1920x1080",
+ "lot": "n-o-1",
+ "profileBuild": true,
+ "shots": {
+  "work-walking": {
+   "cam": [
+    -122.17,
+    2.4,
+    -119.22
+   ],
+   "tech": [
+    -118.54,
+    -120.98
+   ],
+   "distToTech": 4.27,
+   "elevationDeg": 19.1,
+   "serviceView": {
+    "requested": "work",
+    "mode": "work",
+    "phase": "diagnosis",
+    "reason": "phase",
+    "ms": 5.9,
+    "report": {
+     "mode": "work",
+     "fill": 0.5520566752369356,
+     "center": [
+      -0.06297648331361899,
+      0.03823371942320858
+     ],
+     "roof": 0,
+     "wall": 0.47619047619047616,
+     "background": 0,
+     "plant": 0,
+     "pole": 0,
+     "sky": 0,
+     "foreground": 0,
+     "azimuth": -1.0480169489644826,
+     "elevation": 0.4,
+     "distance": 4.665395032228258,
+     "sideAngle": 2.1281346678481086,
+     "cost": 1.1659315918866064
+    },
+    "aspect": 1.778,
+    "safe": {
+     "right": 0,
+     "bottom": 0.0787037037037037,
+     "top": 0.08518518518518518
+    }
+   },
+   "ui": {
+    "hud": [
+     14,
+     14,
+     1892,
+     78
+    ],
+    "inspector": [
+     1534,
+     86,
+     372,
+     104
+    ],
+    "actionBar": [
+     14,
+     995,
+     596,
+     71
+    ],
+    "worldControls": [
+     1362,
+     1014,
+     544,
+     52
+    ],
+    "serviceBar": [
+     806,
+     1016,
+     307,
+     50
+    ],
+    "toasts": [
+     14,
+     86,
+     340,
+     260
+    ],
+    "inspectorCompact": true
+   },
+   "mask": {
+    "tech": {
+     "visible": 0,
+     "pixels": 0,
+     "screenShare": 0,
+     "box": null,
+     "heightShare": 0,
+     "underUi": 0
+    },
+    "kit": {
+     "visible": 0,
+     "pixels": 0,
+     "screenShare": 0,
+     "box": null,
+     "heightShare": 0,
+     "underUi": 0
+    }
+   },
+   "at": 1793415129179
+  },
+  "work": {
+   "cam": [
+    -122.19,
+    2.37,
+    -119.34
+   ],
+   "tech": [
+    -118.54,
+    -120.98
+   ],
+   "distToTech": 4.23,
+   "elevationDeg": 18.9,
+   "serviceView": {
+    "requested": "work",
+    "mode": "work",
+    "phase": "diagnosis",
+    "reason": "arrived",
+    "ms": 3.4,
+    "report": {
+     "mode": "work",
+     "fill": 0.5520566752369356,
+     "center": [
+      -0.06297648331361899,
+      0.03823371942320858
+     ],
+     "roof": 0,
+     "wall": 0.47619047619047616,
+     "background": 0,
+     "plant": 0,
+     "pole": 0,
+     "sky": 0,
+     "foreground": 0,
+     "azimuth": -1.0480169489644826,
+     "elevation": 0.4,
+     "distance": 4.665395032228258,
+     "sideAngle": 2.1281346678481086,
+     "cost": 1.1659315918866064
+    },
+    "aspect": 1.778,
+    "safe": {
+     "right": 0,
+     "bottom": 0.0787037037037037,
+     "top": 0.08518518518518518
+    }
+   },
+   "ui": {
+    "hud": [
+     14,
+     14,
+     1892,
+     78
+    ],
+    "inspector": [
+     1534,
+     86,
+     372,
+     104
+    ],
+    "actionBar": [
+     14,
+     995,
+     596,
+     71
+    ],
+    "worldControls": [
+     1362,
+     1014,
+     544,
+     52
+    ],
+    "serviceBar": [
+     806,
+     1016,
+     307,
+     50
+    ],
+    "inspectorCompact": true
+   },
+   "mask": {
+    "tech": {
+     "visible": 0.899,
+     "pixels": 98309,
+     "screenShare": 0.0474,
+     "box": [
+      0.454,
+      0.214,
+      0.209,
+      0.594
+     ],
+     "heightShare": 0.594,
+     "underUi": 0
+    },
+    "kit": {
+     "visible": 0.521,
+     "pixels": 100924,
+     "screenShare": 0.0487,
+     "box": [
+      0.479,
+      0.386,
+      0.349,
+      0.614
+     ],
+     "heightShare": 0.614,
+     "underUi": 0.089
+    }
+   },
+   "at": 1793415146939
+  },
+  "property": {
+   "cam": [
+    -125.43,
+    33.47,
+    -71.17
+   ],
+   "tech": [
+    -118.54,
+    -120.98
+   ],
+   "distToTech": 59.86,
+   "elevationDeg": 32.9,
+   "serviceView": {
+    "requested": "property",
+    "mode": "property",
+    "phase": "diagnosis",
+    "reason": "mode",
+    "ms": 14,
+    "report": {
+     "mode": "property",
+     "fill": 0.8700105748166046,
+     "center": [
+      -0.02425884169667822,
+      -0.0008559558833999281
+     ],
+     "roof": 0.12698412698412698,
+     "wall": 0.047619047619047616,
+     "background": 0.015873015873015872,
+     "plant": 0.09523809523809523,
+     "pole": 0,
+     "sky": 0.15873015873015872,
+     "foreground": 0.07936507936507936,
+     "azimuth": -0.38527435816435796,
+     "elevation": 0.5599999999999999,
+     "distance": 60,
+     "cost": 0.7898258060861345
+    },
+    "aspect": 1.778,
+    "safe": {
+     "right": 0,
+     "bottom": 0.0787037037037037,
+     "top": 0.08518518518518518
+    }
+   },
+   "ui": {
+    "hud": [
+     14,
+     14,
+     1892,
+     78
+    ],
+    "inspector": [
+     1534,
+     86,
+     372,
+     104
+    ],
+    "actionBar": [
+     14,
+     995,
+     596,
+     71
+    ],
+    "worldControls": [
+     1362,
+     1014,
+     544,
+     52
+    ],
+    "serviceBar": [
+     806,
+     1016,
+     307,
+     50
+    ],
+    "inspectorCompact": true
+   },
+   "mask": {
+    "tech": {
+     "visible": 0.945,
+     "pixels": 490,
+     "screenShare": 0.0002,
+     "box": [
+      0.322,
+      0.529,
+      0.014,
+      0.041
+     ],
+     "heightShare": 0.041,
+     "underUi": 0
+    },
+    "kit": {
+     "visible": 0.55,
+     "pixels": 409,
+     "screenShare": 0.0002,
+     "box": [
+      0.319,
+      0.54,
+      0.024,
+      0.046
+     ],
+     "heightShare": 0.046,
+     "underUi": 0
+    }
+   },
+   "at": 1793415150415
+  },
+  "work-from-property": {
+   "cam": [
+    -122.19,
+    2.37,
+    -119.34
+   ],
+   "tech": [
+    -118.54,
+    -120.98
+   ],
+   "distToTech": 4.23,
+   "elevationDeg": 18.9,
+   "serviceView": {
+    "requested": "work",
+    "mode": "work",
+    "phase": "diagnosis",
+    "reason": "mode",
+    "ms": 4.1,
+    "report": {
+     "mode": "work",
+     "fill": 0.5520566752369356,
+     "center": [
+      -0.06297648331361899,
+      0.03823371942320858
+     ],
+     "roof": 0,
+     "wall": 0.47619047619047616,
+     "background": 0,
+     "plant": 0,
+     "pole": 0,
+     "sky": 0,
+     "foreground": 0,
+     "azimuth": -1.0480169489644826,
+     "elevation": 0.4,
+     "distance": 4.665395032228258,
+     "sideAngle": 2.1281346678481086,
+     "cost": 1.1659315918866064
+    },
+    "aspect": 1.778,
+    "safe": {
+     "right": 0,
+     "bottom": 0.0787037037037037,
+     "top": 0.08518518518518518
+    }
+   },
+   "ui": {
+    "hud": [
+     14,
+     14,
+     1892,
+     78
+    ],
+    "inspector": [
+     1534,
+     86,
+     372,
+     104
+    ],
+    "actionBar": [
+     14,
+     995,
+     596,
+     71
+    ],
+    "worldControls": [
+     1362,
+     1014,
+     544,
+     52
+    ],
+    "serviceBar": [
+     806,
+     1016,
+     307,
+     50
+    ],
+    "inspectorCompact": true
+   },
+   "mask": {
+    "tech": {
+     "visible": 0.899,
+     "pixels": 98309,
+     "screenShare": 0.0474,
+     "box": [
+      0.454,
+      0.214,
+      0.209,
+      0.594
+     ],
+     "heightShare": 0.594,
+     "underUi": 0
+    },
+    "kit": {
+     "visible": 0.521,
+     "pixels": 100924,
+     "screenShare": 0.0487,
+     "box": [
+      0.479,
+      0.386,
+      0.349,
+      0.614
+     ],
+     "heightShare": 0.614,
+     "underUi": 0.089
+    }
+   },
+   "at": 1793415153865
+  },
+  "detail": {
+   "cam": [
+    -120.96,
+    1.76,
+    -119.88
+   ],
+   "tech": [
+    -118.54,
+    -120.98
+   ],
+   "distToTech": 2.76,
+   "elevationDeg": 16,
+   "serviceView": {
+    "requested": "detail",
+    "mode": "detail",
+    "phase": "diagnosis",
+    "reason": "mode",
+    "ms": 3.8,
+    "report": {
+     "mode": "detail",
+     "fill": 0.6799156838024538,
+     "center": [
+      -0.013667149467962589,
+      -0.09657510842233036
+     ],
+     "roof": 0,
+     "wall": 0.47619047619047616,
+     "background": 0,
+     "plant": 0,
+     "pole": 0,
+     "sky": 0,
+     "foreground": 0,
+     "azimuth": -1.0130169489644827,
+     "elevation": 0.36,
+     "distance": 3.1209332963694387,
+     "sideAngle": 2.1353850479745566,
+     "cost": 1.056576495829095
+    },
+    "aspect": 1.778,
+    "safe": {
+     "right": 0,
+     "bottom": 0.0787037037037037,
+     "top": 0.08518518518518518
+    }
+   },
+   "ui": {
+    "hud": [
+     14,
+     14,
+     1892,
+     78
+    ],
+    "inspector": [
+     1534,
+     86,
+     372,
+     104
+    ],
+    "actionBar": [
+     14,
+     995,
+     596,
+     71
+    ],
+    "worldControls": [
+     1362,
+     1014,
+     544,
+     52
+    ],
+    "serviceBar": [
+     806,
+     1016,
+     307,
+     50
+    ],
+    "inspectorCompact": true
+   },
+   "mask": {
+    "tech": {
+     "visible": 0.9,
+     "pixels": 232817,
+     "screenShare": 0.1123,
+     "box": [
+      0.412,
+      0.094,
+      0.318,
+      0.906
+     ],
+     "heightShare": 0.906,
+     "underUi": 0.018
+    },
+    "kit": {
+     "visible": 0.674,
+     "pixels": 77033,
+     "screenShare": 0.0371,
+     "box": [
+      0.453,
+      0.365,
+      0.456,
+      0.635
+     ],
+     "heightShare": 0.635,
+     "underUi": 0.113
+    }
+   },
+   "at": 1793415157331
+  },
+  "property-from-detail": {
+   "cam": [
+    -125.43,
+    33.47,
+    -71.17
+   ],
+   "tech": [
+    -118.54,
+    -120.98
+   ],
+   "distToTech": 59.86,
+   "elevationDeg": 32.9,
+   "serviceView": {
+    "requested": "property",
+    "mode": "property",
+    "phase": "diagnosis",
+    "reason": "mode",
+    "ms": 11.2,
+    "report": {
+     "mode": "property",
+     "fill": 0.8700105748166046,
+     "center": [
+      -0.02425884169667822,
+      -0.0008559558833999281
+     ],
+     "roof": 0.12698412698412698,
+     "wall": 0.047619047619047616,
+     "background": 0.015873015873015872,
+     "plant": 0.09523809523809523,
+     "pole": 0,
+     "sky": 0.15873015873015872,
+     "foreground": 0.07936507936507936,
+     "azimuth": -0.38527435816435796,
+     "elevation": 0.5599999999999999,
+     "distance": 60,
+     "cost": 0.7898258060861345
+    },
+    "aspect": 1.778,
+    "safe": {
+     "right": 0,
+     "bottom": 0.0787037037037037,
+     "top": 0.08518518518518518
+    }
+   },
+   "ui": {
+    "hud": [
+     14,
+     14,
+     1892,
+     78
+    ],
+    "inspector": [
+     1534,
+     86,
+     372,
+     104
+    ],
+    "actionBar": [
+     14,
+     995,
+     596,
+     71
+    ],
+    "worldControls": [
+     1362,
+     1014,
+     544,
+     52
+    ],
+    "serviceBar": [
+     806,
+     1016,
+     307,
+     50
+    ],
+    "inspectorCompact": true
+   },
+   "mask": {
+    "tech": {
+     "visible": 0.945,
+     "pixels": 490,
+     "screenShare": 0.0002,
+     "box": [
+      0.322,
+      0.529,
+      0.014,
+      0.041
+     ],
+     "heightShare": 0.041,
+     "underUi": 0
+    },
+    "kit": {
+     "visible": 0.55,
+     "pixels": 409,
+     "screenShare": 0.0002,
+     "box": [
+      0.319,
+      0.54,
+      0.024,
+      0.046
+     ],
+     "heightShare": 0.046,
+     "underUi": 0
+    }
+   },
+   "at": 1793415160787
+  },
+  "detail-from-property": {
+   "cam": [
+    -120.96,
+    1.76,
+    -119.88
+   ],
+   "tech": [
+    -118.54,
+    -120.98
+   ],
+   "distToTech": 2.76,
+   "elevationDeg": 16,
+   "serviceView": {
+    "requested": "detail",
+    "mode": "detail",
+    "phase": "diagnosis",
+    "reason": "mode",
+    "ms": 3,
+    "report": {
+     "mode": "detail",
+     "fill": 0.6799156838024538,
+     "center": [
+      -0.013667149467962589,
+      -0.09657510842233036
+     ],
+     "roof": 0,
+     "wall": 0.47619047619047616,
+     "background": 0,
+     "plant": 0,
+     "pole": 0,
+     "sky": 0,
+     "foreground": 0,
+     "azimuth": -1.0130169489644827,
+     "elevation": 0.36,
+     "distance": 3.1209332963694387,
+     "sideAngle": 2.1353850479745566,
+     "cost": 1.056576495829095
+    },
+    "aspect": 1.778,
+    "safe": {
+     "right": 0,
+     "bottom": 0.0787037037037037,
+     "top": 0.08518518518518518
+    }
+   },
+   "ui": {
+    "hud": [
+     14,
+     14,
+     1892,
+     78
+    ],
+    "inspector": [
+     1534,
+     86,
+     372,
+     104
+    ],
+    "actionBar": [
+     14,
+     995,
+     596,
+     71
+    ],
+    "worldControls": [
+     1362,
+     1014,
+     544,
+     52
+    ],
+    "serviceBar": [
+     806,
+     1016,
+     307,
+     50
+    ],
+    "inspectorCompact": true
+   },
+   "mask": {
+    "tech": {
+     "visible": 0.9,
+     "pixels": 232817,
+     "screenShare": 0.1123,
+     "box": [
+      0.412,
+      0.094,
+      0.318,
+      0.906
+     ],
+     "heightShare": 0.906,
+     "underUi": 0.018
+    },
+    "kit": {
+     "visible": 0.674,
+     "pixels": 77033,
+     "screenShare": 0.0371,
+     "box": [
+      0.453,
+      0.365,
+      0.456,
+      0.635
+     ],
+     "heightShare": 0.635,
+     "underUi": 0.113
+    }
+   },
+   "at": 1793415164266
+  },
+  "work-again": {
+   "cam": [
+    -122.19,
+    2.37,
+    -119.34
+   ],
+   "tech": [
+    -118.54,
+    -120.98
+   ],
+   "distToTech": 4.23,
+   "elevationDeg": 18.9,
+   "serviceView": {
+    "requested": "work",
+    "mode": "work",
+    "phase": "diagnosis",
+    "reason": "mode",
+    "ms": 2.9,
+    "report": {
+     "mode": "work",
+     "fill": 0.5520566752369356,
+     "center": [
+      -0.06297648331361899,
+      0.03823371942320858
+     ],
+     "roof": 0,
+     "wall": 0.47619047619047616,
+     "background": 0,
+     "plant": 0,
+     "pole": 0,
+     "sky": 0,
+     "foreground": 0,
+     "azimuth": -1.0480169489644826,
+     "elevation": 0.4,
+     "distance": 4.665395032228258,
+     "sideAngle": 2.1281346678481086,
+     "cost": 1.1659315918866064
+    },
+    "aspect": 1.778,
+    "safe": {
+     "right": 0,
+     "bottom": 0.0787037037037037,
+     "top": 0.08518518518518518
+    }
+   },
+   "ui": {
+    "hud": [
+     14,
+     14,
+     1892,
+     78
+    ],
+    "inspector": [
+     1534,
+     86,
+     372,
+     104
+    ],
+    "actionBar": [
+     14,
+     995,
+     596,
+     71
+    ],
+    "worldControls": [
+     1362,
+     1014,
+     544,
+     52
+    ],
+    "serviceBar": [
+     806,
+     1016,
+     307,
+     50
+    ],
+    "inspectorCompact": true
+   },
+   "mask": {
+    "tech": {
+     "visible": 0.899,
+     "pixels": 98309,
+     "screenShare": 0.0474,
+     "box": [
+      0.454,
+      0.214,
+      0.209,
+      0.594
+     ],
+     "heightShare": 0.594,
+     "underUi": 0
+    },
+    "kit": {
+     "visible": 0.521,
+     "pixels": 100924,
+     "screenShare": 0.0487,
+     "box": [
+      0.479,
+      0.386,
+      0.349,
+      0.614
+     ],
+     "heightShare": 0.614,
+     "underUi": 0.089
+    }
+   },
+   "at": 1793415167733
+  },
+  "work-inspector": {
+   "cam": [
+    -122.37,
+    1.94,
+    -119.92
+   ],
+   "tech": [
+    -118.54,
+    -120.98
+   ],
+   "distToTech": 4.08,
+   "elevationDeg": 13.3,
+   "serviceView": {
+    "requested": "work",
+    "mode": "work",
+    "phase": "diagnosis",
+    "reason": "layout",
+    "ms": 3.6,
+    "report": {
+     "mode": "work",
+     "fill": 0.5531026704313688,
+     "center": [
+      -0.10252540190486911,
+      0.004152659575161033
+     ],
+     "roof": 0,
+     "wall": 0.4603174603174603,
+     "background": 0,
+     "plant": 0,
+     "pole": 0,
+     "sky": 0,
+     "foreground": 0,
+     "azimuth": -1.1874564592038022,
+     "elevation": 0.32,
+     "distance": 4.4312145449960285,
+     "sideAngle": 1.9779196994735513,
+     "cost": 1.0838321705509062
+    },
+    "aspect": 1.778,
+    "safe": {
+     "right": 0.20104166666666667,
+     "bottom": 0.0787037037037037,
+     "top": 0.08518518518518518
+    }
+   },
+   "ui": {
+    "hud": [
+     14,
+     14,
+     1892,
+     78
+    ],
+    "inspector": [
+     1534,
+     86,
+     372,
+     761
+    ],
+    "actionBar": [
+     14,
+     995,
+     596,
+     71
+    ],
+    "worldControls": [
+     1362,
+     1014,
+     544,
+     52
+    ],
+    "serviceBar": [
+     806,
+     1016,
+     307,
+     50
+    ],
+    "inspectorCompact": false
+   },
+   "mask": {
+    "tech": {
+     "visible": 0.909,
+     "pixels": 104654,
+     "screenShare": 0.0505,
+     "box": [
+      0.361,
+      0.185,
+      0.224,
+      0.613
+     ],
+     "heightShare": 0.613,
+     "underUi": 0
+    },
+    "kit": {
+     "visible": 0.485,
+     "pixels": 103156,
+     "screenShare": 0.0497,
+     "box": [
+      0.381,
+      0.372,
+      0.38,
+      0.611
+     ],
+     "heightShare": 0.611,
+     "underUi": 0.035
+    }
+   },
+   "at": 1793415171182
+  },
+  "repair-auto": {
+   "cam": [
+    -122.19,
+    2.37,
+    -119.34
+   ],
+   "tech": [
+    -118.54,
+    -120.98
+   ],
+   "distToTech": 4.23,
+   "elevationDeg": 18.9,
+   "serviceView": {
+    "requested": "work",
+    "mode": "work",
+    "phase": "repair",
+    "reason": "phase",
+    "ms": 3.4,
+    "report": {
+     "mode": "work",
+     "fill": 0.5520566752369356,
+     "center": [
+      -0.06297648331361899,
+      0.03823371942320858
+     ],
+     "roof": 0,
+     "wall": 0.47619047619047616,
+     "background": 0,
+     "plant": 0,
+     "pole": 0,
+     "sky": 0,
+     "foreground": 0,
+     "azimuth": -1.0480169489644826,
+     "elevation": 0.4,
+     "distance": 4.665395032228258,
+     "sideAngle": 2.1281346678481086,
+     "cost": 1.1659315918866064
+    },
+    "aspect": 1.778,
+    "safe": {
+     "right": 0,
+     "bottom": 0.0787037037037037,
+     "top": 0.08518518518518518
+    }
+   },
+   "ui": {
+    "hud": [
+     14,
+     14,
+     1892,
+     78
+    ],
+    "inspector": [
+     1534,
+     86,
+     372,
+     104
+    ],
+    "actionBar": [
+     14,
+     995,
+     596,
+     71
+    ],
+    "worldControls": [
+     1362,
+     1014,
+     544,
+     52
+    ],
+    "serviceBar": [
+     806,
+     1016,
+     307,
+     50
+    ],
+    "inspectorCompact": true
+   },
+   "mask": {
+    "tech": {
+     "visible": 0.905,
+     "pixels": 102215,
+     "screenShare": 0.0493,
+     "box": [
+      0.454,
+      0.207,
+      0.209,
+      0.601
+     ],
+     "heightShare": 0.601,
+     "underUi": 0
+    },
+    "kit": {
+     "visible": 0.512,
+     "pixels": 100860,
+     "screenShare": 0.0486,
+     "box": [
+      0.479,
+      0.386,
+      0.349,
+      0.614
+     ],
+     "heightShare": 0.614,
+     "underUi": 0.089
+    }
+   },
+   "at": 1793415221937
+  },
+  "work-repair": {
+   "cam": [
+    -122.19,
+    2.37,
+    -119.34
+   ],
+   "tech": [
+    -118.54,
+    -120.98
+   ],
+   "distToTech": 4.23,
+   "elevationDeg": 18.9,
+   "serviceView": {
+    "requested": "work",
+    "mode": "work",
+    "phase": "repair",
+    "reason": "mode",
+    "ms": 3,
+    "report": {
+     "mode": "work",
+     "fill": 0.5520566752369356,
+     "center": [
+      -0.06297648331361899,
+      0.03823371942320858
+     ],
+     "roof": 0,
+     "wall": 0.47619047619047616,
+     "background": 0,
+     "plant": 0,
+     "pole": 0,
+     "sky": 0,
+     "foreground": 0,
+     "azimuth": -1.0480169489644826,
+     "elevation": 0.4,
+     "distance": 4.665395032228258,
+     "sideAngle": 2.1281346678481086,
+     "cost": 1.1659315918866064
+    },
+    "aspect": 1.778,
+    "safe": {
+     "right": 0,
+     "bottom": 0.0787037037037037,
+     "top": 0.08518518518518518
+    }
+   },
+   "ui": {
+    "hud": [
+     14,
+     14,
+     1892,
+     78
+    ],
+    "inspector": [
+     1534,
+     86,
+     372,
+     104
+    ],
+    "actionBar": [
+     14,
+     995,
+     596,
+     71
+    ],
+    "worldControls": [
+     1362,
+     1014,
+     544,
+     52
+    ],
+    "serviceBar": [
+     806,
+     1016,
+     307,
+     50
+    ],
+    "inspectorCompact": true
+   },
+   "mask": {
+    "tech": {
+     "visible": 0.905,
+     "pixels": 102215,
+     "screenShare": 0.0493,
+     "box": [
+      0.454,
+      0.207,
+      0.209,
+      0.601
+     ],
+     "heightShare": 0.601,
+     "underUi": 0
+    },
+    "kit": {
+     "visible": 0.512,
+     "pixels": 100860,
+     "screenShare": 0.0486,
+     "box": [
+      0.479,
+      0.386,
+      0.349,
+      0.614
+     ],
+     "heightShare": 0.614,
+     "underUi": 0.089
+    }
+   },
+   "at": 1793415225388
+  },
+  "detail-repair": {
+   "cam": [
+    -120.9,
+    1.94,
+    -119.89
+   ],
+   "tech": [
+    -118.54,
+    -120.98
+   ],
+   "distToTech": 2.76,
+   "elevationDeg": 19.9,
+   "serviceView": {
+    "requested": "detail",
+    "mode": "detail",
+    "phase": "repair",
+    "reason": "mode",
+    "ms": 3.3,
+    "report": {
+     "mode": "detail",
+     "fill": 0.6808465697809296,
+     "center": [
+      0.03182171314434851,
+      -0.1574139878964883
+     ],
+     "roof": 0,
+     "wall": 0.47619047619047616,
+     "background": 0,
+     "plant": 0,
+     "pole": 0,
+     "sky": 0,
+     "foreground": 0,
+     "azimuth": -0.9780169489644827,
+     "elevation": 0.39999999999999997,
+     "distance": 3.1937256487220083,
+     "sideAngle": 2.1392258608923678,
+     "cost": 1.130997402767999
+    },
+    "aspect": 1.778,
+    "safe": {
+     "right": 0,
+     "bottom": 0.0787037037037037,
+     "top": 0.08518518518518518
+    }
+   },
+   "ui": {
+    "hud": [
+     14,
+     14,
+     1892,
+     78
+    ],
+    "inspector": [
+     1534,
+     86,
+     372,
+     104
+    ],
+    "actionBar": [
+     14,
+     995,
+     596,
+     71
+    ],
+    "worldControls": [
+     1362,
+     1014,
+     544,
+     52
+    ],
+    "serviceBar": [
+     806,
+     1016,
+     307,
+     50
+    ],
+    "inspectorCompact": true
+   },
+   "mask": {
+    "tech": {
+     "visible": 0.897,
+     "pixels": 237319,
+     "screenShare": 0.1144,
+     "box": [
+      0.433,
+      0.133,
+      0.315,
+      0.867
+     ],
+     "heightShare": 0.867,
+     "underUi": 0.025
+    },
+    "kit": {
+     "visible": 0.692,
+     "pixels": 64977,
+     "screenShare": 0.0313,
+     "box": [
+      0.476,
+      0.401,
+      0.36,
+      0.599
+     ],
+     "heightShare": 0.599,
+     "underUi": 0.027
+    }
+   },
+   "at": 1793415228856
+  },
+  "work-repair-2": {
+   "cam": [
+    -122.19,
+    2.37,
+    -119.34
+   ],
+   "tech": [
+    -118.54,
+    -120.98
+   ],
+   "distToTech": 4.23,
+   "elevationDeg": 18.9,
+   "serviceView": {
+    "requested": "work",
+    "mode": "work",
+    "phase": "repair",
+    "reason": "mode",
+    "ms": 3.2,
+    "report": {
+     "mode": "work",
+     "fill": 0.5520566752369356,
+     "center": [
+      -0.06297648331361899,
+      0.03823371942320858
+     ],
+     "roof": 0,
+     "wall": 0.47619047619047616,
+     "background": 0,
+     "plant": 0,
+     "pole": 0,
+     "sky": 0,
+     "foreground": 0,
+     "azimuth": -1.0480169489644826,
+     "elevation": 0.4,
+     "distance": 4.665395032228258,
+     "sideAngle": 2.1281346678481086,
+     "cost": 1.1659315918866064
+    },
+    "aspect": 1.778,
+    "safe": {
+     "right": 0,
+     "bottom": 0.0787037037037037,
+     "top": 0.08518518518518518
+    }
+   },
+   "ui": {
+    "hud": [
+     14,
+     14,
+     1892,
+     78
+    ],
+    "inspector": [
+     1534,
+     86,
+     372,
+     104
+    ],
+    "actionBar": [
+     14,
+     995,
+     596,
+     71
+    ],
+    "worldControls": [
+     1362,
+     1014,
+     544,
+     52
+    ],
+    "serviceBar": [
+     806,
+     1016,
+     307,
+     50
+    ],
+    "inspectorCompact": true
+   },
+   "mask": {
+    "tech": {
+     "visible": 0.905,
+     "pixels": 102215,
+     "screenShare": 0.0493,
+     "box": [
+      0.454,
+      0.207,
+      0.209,
+      0.601
+     ],
+     "heightShare": 0.601,
+     "underUi": 0
+    },
+    "kit": {
+     "visible": 0.512,
+     "pixels": 100860,
+     "screenShare": 0.0486,
+     "box": [
+      0.479,
+      0.386,
+      0.349,
+      0.614
+     ],
+     "heightShare": 0.614,
+     "underUi": 0.089
+    }
+   },
+   "at": 1793415232105
+  },
+  "after-controls": {
+   "cam": [
+    -123.24,
+    4.59,
+    -119.34
+   ],
+   "tech": [
+    -118.54,
+    -120.98
+   ],
+   "distToTech": 6.14,
+   "elevationDeg": 35.8,
+   "serviceView": {
+    "requested": "work",
+    "mode": "work",
+    "phase": "repair",
+    "reason": "mode",
+    "ms": 3.2,
+    "report": {
+     "mode": "work",
+     "fill": 0.5520566752369356,
+     "center": [
+      -0.06297648331361899,
+      0.03823371942320858
+     ],
+     "roof": 0,
+     "wall": 0.47619047619047616,
+     "background": 0,
+     "plant": 0,
+     "pole": 0,
+     "sky": 0,
+     "foreground": 0,
+     "azimuth": -1.0480169489644826,
+     "elevation": 0.4,
+     "distance": 4.665395032228258,
+     "sideAngle": 2.1281346678481086,
+     "cost": 1.1659315918866064
+    },
+    "aspect": 1.778,
+    "safe": {
+     "right": 0,
+     "bottom": 0.0787037037037037,
+     "top": 0.08518518518518518
+    }
+   },
+   "ui": {
+    "hud": [
+     14,
+     14,
+     1892,
+     78
+    ],
+    "inspector": [
+     1534,
+     86,
+     372,
+     104
+    ],
+    "actionBar": [
+     14,
+     995,
+     596,
+     71
+    ],
+    "worldControls": [
+     1362,
+     1014,
+     544,
+     52
+    ],
+    "serviceBar": [
+     806,
+     1016,
+     307,
+     50
+    ],
+    "inspectorCompact": true
+   },
+   "mask": {
+    "tech": {
+     "visible": 0.895,
+     "pixels": 51605,
+     "screenShare": 0.0249,
+     "box": [
+      0.299,
+      0.311,
+      0.144,
+      0.385
+     ],
+     "heightShare": 0.385,
+     "underUi": 0
+    },
+    "kit": {
+     "visible": 0.492,
+     "pixels": 45702,
+     "screenShare": 0.022,
+     "box": [
+      0.295,
+      0.44,
+      0.252,
+      0.355
+     ],
+     "heightShare": 0.355,
+     "underUi": 0
+    }
+   },
+   "at": 1793415277897
+  }
+ },
+ "controls": {
+  "orbit": {
+   "before": {
+    "dist": 4.23,
+    "az": -65.9,
+    "y": 2.37
+   },
+   "released": {
+    "dist": 4.8,
+    "az": -106.2,
+    "y": 2.48
+   },
+   "moved": 3.001,
+   "driftAfter10s": 1.138,
+   "serviceView": "work"
+  },
+  "zoomIn": {
+   "before": {
+    "dist": 4.52,
+    "az": -96.3,
+    "y": 3.12
+   },
+   "released": {
+    "dist": 3.39,
+    "az": -101.4,
+    "y": 2.63
+   },
+   "moved": 1.174,
+   "driftAfter10s": 0.649,
+   "serviceView": "work"
+  },
+  "zoomOut": {
+   "before": {
+    "dist": 3.66,
+    "az": -102.1,
+    "y": 3.27
+   },
+   "released": {
+    "dist": 5.71,
+    "az": -94.8,
+    "y": 4.59
+   },
+   "moved": 2.095,
+   "driftAfter10s": 0,
+   "serviceView": "work"
+  },
+  "panAway": {
+   "before": {
+    "dist": 5.71,
+    "az": -94.8,
+    "y": 4.59
+   },
+   "released": {
+    "dist": 6.14,
+    "az": -70.8,
+    "y": 4.59
+   },
+   "moved": 2.032,
+   "driftAfter10s": 0,
+   "serviceView": "work"
+  }
+ },
+ "errors": [],
+ "failed": [],
+ "watchButton": true,
+ "arrivedReason": "arrived",
+ "repairStatus": "repairing",
+ "repairViewMode": "work",
+ "transitions": {
+  "watch-press": {
+   "frames": 1007,
+   "dtP50": 16.7,
+   "dtP95": 16.8,
+   "dtMax": 100.2,
+   "longFrames": 2,
+   "path": 260.93,
+   "peakSpeed": 748.32,
+   "settleMs": 14602,
+   "reversals": 3,
+   "overshoot": 5.618
+  },
+  "idle": {
+   "frames": 159,
+   "dtP50": 16.7,
+   "dtP95": 16.8,
+   "dtMax": 183.3,
+   "longFrames": 1,
+   "path": 0,
+   "peakSpeed": 0,
+   "settleMs": 0,
+   "reversals": 0,
+   "overshoot": 0
+  },
+  "property": {
+   "frames": 202,
+   "dtP50": 16.7,
+   "dtP95": 16.8,
+   "dtMax": 116.6,
+   "longFrames": 1,
+   "path": 60.84,
+   "peakSpeed": 157.89,
+   "settleMs": 1173,
+   "reversals": 0,
+   "overshoot": 0
+  },
+  "work-from-property": {
+   "frames": 201,
+   "dtP50": 16.7,
+   "dtP95": 16.8,
+   "dtMax": 116.7,
+   "longFrames": 1,
+   "path": 60.84,
+   "peakSpeed": 152.32,
+   "settleMs": 1201,
+   "reversals": 0,
+   "overshoot": 0
+  },
+  "detail": {
+   "frames": 201,
+   "dtP50": 16.7,
+   "dtP95": 16.8,
+   "dtMax": 149.9,
+   "longFrames": 1,
+   "path": 1.48,
+   "peakSpeed": 3.52,
+   "settleMs": 1152,
+   "reversals": 0,
+   "overshoot": 0
+  },
+  "property-from-detail": {
+   "frames": 200,
+   "dtP50": 16.7,
+   "dtP95": 16.8,
+   "dtMax": 133.3,
+   "longFrames": 1,
+   "path": 61.46,
+   "peakSpeed": 153.3,
+   "settleMs": 1216,
+   "reversals": 0,
+   "overshoot": 0
+  },
+  "detail-from-property": {
+   "frames": 201,
+   "dtP50": 16.7,
+   "dtP95": 16.8,
+   "dtMax": 150,
+   "longFrames": 1,
+   "path": 61.46,
+   "peakSpeed": 159.01,
+   "settleMs": 1176,
+   "reversals": 0,
+   "overshoot": 0
+  },
+  "work-again": {
+   "frames": 201,
+   "dtP50": 16.7,
+   "dtP95": 16.8,
+   "dtMax": 133.2,
+   "longFrames": 1,
+   "path": 1.48,
+   "peakSpeed": 3.65,
+   "settleMs": 1131,
+   "reversals": 0,
+   "overshoot": 0
+  },
+  "inspector-expand": {
+   "frames": 200,
+   "dtP50": 16.7,
+   "dtP95": 16.8,
+   "dtMax": 133.4,
+   "longFrames": 1,
+   "path": 0.77,
+   "peakSpeed": 1.88,
+   "settleMs": 1132,
+   "reversals": 0,
+   "overshoot": 0
+  },
+  "inspector-collapse": {
+   "frames": 2786,
+   "dtP50": 16.7,
+   "dtP95": 16.8,
+   "dtMax": 17.5,
+   "longFrames": 0,
+   "path": 0.77,
+   "peakSpeed": 1.86,
+   "settleMs": 1149,
+   "reversals": 0,
+   "overshoot": 0
+  },
+  "phase-repair": {
+   "frames": 250,
+   "dtP50": 16.7,
+   "dtP95": 16.8,
+   "dtMax": 149.9,
+   "longFrames": 1,
+   "path": 0,
+   "peakSpeed": 0,
+   "settleMs": 0,
+   "reversals": 0,
+   "overshoot": 0
+  },
+  "work-repair": {
+   "frames": 202,
+   "dtP50": 16.7,
+   "dtP95": 16.8,
+   "dtMax": 116.7,
+   "longFrames": 1,
+   "path": 0,
+   "peakSpeed": 0,
+   "settleMs": 0,
+   "reversals": 0,
+   "overshoot": 0
+  },
+  "detail-repair": {
+   "frames": 200,
+   "dtP50": 16.7,
+   "dtP95": 16.8,
+   "dtMax": 150,
+   "longFrames": 1,
+   "path": 1.47,
+   "peakSpeed": 3.6,
+   "settleMs": 1133,
+   "reversals": 0,
+   "overshoot": 0
+  },
+  "work-repair-2": {
+   "frames": 188,
+   "dtP50": 16.7,
+   "dtP95": 16.8,
+   "dtMax": 133.5,
+   "longFrames": 1,
+   "path": 1.47,
+   "peakSpeed": 3.55,
+   "settleMs": 1148,
+   "reversals": 0,
+   "overshoot": 0
+  },
+  "orbit": {
+   "frames": 687,
+   "dtP50": 16.7,
+   "dtP95": 16.8,
+   "dtMax": 17.5,
+   "longFrames": 0,
+   "path": 4.44,
+   "peakSpeed": 4.98,
+   "settleMs": 1953,
+   "reversals": 1,
+   "overshoot": 0.415
+  },
+  "zoom-in": {
+   "frames": 671,
+   "dtP50": 16.7,
+   "dtP95": 16.8,
+   "dtMax": 17.8,
+   "longFrames": 0,
+   "path": 2.02,
+   "peakSpeed": 6.69,
+   "settleMs": 1653,
+   "reversals": 1,
+   "overshoot": 0.059
+  },
+  "zoom-out": {
+   "frames": 684,
+   "dtP50": 16.7,
+   "dtP95": 16.8,
+   "dtMax": 17.2,
+   "longFrames": 0,
+   "path": 2.1,
+   "peakSpeed": 4.53,
+   "settleMs": 624,
+   "reversals": 0,
+   "overshoot": 0
+  },
+  "pan-away": {
+   "frames": 698,
+   "dtP50": 16.7,
+   "dtP95": 16.8,
+   "dtMax": 116.6,
+   "longFrames": 1,
+   "path": 2.03,
+   "peakSpeed": 2.91,
+   "settleMs": 1024,
+   "reversals": 0,
+   "overshoot": 0
+  }
+ },
+ "reframes": [
+  {
+   "t": 14965,
+   "reason": "mode",
+   "mode": "work",
+   "requested": "work",
+   "phase": "arrival",
+   "ms": 17.7,
+   "fill": 0.552
+  },
+  {
+   "t": 15765,
+   "reason": "phase",
+   "mode": "work",
+   "requested": "work",
+   "phase": "diagnosis",
+   "ms": 5.9,
+   "fill": 0.552
+  },
+  {
+   "t": 16848,
+   "reason": "follow",
+   "mode": "work",
+   "requested": "work",
+   "phase": "diagnosis",
+   "ms": 4.3,
+   "fill": null
+  },
+  {
+   "t": 18032,
+   "reason": "follow",
+   "mode": "work",
+   "requested": "work",
+   "phase": "diagnosis",
+   "ms": 1.8,
+   "fill": null
+  },
+  {
+   "t": 19098,
+   "reason": "follow",
+   "mode": "work",
+   "requested": "work",
+   "phase": "diagnosis",
+   "ms": 1.5,
+   "fill": null
+  },
+  {
+   "t": 20165,
+   "reason": "follow",
+   "mode": "work",
+   "requested": "work",
+   "phase": "diagnosis",
+   "ms": 1.9,
+   "fill": null
+  },
+  {
+   "t": 21231,
+   "reason": "follow",
+   "mode": "work",
+   "requested": "work",
+   "phase": "diagnosis",
+   "ms": 1.5,
+   "fill": null
+  },
+  {
+   "t": 22298,
+   "reason": "follow",
+   "mode": "work",
+   "requested": "work",
+   "phase": "diagnosis",
+   "ms": 1.9,
+   "fill": null
+  },
+  {
+   "t": 23365,
+   "reason": "follow",
+   "mode": "work",
+   "requested": "work",
+   "phase": "diagnosis",
+   "ms": 4.3,
+   "fill": 0.885
+  },
+  {
+   "t": 24431,
+   "reason": "follow",
+   "mode": "work",
+   "requested": "work",
+   "phase": "diagnosis",
+   "ms": 4.6,
+   "fill": 0.729
+  },
+  {
+   "t": 25498,
+   "reason": "follow",
+   "mode": "work",
+   "requested": "work",
+   "phase": "diagnosis",
+   "ms": 3.9,
+   "fill": 0.56
+  },
+  {
+   "t": 26565,
+   "reason": "follow",
+   "mode": "work",
+   "requested": "work",
+   "phase": "diagnosis",
+   "ms": 4.8,
+   "fill": 0.606
+  },
+  {
+   "t": 27631,
+   "reason": "follow",
+   "mode": "work",
+   "requested": "work",
+   "phase": "diagnosis",
+   "ms": 4.1,
+   "fill": 0.57
+  },
+  {
+   "t": 28431,
+   "reason": "arrived",
+   "mode": "work",
+   "requested": "work",
+   "phase": "diagnosis",
+   "ms": 3.4,
+   "fill": 0.552
+  },
+  {
+   "t": 34764,
+   "reason": "mode",
+   "mode": "property",
+   "requested": "property",
+   "phase": "diagnosis",
+   "ms": 14,
+   "fill": 0.87
+  },
+  {
+   "t": 38231,
+   "reason": "mode",
+   "mode": "work",
+   "requested": "work",
+   "phase": "diagnosis",
+   "ms": 4.1,
+   "fill": 0.552
+  },
+  {
+   "t": 41680,
+   "reason": "mode",
+   "mode": "detail",
+   "requested": "detail",
+   "phase": "diagnosis",
+   "ms": 3.8,
+   "fill": 0.68
+  },
+  {
+   "t": 45164,
+   "reason": "mode",
+   "mode": "property",
+   "requested": "property",
+   "phase": "diagnosis",
+   "ms": 11.2,
+   "fill": 0.87
+  },
+  {
+   "t": 48613,
+   "reason": "mode",
+   "mode": "detail",
+   "requested": "detail",
+   "phase": "diagnosis",
+   "ms": 3,
+   "fill": 0.68
+  },
+  {
+   "t": 52097,
+   "reason": "mode",
+   "mode": "work",
+   "requested": "work",
+   "phase": "diagnosis",
+   "ms": 2.9,
+   "fill": 0.552
+  },
+  {
+   "t": 55563,
+   "reason": "layout",
+   "mode": "work",
+   "requested": "work",
+   "phase": "diagnosis",
+   "ms": 3.6,
+   "fill": 0.553
+  },
+  {
+   "t": 59063,
+   "reason": "layout",
+   "mode": "work",
+   "requested": "work",
+   "phase": "diagnosis",
+   "ms": 3.3,
+   "fill": 0.552
+  },
+  {
+   "t": 105511,
+   "reason": "phase",
+   "mode": "work",
+   "requested": "work",
+   "phase": "repair",
+   "ms": 3.4,
+   "fill": 0.552
+  },
+  {
+   "t": 109744,
+   "reason": "mode",
+   "mode": "work",
+   "requested": "work",
+   "phase": "repair",
+   "ms": 3,
+   "fill": 0.552
+  },
+  {
+   "t": 113194,
+   "reason": "mode",
+   "mode": "detail",
+   "requested": "detail",
+   "phase": "repair",
+   "ms": 3.3,
+   "fill": 0.681
+  },
+  {
+   "t": 116677,
+   "reason": "mode",
+   "mode": "work",
+   "requested": "work",
+   "phase": "repair",
+   "ms": 3.2,
+   "fill": 0.552
+  }
+ ],
+ "walkup": {
+  "cam": [
+   [
+    36,
+    -52,
+    54,
+    106
+   ],
+   [
+    136,
+    -52.15,
+    53.953,
+    105.658
+   ],
+   [
+    252,
+    -54.165,
+    53.313,
+    101.036
+   ],
+   [
+    369,
+    -60.594,
+    51.107,
+    85.877
+   ],
+   [
+    536,
+    -80.204,
+    42.029,
+    34.711
+   ],
+   [
+    636,
+    -98.953,
+    28.037,
+    -24.277
+   ],
+   [
+    752,
+    -110.757,
+    15.844,
+    -68.959
+   ],
+   [
+    852,
+    -117.462,
+    8.019,
+    -97.639
+   ],
+   [
+    952,
+    -118.401,
+    6.898,
+    -101.854
+   ],
+   [
+    1052,
+    -118.447,
+    6.849,
+    -102.051
+   ],
+   [
+    1152,
+    -118.599,
+    6.684,
+    -102.711
+   ],
+   [
+    1252,
+    -118.914,
+    6.337,
+    -104.092
+   ],
+   [
+    1352,
+    -119.457,
+    5.726,
+    -106.501
+   ],
+   [
+    1452,
+    -120.254,
+    4.788,
+    -110.127
+   ],
+   [
+    1552,
+    -121.09,
+    3.76,
+    -114.038
+   ],
+   [
+    1652,
+    -121.648,
+    3.057,
+    -116.703
+   ],
+   [
+    1752,
+    -121.97,
+    2.65,
+    -118.258
+   ],
+   [
+    1852,
+    -122.13,
+    2.446,
+    -119.039
+   ],
+   [
+    2036,
+    -122.193,
+    2.367,
+    -119.344
+   ],
+   [
+    2136,
+    -122.197,
+    2.37,
+    -119.347
+   ],
+   [
+    2236,
+    -122.245,
+    2.414,
+    -119.373
+   ],
+   [
+    2336,
+    -122.395,
+    2.558,
+    -119.462
+   ],
+   [
+    2436,
+    -122.684,
+    2.856,
+    -119.666
+   ],
+   [
+    2536,
+    -123.11,
+    3.34,
+    -120.078
+   ],
+   [
+    2636,
+    -123.577,
+    3.9,
+    -120.825
+   ],
+   [
+    2736,
+    -123.828,
+    4.132,
+    -121.679
+   ],
+   [
+    2836,
+    -123.869,
+    4.106,
+    -122.261
+   ],
+   [
+    2936,
+    -123.846,
+    4.049,
+    -122.602
+   ],
+   [
+    3036,
+    -123.823,
+    4.015,
+    -122.767
+   ],
+   [
+    3136,
+    -123.814,
+    4.004,
+    -122.821
+   ],
+   [
+    3236,
+    -123.814,
+    4.004,
+    -122.821
+   ],
+   [
+    3336,
+    -123.814,
+    4.004,
+    -122.821
+   ],
+   [
+    3436,
+    -123.814,
+    4.004,
+    -122.821
+   ],
+   [
+    3536,
+    -123.814,
+    4.004,
+    -122.822
+   ],
+   [
+    3636,
+    -123.813,
+    4.004,
+    -122.823
+   ],
+   [
+    3736,
+    -123.813,
+    4.004,
+    -122.824
+   ],
+   [
+    3835,
+    -123.813,
+    4.004,
+    -122.825
+   ],
+   [
+    3936,
+    -123.813,
+    4.003,
+    -122.825
+   ],
+   [
+    4036,
+    -123.813,
+    4.003,
+    -122.825
+   ],
+   [
+    4136,
+    -123.813,
+    4.003,
+    -122.826
+   ],
+   [
+    4235,
+    -123.813,
+    4.003,
+    -122.826
+   ],
+   [
+    4336,
+    -123.813,
+    4.003,
+    -122.826
+   ],
+   [
+    4436,
+    -123.813,
+    4.003,
+    -122.826
+   ],
+   [
+    4536,
+    -123.813,
+    4.003,
+    -122.826
+   ],
+   [
+    4636,
+    -123.813,
+    4.003,
+    -122.826
+   ],
+   [
+    4735,
+    -123.813,
+    4.003,
+    -122.826
+   ],
+   [
+    4835,
+    -123.813,
+    4.003,
+    -122.826
+   ],
+   [
+    4936,
+    -123.813,
+    4.003,
+    -122.826
+   ],
+   [
+    5035,
+    -123.813,
+    4.003,
+    -122.826
+   ],
+   [
+    5136,
+    -123.813,
+    4.003,
+    -122.826
+   ],
+   [
+    5236,
+    -123.813,
+    4.003,
+    -122.826
+   ],
+   [
+    5336,
+    -123.813,
+    4.003,
+    -122.826
+   ],
+   [
+    5436,
+    -123.813,
+    4.003,
+    -122.826
+   ],
+   [
+    5535,
+    -123.813,
+    4.003,
+    -122.826
+   ],
+   [
+    5635,
+    -123.813,
+    4.003,
+    -122.826
+   ],
+   [
+    5735,
+    -123.813,
+    4.003,
+    -122.826
+   ],
+   [
+    5835,
+    -123.813,
+    4.003,
+    -122.826
+   ],
+   [
+    5935,
+    -123.813,
+    4.003,
+    -122.826
+   ],
+   [
+    6035,
+    -123.813,
+    4.003,
+    -122.826
+   ],
+   [
+    6136,
+    -123.813,
+    4.003,
+    -122.826
+   ],
+   [
+    6235,
+    -123.813,
+    4.003,
+    -122.826
+   ],
+   [
+    6335,
+    -123.813,
+    4.003,
+    -122.826
+   ],
+   [
+    6436,
+    -123.813,
+    4.003,
+    -122.826
+   ],
+   [
+    6535,
+    -123.813,
+    4.003,
+    -122.826
+   ],
+   [
+    6635,
+    -123.813,
+    4.003,
+    -122.826
+   ],
+   [
+    6735,
+    -123.813,
+    4.003,
+    -122.826
+   ],
+   [
+    6835,
+    -123.813,
+    4.003,
+    -122.826
+   ],
+   [
+    6936,
+    -123.813,
+    4.003,
+    -122.826
+   ],
+   [
+    7035,
+    -123.813,
+    4.003,
+    -122.826
+   ],
+   [
+    7135,
+    -123.813,
+    4.003,
+    -122.826
+   ],
+   [
+    7235,
+    -123.813,
+    4.003,
+    -122.826
+   ],
+   [
+    7335,
+    -123.813,
+    4.003,
+    -122.826
+   ],
+   [
+    7435,
+    -123.813,
+    4.003,
+    -122.826
+   ],
+   [
+    7535,
+    -123.813,
+    4.003,
+    -122.826
+   ],
+   [
+    7635,
+    -123.813,
+    4.003,
+    -122.826
+   ],
+   [
+    7735,
+    -123.813,
+    4.003,
+    -122.826
+   ],
+   [
+    7835,
+    -123.813,
+    4.003,
+    -122.826
+   ],
+   [
+    7935,
+    -123.813,
+    4.003,
+    -122.826
+   ],
+   [
+    8035,
+    -123.813,
+    4.003,
+    -122.826
+   ],
+   [
+    8135,
+    -123.813,
+    4.003,
+    -122.826
+   ],
+   [
+    8235,
+    -123.813,
+    4.003,
+    -122.826
+   ],
+   [
+    8335,
+    -123.813,
+    4.003,
+    -122.826
+   ],
+   [
+    8435,
+    -123.813,
+    4.003,
+    -122.826
+   ],
+   [
+    8535,
+    -123.815,
+    4.004,
+    -122.822
+   ],
+   [
+    8635,
+    -123.845,
+    4.032,
+    -122.763
+   ],
+   [
+    8735,
+    -123.949,
+    4.13,
+    -122.555
+   ],
+   [
+    8835,
+    -124.168,
+    4.34,
+    -122.095
+   ],
+   [
+    8935,
+    -124.533,
+    4.684,
+    -121.25
+   ],
+   [
+    9035,
+    -125.028,
+    5.066,
+    -119.867
+   ],
+   [
+    9135,
+    -125.462,
+    5.181,
+    -118.215
+   ],
+   [
+    9235,
+    -125.668,
+    5.072,
+    -117.035
+   ],
+   [
+    9335,
+    -125.75,
+    4.958,
+    -116.324
+   ],
+   [
+    9435,
+    -125.781,
+    4.892,
+    -115.957
+   ],
+   [
+    9535,
+    -125.79,
+    4.868,
+    -115.829
+   ],
+   [
+    9635,
+    -125.79,
+    4.868,
+    -115.829
+   ],
+   [
+    9735,
+    -125.79,
+    4.874,
+    -115.833
+   ],
+   [
+    9835,
+    -125.79,
+    4.889,
+    -115.842
+   ],
+   [
+    9935,
+    -125.79,
+    4.917,
+    -115.862
+   ],
+   [
+    10035,
+    -125.786,
+    4.953,
+    -115.894
+   ],
+   [
+    10135,
+    -125.771,
+    4.967,
+    -115.943
+   ],
+   [
+    10235,
+    -125.747,
+    4.936,
+    -115.989
+   ],
+   [
+    10335,
+    -125.728,
+    4.901,
+    -116.02
+   ],
+   [
+    10435,
+    -125.717,
+    4.878,
+    -116.038
+   ],
+   [
+    10535,
+    -125.711,
+    4.868,
+    -116.046
+   ],
+   [
+    10635,
+    -125.71,
+    4.865,
+    -116.048
+   ],
+   [
+    10735,
+    -125.709,
+    4.869,
+    -116.046
+   ],
+   [
+    10835,
+    -125.706,
+    4.886,
+    -116.037
+   ],
+   [
+    10935,
+    -125.696,
+    4.926,
+    -116.017
+   ],
+   [
+    11035,
+    -125.676,
+    4.99,
+    -115.98
+   ],
+   [
+    11135,
+    -125.631,
+    5.058,
+    -115.925
+   ],
+   [
+    11235,
+    -125.547,
+    5.051,
+    -115.863
+   ],
+   [
+    11335,
+    -125.468,
+    4.98,
+    -115.825
+   ],
+   [
+    11435,
+    -125.414,
+    4.918,
+    -115.806
+   ],
+   [
+    11535,
+    -125.383,
+    4.882,
+    -115.796
+   ],
+   [
+    11635,
+    -125.371,
+    4.867,
+    -115.792
+   ],
+   [
+    11735,
+    -125.368,
+    4.865,
+    -115.793
+   ],
+   [
+    11835,
+    -125.347,
+    4.852,
+    -115.811
+   ],
+   [
+    11935,
+    -125.274,
+    4.806,
+    -115.876
+   ],
+   [
+    12035,
+    -125.118,
+    4.708,
+    -116.015
+   ],
+   [
+    12135,
+    -124.845,
+    4.536,
+    -116.257
+   ],
+   [
+    12235,
+    -124.428,
+    4.273,
+    -116.628
+   ],
+   [
+    12335,
+    -123.979,
+    3.991,
+    -117.027
+   ],
+   [
+    12435,
+    -123.681,
+    3.804,
+    -117.291
+   ],
+   [
+    12535,
+    -123.507,
+    3.694,
+    -117.446
+   ],
+   [
+    12635,
+    -123.42,
+    3.639,
+    -117.523
+   ],
+   [
+    12735,
+    -123.392,
+    3.621,
+    -117.548
+   ],
+   [
+    12835,
+    -123.391,
+    3.619,
+    -117.551
+   ],
+   [
+    12935,
+    -123.384,
+    3.602,
+    -117.568
+   ],
+   [
+    13035,
+    -123.364,
+    3.554,
+    -117.617
+   ],
+   [
+    13135,
+    -123.325,
+    3.46,
+    -117.713
+   ],
+   [
+    13235,
+    -123.257,
+    3.307,
+    -117.873
+   ],
+   [
+    13335,
+    -123.154,
+    3.087,
+    -118.108
+   ],
+   [
+    13435,
+    -123.059,
+    2.9,
+    -118.316
+   ],
+   [
+    13535,
+    -122.996,
+    2.783,
+    -118.449
+   ],
+   [
+    13635,
+    -122.994,
+    2.782,
+    -118.451
+   ],
+   [
+    13735,
+    -122.981,
+    2.779,
+    -118.465
+   ],
+   [
+    13835,
+    -122.943,
+    2.768,
+    -118.506
+   ],
+   [
+    13935,
+    -122.869,
+    2.746,
+    -118.587
+   ],
+   [
+    14035,
+    -122.745,
+    2.701,
+    -118.724
+   ],
+   [
+    14135,
+    -122.558,
+    2.609,
+    -118.931
+   ],
+   [
+    14235,
+    -122.394,
+    2.506,
+    -119.115
+   ],
+   [
+    14335,
+    -122.287,
+    2.433,
+    -119.237
+   ],
+   [
+    14435,
+    -122.227,
+    2.39,
+    -119.306
+   ],
+   [
+    14535,
+    -122.2,
+    2.372,
+    -119.336
+   ],
+   [
+    14635,
+    -122.193,
+    2.367,
+    -119.344
+   ],
+   [
+    14735,
+    -122.193,
+    2.367,
+    -119.344
+   ],
+   [
+    14835,
+    -122.193,
+    2.367,
+    -119.344
+   ],
+   [
+    14935,
+    -122.193,
+    2.367,
+    -119.344
+   ],
+   [
+    15035,
+    -122.193,
+    2.367,
+    -119.344
+   ],
+   [
+    15135,
+    -122.193,
+    2.367,
+    -119.344
+   ],
+   [
+    15235,
+    -122.193,
+    2.367,
+    -119.344
+   ],
+   [
+    15335,
+    -122.193,
+    2.367,
+    -119.344
+   ],
+   [
+    15435,
+    -122.193,
+    2.367,
+    -119.344
+   ],
+   [
+    15535,
+    -122.193,
+    2.367,
+    -119.344
+   ],
+   [
+    15635,
+    -122.193,
+    2.367,
+    -119.344
+   ],
+   [
+    15735,
+    -122.193,
+    2.367,
+    -119.344
+   ],
+   [
+    15835,
+    -122.193,
+    2.367,
+    -119.344
+   ],
+   [
+    15935,
+    -122.193,
+    2.367,
+    -119.344
+   ],
+   [
+    16035,
+    -122.193,
+    2.367,
+    -119.344
+   ],
+   [
+    16135,
+    -122.193,
+    2.367,
+    -119.344
+   ],
+   [
+    16235,
+    -122.193,
+    2.367,
+    -119.344
+   ],
+   [
+    16335,
+    -122.193,
+    2.367,
+    -119.344
+   ],
+   [
+    16435,
+    -122.193,
+    2.367,
+    -119.344
+   ],
+   [
+    16535,
+    -122.193,
+    2.367,
+    -119.344
+   ],
+   [
+    16635,
+    -122.193,
+    2.367,
+    -119.344
+   ],
+   [
+    16735,
+    -122.193,
+    2.367,
+    -119.344
+   ],
+   [
+    16835,
+    -122.193,
+    2.367,
+    -119.344
+   ],
+   [
+    16935,
+    -122.193,
+    2.367,
+    -119.344
+   ]
+  ],
+  "tech": [
+   [
+    136,
+    -113.97,
+    -113.02,
+    "walking"
+   ],
+   [
+    370,
+    -115.61,
+    -115.87,
+    "walking"
+   ],
+   [
+    636,
+    -117.49,
+    -119.14,
+    "walking"
+   ],
+   [
+    853,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    1053,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    1253,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    1453,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    1653,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    1853,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    2136,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    2336,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    2536,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    2736,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    2936,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    3136,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    3336,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    3536,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    3736,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    3936,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    4136,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    4336,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    4536,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    4736,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    4936,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    5136,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    5336,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    5536,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    5736,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    5936,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    6136,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    6336,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    6536,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    6736,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    6936,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    7136,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    7336,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    7536,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    7736,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    7936,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    8136,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    8336,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    8536,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    8736,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    8936,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    9136,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    9336,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    9536,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    9736,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    9936,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    10136,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    10336,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    10536,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    10736,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    10936,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    11136,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    11336,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    11536,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    11736,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    11936,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    12136,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    12336,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    12536,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    12736,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    12936,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    13135,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    13336,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    13536,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    13735,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    13935,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    14135,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    14336,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    14535,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    14735,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    14935,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    15136,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    15335,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    15535,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    15735,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    15935,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    16135,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    16335,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    16535,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    16735,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    16935,
+    -118.54,
+    -120.98,
+    "working"
+   ]
+  ],
+  "reframes": [
+   {
+    "t": 36,
+    "reason": "mode",
+    "mode": "work",
+    "requested": "work",
+    "phase": "arrival",
+    "ms": 17.7,
+    "fill": 0.552
+   },
+   {
+    "t": 836,
+    "reason": "phase",
+    "mode": "work",
+    "requested": "work",
+    "phase": "diagnosis",
+    "ms": 5.9,
+    "fill": 0.552
+   },
+   {
+    "t": 1919,
+    "reason": "follow",
+    "mode": "work",
+    "requested": "work",
+    "phase": "diagnosis",
+    "ms": 4.3,
+    "fill": null
+   },
+   {
+    "t": 3103,
+    "reason": "follow",
+    "mode": "work",
+    "requested": "work",
+    "phase": "diagnosis",
+    "ms": 1.8,
+    "fill": null
+   },
+   {
+    "t": 4169,
+    "reason": "follow",
+    "mode": "work",
+    "requested": "work",
+    "phase": "diagnosis",
+    "ms": 1.5,
+    "fill": null
+   },
+   {
+    "t": 5236,
+    "reason": "follow",
+    "mode": "work",
+    "requested": "work",
+    "phase": "diagnosis",
+    "ms": 1.9,
+    "fill": null
+   },
+   {
+    "t": 6302,
+    "reason": "follow",
+    "mode": "work",
+    "requested": "work",
+    "phase": "diagnosis",
+    "ms": 1.5,
+    "fill": null
+   },
+   {
+    "t": 7369,
+    "reason": "follow",
+    "mode": "work",
+    "requested": "work",
+    "phase": "diagnosis",
+    "ms": 1.9,
+    "fill": null
+   },
+   {
+    "t": 8436,
+    "reason": "follow",
+    "mode": "work",
+    "requested": "work",
+    "phase": "diagnosis",
+    "ms": 4.3,
+    "fill": 0.885
+   },
+   {
+    "t": 9502,
+    "reason": "follow",
+    "mode": "work",
+    "requested": "work",
+    "phase": "diagnosis",
+    "ms": 4.6,
+    "fill": 0.729
+   },
+   {
+    "t": 10569,
+    "reason": "follow",
+    "mode": "work",
+    "requested": "work",
+    "phase": "diagnosis",
+    "ms": 3.9,
+    "fill": 0.56
+   },
+   {
+    "t": 11636,
+    "reason": "follow",
+    "mode": "work",
+    "requested": "work",
+    "phase": "diagnosis",
+    "ms": 4.8,
+    "fill": 0.606
+   },
+   {
+    "t": 12702,
+    "reason": "follow",
+    "mode": "work",
+    "requested": "work",
+    "phase": "diagnosis",
+    "ms": 4.1,
+    "fill": 0.57
+   },
+   {
+    "t": 13502,
+    "reason": "arrived",
+    "mode": "work",
+    "requested": "work",
+    "phase": "diagnosis",
+    "ms": 3.4,
+    "fill": 0.552
+   }
+  ]
+ }
+}

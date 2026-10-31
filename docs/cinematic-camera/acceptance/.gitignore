@@ -1,0 +1,7 @@
+# Raw captures stay local (about 100 MB); the contact sheets in sheets/ hold every shot.
+/desktop/*.jpg
+/laptop/*.jpg
+/portrait/*.jpg
+/landscape/*.jpg
+/mask/**/*.jpg
+/strips/**/*.jpg
