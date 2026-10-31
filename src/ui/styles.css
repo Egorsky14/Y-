@@ -310,6 +310,8 @@ h4 { font-size: 13px; color: var(--muted); text-transform: uppercase; letter-spa
   .hud-stat { min-width: 84px; padding: 6px 10px; }
 }
 @media (max-width: 1100px) {
+  /* The top HUD's stat cards wrap to a second line here (down to ~104 px): toasts start below them. */
+  .toasts { top: 114px; }
   .world-controls button span.lbl { display: none; }
   .world-controls button { padding: 0 8px; }
   .action-bar button { width: 56px; }
@@ -532,3 +534,7 @@ h4 { font-size: 13px; color: var(--muted); text-transform: uppercase; letter-spa
   .app-ui:has(.service-bar):has(.inspector.compact) .toast:nth-last-child(n+2) { display: none; }
 }
 .inspector-notice { margin-top: 6px; cursor: pointer; }
+/* The inspector's watch button while the service camera is on at this job: teal, with a live dot and the shot it is in. */
+.btn.watching { border-color: var(--teal); background: var(--teal-soft); color: var(--teal); }
+.btn.watching:hover:not(:disabled) { background: rgba(25, 211, 197, 0.24); }
+.watching-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--teal); flex: none; }

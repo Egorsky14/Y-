@@ -1,0 +1,33 @@
+﻿# service camera feedback (working tree on ba614e5), dist from npm run build
+desktop-1080p|service-camera-feedback.spec.ts exit=0 passed=1 failed= secs=42 freeRamMB=5584 leftover=0
+laptop-768p|service-camera-feedback.spec.ts exit=0 passed=1 failed= secs=41 freeRamMB=5594 leftover=0
+small-1024|service-camera-feedback.spec.ts exit=0 passed=1 failed= secs=41 freeRamMB=5593 leftover=0
+iphone-portrait|service-camera-feedback.spec.ts exit=0 passed=1 failed= secs=41 freeRamMB=5506 leftover=0
+iphone-landscape|service-camera-feedback.spec.ts exit=0 passed=1 failed= secs=43 freeRamMB=5593 leftover=0
+desktop-1080p|service-camera.spec.ts exit=0 passed=1 failed= secs=54 freeRamMB=5615 leftover=0
+laptop-768p|service-camera.spec.ts exit=0 passed=1 failed= secs=53 freeRamMB=5645 leftover=0
+small-1024|service-camera.spec.ts exit=0 passed=1 failed= secs=53 freeRamMB=5643 leftover=0
+iphone-portrait|service-camera.spec.ts exit=0 passed=1 failed= secs=54 freeRamMB=5642 leftover=0
+iphone-landscape|service-camera.spec.ts exit=0 passed=1 failed= secs=54 freeRamMB=5555 leftover=0
+# existing browser cases
+desktop-1080p|gameplay.spec.ts exit=0 passed=1 failed= secs=90 freeRamMB=5580 leftover=0
+desktop-1080p|graphics.spec.ts exit=0 passed=1 failed= secs=29 freeRamMB=5620 leftover=0
+desktop-1080p|automation.spec.ts exit=0 passed=1 failed= secs=22 freeRamMB=5638 leftover=0
+desktop-1080p|banking.spec.ts exit=0 passed=1 failed= secs=18 freeRamMB=5626 leftover=0
+desktop-1080p|banking-layout.spec.ts exit=0 passed=1 failed= secs=13 freeRamMB=5629 leftover=0
+desktop-1080p|supply.spec.ts exit=0 passed=1 failed= secs=25 freeRamMB=5624 leftover=0
+laptop-768p|graphics.spec.ts exit=0 passed=1 failed= secs=28 freeRamMB=5606 leftover=0
+small-1024|graphics.spec.ts exit=0 passed=1 failed= secs=29 freeRamMB=5619 leftover=0
+small-1024|banking-layout.spec.ts exit=0 passed=1 failed= secs=13 freeRamMB=5525 leftover=0
+small-1024|supply.spec.ts exit=0 passed=1 failed= secs=23 freeRamMB=5542 leftover=0
+small-1024|automation.spec.ts exit=0 passed=1 failed= secs=21 freeRamMB=5527 leftover=0
+iphone-portrait|mobile.spec.ts exit=0 passed=1 failed= secs=42 freeRamMB=5495 leftover=0
+iphone-portrait|banking-layout.spec.ts exit=0 passed=1 failed= secs=12 freeRamMB=5596 leftover=0
+phone-390x844|banking-layout.spec.ts exit=0 passed=1 failed= secs=12 freeRamMB=5586 leftover=0
+phone-390x844|supply.spec.ts exit=0 passed=1 failed= secs=33 freeRamMB=5542 leftover=0
+phone-390x844|automation.spec.ts exit=0 passed=1 failed= secs=23 freeRamMB=5574 leftover=0
+iphone-landscape|mobile.spec.ts exit=0 passed=1 failed= secs=36 freeRamMB=5571 leftover=0
+iphone-landscape|supply.spec.ts exit=0 passed=1 failed= secs=23 freeRamMB=5590 leftover=0
+android-portrait|mobile.spec.ts exit=0 passed=1 failed= secs=42 freeRamMB=5591 leftover=0
+android-landscape|mobile.spec.ts exit=0 passed=1 failed= secs=36 freeRamMB=5529 leftover=0
+tablet-portrait|mobile.spec.ts exit=0 passed=1 failed= secs=38 freeRamMB=5576 leftover=0

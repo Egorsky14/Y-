@@ -1,4 +1,4 @@
-import { useApp, useGame } from '@/app/store';
+import { useApp, useGame, type ServiceCameraMode } from '@/app/store';
 import { lotById, COMPETITOR_LOT, WAREHOUSE_LOT } from '@/game/world/cityLayout';
 import { VEHICLE_SPECS, upgradeById } from '@/game/fleet/vehicleCatalog';
 import { ATTRIBUTE_KEYS, ATTRIBUTE_LABELS } from '@/game/employees/attributes';
@@ -17,6 +17,28 @@ import type { JobStatus } from '@/game/simulation/types';
 function watchTechnician(jobId: string, lotId: string) {
   useApp.getState().setInspectorCompact(true);
   useApp.getState().setServiceView({ jobId, lotId, mode: 'work' });
+}
+
+const WATCH_LABELS: Record<ServiceCameraMode, string> = { property: 'Property', work: 'Work', detail: 'Detail' };
+
+/**
+ * Starts the service camera at this job, or, while it is on here, shows which shot it is in
+ * (pressed again, it leaves the service camera, like the bar's ✕).
+ */
+function WatchButton({ jobId, lotId }: { jobId: string; lotId: string }) {
+  const mode = useApp((s) => (s.serviceView?.jobId === jobId ? s.serviceView.mode : null));
+  if (!mode)
+    return (
+      <button className="btn small" onClick={() => watchTechnician(jobId, lotId)} data-testid="watch-technician" aria-pressed={false}>
+        Watch technician
+      </button>
+    );
+  return (
+    <button className="btn small watching" onClick={() => useApp.getState().setServiceView(null)} data-testid="watch-technician" aria-pressed title="Leave the service camera">
+      <span className="watching-dot" aria-hidden />
+      Watching: {WATCH_LABELS[mode]}
+    </button>
+  );
 }
 
 /** Phases in which the lead technician is at the site: walking up, diagnosis, quoting and repair. */
@@ -94,12 +116,14 @@ function CustomerInspector({ lotId, onClose, preferredJobId }: { lotId: string; 
   const customer = useGame((s) => Object.values(s.customers).find((c) => c.lotId === lotId));
   const jobs = useGame((s) => (customer ? Object.values(s.jobs).filter((j) => j.customerId === customer.id) : []));
   const camera = useApp((s) => s.camera);
+  const watchedJobId = useApp((s) => s.serviceView?.jobId);
   const lot = lotById(lotId)!;
   if (!customer) return <Head title="Vacant lot" onClose={onClose} />;
   const active = jobs.find((j) => j.id === preferredJobId && !['completed', 'declined', 'expired', 'cancelled'].includes(j.status)) ?? jobs.find((j) => !['completed', 'declined', 'expired', 'cancelled'].includes(j.status));
   const latest = active ?? jobs.filter((j) => j.id === preferredJobId)[0] ?? jobs[jobs.length - 1];
   const history = jobs.filter((j) => j.status === 'completed').slice().reverse();
   const tech = useApp.getState().engine?.state.employees[active?.technicianId ?? ''];
+  const watching = !!active && watchedJobId === active.id;
   return (
     <>
       <Head
@@ -116,6 +140,7 @@ function CustomerInspector({ lotId, onClose, preferredJobId }: { lotId: string; 
       />
       <div className="inspector-body">
         {latest && <JobFlow jobId={latest.id} />}
+        {active && (ON_SITE.has(active.status) || watching) && <WatchButton jobId={active.id} lotId={lot.id} />}
         {!latest && (
           <div className="card muted" style={{ fontSize: 13 }}>
             No open service call. Customers call when their equipment fails; reputation and marketing bring more direct calls.
@@ -168,11 +193,6 @@ function CustomerInspector({ lotId, onClose, preferredJobId }: { lotId: string; 
               ))}
             </div>
           </Section>
-        )}
-        {active && ON_SITE.has(active.status) && (
-          <button className="btn small" onClick={() => watchTechnician(active.id, lot.id)} data-testid="watch-technician">
-            Watch technician
-          </button>
         )}
         <button className="btn small ghost" onClick={() => camera({ type: 'focus', target: lot.center, distance: 55 })}>
           Center camera on property

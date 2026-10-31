@@ -468,7 +468,7 @@ export function CameraRig() {
     if (Math.hypot(c.target.x - w.target.x, c.target.z - w.target.z) > WATCH_RADIUS) {
       // The player panned away from the site: the watch ends, and so does the service camera (it will not pull them back).
       watch.current = null;
-      if (useApp.getState().serviceView) useApp.getState().setServiceView(null);
+      useApp.getState().serviceCameraOff();
       return;
     }
     if (w.checkAt === null || performance.now() < w.checkAt) return;

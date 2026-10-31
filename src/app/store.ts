@@ -120,6 +120,8 @@ interface AppState {
   setInspectorCompact: (compact: boolean) => void;
   /** Enter or change the service camera (null leaves it; the camera stays where it is). */
   setServiceView: (view: Omit<ServiceView, 'rev'> | null) => void;
+  /** The service camera ended by the player's camera moves (panning away from the site), not its own exit button: leaves it and says so. */
+  serviceCameraOff: () => void;
   openPanel: (panel: PanelId) => void;
   togglePanel: (panel: Exclude<PanelId, null>) => void;
   camera: (cmd: Omit<CameraCommand, 'id'>) => void;
@@ -162,6 +164,18 @@ export function enqueueCelebrations(queue: Toast[], incoming: Toast[], limit = C
   const next = [...queue, ...incoming];
   if (next.length <= limit) return next;
   return [next[0], ...next.slice(next.length - (limit - 1))];
+}
+
+export const SERVICE_OFF_TITLE = 'Service camera off';
+const SERVICE_OFF_BODY = 'Select Watch technician to return.';
+
+/**
+ * The toasts with the notice that the service camera has ended added, unless it is already on screen,
+ * so ending it again (or rapid picking and panning) never stacks copies.
+ */
+export function withServiceOffNotice(toasts: Toast[], now = Date.now()): Toast[] {
+  if (toasts.some((t) => t.title === SERVICE_OFF_TITLE)) return toasts;
+  return [...toasts, { id: toastId++, type: 'info' as const, title: SERVICE_OFF_TITLE, body: SERVICE_OFF_BODY, createdAt: now }].slice(-6);
 }
 
 export const useApp = create<AppState>((set, get) => ({
@@ -222,18 +236,24 @@ export const useApp = create<AppState>((set, get) => ({
     get().bump();
     return result;
   },
-  // Picking something else ends the service view; closing the inspector or re-picking the same job or lot keeps it.
+  // Picking something else ends the service view (and says so); closing the inspector or re-picking the same job or lot keeps it.
   select: (selection) =>
     set((s) => {
       const v = s.serviceView;
       const keep = !selection || (v && ((selection.kind === 'job' && selection.id === v.jobId) || (selection.kind === 'lot' && selection.id === v.lotId)));
-      return { selection, inspectorCompact: keep && v ? s.inspectorCompact : false, serviceView: keep ? v : null };
+      return { selection, inspectorCompact: keep && v ? s.inspectorCompact : false, serviceView: keep ? v : null, toasts: v && !keep ? withServiceOffNotice(s.toasts) : s.toasts };
     }),
   setInspectorCompact: (inspectorCompact) => set({ inspectorCompact }),
   setServiceView: (view) => set((s) => ({ serviceView: view ? { ...view, rev: (s.serviceView?.rev ?? 0) + 1 } : null })),
+  serviceCameraOff: () => set((s) => (s.serviceView ? { serviceView: null, toasts: withServiceOffNotice(s.toasts) } : {})),
   openPanel: (panel) => set({ panel }),
   togglePanel: (panel) => set((s) => ({ panel: s.panel === panel ? null : panel })),
-  camera: (cmd) => set((s) => ({ cameraCommand: { ...cmd, id: cameraCommandId++ }, followVehicleId: cmd.type === 'follow' ? (cmd.vehicleId ?? null) : null, serviceView: cmd.service ? s.serviceView : null })),
+  // Any camera command but the service camera's own (Overview, HQ, follow, a focus) ends the service view, and says so.
+  camera: (cmd) =>
+    set((s) => {
+      const ends = !!s.serviceView && !cmd.service;
+      return { cameraCommand: { ...cmd, id: cameraCommandId++ }, followVehicleId: cmd.type === 'follow' ? (cmd.vehicleId ?? null) : null, serviceView: cmd.service ? s.serviceView : null, toasts: ends ? withServiceOffNotice(s.toasts) : s.toasts };
+    }),
   setPhoto: (patch) => set((st) => ({ photo: { ...st.photo, ...patch } })),
   setFollow: (vehicleId) => set({ followVehicleId: vehicleId }),
   setSettings: (patch) => {
