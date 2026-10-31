@@ -159,6 +159,14 @@ export function houseBounds(lot: Lot): THREE.Box3 {
 }
 
 /**
+ * Where the kneeling technician's head is, from the rig (Worker.tsx): pelvis 0.57 m, torso leaned 0.38 rad, the head
+ * 0.775 m up the torso and the cap about 0.12 m above that, for the tallest build (x1.06). It leans in toward the unit.
+ */
+const KNEEL_HEAD = { lean: 0.34, top: 1.52, mid: 1.38 };
+/** Standing bent over the cabinet (the gauge reading and the final check): pelvis 0.94 m, torso leaned 0.42 rad, hips back 0.1 m. */
+const RISEN_HEAD = { lean: 0.28, mid: 1.76 };
+
+/**
  * What each service camera mode must show, in world space:
  *  - property: the house, the van at the curb, the unit and the technician (establishing shot);
  *  - work: the technician and the unit as one group (head to boots, the whole cabinet, the bag);
@@ -182,6 +190,13 @@ export function serviceSubject(lot: Lot, mode: ServiceMode, opts: ServiceViewOpt
   const facing = Math.atan2(unit.x - tech.x, unit.z - tech.z);
   const head = opts.standing ? 1.75 : 1.12;
   const P = (x: number, y: number, z: number) => ({ x, y, z });
+  // At work he kneels leaning in, so his head is over the unit side of his knees, not over his root (Worker.tsx KNEEL
+  // and the inspect/repair torso lean): the top of his cap and the middle of his head, for the tallest build.
+  const leanIn = (lean: number, y: number) => P(tech.x - ux * lean, y, tech.z - uz * lean);
+  const capTop = opts.standing ? P(tech.x, head + 0.08, tech.z) : leanIn(KNEEL_HEAD.lean, KNEEL_HEAD.top);
+  const headMid = opts.standing ? P(tech.x, head, tech.z) : leanIn(KNEEL_HEAD.lean, KNEEL_HEAD.mid);
+  // Reading the gauges and checking the unit he stands up, bent over the cabinet: his head then must not go under a control.
+  const clear = opts.standing ? [] : [leanIn(RISEN_HEAD.lean, RISEN_HEAD.mid)];
   const corner = (a: number, b: number, y: number) => P(unit.x + ux * half * a + px * half * b, y, unit.z + uz * half * a + pz * half * b);
   const hands = P(tech.x * 0.6 + unit.x * 0.4, 0.6, tech.z * 0.6 + unit.z * 0.4);
   const panel = P(unit.x + ux * half, 0.45, unit.z + uz * half);
@@ -226,24 +241,24 @@ export function serviceSubject(lot: Lot, mode: ServiceMode, opts: ServiceViewOpt
   }
   if (mode === 'work' || opts.phase === 'arrival' || opts.standing) {
     const frame = [
-      P(tech.x, head + 0.08, tech.z),
+      capTop,
       P(tech.x - ux * 0.55, 0.02, tech.z - uz * 0.55),
       corner(1, 1, top), corner(1, -1, top), corner(-1, 1, top), corner(-1, -1, top),
       corner(1, 1, 0.02), corner(1, -1, 0.02), corner(-1, 1, 0.02), corner(-1, -1, 0.02),
       ...(opts.techPos ? [] : [P(bag.x, 0.25, bag.z)]),
     ];
-    return { frame, key: [P(tech.x, head, tech.z), hands, P(unit.x, top, unit.z), panel], focus: P((tech.x + unit.x) / 2, 0.55, (tech.z + unit.z) / 2), tech: techFacing, preferredAzimuth: preferred };
+    return { frame, key: [headMid, hands, P(unit.x, top, unit.z), panel], clear, focus: P((tech.x + unit.x) / 2, 0.55, (tech.z + unit.z) / 2), tech: techFacing, preferredAzimuth: preferred };
   }
   if (opts.phase === 'repair') {
     // The tool works on the cabinet near the technician: frame head, hands, the near top edge and the panel.
     const topEdge = P(unit.x + ux * half * 0.6, top, unit.z + uz * half * 0.6);
-    const frame = [P(tech.x, head + 0.06, tech.z), hands, topEdge, corner(1, 1, top), corner(1, -1, top), panel, corner(1, 1, 0.1), corner(1, -1, 0.1)];
-    return { frame, key: [hands, panel, topEdge], focus: P(hands.x * 0.5 + topEdge.x * 0.5, 0.7, hands.z * 0.5 + topEdge.z * 0.5), tech: techFacing, preferredAzimuth: preferred };
+    const frame = [capTop, hands, topEdge, corner(1, 1, top), corner(1, -1, top), panel, corner(1, 1, 0.1), corner(1, -1, 0.1)];
+    return { frame, key: [hands, panel, topEdge], clear, focus: P(hands.x * 0.5 + topEdge.x * 0.5, 0.7, hands.z * 0.5 + topEdge.z * 0.5), tech: techFacing, preferredAzimuth: preferred };
   }
   // Diagnosis: meter in hand, leads and gauge hoses down to the service valves at the panel.
   const valves = P(unit.x + ux * half + px * half * 0.6, 0.3, unit.z + uz * half + pz * half * 0.6);
-  const frame = [P(tech.x, head + 0.06, tech.z), hands, panel, valves, corner(1, 1, top), corner(1, -1, top), corner(1, 1, 0.1), corner(1, -1, 0.1)];
-  return { frame, key: [hands, panel, valves], focus: P(hands.x * 0.55 + panel.x * 0.45, 0.66, hands.z * 0.55 + panel.z * 0.45), tech: techFacing, preferredAzimuth: preferred };
+  const frame = [capTop, hands, panel, valves, corner(1, 1, top), corner(1, -1, top), corner(1, 1, 0.1), corner(1, -1, 0.1)];
+  return { frame, key: [hands, panel, valves], clear, focus: P(hands.x * 0.55 + panel.x * 0.45, 0.66, hands.z * 0.55 + panel.z * 0.45), tech: techFacing, preferredAzimuth: preferred };
 }
 
 /** Obstacles a service camera checks at a lot: the lot's and its neighbours' house parts, plus plants and poles nearby. */
@@ -311,14 +326,45 @@ export interface WalkPlan {
   end: Orbit;
 }
 
-/** Over the last this many metres of his walk the followed view turns into the Watch Work shot. */
+/** Over at least the last this many metres of his walk the followed view turns into the Watch Work shot. */
 const WALK_SETTLE = 5;
+/**
+ * How many metres the camera may travel per metre he walks while it turns into the end shot. The turn is eased, so
+ * its fastest moment is 1.5 times the average: at his 1.5 m/s that is about 3.6 m/s, plus the slide along with him.
+ */
+const SETTLE_TRAVEL = 1.6;
+const settles = new WeakMap<WalkPlan, number>();
+
+/**
+ * The stretch of his walk, ending at his spot, over which the view turns into the end shot: WALK_SETTLE metres, or
+ * longer when the camera has far to go (a wide walking shot turning into a close one), so it never has to hurry.
+ * Never longer than the walk.
+ */
+function settleOf(plan: WalkPlan): number {
+  const known = settles.get(plan);
+  if (known !== undefined) return known;
+  const walk = Math.hypot(plan.spot.x - plan.from.x, plan.spot.z - plan.from.z);
+  // The camera's path from the start shot (slid along to his spot) to the end shot.
+  let travel = 0;
+  let last: THREE.Vector3 | null = null;
+  for (let i = 0; i <= 12; i++) {
+    const c = cameraPosition(orbitView(blendPose(plan, plan.spot, ease(i / 12))));
+    if (last) travel += c.distanceTo(last);
+    last = c;
+  }
+  const settle = Math.min(walk, Math.max(WALK_SETTLE, travel / SETTLE_TRAVEL)) || 1;
+  settles.set(plan, settle);
+  return settle;
+}
 
 /** The view a walk plan gives with the technician at p (CameraRig follows it every frame). */
 export function walkPose(plan: WalkPlan, p: { x: number; z: number }): Orbit {
-  // It slides along with him, and turns into the end shot over the last WALK_SETTLE metres.
-  const settle = Math.min(WALK_SETTLE, Math.hypot(plan.spot.x - plan.from.x, plan.spot.z - plan.from.z)) || 1;
-  const e = ease(1 - Math.hypot(plan.spot.x - p.x, plan.spot.z - p.z) / settle);
+  // It slides along with him, and turns into the end shot over the last part of his walk (settleOf).
+  return blendPose(plan, p, ease(1 - Math.hypot(plan.spot.x - p.x, plan.spot.z - p.z) / settleOf(plan)));
+}
+
+/** The start shot slid along to the technician at p, turned a share e of the way into the end shot. */
+function blendPose(plan: WalkPlan, p: { x: number; z: number }, e: number): Orbit {
   // Each pose's target relative to the walking aim point (start) or the work shot's (end), blended.
   const f0 = walkFocus(plan.from, plan.unit);
   const f1 = walkFocus(plan.spot, plan.unit);
@@ -383,6 +429,10 @@ export const WALK_AHEAD = [0.12, 0.25, 0.37, 0.5, 0.62, 0.74, 0.85];
 
 /** How much of the way ahead a walking shot frames with him (m). */
 export const WALK_REACH = 4.5;
+/** Camera positions checked along a planned walk-up, between the look-ahead points, for running into scenery. */
+const WALK_PATH_SAMPLES = 48;
+/** How far (m) those positions stay from any obstacle box, so the camera cannot clip one between two of them either. */
+const WALK_PATH_CLEARANCE = 0.3;
 
 /**
  * Where a walking shot aims: midway between him and the point WALK_REACH ahead of him toward the unit (the unit
@@ -451,11 +501,22 @@ function walkingCamera(lot: Lot, aspect: number, safe: SafeArea, opts: ServiceVi
     subject.preferWeight = opts.keepWeight ?? 3;
   }
   const boxes = serviceObstacles(lot, 'work', subject.focus);
+  // Everything the followed camera could run into on the way (the boxes round each look-ahead point), and where he
+  // will be at even steps along the path he walks.
+  const along = [...new Set([boxes, ...ahead.map((a) => a.boxes)].flat())];
+  const path = approachPath(lot, from, 0);
+  const length = pathLength(path);
+  const steps = Array.from({ length: WALK_PATH_SAMPLES + 1 }, (_, i) => samplePath(path, (length * i) / WALK_PATH_SAMPLES));
   const attempt = (points: typeof ahead, turn: boolean, from = 0) => {
     const holds = points.length
       ? (v: ViewSpec) => {
           const plan = planFor(groundOrbit(v), turn);
-          return points.every((a) => followFailure(orbitView(walkPose(plan, a.p)), lot, a.p, aspect, safe, a.subject, a.boxes) === null);
+          if (!points.every((a) => followFailure(orbitView(walkPose(plan, a.p)), lot, a.p, aspect, safe, a.subject, a.boxes) === null)) return false;
+          // All the way along his path, between the look-ahead points too, the camera never passes through a tree, a pole or a wall.
+          return steps.every((p) => {
+            const c = cameraPosition(orbitView(walkPose(plan, p)));
+            return !along.some((b) => b.distanceToPoint(c) < WALK_PATH_CLEARANCE);
+          });
         }
       : undefined;
     const view = composeView(subject, boxes, aspect, 'work', safe, WALKING, holds);

@@ -510,15 +510,25 @@ h4 { font-size: 13px; color: var(--muted); text-transform: uppercase; letter-spa
    up above it. */
 @media (min-width: 901px) and (max-width: 1560px) and (min-height: 561px) {
   .service-bar { bottom: 92px; }
+  /* The open inspector reaches down past the bar on narrower screens (1024 px): the bar centres in the part left of it. */
+  .app-ui:has(.inspector:not(.compact)) .service-bar { left: calc((100% - 400px) / 2); }
   .app-ui:has(.service-bar) .hint, .app-ui:has(.service-bar) .error-banner { bottom: 152px; }
 }
 /* Phones and short screens: toasts and celebrations start below the camera bar instead of under it. */
 @media (max-width: 900px), (max-height: 560px) {
   .app-ui:has(.service-bar) .toasts, .app-ui:has(.service-bar) .celebration { top: calc(max(8px, env(safe-area-inset-top)) + 112px); }
 }
-/* Short landscape screens with the job card collapsed: the shot is centred in the part left of the card, so toasts
-   stack in the bottom-right corner below the card (a part the service camera already keeps the work out of). */
+/* Short landscape screens: the shot is centred in the part left of the job card, so the camera bar goes in the card's
+   column (a part the service camera already keeps the work out of). Under the HUD it covered most of the top of the
+   free area, where his head is in the close shots. It sits in the bottom-right corner, level with the action bar, so
+   it costs the shot no height; the open inspector ends above it. With the card collapsed, toasts stack above the bar. */
 @media (max-height: 560px) and (orientation: landscape) {
-  .app-ui:has(.service-bar):has(.inspector.compact) .toasts { top: auto; left: auto; right: max(8px, env(safe-area-inset-right)); bottom: max(8px, env(safe-area-inset-bottom)); }
+  .app-ui:has(.inspector) .service-bar { top: auto; left: auto; transform: none; right: max(8px, env(safe-area-inset-right)); bottom: max(8px, env(safe-area-inset-bottom)); }
+  .app-ui:has(.service-bar) .inspector:not(.compact) { bottom: calc(max(8px, env(safe-area-inset-bottom)) + 56px); }
+  .app-ui:has(.service-bar):has(.inspector.compact) .toasts { top: auto; left: auto; right: max(8px, env(safe-area-inset-right)); bottom: calc(max(8px, env(safe-area-inset-bottom)) + 56px); }
+}
+/* Very short landscape screens (iPhone 750x340): one toast at a time there, so the stack stays below the card. */
+@media (max-height: 360px) and (orientation: landscape) {
+  .app-ui:has(.service-bar):has(.inspector.compact) .toast:nth-last-child(n+2) { display: none; }
 }
 .inspector-notice { margin-top: 6px; cursor: pointer; }

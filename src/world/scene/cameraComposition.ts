@@ -29,6 +29,8 @@ export interface Subject {
   frame: V3[];
   /** What must be in plain sight (a blocked key point rejects the view). */
   key: V3[];
+  /** Points that must stay in the free area and out from under the UI, without being framed (his head when he stands up from the work). */
+  clear?: V3[];
   /** The point the camera aims at. */
   focus: V3;
   /** The lead technician and the heading he faces (toward the unit), for the side-on preference. */
@@ -225,8 +227,10 @@ function evaluate(v: ViewSpec, subject: Subject, boxes: THREE.Box3[], mode: Serv
   const placed = project(subject.frame, f);
   if (!placed) return 'subject not inside the free area';
   // What must stay out from under the UI cards: the key points (head, hands, panel, unit top; for the property shot the unit,
-  // technician and van) and, in close shots, the top of his head. The rest of the group may pass under a card's corner.
-  if (underUi(mode === 'property' ? subject.key : [subject.frame[0], ...subject.key], avoid)) return 'subject under the UI';
+  // technician and van) and, in close shots, the top of his head and where his head goes when he stands up from the work.
+  // The rest of the group may pass under a card's corner.
+  if (underUi(mode === 'property' ? subject.key : [subject.frame[0], ...subject.key, ...(subject.clear ?? [])], avoid)) return 'subject under the UI';
+  if (subject.clear?.length && !project(subject.clear, f, 1)) return 'subject under the UI';
   if (strict) for (const p of subject.key) if (segmentBlocked(cam, _key.set(p.x, p.y, p.z), boxes)) return `key point hidden (${subject.key.indexOf(p)})`;
 
   // Sight-line grid across the free area.

@@ -5,7 +5,7 @@ import { MapControls } from '@react-three/drei';
 import type { MapControls as MapControlsImpl } from 'three-stdlib';
 import { getGameState, useApp } from '@/app/store';
 import { HQ_LOT } from '@/game/world/cityLayout';
-import { solveClearView, verticalFovFor, viewOffsetFor, visibility, type SafeArea, type V3 } from './cameraOcclusion';
+import { occluderKind, solveClearView, verticalFovFor, viewOffsetFor, visibility, type SafeArea, type V3 } from './cameraOcclusion';
 import { occludersOf, walkFocus, walkPose, type WalkPlan } from './serviceCall';
 import { obstaclesNear } from './cameraObstacles';
 import { measureSafeArea } from '@/ui/safeArea';
@@ -133,6 +133,8 @@ export function CameraRig() {
   const followLast = useRef<THREE.Vector3 | null>(null);
   const watch = useRef<Watch | null>(null);
   const track = useRef<Track | null>(null);
+  // The last frame's distance to the orbit target and whether the work was on screen there (zooming in then heads for it).
+  const zoomed = useRef<{ distance: number; seen: boolean } | null>(null);
   const interacting = useRef(false);
   const gl = useThree((s) => s.gl);
   const scene = useThree((s) => s.scene);
@@ -298,6 +300,7 @@ export function CameraRig() {
     c.update();
     cameraMotion.flying = !!flight.current;
     if (!flight.current) keepClearOfWork(c);
+    else zoomed.current = null;
     applySafeArea(dt);
     settleWatchedView(c);
   });
@@ -355,15 +358,35 @@ export function CameraRig() {
   /**
    * While the service camera is on, zooming or orbiting stops short of the technician's body and
    * the serviced cabinet: the camera is moved back out along its line to the target, never sideways,
-   * so the player's angle is kept and only the zoom is limited.
+   * so the player's angle is kept and only the zoom is limited. Zooming in goes toward the work
+   * while it is on screen: the orbit target is a ground point behind the work, so after an orbit the
+   * zoom line passes beside it and would end facing the wall behind. Each step in moves the target and
+   * camera toward the ground under the work by the share the zoom took off the distance, which keeps the
+   * work where it is on screen (the view is scaled about that point); a later orbit then turns round it.
    */
   function keepClearOfWork(c: MapControlsImpl) {
     const view = useApp.getState().serviceView;
-    if (!view) return;
+    if (!view) {
+      zoomed.current = null;
+      return;
+    }
     const job = getGameState()?.jobs[view.jobId];
     const tech = job?.technicianId ? scene.getObjectByName(`employee:${job.technicianId}`) : undefined;
     const body = tech?.visible ? tech.getWorldPosition(new THREE.Vector3()) : null;
     const unit = watch.current?.cabinet ?? null;
+    // The work: between him and the cabinet.
+    const parts = [...(body ? [body] : []), ...(unit ? [unit.getCenter(new THREE.Vector3())] : [])];
+    const work = parts.length ? parts.reduce((a, p) => a.add(p), new THREE.Vector3()).divideScalar(parts.length).setY(0.6) : null;
+    const distance = camera.position.distanceTo(c.target);
+    const last = zoomed.current;
+    if (work && last?.seen && distance < last.distance - 1e-4) {
+      const shift = new THREE.Vector3(work.x - c.target.x, 0, work.z - c.target.z).multiplyScalar(1 - distance / last.distance);
+      c.target.add(shift);
+      camera.position.add(shift);
+    }
+    camera.updateMatrixWorld();
+    const s = work?.clone().project(camera);
+    zoomed.current = { distance: camera.position.distanceTo(c.target), seen: !!s && s.z > -1 && s.z < 1 && Math.abs(s.x) < 1 && Math.abs(s.y) < 1 };
     const inside = (p: THREE.Vector3) =>
       p.y < 0.45 ||
       (body !== null && p.y < BODY_HEIGHT && Math.hypot(p.x - body.x, p.z - body.z) < BODY_CLEARANCE) ||
@@ -452,11 +475,34 @@ export function CameraRig() {
     w.checkAt = null;
     if (useApp.getState().serviceView) {
       // The service camera respects the player's own angle: it only steps in when the camera has been
-      // left inside a wall, roof, trunk or crown, and then just slides closer along the same line.
+      // left inside a wall, roof, trunk or pole, or inside a tree's crown with leaves between it and the
+      // work, and then just slides closer along the same line. A crown (a plant box held up off the ground)
+      // is a generous box round the canopy, which is drawn front faces only: from inside the box the view is
+      // often clear, and moving would only undo the player's orbit or zoom. So there the drawn foliage
+      // decides: a ray from the lens to the work, which like the renderer skips faces seen from behind and
+      // anything nearer than the near clipping plane.
       const from = sphericalOf(camera.position.clone().sub(c.target));
+      const crown = (b: THREE.Box3) => occluderKind(b) === 'plant' && b.min.y > 0.05;
+      const work = w.points.reduce<THREE.Vector3>((a, p) => a.add(new THREE.Vector3(p.x, p.y, p.z)), new THREE.Vector3()).divideScalar(Math.max(1, w.points.length));
+      const vegetation = scene.getObjectByName('vegetation');
+      // The tree layers move instances between their near and far meshes, so their bounds go stale.
+      let bounded = false;
+      const near = (camera as THREE.PerspectiveCamera).near ?? 1;
+      const leavesInTheWay = (p: THREE.Vector3) => {
+        if (!vegetation) return true;
+        if (!bounded) {
+          vegetation.traverse((o) => (o as THREE.InstancedMesh).isInstancedMesh && (o as THREE.InstancedMesh).computeBoundingSphere());
+          bounded = true;
+        }
+        const toWork = work.clone().sub(p);
+        const dir = toWork.clone().normalize();
+        const depth = dir.dot(c.target.clone().sub(p).normalize());
+        return new THREE.Raycaster(p, dir, 0, toWork.length()).intersectObject(vegetation, true).some((h) => h.distance * depth > near);
+      };
       const solid = (d: number) => {
         const p = c.target.clone().add(offsetOf({ ...from, distance: d }));
-        return w.boxes.some((b) => p.x > b.min.x - 0.15 && p.x < b.max.x + 0.15 && p.y > b.min.y - 0.15 && p.y < b.max.y + 0.15 && p.z > b.min.z - 0.15 && p.z < b.max.z + 0.15);
+        const inside = w.boxes.filter((b) => p.x > b.min.x - 0.15 && p.x < b.max.x + 0.15 && p.y > b.min.y - 0.15 && p.y < b.max.y + 0.15 && p.z > b.min.z - 0.15 && p.z < b.max.z + 0.15);
+        return inside.some((b) => !crown(b)) || (inside.length > 0 && leavesInTheWay(p));
       };
       if (!solid(from.distance)) return;
       for (let d = from.distance - 0.25; d >= SERVICE_MIN_DISTANCE; d -= 0.25) {

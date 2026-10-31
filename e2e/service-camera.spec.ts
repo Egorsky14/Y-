@@ -120,8 +120,8 @@ test('service camera: walk-up follow, layout, composed modes, player control', a
   expect(walkingFrames.length, 'walking framings').toBeGreaterThan(0);
   expect(walkingFrames.filter((f) => !f.composed), 'walking framings that were not composed').toEqual([]);
   // The follow never re-aims on the way (the plan picked at the start holds), and after the opening flight it is
-  // continuous and gentle: no stop of a second or more, no 0.25 s step faster than 8 m/s (the old swoops reached
-  // 15-20 m/s; the planned settle into Watch Work over his last metres peaks at about 4-7), and no jerk: the speed
+  // continuous and gentle: no stop of a second or more, no 0.25 s step faster than 4 m/s (the old swoops reached
+  // 15-20 m/s; the settle into Watch Work is paced to the distance the camera covers, about 1.6-2.7 m/s here), and no jerk: the speed
   // changes by less than 3 m/s from one 0.25 s step to the next.
   expect(walk.frames.filter((f) => f.reason === 'follow').map((f) => f.why), 're-aims while he walks').toEqual([]);
   const steps: { t: number; v: number }[] = [];
@@ -135,7 +135,8 @@ test('service camera: walk-up follow, layout, composed modes, player control', a
   const followFrom = walk.frames[0].t - t0 + 1100 + 250;
   const following = steps.filter((s) => s.t > followFrom && s.t < arrivedAt - t0 - 300);
   expect(following.length, 'follow samples').toBeGreaterThan(8);
-  expect(Math.max(...following.map((s) => s.v)), 'fastest follow step (m/s)').toBeLessThan(8);
+  console.log(`walk-up: fastest ${Math.max(...following.map((s) => s.v)).toFixed(2)} m/s over ${following.length} steps`);
+  expect(Math.max(...following.map((s) => s.v)), 'fastest follow step (m/s)').toBeLessThan(4);
   expect(Math.max(...following.slice(1).map((s, i) => Math.abs(s.v - following[i].v))), 'largest change of speed between steps (m/s)').toBeLessThan(3);
   let still = 0;
   let longestStill = 0;
@@ -148,13 +149,25 @@ test('service camera: walk-up follow, layout, composed modes, player control', a
   expect(work.mode).toBe('work');
   expect(work.report, 'Watch Work composed').not.toBeNull();
 
-  // 2. Camera bar layout.
+  // 2. Camera bar layout, with the card collapsed and open.
   expect(await barLayout(page), 'camera bar layout').toEqual([]);
-  // Where the shot is centred beside a collapsed card (short landscape screens), toasts stay in the strip beside it.
+  // Where the shot is centred beside a collapsed card (short landscape screens), the camera bar and toasts stay in the
+  // strip beside it, out of the shot (under the HUD the bar covered his head in the close shots).
   const right = work.safe as unknown as { right: number };
   if (right.right > 0) {
+    const edge = (1 - right.right) * page.viewportSize()!.width - 1;
     const toastLeft = await page.evaluate(() => Math.min(...Array.from(document.querySelectorAll('.toasts > *')).map((t) => t.getBoundingClientRect().left)));
-    if (Number.isFinite(toastLeft)) expect(toastLeft, 'toasts beside the card, out of the shot').toBeGreaterThanOrEqual((1 - right.right) * page.viewportSize()!.width - 1);
+    if (Number.isFinite(toastLeft)) expect(toastLeft, 'toasts beside the card, out of the shot').toBeGreaterThanOrEqual(edge);
+    const barLeft = await page.getByTestId('service-camera-bar').evaluate((b) => b.getBoundingClientRect().left);
+    expect(barLeft, 'camera bar beside the card, out of the shot').toBeGreaterThanOrEqual(edge);
+    expect(work.safe.avoid ?? [], 'nothing to keep the work out from under in the shot').toEqual([]);
+  }
+  if (await page.locator('[data-testid="inspector"].compact').count()) {
+    await press(page, 'inspector-compact', touch);
+    await page.waitForTimeout(400);
+    expect(await barLayout(page), 'camera bar layout, card open').toEqual([]);
+    await press(page, 'inspector-compact', touch);
+    await page.waitForTimeout(2600);
   }
 
   // 3. Property and Detail are composed shots; the collapsed card is avoided where it reaches into the view.
@@ -167,7 +180,12 @@ test('service camera: walk-up follow, layout, composed modes, player control', a
   }
   await press(page, 'service-view-work', touch);
   await page.waitForTimeout(2600);
-  if (await page.locator('[data-testid="inspector"].compact').count()) expect((await view(page))!.safe.avoid?.length ?? 0, 'collapsed card avoided').toBeGreaterThan(0);
+  // The collapsed card is avoided: kept out from under (a rectangle to avoid) or, where it reaches deep into a short
+  // landscape screen, its whole width counted as covered.
+  if (await page.locator('[data-testid="inspector"].compact').count()) {
+    const safe = (await view(page))!.safe as { avoid?: number[][]; right?: number };
+    expect((safe.avoid?.length ?? 0) > 0 || (safe.right ?? 0) > 0, 'collapsed card avoided').toBe(true);
+  }
 
   // 4. A hand orbit stays where the player left it.
   const W = page.viewportSize()!.width;
@@ -194,8 +212,8 @@ test('service camera: walk-up follow, layout, composed modes, player control', a
   const released = await cam(page);
   await page.waitForTimeout(9000);
   const held = await cam(page);
-  // No automatic re-framing (before the fix: 0.5-19.5 m). The zoom clearance may nudge it out by a step of a few cm if he shifts toward it.
-  expect(Math.hypot(held[0] - released[0], held[1] - released[1], held[2] - released[2]), 'camera moved by itself after an orbit (m)').toBeLessThan(0.15);
+  // No automatic re-framing (before the fix: 0.5-19.5 m).
+  expect(Math.hypot(held[0] - released[0], held[1] - released[1], held[2] - released[2]), 'camera moved by itself after an orbit (m)').toBeLessThan(0.05);
 
   // 5. Zooming right in stops short of the technician.
   if (touch) await drag((k) => [[cx - 30 - 120 * k, cy], [cx + 30 + 120 * k, cy]]);
