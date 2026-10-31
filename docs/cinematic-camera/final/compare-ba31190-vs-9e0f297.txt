@@ -1,0 +1,48 @@
+desktop c-n-4
+  before: walk peak 5.4 m/s, longest stop 2.0 s, uncomposed 0, re-aims 0 | property composed | bar overlaps none | self-moves >0.3 m 0/4 (max 0.00) | closest zoom 3.31 m | errors 0
+  after: walk peak 2.2 m/s, longest stop 2.0 s, uncomposed 0, re-aims 0 | property composed | bar overlaps none | self-moves >0.3 m 0/4 (max 0.00) | closest zoom 4.09 m | errors 0
+desktop n-o-1
+  before: walk peak 6.5 m/s, longest stop 0.3 s, uncomposed 0, re-aims 0 | property composed | bar overlaps none | self-moves >0.3 m 0/4 (max 0.11) | closest zoom 3.51 m | errors 0
+  after: walk peak 2.7 m/s, longest stop 0.3 s, uncomposed 0, re-aims 0 | property composed | bar overlaps none | self-moves >0.3 m 0/4 (max 0.00) | closest zoom 4.03 m | errors 0
+desktop a-s-2
+  before: walk peak 5.4 m/s, longest stop 0.2 s, uncomposed 0, re-aims 0 | property composed | bar overlaps none | self-moves >0.3 m 0/4 (max 0.09) | closest zoom 3.49 m | errors 0
+  after: walk peak 3.7 m/s, longest stop 0.4 s, uncomposed 0, re-aims 0 | property composed | bar overlaps none | self-moves >0.3 m 0/4 (max 0.00) | closest zoom 4.03 m | errors 0
+desktop a-s-1
+  before: walk peak 2.2 m/s, longest stop 0.3 s, uncomposed 0, re-aims 0 | property composed | bar overlaps none | self-moves >0.3 m 0/4 (max 0.00) | closest zoom 3.44 m | errors 0
+  after: walk peak 2.3 m/s, longest stop 0.3 s, uncomposed 0, re-aims 0 | property composed | bar overlaps none | self-moves >0.3 m 0/4 (max 0.00) | closest zoom 3.97 m | errors 0
+laptop c-n-4
+  before: walk peak 6.8 m/s, longest stop 2.0 s, uncomposed 0, re-aims 0 | property composed | bar overlaps none | self-moves >0.3 m 0/4 (max 0.00) | closest zoom 4.19 m | errors 0
+  after: walk peak 2.4 m/s, longest stop 2.0 s, uncomposed 0, re-aims 0 | property composed | bar overlaps none | self-moves >0.3 m 0/4 (max 0.00) | closest zoom 5.16 m | errors 0
+laptop n-o-1
+  before: walk peak 5.8 m/s, longest stop 0.3 s, uncomposed 0, re-aims 0 | property composed | bar overlaps none | self-moves >0.3 m 0/4 (max 0.00) | closest zoom 4.59 m | errors 0
+  after: walk peak 2.2 m/s, longest stop 0.3 s, uncomposed 0, re-aims 0 | property composed | bar overlaps none | self-moves >0.3 m 0/4 (max 0.00) | closest zoom 4.66 m | errors 0
+laptop a-s-2
+  before: walk peak 3.7 m/s, longest stop 0.4 s, uncomposed 0, re-aims 0 | property composed | bar overlaps none | self-moves >0.3 m 0/4 (max 0.00) | closest zoom 4.76 m | errors 0
+  after: walk peak 3.7 m/s, longest stop 0.4 s, uncomposed 0, re-aims 0 | property composed | bar overlaps none | self-moves >0.3 m 0/4 (max 0.00) | closest zoom 4.92 m | errors 0
+laptop a-s-1
+  before: walk peak 2.6 m/s, longest stop 0.3 s, uncomposed 0, re-aims 0 | property composed | bar overlaps none | self-moves >0.3 m 0/4 (max 0.00) | closest zoom 4.15 m | errors 0
+  after: walk peak 2.4 m/s, longest stop 0.3 s, uncomposed 0, re-aims 0 | property composed | bar overlaps none | self-moves >0.3 m 0/4 (max 0.00) | closest zoom 5.31 m | errors 0
+portrait c-n-4
+  before: walk peak 8.5 m/s, longest stop 2.1 s, uncomposed 0, re-aims 0 | property composed | bar overlaps none | self-moves >0.3 m 0/4 (max 0.00) | closest zoom 1.72 m | errors 0
+  after: walk peak 2.4 m/s, longest stop 2.0 s, uncomposed 0, re-aims 0 | property composed | bar overlaps none | self-moves >0.3 m 0/4 (max 0.00) | closest zoom 1.99 m | errors 0
+portrait n-o-1
+  before: walk peak 3.4 m/s, longest stop 0.3 s, uncomposed 0, re-aims 0 | property composed | bar overlaps none | self-moves >0.3 m 0/4 (max 0.00) | closest zoom 1.72 m | errors 0
+  after: walk peak 2.3 m/s, longest stop 0.3 s, uncomposed 0, re-aims 0 | property composed | bar overlaps none | self-moves >0.3 m 0/4 (max 0.00) | closest zoom 1.95 m | errors 0
+portrait a-s-2
+  before: walk peak 2.8 m/s, longest stop 0.3 s, uncomposed 0, re-aims 0 | property composed | bar overlaps none | self-moves >0.3 m 0/4 (max 0.00) | closest zoom 1.70 m | errors 0
+  after: walk peak 4.0 m/s, longest stop 0.3 s, uncomposed 0, re-aims 0 | property composed | bar overlaps none | self-moves >0.3 m 0/4 (max 0.00) | closest zoom 1.95 m | errors 0
+portrait a-s-1
+  before: walk peak 2.1 m/s, longest stop 0.3 s, uncomposed 0, re-aims 0 | property composed | bar overlaps none | self-moves >0.3 m 0/4 (max 0.00) | closest zoom 1.76 m | errors 0
+  after: walk peak 2.5 m/s, longest stop 0.2 s, uncomposed 0, re-aims 0 | property composed | bar overlaps none | self-moves >0.3 m 0/4 (max 0.00) | closest zoom 2.07 m | errors 0
+landscape c-n-4
+  before: walk peak 7.3 m/s, longest stop 2.0 s, uncomposed 0, re-aims 0 | property composed | bar overlaps none | self-moves >0.3 m 2/4 (max 2.65) | closest zoom 2.78 m | errors 0
+  after: walk peak 4.5 m/s, longest stop 2.0 s, uncomposed 0, re-aims 0 | property composed | bar overlaps none | self-moves >0.3 m 1/4 (max 0.35) | closest zoom 2.65 m | errors 0
+landscape n-o-1
+  before: walk peak 9.5 m/s, longest stop 0.3 s, uncomposed 0, re-aims 0 | property composed | bar overlaps none | self-moves >0.3 m 0/4 (max 0.00) | closest zoom 2.74 m | errors 0
+  after: walk peak 2.1 m/s, longest stop 0.3 s, uncomposed 0, re-aims 0 | property composed | bar overlaps none | self-moves >0.3 m 0/4 (max 0.00) | closest zoom 2.54 m | errors 0
+landscape a-s-2
+  before: walk peak 7.4 m/s, longest stop 0.4 s, uncomposed 0, re-aims 0 | property composed | bar overlaps none | self-moves >0.3 m 0/4 (max 0.00) | closest zoom 2.74 m | errors 0
+  after: walk peak 3.9 m/s, longest stop 0.3 s, uncomposed 0, re-aims 0 | property composed | bar overlaps none | self-moves >0.3 m 0/4 (max 0.00) | closest zoom 2.54 m | errors 0
+landscape a-s-1
+  before: walk peak 4.9 m/s, longest stop 0.3 s, uncomposed 0, re-aims 0 | property composed | bar overlaps none | self-moves >0.3 m 0/4 (max 0.00) | closest zoom 2.70 m | errors 0
+  after: walk peak 2.3 m/s, longest stop 0.3 s, uncomposed 0, re-aims 0 | property composed | bar overlaps none | self-moves >0.3 m 0/4 (max 0.00) | closest zoom 2.81 m | errors 0
