@@ -16,6 +16,9 @@ export interface Selection {
 
 export type PanelId = 'jobs' | 'employees' | 'fleet' | 'supply' | 'hq' | 'marketing' | 'finance' | 'settings' | null;
 
+type P2 = { x: number; z: number };
+type OrbitPose = { target: P2; azimuth: number; elevation: number; distance: number };
+
 export interface CameraCommand {
   id: number;
   type: 'focus' | 'reset' | 'hq' | 'follow';
@@ -38,11 +41,11 @@ export interface CameraCommand {
   /** Issued by the service camera itself (ServiceDirector); any other command ends the service view. */
   service?: boolean;
   /**
-   * Keep following a walking crew member after the flight: the view (target and camera together,
-   * so the heading never changes) slides by `weight` × how far the named object has moved from
-   * `anchor`, eased every frame.
+   * Keep following a walking crew member (the named scene object) after the flight, along a walk
+   * plan (serviceCall WalkPlan / walkPose): the view eases every frame toward the pose the plan gives
+   * for where he is, turning gradually into the shot it ends as when he reaches his spot.
    */
-  track?: { object: string; anchor: { x: number; z: number }; weight: number };
+  track?: { object: string; plan: { from: P2; spot: P2; unit: P2; start: OrbitPose; end: OrbitPose } };
   /** Seconds for an orbit flight (default 1.1). */
   duration?: number;
 }

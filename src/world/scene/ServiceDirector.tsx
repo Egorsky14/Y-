@@ -6,9 +6,8 @@ import { curbParking, lotById, workPosition } from '@/game/world/cityLayout';
 import type { JobStatus } from '@/game/simulation/types';
 import { mainCanvas, measureSafeArea } from '@/ui/safeArea';
 import type { SafeArea } from './cameraOcclusion';
-import { scoreView } from './cameraComposition';
-import { cameraInput } from './CameraRig';
-import { curbDoor, serviceObstacles, serviceSubject, serviceViewCamera, siteFor, WALK_TRACK_WEIGHT, WALKING, type ServicePhase } from './serviceCall';
+import { cameraInput, cameraMotion } from './CameraRig';
+import { curbDoor, followFailure, serviceViewCamera, siteFor, WALK_AHEAD, type ServicePhase } from './serviceCall';
 
 /**
  * The service camera's director. While the player uses the service camera at a job (Property,
@@ -61,6 +60,10 @@ interface Framed {
   tech: { x: number; z: number } | null;
   walking: boolean;
   at: number;
+  /** Consecutive follow checks that found the followed view no longer working. */
+  misses: number;
+  /** The walk being followed (from where he was framed to his spot) and the share of it from which its plan keeps him in sight. */
+  walk: { from: { x: number; z: number }; spot: { x: number; z: number }; holdsFrom: number } | null;
 }
 
 /** Two measured free areas differ enough to recompose (bars and panels moved, a card appeared). */
@@ -121,7 +124,7 @@ export function ServiceDirector() {
     const offset = camera.position.clone().sub(controls.target);
     // Where he will be on his way to the unit (a straight walk from the van door): the walking shot must keep him in view there.
     const spot = workPosition(lot, 0);
-    const ahead = walking ? [0.25, 0.5, 0.75, 0.95].map((k) => ({ x: tech!.pos.x + (spot.x - tech!.pos.x) * k, z: tech!.pos.z + (spot.z - tech!.pos.z) * k })) : undefined;
+    const ahead = walking ? WALK_AHEAD.map((k) => ({ x: tech!.pos.x + (spot.x - tech!.pos.x) * k, z: tech!.pos.z + (spot.z - tech!.pos.z) * k })) : undefined;
     // Once the work is done the shot goes back to the property (the technician packs up and leaves).
     const mode = phase === 'done' ? 'property' : v.mode;
     const shot = serviceViewCamera(lot, mode, aspect, safe, {
@@ -129,6 +132,8 @@ export function ServiceDirector() {
       techPos: walking ? tech!.pos : undefined,
       standing: walking,
       keepAzimuth: follow ? Math.atan2(offset.x, offset.z) : undefined,
+      // A walking view that lost him re-aims to the best heading that keeps him in sight, only leaning toward the current one.
+      keepWeight: reason === 'follow' ? 0.5 : undefined,
       ahead,
     });
     let command: Omit<CameraCommand, 'id'> = shot.command;
@@ -139,29 +144,34 @@ export function ServiceDirector() {
         const dist = offset.length();
         command = { type: 'focus', target: { x: controls.target.x, z: controls.target.z }, targetY: 0, distance: dist, azimuth: Math.atan2(offset.x, offset.z), elevation: Math.asin(offset.y / Math.max(dist, 1e-6)), orbit: true, service: true, watch: 'watch' in shot.command ? shot.command.watch : undefined };
       }
-      command = { ...command, track: { object: tech!.object, anchor: tech!.pos, weight: WALK_TRACK_WEIGHT } };
+      const plan = 'plan' in shot ? shot.plan : null;
+      if (plan) command = { ...command, track: { object: tech!.object, plan } };
     }
     // Re-aiming a followed view mid-walk and settling into the work shot on arrival glide more slowly than a mode change.
-    if (reason === 'follow') command = { ...command, duration: 2 };
+    if (reason === 'follow') command = { ...command, duration: 2.5 };
     else if (reason === 'arrived') command = { ...command, duration: 1.6 };
     useApp.getState().camera(command);
-    framed.current = { rev: v.rev, phase, safe, tech: tech?.pos ?? null, walking, at: performance.now() };
+    const holdsFrom = 'holdsFrom' in shot ? shot.holdsFrom : 0;
+    framed.current = { rev: v.rev, phase, safe, tech: tech?.pos ?? null, walking, at: performance.now(), misses: 0, walk: walking ? { from: tech!.pos, spot, holdsFrom } : null };
     window.__egoServiceView = { requested: v.mode, mode: shot.mode, phase, reason, walking, ms: +shot.ms.toFixed(1), report: shot.report, aspect: +aspect.toFixed(3), safe };
   }
 
-  /** Whether the followed view (as CameraRig has slid it) still shows the walking technician and the unit. */
+  /**
+   * Whether the followed view (as CameraRig has slid it) still shows the walking technician: the camera is not inside
+   * anything, the group is still in the free part of the screen and clear of the UI cards, and his head or body is in
+   * sight. Brushing past a bush or a head briefly behind a post is not worth a re-aim.
+   */
   function followStillWorks(v: ServiceView, pos: { x: number; z: number }): boolean {
     const lot = lotById(v.lotId);
     const canvas = mainCanvas();
     if (!lot || !controls || !canvas) return true;
     const aspect = canvas.clientWidth / Math.max(1, canvas.clientHeight);
-    const subject = serviceSubject(lot, 'work', { techPos: pos, standing: true });
     const offset = camera.position.clone().sub(controls.target);
     const distance = offset.length();
     const pose = { target: { x: controls.target.x, y: controls.target.y, z: controls.target.z }, azimuth: Math.atan2(offset.x, offset.z), elevation: Math.asin(offset.y / Math.max(distance, 1e-6)), distance };
-    const r = scoreView(pose, subject, serviceObstacles(lot, 'work', subject.focus), aspect, 'work', measureSafeArea(canvas), true, WALKING);
-    window.__egoServiceFollow = typeof r === 'string' ? r : 'ok';
-    return typeof r !== 'string';
+    const why = followFailure(pose, lot, pos, aspect, measureSafeArea(canvas));
+    window.__egoServiceFollow = why ?? 'ok';
+    return why === null;
   }
 
   // Entering or changing mode: frame after the layout has settled (the inspector may just have collapsed).
@@ -209,10 +219,17 @@ export function ServiceDirector() {
     if (v.mode === 'property') return;
     // He has reached the unit: the full Watch Work or Detail shot (on the player's heading if they turned the view meanwhile).
     if (f.walking && tech && !walking) return frame(v, 'arrived', cameraInput.lastInput > f.at);
-    if (!walking || !tech) return;
+    if (!walking || !tech || cameraMotion.flying) return;
     if (f.tech && Math.hypot(tech.pos.x - f.tech.x, tech.pos.z - f.tech.z) < FOLLOW_STEP) return;
     f.tech = tech.pos;
-    if (!followStillWorks(v, tech.pos)) frame(v, 'follow', true);
+    // Re-aim only once he has been out of the view for two checks running: a head passing behind a trunk for a moment
+    // is not worth moving the camera for.
+    f.misses = followStillWorks(v, tech.pos) ? 0 : f.misses + 1;
+    // Where the plan was picked knowing the first stretch beside the van hides him, it is not re-aimed there; nor over the
+    // last metre or so, where he kneels and the arrival framing takes over (WALK_AHEAD ends short of the spot).
+    const w = f.walk;
+    const progress = w ? 1 - Math.hypot(w.spot.x - tech.pos.x, w.spot.z - tech.pos.z) / (Math.hypot(w.spot.x - w.from.x, w.spot.z - w.from.z) || 1) : 1;
+    if (f.misses >= 2 && (!w || (progress >= w.holdsFrom && progress <= WALK_AHEAD[WALK_AHEAD.length - 1]))) frame(v, 'follow', true);
   });
 
   return null;

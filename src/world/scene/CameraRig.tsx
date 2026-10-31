@@ -6,7 +6,7 @@ import type { MapControls as MapControlsImpl } from 'three-stdlib';
 import { getGameState, useApp } from '@/app/store';
 import { HQ_LOT } from '@/game/world/cityLayout';
 import { solveClearView, verticalFovFor, viewOffsetFor, visibility, type SafeArea, type V3 } from './cameraOcclusion';
-import { occludersOf } from './serviceCall';
+import { occludersOf, walkFocus, walkPose, type WalkPlan } from './serviceCall';
 import { obstaclesNear } from './cameraObstacles';
 import { measureSafeArea } from '@/ui/safeArea';
 
@@ -62,15 +62,21 @@ const WATCH_RADIUS = 8;
  */
 export const cameraInput = { dragging: false, lastInput: -Infinity };
 
-/** A walking crew member the view follows (CameraCommand.track) and how far it has slid so far. */
+/** Whether a camera flight is under way (the service camera judges a followed view only once it has landed). */
+export const cameraMotion = { flying: false };
+
+/** A walking crew member the view follows (CameraCommand.track) along a walk plan. */
 interface Track {
   object: string;
-  anchor: THREE.Vector3;
-  weight: number;
-  shift: THREE.Vector3;
+  plan: WalkPlan;
+  /** When the plan was handed over; any later drag, zoom or key makes the view the player's. */
+  started: number;
+  /** The player has turned or zoomed the view: from then on it only slides along with him. */
+  manual: boolean;
+  last: THREE.Vector3 | null;
 }
 
-/** How quickly the followed view catches up with the walker (1/s): at walking pace it trails by ~0.3 m, and never jerks. */
+/** How quickly the followed view catches up with the plan (1/s): at walking pace it trails by ~0.3 m, and never jerks. */
 const TRACK_RATE = 3.5;
 
 /**
@@ -158,7 +164,7 @@ export function CameraRig() {
     const fromTarget = c.target.clone();
     const fromPos = camera.position.clone();
     const offset = fromPos.clone().sub(fromTarget);
-    track.current = command.track ? { object: command.track.object, anchor: new THREE.Vector3(command.track.anchor.x, 0, command.track.anchor.z), weight: command.track.weight, shift: new THREE.Vector3() } : null;
+    track.current = command.track ? { object: command.track.object, plan: command.track.plan, started: performance.now(), manual: false, last: null } : null;
     let toTarget: THREE.Vector3;
     let toPos: THREE.Vector3;
     if (command.type === 'reset') {
@@ -290,16 +296,17 @@ export function CameraRig() {
     }
     applyLimits(c);
     c.update();
+    cameraMotion.flying = !!flight.current;
     if (!flight.current) keepClearOfWork(c);
     applySafeArea(dt);
     settleWatchedView(c);
   });
 
   /**
-   * Following a walking technician (CameraCommand.track): the whole view slides with him, target and
-   * camera together, so the heading the player or the director chose is kept. The slide is eased
-   * every frame (no stop-and-go between updates) and carries on through a flight in progress (its
-   * end points slide too), so landing and following join up without a jolt.
+   * Following a walking technician (CameraCommand.track): every frame the view eases toward the pose his walk plan
+   * gives for where he is (walkPose), so it moves continuously with him, never in steps, and turns gradually into the
+   * Watch Work shot it ends as. A flight still under way lands on that pose. Once the player has turned or zoomed the
+   * view it is theirs, and only slides along with him.
    */
   function followWalker(c: MapControlsImpl, dt: number) {
     const t = track.current;
@@ -311,21 +318,38 @@ export function CameraRig() {
     const o = scene.getObjectByName(t.object);
     if (!o || !o.visible) return;
     const p = o.getWorldPosition(new THREE.Vector3());
-    const want = new THREE.Vector3((p.x - t.anchor.x) * t.weight, 0, (p.z - t.anchor.z) * t.weight);
-    const step = want.sub(t.shift).multiplyScalar(1 - Math.exp(-dt * TRACK_RATE));
-    if (step.lengthSq() < 1e-10) return;
-    t.shift.add(step);
-    const f = flight.current;
-    if (f) {
-      f.fromTarget.add(step);
-      f.toTarget.add(step);
-      f.fromPos.add(step);
-      f.toPos.add(step);
-    } else {
+    if (!t.manual && (cameraInput.dragging || cameraInput.lastInput > t.started)) t.manual = true;
+    const last = t.last;
+    t.last = p;
+    if (t.manual) {
+      if (!last) return;
+      const a = walkFocus(last, t.plan.unit);
+      const b = walkFocus(p, t.plan.unit);
+      const step = new THREE.Vector3(b.x - a.x, 0, b.z - a.z);
       c.target.add(step);
       camera.position.add(step);
+      watch.current?.target.add(step);
+      return;
     }
-    watch.current?.target.add(step);
+    const pose = walkPose(t.plan, p);
+    const target = new THREE.Vector3(pose.target.x, 0, pose.target.z);
+    const pos = target.clone().add(offsetOf(pose));
+    const f = flight.current;
+    if (f) {
+      f.toTarget.copy(target);
+      f.toPos.copy(pos);
+      if (f.orbit) {
+        const to = sphericalOf(pos.clone().sub(target));
+        to.azimuth = f.orbit.from.azimuth + Math.atan2(Math.sin(to.azimuth - f.orbit.from.azimuth), Math.cos(to.azimuth - f.orbit.from.azimuth));
+        f.orbit.to = to;
+      }
+      return;
+    }
+    const k = 1 - Math.exp(-dt * TRACK_RATE);
+    const before = c.target.clone();
+    c.target.lerp(target, k);
+    camera.position.lerp(pos, k);
+    watch.current?.target.add(c.target.clone().sub(before));
   }
 
   /**

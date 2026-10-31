@@ -4,7 +4,8 @@ import { test, expect, type Page } from '@playwright/test';
  * Service camera acceptance regressions (docs/cinematic-camera/acceptance/REPORT.md), on desktop,
  * laptop, 1024×768 and phones held either way. One service call at the palm-tree house (n-o-1):
  *  - Watch technician pressed as the van parks: every walking shot is composed (never the unit's
- *    fixed close-up), and the view follows him without stopping, swooping or turning on the way;
+ *    fixed close-up), and the view follows him without stopping, swooping or re-aiming on the way,
+ *    settling into Watch Work as he reaches the unit;
  *  - the camera bar overlaps no other control and every bar and bottom-row button can be pressed;
  *  - Property, Watch Work and Detail are composed shots (no silent fallback), with the subject kept
  *    out from under the collapsed inspector card;
@@ -118,8 +119,11 @@ test('service camera: walk-up follow, layout, composed modes, player control', a
   const walkingFrames = walk.frames.filter((f) => f.walking);
   expect(walkingFrames.length, 'walking framings').toBeGreaterThan(0);
   expect(walkingFrames.filter((f) => !f.composed), 'walking framings that were not composed').toEqual([]);
-  // After the opening flight the follow is continuous and gentle: no 0.25 s step faster
-  // than 4 m/s (the old swoop reached 15-20 m/s) and no stop of a second or more while he walks.
+  // The follow never re-aims on the way (the plan picked at the start holds), and after the opening flight it is
+  // continuous and gentle: no stop of a second or more, no 0.25 s step faster than 8 m/s (the old swoops reached
+  // 15-20 m/s; the planned settle into Watch Work over his last metres peaks at about 4-7), and no jerk: the speed
+  // changes by less than 3 m/s from one 0.25 s step to the next.
+  expect(walk.frames.filter((f) => f.reason === 'follow').map((f) => f.why), 're-aims while he walks').toEqual([]);
   const steps: { t: number; v: number }[] = [];
   for (let i = 1, j = 0; i < walk.rec.length; i++) {
     if (walk.rec[i].t - walk.rec[j].t < 250) continue;
@@ -131,7 +135,8 @@ test('service camera: walk-up follow, layout, composed modes, player control', a
   const followFrom = walk.frames[0].t - t0 + 1100 + 250;
   const following = steps.filter((s) => s.t > followFrom && s.t < arrivedAt - t0 - 300);
   expect(following.length, 'follow samples').toBeGreaterThan(8);
-  expect(Math.max(...following.map((s) => s.v)), 'fastest follow step (m/s)').toBeLessThan(4);
+  expect(Math.max(...following.map((s) => s.v)), 'fastest follow step (m/s)').toBeLessThan(8);
+  expect(Math.max(...following.slice(1).map((s, i) => Math.abs(s.v - following[i].v))), 'largest change of speed between steps (m/s)').toBeLessThan(3);
   let still = 0;
   let longestStill = 0;
   for (const s of following) longestStill = Math.max(longestStill, (still = s.v < 0.05 ? still + 1 : 0));
@@ -145,6 +150,12 @@ test('service camera: walk-up follow, layout, composed modes, player control', a
 
   // 2. Camera bar layout.
   expect(await barLayout(page), 'camera bar layout').toEqual([]);
+  // Where the shot is centred beside a collapsed card (short landscape screens), toasts stay in the strip beside it.
+  const right = work.safe as unknown as { right: number };
+  if (right.right > 0) {
+    const toastLeft = await page.evaluate(() => Math.min(...Array.from(document.querySelectorAll('.toasts > *')).map((t) => t.getBoundingClientRect().left)));
+    if (Number.isFinite(toastLeft)) expect(toastLeft, 'toasts beside the card, out of the shot').toBeGreaterThanOrEqual((1 - right.right) * page.viewportSize()!.width - 1);
+  }
 
   // 3. Property and Detail are composed shots; the collapsed card is avoided where it reaches into the view.
   for (const mode of ['property', 'detail'] as const) {
@@ -183,7 +194,8 @@ test('service camera: walk-up follow, layout, composed modes, player control', a
   const released = await cam(page);
   await page.waitForTimeout(9000);
   const held = await cam(page);
-  expect(Math.hypot(held[0] - released[0], held[1] - released[1], held[2] - released[2]), 'camera moved by itself after an orbit (m)').toBeLessThan(0.05);
+  // No automatic re-framing (before the fix: 0.5-19.5 m). The zoom clearance may nudge it out by a step of a few cm if he shifts toward it.
+  expect(Math.hypot(held[0] - released[0], held[1] - released[1], held[2] - released[2]), 'camera moved by itself after an orbit (m)').toBeLessThan(0.15);
 
   // 5. Zooming right in stops short of the technician.
   if (touch) await drag((k) => [[cx - 30 - 120 * k, cy], [cx + 30 + 120 * k, cy]]);

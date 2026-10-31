@@ -516,4 +516,9 @@ h4 { font-size: 13px; color: var(--muted); text-transform: uppercase; letter-spa
 @media (max-width: 900px), (max-height: 560px) {
   .app-ui:has(.service-bar) .toasts, .app-ui:has(.service-bar) .celebration { top: calc(max(8px, env(safe-area-inset-top)) + 112px); }
 }
+/* Short landscape screens with the job card collapsed: the shot is centred in the part left of the card, so toasts
+   stack in the bottom-right corner below the card (a part the service camera already keeps the work out of). */
+@media (max-height: 560px) and (orientation: landscape) {
+  .app-ui:has(.service-bar):has(.inspector.compact) .toasts { top: auto; left: auto; right: max(8px, env(safe-area-inset-right)); bottom: max(8px, env(safe-area-inset-bottom)); }
+}
 .inspector-notice { margin-top: 6px; cursor: pointer; }

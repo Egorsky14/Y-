@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { condenserPosition, curbParking, HOUSE_HALF_WIDTH, HOUSE_LOTS, lotById, lotLocalToWorld, workPosition, type Lot } from '@/game/world/cityLayout';
 import type { GameState } from '@/game/simulation/types';
 import { collectHouseOccluders } from '../buildings/HouseBuilder';
-import { cameraPosition, NO_SAFE_AREA, registeredOccluders, registerOccluders, solveClearView, tagOccluder, type SafeArea, type ViewSpec } from './cameraOcclusion';
+import { cameraPosition, NO_SAFE_AREA, registeredOccluders, registerOccluders, segmentBlocked, solveClearView, tagOccluder, type SafeArea, type ViewSpec } from './cameraOcclusion';
 import { composeView, scoreView, type Composed, type RuleTuning, type ServiceMode, type Subject } from './cameraComposition';
 import { obstaclesNear } from './cameraObstacles';
 
@@ -136,9 +136,11 @@ export interface ServiceViewOptions {
   standing?: boolean;
   /** Keep close to this heading (following the technician as he walks: no swings between updates). */
   keepAzimuth?: number;
+  /** How strongly to keep it (cost per radian; default 3, nearly fixed). */
+  keepWeight?: number;
   /**
    * Walking: where he will be further along his way. The view follows him by sliding (CameraRig
-   * track, WALK_TRACK_WEIGHT), so the walking shot is only taken if, slid that far, it still sees him
+   * track, walkFocus), so the walking shot is only taken if, slid that far, it still sees him
    * at each of these points.
    */
   ahead?: { x: number; z: number }[];
@@ -207,6 +209,21 @@ export function serviceSubject(lot: Lot, mode: ServiceMode, opts: ServiceViewOpt
   }
   const techFacing = { x: tech.x, z: tech.z, facing };
   const bag = bagWorldPosition(lot);
+  if (opts.standing && opts.techPos) {
+    // Walking up: he is the subject, with the way ahead of him (at most WALK_REACH of it, ending at the unit),
+    // so the group stays compact while he is still far off. His head and body in sight, and the unit top once
+    // it is within reach; his hands and the panel come into play once he kneels.
+    const k = Math.min(1, WALK_REACH / d);
+    const a = { x: tech.x + (unit.x - tech.x) * k, z: tech.z + (unit.z - tech.z) * k };
+    const near = k === 1;
+    const ahead = near
+      ? [corner(1, 1, top), corner(1, -1, top), corner(-1, 1, top), corner(-1, -1, top), corner(1, 1, 0.02), corner(1, -1, 0.02), corner(-1, 1, 0.02), corner(-1, -1, 0.02)]
+      : [P(a.x + px * 0.5, 0.02, a.z + pz * 0.5), P(a.x - px * 0.5, 0.02, a.z - pz * 0.5), P(a.x, 1.0, a.z)];
+    const frame = [P(tech.x, head + 0.08, tech.z), P(tech.x - ux * 0.4, 0.02, tech.z - uz * 0.4), ...ahead];
+    const key = [P(tech.x, head, tech.z), P(tech.x, 1.0, tech.z), ...(near ? [P(unit.x, top, unit.z)] : [])];
+    const f = walkFocus(tech, unit);
+    return { frame, key, focus: P(f.x, 0.55, f.z), tech: techFacing, preferredAzimuth: preferred };
+  }
   if (mode === 'work' || opts.phase === 'arrival' || opts.standing) {
     const frame = [
       P(tech.x, head + 0.08, tech.z),
@@ -215,9 +232,7 @@ export function serviceSubject(lot: Lot, mode: ServiceMode, opts: ServiceViewOpt
       corner(1, 1, 0.02), corner(1, -1, 0.02), corner(-1, 1, 0.02), corner(-1, -1, 0.02),
       ...(opts.techPos ? [] : [P(bag.x, 0.25, bag.z)]),
     ];
-    // Walking up he is the subject, with the unit he heads for: his head and body and the unit top in sight (his hands and the panel come into play once he kneels).
-    const key = opts.standing ? [P(tech.x, head, tech.z), P(tech.x, 1.0, tech.z), P(unit.x, top, unit.z)] : [P(tech.x, head, tech.z), hands, P(unit.x, top, unit.z), panel];
-    return { frame, key, focus: P((tech.x + unit.x) / 2, 0.55, (tech.z + unit.z) / 2), tech: techFacing, preferredAzimuth: preferred };
+    return { frame, key: [P(tech.x, head, tech.z), hands, P(unit.x, top, unit.z), panel], focus: P((tech.x + unit.x) / 2, 0.55, (tech.z + unit.z) / 2), tech: techFacing, preferredAzimuth: preferred };
   }
   if (opts.phase === 'repair') {
     // The tool works on the cabinet near the technician: frame head, hands, the near top edge and the panel.
@@ -245,6 +260,13 @@ export function serviceObstacles(lot: Lot, mode: ServiceMode, focus: { x: number
     const unit = condenserPosition(lot);
     const half = (lot.style === 'premium' ? 1.08 : 0.92) / 2 - 0.03;
     out.push(tagOccluder(new THREE.Box3(new THREE.Vector3(unit.x - half, 0, unit.z - half), new THREE.Vector3(unit.x + half, (lot.style === 'premium' ? 1.1 : 0.96) - 0.03, unit.z + half)), 'subject'));
+    // The van parked at the curb (any fleet model, ladder rack included): he steps out of its curb-side door,
+    // so a camera on the street side behind it would lose him. Curb parking runs along a lot axis.
+    const van = curbParking(lot);
+    const along = Math.abs(Math.sin(van.heading)) > 0.5;
+    const hx = along ? 2.95 : 1.0;
+    const hz = along ? 1.0 : 2.95;
+    out.push(tagOccluder(new THREE.Box3(new THREE.Vector3(van.x - hx, 0, van.z - hz), new THREE.Vector3(van.x + hx, 2.45, van.z + hz)), 'wall'));
   }
   return out;
 }
@@ -256,20 +278,68 @@ function cabinetBox(lot: Lot) {
   return { min: { x: unit.x - half, y: 0, z: unit.z - half }, max: { x: unit.x + half, y: lot.style === 'premium' ? 1.1 : 0.96, z: unit.z + half } };
 }
 
-/** A composed view as a camera command (ground orbit target on the same sight line as the aim point). */
-function toCommand(view: Composed, lot: Lot, subject: Subject) {
+/** A camera pose as CameraRig flies it: an orbit around a target on the ground. */
+export interface Orbit {
+  target: { x: number; z: number };
+  azimuth: number;
+  elevation: number;
+  distance: number;
+}
+
+/** The same view with its orbit target on the ground, on the sight line through the aim point. */
+function groundOrbit(view: ViewSpec): Orbit {
   const cam = cameraPosition(view);
   const s = view.target;
   const t = cam.y / Math.max(1e-3, cam.y - s.y);
-  const ground = { x: cam.x + (s.x - cam.x) * t, z: cam.z + (s.z - cam.z) * t };
-  const distance = Math.hypot(cam.x - ground.x, cam.y, cam.z - ground.z);
+  const target = { x: cam.x + (s.x - cam.x) * t, z: cam.z + (s.z - cam.z) * t };
+  const distance = Math.hypot(cam.x - target.x, cam.y, cam.z - target.z);
+  return { target, azimuth: view.azimuth, elevation: Math.asin(cam.y / distance), distance };
+}
+
+const orbitView = (o: Orbit): ViewSpec => ({ target: { x: o.target.x, y: 0, z: o.target.z }, azimuth: o.azimuth, elevation: o.elevation, distance: o.distance });
+
+/**
+ * How the view follows the technician from where he was framed (`from`) to his work spot: it starts as the walking
+ * shot (`start`) and, in step with the distance he has covered, turns and moves into the Watch Work shot it will end
+ * as (`end`), so reaching the unit needs no further flight. When the end is the start slid along, it only slides.
+ */
+export interface WalkPlan {
+  from: { x: number; z: number };
+  spot: { x: number; z: number };
+  unit: { x: number; z: number };
+  start: Orbit;
+  end: Orbit;
+}
+
+/** Over the last this many metres of his walk the followed view turns into the Watch Work shot. */
+const WALK_SETTLE = 5;
+
+/** The view a walk plan gives with the technician at p (CameraRig follows it every frame). */
+export function walkPose(plan: WalkPlan, p: { x: number; z: number }): Orbit {
+  // It slides along with him, and turns into the end shot over the last WALK_SETTLE metres.
+  const settle = Math.min(WALK_SETTLE, Math.hypot(plan.spot.x - plan.from.x, plan.spot.z - plan.from.z)) || 1;
+  const e = ease(1 - Math.hypot(plan.spot.x - p.x, plan.spot.z - p.z) / settle);
+  // Each pose's target relative to the walking aim point (start) or the work shot's (end), blended.
+  const f0 = walkFocus(plan.from, plan.unit);
+  const f1 = walkFocus(plan.spot, plan.unit);
+  const f = walkFocus(p, plan.unit);
+  const dx = (plan.start.target.x - f0.x) * (1 - e) + (plan.end.target.x - f1.x) * e;
+  const dz = (plan.start.target.z - f0.z) * (1 - e) + (plan.end.target.z - f1.z) * e;
+  const turn = Math.atan2(Math.sin(plan.end.azimuth - plan.start.azimuth), Math.cos(plan.end.azimuth - plan.start.azimuth));
+  return {
+    target: { x: f.x + dx, z: f.z + dz },
+    azimuth: plan.start.azimuth + turn * e,
+    elevation: plan.start.elevation + (plan.end.elevation - plan.start.elevation) * e,
+    distance: plan.start.distance + (plan.end.distance - plan.start.distance) * e,
+  };
+}
+
+/** A composed view as a camera command (ground orbit target on the same sight line as the aim point). */
+function toCommand(view: Composed, lot: Lot, subject: Subject) {
   return {
     type: 'focus' as const,
-    target: ground,
+    ...groundOrbit(view),
     targetY: 0,
-    distance,
-    azimuth: view.azimuth,
-    elevation: Math.asin(cam.y / distance),
     orbit: true,
     service: true,
     watch: { lotIds: nearbyLotIds(lot), points: subject.key, cabinet: cabinetBox(lot) },
@@ -281,7 +351,7 @@ function toCommand(view: Composed, lot: Lot, subject: Subject) {
  * street-side camera is behind him) and from farther off while he is still far from it, with the
  * body and the unit in sight instead of the hands and panel.
  */
-export const WALKING: RuleTuning = { maxDistance: 20, sideReject: null, side: [0.4, 2.7], fill: 0.5 };
+export const WALKING: RuleTuning = { maxDistance: 20, sideReject: null, side: [0.4, 2.7], fill: 0.5, elevations: [0.24, 0.32, 0.42, 0.52, 0.62], band: [0.27, 0.52] };
 
 /**
  * A short, wide free area (landscape phones under the HUD, camera bar and action bar): the property
@@ -289,8 +359,41 @@ export const WALKING: RuleTuning = { maxDistance: 20, sideReject: null, side: [0
  */
 const SHORT_SCREEN_PROPERTY: RuleTuning = { maxDistance: 90, elevations: [0.36, 0.44, 0.52, 0.62], band: [0.4, 0.68] };
 
-/** How far the walking shot's aim point moves per metre the technician walks (its focus is midway between him and the unit). */
-export const WALK_TRACK_WEIGHT = 0.5;
+/**
+ * Why a view following the walking technician no longer works, or null while it does: the camera inside something,
+ * his head, body or (when near) the unit top off the free part of the screen or under a UI card, or his head and body
+ * both out of sight. Brushing
+ * past a bush or his head briefly behind a post is not a reason to re-aim. The director checks this as he walks;
+ * a walking shot is picked so that it holds further along his way.
+ */
+export function followFailure(v: ViewSpec, lot: Lot, techPos: { x: number; z: number }, aspect: number, safe: SafeArea, subject = serviceSubject(lot, 'work', { techPos, standing: true }), boxes = serviceObstacles(lot, 'work', subject.focus)): string | null {
+  // On screen: his head and body (and the unit top when near), not necessarily every corner of the group.
+  const r = scoreView(v, { ...subject, frame: [subject.frame[0], ...subject.key] }, boxes, aspect, 'work', safe, false, { ...WALKING, clearanceScale: 0 });
+  if (typeof r === 'string') return r;
+  const cam = cameraPosition(v);
+  const hidden = [1.75, 1.0].every((y) => segmentBlocked(cam, new THREE.Vector3(techPos.x, y, techPos.z), boxes));
+  return hidden ? 'technician hidden' : null;
+}
+
+/**
+ * Shares of the walk from where he is to his spot at which a walking shot must still see him (the last metre or so,
+ * where he kneels down, the arrival framing covers).
+ */
+export const WALK_AHEAD = [0.12, 0.25, 0.37, 0.5, 0.62, 0.74, 0.85];
+
+/** How much of the way ahead a walking shot frames with him (m). */
+export const WALK_REACH = 4.5;
+
+/**
+ * Where a walking shot aims: midway between him and the point WALK_REACH ahead of him toward the unit (the unit
+ * itself once he is that close). The followed view slides as this point moves: as fast as he walks while he is
+ * far off, half as fast over the last metres.
+ */
+export function walkFocus(tech: { x: number; z: number }, unit: { x: number; z: number }): { x: number; z: number } {
+  const d = Math.hypot(unit.x - tech.x, unit.z - tech.z);
+  const k = d > 0 ? Math.min(1, WALK_REACH / d) / 2 : 0;
+  return { x: tech.x + (unit.x - tech.x) * k, z: tech.z + (unit.z - tech.z) * k };
+}
 
 /**
  * The camera for a service mode at a lot: the best-composed view (cameraComposition.ts) for this
@@ -299,34 +402,72 @@ export const WALK_TRACK_WEIGHT = 0.5;
  */
 export function serviceViewCamera(lot: Lot, mode: ServiceMode, aspect: number, safe: SafeArea = NO_SAFE_AREA, opts: ServiceViewOptions = {}) {
   const t0 = performance.now();
-  const walking = opts.standing && opts.techPos;
-  // Walking: each later position of his, with what the slid view must see there.
-  const ahead = walking
-    ? (opts.ahead ?? []).map((p) => {
-        const s = serviceSubject(lot, 'work', { ...opts, techPos: p });
-        return { dx: (p.x - opts.techPos!.x) * WALK_TRACK_WEIGHT, dz: (p.z - opts.techPos!.z) * WALK_TRACK_WEIGHT, subject: s, boxes: serviceObstacles(lot, 'work', s.focus) };
-      })
-    : [];
-  const stillSeesHim = (v: ViewSpec) => ahead.every((a) => typeof scoreView({ ...v, target: { x: v.target.x + a.dx, y: v.target.y, z: v.target.z + a.dz } }, a.subject, a.boxes, aspect, 'work', safe, true, WALKING) !== 'string');
-  const tryMode = (m: ServiceMode, tune?: RuleTuning, lookAhead = true) => {
+  const walking = mode !== 'property' && opts.standing && opts.techPos;
+  if (walking) return walkingCamera(lot, aspect, safe, opts, t0);
+  const tryMode = (m: ServiceMode, tune?: RuleTuning) => {
     const subject = serviceSubject(lot, m, opts);
     if (opts.keepAzimuth !== undefined) {
       subject.preferredAzimuth = opts.keepAzimuth;
-      subject.preferWeight = 3;
+      subject.preferWeight = opts.keepWeight ?? 3;
     }
-    const walk = m !== 'property' && walking;
-    const view = composeView(subject, serviceObstacles(lot, m, subject.focus), aspect, m, safe, tune ?? (walk ? WALKING : undefined), walk && lookAhead && ahead.length ? stillSeesHim : undefined);
+    const view = composeView(subject, serviceObstacles(lot, m, subject.focus), aspect, m, safe, tune);
     return view ? { command: toCommand(view, lot, subject), report: view.report } : null;
   };
-  // Walking up to the unit there is no close work to show yet: Detail waits as Watch Work.
-  const asked = mode === 'detail' && (opts.phase === 'arrival' || opts.standing) ? 'work' : mode;
+  // Waiting at the unit for the work to start there is no close work to show yet: Detail waits as Watch Work.
+  const asked = mode === 'detail' && opts.phase === 'arrival' ? 'work' : mode;
   // Property first with its own rules, then (short landscape screens) from farther off and lower,
   // before ever falling back to the uncomposed site camera.
-  // Walking with no shot that sees him all the way: the best one for now (the director re-aims later if needed).
-  const shot = tryMode(asked) ?? (asked === 'detail' ? tryMode('work') : asked === 'property' ? tryMode('property', SHORT_SCREEN_PROPERTY) : walking ? tryMode(asked, undefined, false) : null);
+  const shot = tryMode(asked) ?? (asked === 'detail' ? tryMode('work') : asked === 'property' ? tryMode('property', SHORT_SCREEN_PROPERTY) : null);
   if (shot) return { ...shot, mode: shot.report.mode, ms: performance.now() - t0 };
   if (mode === 'property') return { command: { ...serviceSiteCamera(lot), service: true }, report: null, mode, ms: performance.now() - t0 };
   return { command: { ...serviceCloseUpCamera(lot, aspect, undefined, safe), service: true }, report: null, mode: 'work' as ServiceMode, ms: performance.now() - t0 };
+}
+
+/**
+ * The shot while he walks up (Watch Work or Detail asked) and how it follows him (WalkPlan). In order of preference:
+ * a shot that turns into the final Watch Work shot as he goes and sees him at every look-ahead point on the way; one
+ * that only slides along with him and does; the same two over the later part of the walk; the best one for now (the
+ * director re-aims if it loses him).
+ */
+function walkingCamera(lot: Lot, aspect: number, safe: SafeArea, opts: ServiceViewOptions, t0: number) {
+  const from = opts.techPos!;
+  const unit = condenserPosition(lot);
+  const spot = workPosition(lot, 0);
+  const final = serviceViewCamera(lot, 'work', aspect, safe, { phase: 'diagnosis' });
+  const end: Orbit | null = final.report ? { target: { x: final.command.target.x, z: final.command.target.z }, azimuth: final.command.azimuth, elevation: final.command.elevation, distance: final.command.distance } : null;
+  const slideEnd = (start: Orbit): Orbit => {
+    const f0 = walkFocus(from, unit);
+    const f1 = walkFocus(spot, unit);
+    return { ...start, target: { x: start.target.x - f0.x + f1.x, z: start.target.z - f0.z + f1.z } };
+  };
+  const planFor = (start: Orbit, turn: boolean): WalkPlan => ({ from, spot, unit, start, end: turn && end ? end : slideEnd(start) });
+  const ahead = (opts.ahead ?? []).map((p) => {
+    const s = serviceSubject(lot, 'work', { techPos: p, standing: true });
+    return { p, subject: s, boxes: serviceObstacles(lot, 'work', s.focus) };
+  });
+  const subject = serviceSubject(lot, 'work', opts);
+  if (opts.keepAzimuth !== undefined) {
+    subject.preferredAzimuth = opts.keepAzimuth;
+    subject.preferWeight = opts.keepWeight ?? 3;
+  }
+  const boxes = serviceObstacles(lot, 'work', subject.focus);
+  const attempt = (points: typeof ahead, turn: boolean, from = 0) => {
+    const holds = points.length
+      ? (v: ViewSpec) => {
+          const plan = planFor(groundOrbit(v), turn);
+          return points.every((a) => followFailure(orbitView(walkPose(plan, a.p)), lot, a.p, aspect, safe, a.subject, a.boxes) === null);
+        }
+      : undefined;
+    const view = composeView(subject, boxes, aspect, 'work', safe, WALKING, holds);
+    return view ? { command: toCommand(view, lot, subject), report: view.report, plan: planFor(groundOrbit(view), turn), holdsFrom: from } : null;
+  };
+  const later = ahead.slice(Math.floor(ahead.length / 2));
+  // holdsFrom: the share of the walk from which the plan is known to keep him in sight (0: all the way).
+  const walk = Math.hypot(spot.x - from.x, spot.z - from.z) || 1;
+  const laterFrom = later.length ? 1 - Math.hypot(spot.x - later[0].p.x, spot.z - later[0].p.z) / walk : 0;
+  const shot = attempt(ahead, true) ?? attempt(ahead, false) ?? attempt(later, true, laterFrom) ?? attempt(later, false, laterFrom) ?? attempt([], true);
+  if (shot) return { ...shot, mode: 'work' as ServiceMode, ms: performance.now() - t0 };
+  return { command: { ...serviceCloseUpCamera(lot, aspect, undefined, safe), service: true }, report: null, plan: null, holdsFrom: 0, mode: 'work' as ServiceMode, ms: performance.now() - t0 };
 }
 
 /**

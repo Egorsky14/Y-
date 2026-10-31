@@ -52,6 +52,8 @@ interface Rules {
   side?: [number, number];
   /** Angles beyond this (behind him) are rejected: his body hides the hands and the panel. */
   sideReject?: number;
+  /** Scale on the clearance kept from obstacles (0: only a camera inside one is turned down). */
+  clearanceScale?: number;
   /** Cost per share of the frame covered by each thing (from the ray grid). */
   weights: Record<Exclude<OccluderKind, 'subject'> | 'background' | 'foreground' | 'sky', number>;
 }
@@ -209,7 +211,7 @@ function evaluate(v: ViewSpec, subject: Subject, boxes: THREE.Box3[], mode: Serv
   const cam = aim(v);
   if (cam.y < 0.55) return 'camera too low';
   for (const b of boxes) {
-    const pad = CLEARANCE[occluderKind(b)];
+    const pad = CLEARANCE[occluderKind(b)] * (rules.clearanceScale ?? 1);
     if (cam.x > b.min.x - pad && cam.x < b.max.x + pad && cam.y > b.min.y - pad && cam.y < b.max.y + pad && cam.z > b.min.z - pad && cam.z < b.max.z + pad) return `camera within clearance of ${occluderKind(b)}`;
   }
   let sideAngle: number | undefined;
