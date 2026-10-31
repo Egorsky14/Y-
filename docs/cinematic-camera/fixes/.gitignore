@@ -1,0 +1,4 @@
+# Raw captures stay local; the contact sheets and filmstrip sheets hold every shot.
+/after/*/*.jpg
+/mask/**/*.jpg
+/strips/**/*.jpg

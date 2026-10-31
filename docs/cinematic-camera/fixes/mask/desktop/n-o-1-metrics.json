@@ -1,0 +1,3594 @@
+{
+ "profile": "desktop",
+ "size": "1920x1080",
+ "lot": "n-o-1",
+ "profileBuild": true,
+ "shots": {
+  "work-walking": {
+   "cam": [
+    -111.21,
+    2.06,
+    -108.33
+   ],
+   "tech": [
+    -118.54,
+    -120.98
+   ],
+   "distToTech": 14.66,
+   "elevationDeg": 4.1,
+   "serviceView": {
+    "requested": "work",
+    "mode": "work",
+    "phase": "arrival",
+    "reason": "mode",
+    "walking": true,
+    "ms": 23.9,
+    "report": {
+     "mode": "work",
+     "fill": 0.6036693555086137,
+     "center": [
+      0.01732280145192716,
+      0.15414245050049566
+     ],
+     "roof": 0,
+     "wall": 0.20634920634920634,
+     "background": 0,
+     "plant": 0.07936507936507936,
+     "pole": 0.047619047619047616,
+     "sky": 0.015873015873015872,
+     "foreground": 0,
+     "azimuth": 1.7446966841466711,
+     "elevation": 0.24,
+     "distance": 6.332756918302919,
+     "sideAngle": 1.1359737070555858,
+     "cost": 1.653317507896079
+    },
+    "aspect": 1.778,
+    "safe": {
+     "right": 0,
+     "bottom": 0.0787037037037037,
+     "top": 0.08518518518518518,
+     "avoid": [
+      [
+       0.7989583333333333,
+       0.07962962962962963,
+       0.9927083333333333,
+       0.17550636574074074
+      ]
+     ]
+    }
+   },
+   "ui": {
+    "hud": [
+     14,
+     14,
+     1892,
+     78
+    ],
+    "inspector": [
+     1534,
+     86,
+     372,
+     104
+    ],
+    "actionBar": [
+     14,
+     995,
+     596,
+     71
+    ],
+    "worldControls": [
+     1362,
+     1014,
+     544,
+     52
+    ],
+    "serviceBar": [
+     806,
+     1016,
+     307,
+     50
+    ],
+    "toasts": [
+     14,
+     86,
+     340,
+     260
+    ],
+    "inspectorCompact": true
+   },
+   "mask": {
+    "tech": {
+     "visible": 0.119,
+     "pixels": 47428,
+     "screenShare": 0.0229,
+     "box": [
+      0.077,
+      0.173,
+      0.158,
+      0.461
+     ],
+     "heightShare": 0.461,
+     "underUi": 0
+    },
+    "kit": {
+     "visible": 0,
+     "pixels": 0,
+     "screenShare": 0,
+     "box": null,
+     "heightShare": 0,
+     "underUi": 0
+    }
+   },
+   "at": 1793428431387
+  },
+  "work": {
+   "cam": [
+    -122.19,
+    2.37,
+    -119.34
+   ],
+   "tech": [
+    -118.54,
+    -120.98
+   ],
+   "distToTech": 4.23,
+   "elevationDeg": 18.9,
+   "serviceView": {
+    "requested": "work",
+    "mode": "work",
+    "phase": "diagnosis",
+    "reason": "arrived",
+    "walking": false,
+    "ms": 2.3,
+    "report": {
+     "mode": "work",
+     "fill": 0.5520566752369356,
+     "center": [
+      -0.06297648331361899,
+      0.03823371942320858
+     ],
+     "roof": 0,
+     "wall": 0.47619047619047616,
+     "background": 0,
+     "plant": 0,
+     "pole": 0,
+     "sky": 0,
+     "foreground": 0,
+     "azimuth": -1.0480169489644826,
+     "elevation": 0.4,
+     "distance": 4.665395032228258,
+     "sideAngle": 2.1281346678481086,
+     "cost": 1.1659315918866064
+    },
+    "aspect": 1.778,
+    "safe": {
+     "right": 0,
+     "bottom": 0.0787037037037037,
+     "top": 0.08518518518518518,
+     "avoid": [
+      [
+       0.7989583333333333,
+       0.07962962962962963,
+       0.9927083333333333,
+       0.17550636574074074
+      ]
+     ]
+    }
+   },
+   "ui": {
+    "hud": [
+     14,
+     14,
+     1892,
+     78
+    ],
+    "inspector": [
+     1534,
+     86,
+     372,
+     104
+    ],
+    "actionBar": [
+     14,
+     995,
+     596,
+     71
+    ],
+    "worldControls": [
+     1362,
+     1014,
+     544,
+     52
+    ],
+    "serviceBar": [
+     806,
+     1016,
+     307,
+     50
+    ],
+    "inspectorCompact": true
+   },
+   "mask": {
+    "tech": {
+     "visible": 0.899,
+     "pixels": 98303,
+     "screenShare": 0.0474,
+     "box": [
+      0.454,
+      0.214,
+      0.209,
+      0.594
+     ],
+     "heightShare": 0.594,
+     "underUi": 0
+    },
+    "kit": {
+     "visible": 0.521,
+     "pixels": 100923,
+     "screenShare": 0.0487,
+     "box": [
+      0.479,
+      0.386,
+      0.349,
+      0.614
+     ],
+     "heightShare": 0.614,
+     "underUi": 0.089
+    }
+   },
+   "at": 1793428448958
+  },
+  "property": {
+   "cam": [
+    -125.43,
+    33.47,
+    -71.17
+   ],
+   "tech": [
+    -118.54,
+    -120.98
+   ],
+   "distToTech": 59.86,
+   "elevationDeg": 32.9,
+   "serviceView": {
+    "requested": "property",
+    "mode": "property",
+    "phase": "diagnosis",
+    "reason": "mode",
+    "walking": false,
+    "ms": 8,
+    "report": {
+     "mode": "property",
+     "fill": 0.8700105748166046,
+     "center": [
+      -0.02425884169667822,
+      -0.0008559558833999281
+     ],
+     "roof": 0.12698412698412698,
+     "wall": 0.047619047619047616,
+     "background": 0.015873015873015872,
+     "plant": 0.09523809523809523,
+     "pole": 0,
+     "sky": 0.15873015873015872,
+     "foreground": 0.07936507936507936,
+     "azimuth": -0.38527435816435796,
+     "elevation": 0.5599999999999999,
+     "distance": 60,
+     "cost": 0.7898258060861345
+    },
+    "aspect": 1.778,
+    "safe": {
+     "right": 0,
+     "bottom": 0.0787037037037037,
+     "top": 0.08518518518518518,
+     "avoid": [
+      [
+       0.7989583333333333,
+       0.07962962962962963,
+       0.9927083333333333,
+       0.17550636574074074
+      ]
+     ]
+    }
+   },
+   "ui": {
+    "hud": [
+     14,
+     14,
+     1892,
+     78
+    ],
+    "inspector": [
+     1534,
+     86,
+     372,
+     104
+    ],
+    "actionBar": [
+     14,
+     995,
+     596,
+     71
+    ],
+    "worldControls": [
+     1362,
+     1014,
+     544,
+     52
+    ],
+    "serviceBar": [
+     806,
+     1016,
+     307,
+     50
+    ],
+    "inspectorCompact": true
+   },
+   "mask": {
+    "tech": {
+     "visible": 0.945,
+     "pixels": 490,
+     "screenShare": 0.0002,
+     "box": [
+      0.322,
+      0.529,
+      0.014,
+      0.041
+     ],
+     "heightShare": 0.041,
+     "underUi": 0
+    },
+    "kit": {
+     "visible": 0.55,
+     "pixels": 409,
+     "screenShare": 0.0002,
+     "box": [
+      0.319,
+      0.54,
+      0.024,
+      0.046
+     ],
+     "heightShare": 0.046,
+     "underUi": 0
+    }
+   },
+   "at": 1793428452311
+  },
+  "work-from-property": {
+   "cam": [
+    -122.19,
+    2.37,
+    -119.34
+   ],
+   "tech": [
+    -118.54,
+    -120.98
+   ],
+   "distToTech": 4.23,
+   "elevationDeg": 18.9,
+   "serviceView": {
+    "requested": "work",
+    "mode": "work",
+    "phase": "diagnosis",
+    "reason": "mode",
+    "walking": false,
+    "ms": 2.4,
+    "report": {
+     "mode": "work",
+     "fill": 0.5520566752369356,
+     "center": [
+      -0.06297648331361899,
+      0.03823371942320858
+     ],
+     "roof": 0,
+     "wall": 0.47619047619047616,
+     "background": 0,
+     "plant": 0,
+     "pole": 0,
+     "sky": 0,
+     "foreground": 0,
+     "azimuth": -1.0480169489644826,
+     "elevation": 0.4,
+     "distance": 4.665395032228258,
+     "sideAngle": 2.1281346678481086,
+     "cost": 1.1659315918866064
+    },
+    "aspect": 1.778,
+    "safe": {
+     "right": 0,
+     "bottom": 0.0787037037037037,
+     "top": 0.08518518518518518,
+     "avoid": [
+      [
+       0.7989583333333333,
+       0.07962962962962963,
+       0.9927083333333333,
+       0.17550636574074074
+      ]
+     ]
+    }
+   },
+   "ui": {
+    "hud": [
+     14,
+     14,
+     1892,
+     78
+    ],
+    "inspector": [
+     1534,
+     86,
+     372,
+     104
+    ],
+    "actionBar": [
+     14,
+     995,
+     596,
+     71
+    ],
+    "worldControls": [
+     1362,
+     1014,
+     544,
+     52
+    ],
+    "serviceBar": [
+     806,
+     1016,
+     307,
+     50
+    ],
+    "inspectorCompact": true
+   },
+   "mask": {
+    "tech": {
+     "visible": 0.899,
+     "pixels": 98303,
+     "screenShare": 0.0474,
+     "box": [
+      0.454,
+      0.214,
+      0.209,
+      0.594
+     ],
+     "heightShare": 0.594,
+     "underUi": 0
+    },
+    "kit": {
+     "visible": 0.521,
+     "pixels": 100923,
+     "screenShare": 0.0487,
+     "box": [
+      0.479,
+      0.386,
+      0.349,
+      0.614
+     ],
+     "heightShare": 0.614,
+     "underUi": 0.089
+    }
+   },
+   "at": 1793428455672
+  },
+  "detail": {
+   "cam": [
+    -120.96,
+    1.76,
+    -119.88
+   ],
+   "tech": [
+    -118.54,
+    -120.98
+   ],
+   "distToTech": 2.76,
+   "elevationDeg": 16,
+   "serviceView": {
+    "requested": "detail",
+    "mode": "detail",
+    "phase": "diagnosis",
+    "reason": "mode",
+    "walking": false,
+    "ms": 2.2,
+    "report": {
+     "mode": "detail",
+     "fill": 0.6799156838024538,
+     "center": [
+      -0.013667149467962589,
+      -0.09657510842233036
+     ],
+     "roof": 0,
+     "wall": 0.47619047619047616,
+     "background": 0,
+     "plant": 0,
+     "pole": 0,
+     "sky": 0,
+     "foreground": 0,
+     "azimuth": -1.0130169489644827,
+     "elevation": 0.36,
+     "distance": 3.1209332963694387,
+     "sideAngle": 2.1353850479745566,
+     "cost": 1.056576495829095
+    },
+    "aspect": 1.778,
+    "safe": {
+     "right": 0,
+     "bottom": 0.0787037037037037,
+     "top": 0.08518518518518518,
+     "avoid": [
+      [
+       0.7989583333333333,
+       0.07962962962962963,
+       0.9927083333333333,
+       0.17550636574074074
+      ]
+     ]
+    }
+   },
+   "ui": {
+    "hud": [
+     14,
+     14,
+     1892,
+     78
+    ],
+    "inspector": [
+     1534,
+     86,
+     372,
+     104
+    ],
+    "actionBar": [
+     14,
+     995,
+     596,
+     71
+    ],
+    "worldControls": [
+     1362,
+     1014,
+     544,
+     52
+    ],
+    "serviceBar": [
+     806,
+     1016,
+     307,
+     50
+    ],
+    "inspectorCompact": true
+   },
+   "mask": {
+    "tech": {
+     "visible": 0.9,
+     "pixels": 232755,
+     "screenShare": 0.1122,
+     "box": [
+      0.412,
+      0.094,
+      0.318,
+      0.906
+     ],
+     "heightShare": 0.906,
+     "underUi": 0.018
+    },
+    "kit": {
+     "visible": 0.675,
+     "pixels": 77036,
+     "screenShare": 0.0372,
+     "box": [
+      0.453,
+      0.365,
+      0.456,
+      0.635
+     ],
+     "heightShare": 0.635,
+     "underUi": 0.113
+    }
+   },
+   "at": 1793428459042
+  },
+  "property-from-detail": {
+   "cam": [
+    -125.43,
+    33.47,
+    -71.17
+   ],
+   "tech": [
+    -118.54,
+    -120.98
+   ],
+   "distToTech": 59.86,
+   "elevationDeg": 32.9,
+   "serviceView": {
+    "requested": "property",
+    "mode": "property",
+    "phase": "diagnosis",
+    "reason": "mode",
+    "walking": false,
+    "ms": 6,
+    "report": {
+     "mode": "property",
+     "fill": 0.8700105748166046,
+     "center": [
+      -0.02425884169667822,
+      -0.0008559558833999281
+     ],
+     "roof": 0.12698412698412698,
+     "wall": 0.047619047619047616,
+     "background": 0.015873015873015872,
+     "plant": 0.09523809523809523,
+     "pole": 0,
+     "sky": 0.15873015873015872,
+     "foreground": 0.07936507936507936,
+     "azimuth": -0.38527435816435796,
+     "elevation": 0.5599999999999999,
+     "distance": 60,
+     "cost": 0.7898258060861345
+    },
+    "aspect": 1.778,
+    "safe": {
+     "right": 0,
+     "bottom": 0.0787037037037037,
+     "top": 0.08518518518518518,
+     "avoid": [
+      [
+       0.7989583333333333,
+       0.07962962962962963,
+       0.9927083333333333,
+       0.17550636574074074
+      ]
+     ]
+    }
+   },
+   "ui": {
+    "hud": [
+     14,
+     14,
+     1892,
+     78
+    ],
+    "inspector": [
+     1534,
+     86,
+     372,
+     104
+    ],
+    "actionBar": [
+     14,
+     995,
+     596,
+     71
+    ],
+    "worldControls": [
+     1362,
+     1014,
+     544,
+     52
+    ],
+    "serviceBar": [
+     806,
+     1016,
+     307,
+     50
+    ],
+    "inspectorCompact": true
+   },
+   "mask": {
+    "tech": {
+     "visible": 0.945,
+     "pixels": 490,
+     "screenShare": 0.0002,
+     "box": [
+      0.322,
+      0.529,
+      0.014,
+      0.041
+     ],
+     "heightShare": 0.041,
+     "underUi": 0
+    },
+    "kit": {
+     "visible": 0.55,
+     "pixels": 409,
+     "screenShare": 0.0002,
+     "box": [
+      0.319,
+      0.54,
+      0.024,
+      0.046
+     ],
+     "heightShare": 0.046,
+     "underUi": 0
+    }
+   },
+   "at": 1793428462394
+  },
+  "detail-from-property": {
+   "cam": [
+    -120.96,
+    1.76,
+    -119.88
+   ],
+   "tech": [
+    -118.54,
+    -120.98
+   ],
+   "distToTech": 2.76,
+   "elevationDeg": 16,
+   "serviceView": {
+    "requested": "detail",
+    "mode": "detail",
+    "phase": "diagnosis",
+    "reason": "mode",
+    "walking": false,
+    "ms": 1.9,
+    "report": {
+     "mode": "detail",
+     "fill": 0.6799156838024538,
+     "center": [
+      -0.013667149467962589,
+      -0.09657510842233036
+     ],
+     "roof": 0,
+     "wall": 0.47619047619047616,
+     "background": 0,
+     "plant": 0,
+     "pole": 0,
+     "sky": 0,
+     "foreground": 0,
+     "azimuth": -1.0130169489644827,
+     "elevation": 0.36,
+     "distance": 3.1209332963694387,
+     "sideAngle": 2.1353850479745566,
+     "cost": 1.056576495829095
+    },
+    "aspect": 1.778,
+    "safe": {
+     "right": 0,
+     "bottom": 0.0787037037037037,
+     "top": 0.08518518518518518,
+     "avoid": [
+      [
+       0.7989583333333333,
+       0.07962962962962963,
+       0.9927083333333333,
+       0.17550636574074074
+      ]
+     ]
+    }
+   },
+   "ui": {
+    "hud": [
+     14,
+     14,
+     1892,
+     78
+    ],
+    "inspector": [
+     1534,
+     86,
+     372,
+     104
+    ],
+    "actionBar": [
+     14,
+     995,
+     596,
+     71
+    ],
+    "worldControls": [
+     1362,
+     1014,
+     544,
+     52
+    ],
+    "serviceBar": [
+     806,
+     1016,
+     307,
+     50
+    ],
+    "inspectorCompact": true
+   },
+   "mask": {
+    "tech": {
+     "visible": 0.9,
+     "pixels": 232755,
+     "screenShare": 0.1122,
+     "box": [
+      0.412,
+      0.094,
+      0.318,
+      0.906
+     ],
+     "heightShare": 0.906,
+     "underUi": 0.018
+    },
+    "kit": {
+     "visible": 0.675,
+     "pixels": 77036,
+     "screenShare": 0.0372,
+     "box": [
+      0.453,
+      0.365,
+      0.456,
+      0.635
+     ],
+     "heightShare": 0.635,
+     "underUi": 0.113
+    }
+   },
+   "at": 1793428465750
+  },
+  "work-again": {
+   "cam": [
+    -122.19,
+    2.37,
+    -119.34
+   ],
+   "tech": [
+    -118.54,
+    -120.98
+   ],
+   "distToTech": 4.23,
+   "elevationDeg": 18.9,
+   "serviceView": {
+    "requested": "work",
+    "mode": "work",
+    "phase": "diagnosis",
+    "reason": "mode",
+    "walking": false,
+    "ms": 2,
+    "report": {
+     "mode": "work",
+     "fill": 0.5520566752369356,
+     "center": [
+      -0.06297648331361899,
+      0.03823371942320858
+     ],
+     "roof": 0,
+     "wall": 0.47619047619047616,
+     "background": 0,
+     "plant": 0,
+     "pole": 0,
+     "sky": 0,
+     "foreground": 0,
+     "azimuth": -1.0480169489644826,
+     "elevation": 0.4,
+     "distance": 4.665395032228258,
+     "sideAngle": 2.1281346678481086,
+     "cost": 1.1659315918866064
+    },
+    "aspect": 1.778,
+    "safe": {
+     "right": 0,
+     "bottom": 0.0787037037037037,
+     "top": 0.08518518518518518,
+     "avoid": [
+      [
+       0.7989583333333333,
+       0.07962962962962963,
+       0.9927083333333333,
+       0.17550636574074074
+      ]
+     ]
+    }
+   },
+   "ui": {
+    "hud": [
+     14,
+     14,
+     1892,
+     78
+    ],
+    "inspector": [
+     1534,
+     86,
+     372,
+     104
+    ],
+    "actionBar": [
+     14,
+     995,
+     596,
+     71
+    ],
+    "worldControls": [
+     1362,
+     1014,
+     544,
+     52
+    ],
+    "serviceBar": [
+     806,
+     1016,
+     307,
+     50
+    ],
+    "inspectorCompact": true
+   },
+   "mask": {
+    "tech": {
+     "visible": 0.899,
+     "pixels": 98303,
+     "screenShare": 0.0474,
+     "box": [
+      0.454,
+      0.214,
+      0.209,
+      0.594
+     ],
+     "heightShare": 0.594,
+     "underUi": 0
+    },
+    "kit": {
+     "visible": 0.521,
+     "pixels": 100923,
+     "screenShare": 0.0487,
+     "box": [
+      0.479,
+      0.386,
+      0.349,
+      0.614
+     ],
+     "heightShare": 0.614,
+     "underUi": 0.089
+    }
+   },
+   "at": 1793428469142
+  },
+  "work-inspector": {
+   "cam": [
+    -122.37,
+    1.94,
+    -119.92
+   ],
+   "tech": [
+    -118.54,
+    -120.98
+   ],
+   "distToTech": 4.08,
+   "elevationDeg": 13.3,
+   "serviceView": {
+    "requested": "work",
+    "mode": "work",
+    "phase": "diagnosis",
+    "reason": "layout",
+    "walking": false,
+    "ms": 2.1,
+    "report": {
+     "mode": "work",
+     "fill": 0.5531026704313688,
+     "center": [
+      -0.10252540190486911,
+      0.004152659575161033
+     ],
+     "roof": 0,
+     "wall": 0.4603174603174603,
+     "background": 0,
+     "plant": 0,
+     "pole": 0,
+     "sky": 0,
+     "foreground": 0,
+     "azimuth": -1.1874564592038022,
+     "elevation": 0.32,
+     "distance": 4.4312145449960285,
+     "sideAngle": 1.9779196994735513,
+     "cost": 1.0838321705509062
+    },
+    "aspect": 1.778,
+    "safe": {
+     "right": 0.20104166666666667,
+     "bottom": 0.0787037037037037,
+     "top": 0.08518518518518518,
+     "avoid": []
+    }
+   },
+   "ui": {
+    "hud": [
+     14,
+     14,
+     1892,
+     78
+    ],
+    "inspector": [
+     1534,
+     86,
+     372,
+     761
+    ],
+    "actionBar": [
+     14,
+     995,
+     596,
+     71
+    ],
+    "worldControls": [
+     1362,
+     1014,
+     544,
+     52
+    ],
+    "serviceBar": [
+     806,
+     1016,
+     307,
+     50
+    ],
+    "inspectorCompact": false
+   },
+   "mask": {
+    "tech": {
+     "visible": 0.909,
+     "pixels": 104688,
+     "screenShare": 0.0505,
+     "box": [
+      0.361,
+      0.185,
+      0.224,
+      0.613
+     ],
+     "heightShare": 0.613,
+     "underUi": 0
+    },
+    "kit": {
+     "visible": 0.485,
+     "pixels": 103157,
+     "screenShare": 0.0497,
+     "box": [
+      0.381,
+      0.372,
+      0.38,
+      0.611
+     ],
+     "heightShare": 0.611,
+     "underUi": 0.035
+    }
+   },
+   "at": 1793428472494
+  },
+  "repair-auto": {
+   "cam": [
+    -122.19,
+    2.37,
+    -119.34
+   ],
+   "tech": [
+    -118.54,
+    -120.98
+   ],
+   "distToTech": 4.23,
+   "elevationDeg": 18.9,
+   "serviceView": {
+    "requested": "work",
+    "mode": "work",
+    "phase": "repair",
+    "reason": "phase",
+    "walking": false,
+    "ms": 2.6,
+    "report": {
+     "mode": "work",
+     "fill": 0.5520566752369356,
+     "center": [
+      -0.06297648331361899,
+      0.03823371942320858
+     ],
+     "roof": 0,
+     "wall": 0.47619047619047616,
+     "background": 0,
+     "plant": 0,
+     "pole": 0,
+     "sky": 0,
+     "foreground": 0,
+     "azimuth": -1.0480169489644826,
+     "elevation": 0.4,
+     "distance": 4.665395032228258,
+     "sideAngle": 2.1281346678481086,
+     "cost": 1.1659315918866064
+    },
+    "aspect": 1.778,
+    "safe": {
+     "right": 0,
+     "bottom": 0.0787037037037037,
+     "top": 0.08518518518518518,
+     "avoid": [
+      [
+       0.7989583333333333,
+       0.07962962962962963,
+       0.9927083333333333,
+       0.17550636574074074
+      ]
+     ]
+    }
+   },
+   "ui": {
+    "hud": [
+     14,
+     14,
+     1892,
+     78
+    ],
+    "inspector": [
+     1534,
+     86,
+     372,
+     104
+    ],
+    "actionBar": [
+     14,
+     995,
+     596,
+     71
+    ],
+    "worldControls": [
+     1362,
+     1014,
+     544,
+     52
+    ],
+    "serviceBar": [
+     806,
+     1016,
+     307,
+     50
+    ],
+    "inspectorCompact": true
+   },
+   "mask": {
+    "tech": {
+     "visible": 0.905,
+     "pixels": 102220,
+     "screenShare": 0.0493,
+     "box": [
+      0.454,
+      0.207,
+      0.209,
+      0.601
+     ],
+     "heightShare": 0.601,
+     "underUi": 0
+    },
+    "kit": {
+     "visible": 0.512,
+     "pixels": 100860,
+     "screenShare": 0.0486,
+     "box": [
+      0.479,
+      0.386,
+      0.349,
+      0.614
+     ],
+     "heightShare": 0.614,
+     "underUi": 0.089
+    }
+   },
+   "at": 1793428523109
+  },
+  "work-repair": {
+   "cam": [
+    -122.19,
+    2.37,
+    -119.34
+   ],
+   "tech": [
+    -118.54,
+    -120.98
+   ],
+   "distToTech": 4.23,
+   "elevationDeg": 18.9,
+   "serviceView": {
+    "requested": "work",
+    "mode": "work",
+    "phase": "repair",
+    "reason": "mode",
+    "walking": false,
+    "ms": 1.9,
+    "report": {
+     "mode": "work",
+     "fill": 0.5520566752369356,
+     "center": [
+      -0.06297648331361899,
+      0.03823371942320858
+     ],
+     "roof": 0,
+     "wall": 0.47619047619047616,
+     "background": 0,
+     "plant": 0,
+     "pole": 0,
+     "sky": 0,
+     "foreground": 0,
+     "azimuth": -1.0480169489644826,
+     "elevation": 0.4,
+     "distance": 4.665395032228258,
+     "sideAngle": 2.1281346678481086,
+     "cost": 1.1659315918866064
+    },
+    "aspect": 1.778,
+    "safe": {
+     "right": 0,
+     "bottom": 0.0787037037037037,
+     "top": 0.08518518518518518,
+     "avoid": [
+      [
+       0.7989583333333333,
+       0.07962962962962963,
+       0.9927083333333333,
+       0.17550636574074074
+      ]
+     ]
+    }
+   },
+   "ui": {
+    "hud": [
+     14,
+     14,
+     1892,
+     78
+    ],
+    "inspector": [
+     1534,
+     86,
+     372,
+     104
+    ],
+    "actionBar": [
+     14,
+     995,
+     596,
+     71
+    ],
+    "worldControls": [
+     1362,
+     1014,
+     544,
+     52
+    ],
+    "serviceBar": [
+     806,
+     1016,
+     307,
+     50
+    ],
+    "inspectorCompact": true
+   },
+   "mask": {
+    "tech": {
+     "visible": 0.905,
+     "pixels": 102220,
+     "screenShare": 0.0493,
+     "box": [
+      0.454,
+      0.207,
+      0.209,
+      0.601
+     ],
+     "heightShare": 0.601,
+     "underUi": 0
+    },
+    "kit": {
+     "visible": 0.512,
+     "pixels": 100860,
+     "screenShare": 0.0486,
+     "box": [
+      0.479,
+      0.386,
+      0.349,
+      0.614
+     ],
+     "heightShare": 0.614,
+     "underUi": 0.089
+    }
+   },
+   "at": 1793428526466
+  },
+  "detail-repair": {
+   "cam": [
+    -120.9,
+    1.94,
+    -119.89
+   ],
+   "tech": [
+    -118.54,
+    -120.98
+   ],
+   "distToTech": 2.76,
+   "elevationDeg": 19.9,
+   "serviceView": {
+    "requested": "detail",
+    "mode": "detail",
+    "phase": "repair",
+    "reason": "mode",
+    "walking": false,
+    "ms": 1.9,
+    "report": {
+     "mode": "detail",
+     "fill": 0.6808465697809296,
+     "center": [
+      0.03182171314434851,
+      -0.1574139878964883
+     ],
+     "roof": 0,
+     "wall": 0.47619047619047616,
+     "background": 0,
+     "plant": 0,
+     "pole": 0,
+     "sky": 0,
+     "foreground": 0,
+     "azimuth": -0.9780169489644827,
+     "elevation": 0.39999999999999997,
+     "distance": 3.1937256487220083,
+     "sideAngle": 2.1392258608923678,
+     "cost": 1.130997402767999
+    },
+    "aspect": 1.778,
+    "safe": {
+     "right": 0,
+     "bottom": 0.0787037037037037,
+     "top": 0.08518518518518518,
+     "avoid": [
+      [
+       0.7989583333333333,
+       0.07962962962962963,
+       0.9927083333333333,
+       0.17550636574074074
+      ]
+     ]
+    }
+   },
+   "ui": {
+    "hud": [
+     14,
+     14,
+     1892,
+     78
+    ],
+    "inspector": [
+     1534,
+     86,
+     372,
+     104
+    ],
+    "actionBar": [
+     14,
+     995,
+     596,
+     71
+    ],
+    "worldControls": [
+     1362,
+     1014,
+     544,
+     52
+    ],
+    "serviceBar": [
+     806,
+     1016,
+     307,
+     50
+    ],
+    "inspectorCompact": true
+   },
+   "mask": {
+    "tech": {
+     "visible": 0.897,
+     "pixels": 237308,
+     "screenShare": 0.1144,
+     "box": [
+      0.433,
+      0.133,
+      0.315,
+      0.867
+     ],
+     "heightShare": 0.867,
+     "underUi": 0.025
+    },
+    "kit": {
+     "visible": 0.692,
+     "pixels": 64977,
+     "screenShare": 0.0313,
+     "box": [
+      0.476,
+      0.401,
+      0.36,
+      0.599
+     ],
+     "heightShare": 0.599,
+     "underUi": 0.027
+    }
+   },
+   "at": 1793428529835
+  },
+  "work-repair-2": {
+   "cam": [
+    -122.19,
+    2.37,
+    -119.34
+   ],
+   "tech": [
+    -118.54,
+    -120.98
+   ],
+   "distToTech": 4.23,
+   "elevationDeg": 18.9,
+   "serviceView": {
+    "requested": "work",
+    "mode": "work",
+    "phase": "repair",
+    "reason": "mode",
+    "walking": false,
+    "ms": 1.6,
+    "report": {
+     "mode": "work",
+     "fill": 0.5520566752369356,
+     "center": [
+      -0.06297648331361899,
+      0.03823371942320858
+     ],
+     "roof": 0,
+     "wall": 0.47619047619047616,
+     "background": 0,
+     "plant": 0,
+     "pole": 0,
+     "sky": 0,
+     "foreground": 0,
+     "azimuth": -1.0480169489644826,
+     "elevation": 0.4,
+     "distance": 4.665395032228258,
+     "sideAngle": 2.1281346678481086,
+     "cost": 1.1659315918866064
+    },
+    "aspect": 1.778,
+    "safe": {
+     "right": 0,
+     "bottom": 0.0787037037037037,
+     "top": 0.08518518518518518,
+     "avoid": [
+      [
+       0.7989583333333333,
+       0.07962962962962963,
+       0.9927083333333333,
+       0.17550636574074074
+      ]
+     ]
+    }
+   },
+   "ui": {
+    "hud": [
+     14,
+     14,
+     1892,
+     78
+    ],
+    "inspector": [
+     1534,
+     86,
+     372,
+     104
+    ],
+    "actionBar": [
+     14,
+     995,
+     596,
+     71
+    ],
+    "worldControls": [
+     1362,
+     1014,
+     544,
+     52
+    ],
+    "serviceBar": [
+     806,
+     1016,
+     307,
+     50
+    ],
+    "inspectorCompact": true
+   },
+   "mask": {
+    "tech": {
+     "visible": 0.905,
+     "pixels": 102220,
+     "screenShare": 0.0493,
+     "box": [
+      0.454,
+      0.207,
+      0.209,
+      0.601
+     ],
+     "heightShare": 0.601,
+     "underUi": 0
+    },
+    "kit": {
+     "visible": 0.512,
+     "pixels": 100860,
+     "screenShare": 0.0486,
+     "box": [
+      0.479,
+      0.386,
+      0.349,
+      0.614
+     ],
+     "heightShare": 0.614,
+     "underUi": 0.089
+    }
+   },
+   "at": 1793428532993
+  },
+  "after-controls": {
+   "cam": [
+    -123.84,
+    2.51,
+    -120.64
+   ],
+   "tech": [
+    -118.54,
+    -120.98
+   ],
+   "distToTech": 5.52,
+   "elevationDeg": 15.9,
+   "serviceView": {
+    "requested": "work",
+    "mode": "work",
+    "phase": "repair",
+    "reason": "mode",
+    "walking": false,
+    "ms": 1.6,
+    "report": {
+     "mode": "work",
+     "fill": 0.5520566752369356,
+     "center": [
+      -0.06297648331361899,
+      0.03823371942320858
+     ],
+     "roof": 0,
+     "wall": 0.47619047619047616,
+     "background": 0,
+     "plant": 0,
+     "pole": 0,
+     "sky": 0,
+     "foreground": 0,
+     "azimuth": -1.0480169489644826,
+     "elevation": 0.4,
+     "distance": 4.665395032228258,
+     "sideAngle": 2.1281346678481086,
+     "cost": 1.1659315918866064
+    },
+    "aspect": 1.778,
+    "safe": {
+     "right": 0,
+     "bottom": 0.0787037037037037,
+     "top": 0.08518518518518518,
+     "avoid": [
+      [
+       0.7989583333333333,
+       0.07962962962962963,
+       0.9927083333333333,
+       0.17550636574074074
+      ]
+     ]
+    }
+   },
+   "ui": {
+    "hud": [
+     14,
+     14,
+     1892,
+     78
+    ],
+    "inspector": [
+     1534,
+     86,
+     372,
+     104
+    ],
+    "actionBar": [
+     14,
+     995,
+     596,
+     71
+    ],
+    "worldControls": [
+     1362,
+     1014,
+     544,
+     52
+    ],
+    "serviceBar": [
+     806,
+     1016,
+     307,
+     50
+    ],
+    "inspectorCompact": true
+   },
+   "mask": {
+    "tech": {
+     "visible": 0.569,
+     "pixels": 61869,
+     "screenShare": 0.0298,
+     "box": [
+      0.332,
+      0.183,
+      0.17,
+      0.438
+     ],
+     "heightShare": 0.438,
+     "underUi": 0
+    },
+    "kit": {
+     "visible": 0.416,
+     "pixels": 43917,
+     "screenShare": 0.0212,
+     "box": [
+      0.338,
+      0.336,
+      0.301,
+      0.338
+     ],
+     "heightShare": 0.338,
+     "underUi": 0
+    }
+   },
+   "at": 1793428578617
+  }
+ },
+ "controls": {
+  "orbit": {
+   "before": {
+    "dist": 4.23,
+    "az": -65.9,
+    "y": 2.37
+   },
+   "released": {
+    "dist": 4.8,
+    "az": -107.2,
+    "y": 2.37
+   },
+   "moved": 3.086,
+   "driftAfter10s": 0,
+   "driftAlongView": null,
+   "serviceView": "work"
+  },
+  "zoomIn": {
+   "before": {
+    "dist": 4.8,
+    "az": -107.2,
+    "y": 2.37
+   },
+   "released": {
+    "dist": 3.46,
+    "az": -113,
+    "y": 1.81
+   },
+   "moved": 1.42,
+   "driftAfter10s": 0.058,
+   "driftAlongView": 1,
+   "serviceView": "work"
+  },
+  "zoomOut": {
+   "before": {
+    "dist": 3.4,
+    "az": -113.3,
+    "y": 1.79
+   },
+   "released": {
+    "dist": 5.16,
+    "az": -106.1,
+    "y": 2.51
+   },
+   "moved": 1.853,
+   "driftAfter10s": 0,
+   "driftAlongView": null,
+   "serviceView": "work"
+  },
+  "panAway": {
+   "before": {
+    "dist": 5.16,
+    "az": -106.1,
+    "y": 2.51
+   },
+   "released": {
+    "dist": 5.52,
+    "az": -86.4,
+    "y": 2.51
+   },
+   "moved": 1.797,
+   "driftAfter10s": 0,
+   "driftAlongView": null,
+   "serviceView": "work"
+  }
+ },
+ "errors": [],
+ "failed": [],
+ "watchButton": true,
+ "arrivedReason": "arrived",
+ "repairStatus": "repairing",
+ "repairViewMode": "work",
+ "transitions": {
+  "watch-press": {
+   "frames": 1009,
+   "dtP50": 16.7,
+   "dtP95": 16.8,
+   "dtMax": 83.3,
+   "longFrames": 1,
+   "path": 311.18,
+   "peakSpeed": 824.93,
+   "settleMs": 15000,
+   "reversals": 3,
+   "overshoot": 2.435
+  },
+  "idle": {
+   "frames": 157,
+   "dtP50": 16.7,
+   "dtP95": 16.8,
+   "dtMax": 66.7,
+   "longFrames": 1,
+   "path": 0,
+   "peakSpeed": 0,
+   "settleMs": 0,
+   "reversals": 0,
+   "overshoot": 0
+  },
+  "property": {
+   "frames": 199,
+   "dtP50": 16.7,
+   "dtP95": 16.8,
+   "dtMax": 50.1,
+   "longFrames": 1,
+   "path": 60.84,
+   "peakSpeed": 155.96,
+   "settleMs": 1158,
+   "reversals": 0,
+   "overshoot": 0
+  },
+  "work-from-property": {
+   "frames": 199,
+   "dtP50": 16.7,
+   "dtP95": 16.9,
+   "dtMax": 66.7,
+   "longFrames": 1,
+   "path": 60.84,
+   "peakSpeed": 155.18,
+   "settleMs": 1189,
+   "reversals": 0,
+   "overshoot": 0
+  },
+  "detail": {
+   "frames": 199,
+   "dtP50": 16.7,
+   "dtP95": 16.8,
+   "dtMax": 66.8,
+   "longFrames": 1,
+   "path": 1.48,
+   "peakSpeed": 3.67,
+   "settleMs": 1128,
+   "reversals": 0,
+   "overshoot": 0
+  },
+  "property-from-detail": {
+   "frames": 198,
+   "dtP50": 16.7,
+   "dtP95": 16.8,
+   "dtMax": 66.7,
+   "longFrames": 1,
+   "path": 61.46,
+   "peakSpeed": 157.63,
+   "settleMs": 1157,
+   "reversals": 0,
+   "overshoot": 0
+  },
+  "detail-from-property": {
+   "frames": 198,
+   "dtP50": 16.7,
+   "dtP95": 16.8,
+   "dtMax": 66.5,
+   "longFrames": 1,
+   "path": 61.46,
+   "peakSpeed": 158.03,
+   "settleMs": 1155,
+   "reversals": 0,
+   "overshoot": 0
+  },
+  "work-again": {
+   "frames": 198,
+   "dtP50": 16.7,
+   "dtP95": 16.8,
+   "dtMax": 100.1,
+   "longFrames": 1,
+   "path": 1.48,
+   "peakSpeed": 3.72,
+   "settleMs": 1116,
+   "reversals": 0,
+   "overshoot": 0
+  },
+  "inspector-expand": {
+   "frames": 199,
+   "dtP50": 16.7,
+   "dtP95": 16.8,
+   "dtMax": 50,
+   "longFrames": 0,
+   "path": 0.77,
+   "peakSpeed": 1.87,
+   "settleMs": 1357,
+   "reversals": 0,
+   "overshoot": 0
+  },
+  "inspector-collapse": {
+   "frames": 2784,
+   "dtP50": 16.7,
+   "dtP95": 16.8,
+   "dtMax": 17.4,
+   "longFrames": 0,
+   "path": 0.77,
+   "peakSpeed": 1.92,
+   "settleMs": 1188,
+   "reversals": 0,
+   "overshoot": 0
+  },
+  "phase-repair": {
+   "frames": 248,
+   "dtP50": 16.7,
+   "dtP95": 16.8,
+   "dtMax": 100.1,
+   "longFrames": 1,
+   "path": 0,
+   "peakSpeed": 0,
+   "settleMs": 0,
+   "reversals": 0,
+   "overshoot": 0
+  },
+  "work-repair": {
+   "frames": 199,
+   "dtP50": 16.7,
+   "dtP95": 16.8,
+   "dtMax": 50.1,
+   "longFrames": 1,
+   "path": 0,
+   "peakSpeed": 0,
+   "settleMs": 0,
+   "reversals": 0,
+   "overshoot": 0
+  },
+  "detail-repair": {
+   "frames": 200,
+   "dtP50": 16.7,
+   "dtP95": 16.8,
+   "dtMax": 66.7,
+   "longFrames": 1,
+   "path": 1.47,
+   "peakSpeed": 3.62,
+   "settleMs": 1084,
+   "reversals": 0,
+   "overshoot": 0
+  },
+  "work-repair-2": {
+   "frames": 187,
+   "dtP50": 16.7,
+   "dtP95": 16.8,
+   "dtMax": 50,
+   "longFrames": 0,
+   "path": 1.47,
+   "peakSpeed": 3.69,
+   "settleMs": 1115,
+   "reversals": 0,
+   "overshoot": 0
+  },
+  "orbit": {
+   "frames": 684,
+   "dtP50": 16.7,
+   "dtP95": 16.8,
+   "dtMax": 17.6,
+   "longFrames": 0,
+   "path": 3.13,
+   "peakSpeed": 6.31,
+   "settleMs": 936,
+   "reversals": 0,
+   "overshoot": 0
+  },
+  "zoom-in": {
+   "frames": 670,
+   "dtP50": 16.7,
+   "dtP95": 16.8,
+   "dtMax": 17,
+   "longFrames": 0,
+   "path": 1.48,
+   "peakSpeed": 10.02,
+   "settleMs": 1292,
+   "reversals": 0,
+   "overshoot": 0
+  },
+  "zoom-out": {
+   "frames": 683,
+   "dtP50": 16.7,
+   "dtP95": 16.8,
+   "dtMax": 17,
+   "longFrames": 0,
+   "path": 1.85,
+   "peakSpeed": 4.01,
+   "settleMs": 625,
+   "reversals": 0,
+   "overshoot": 0
+  },
+  "pan-away": {
+   "frames": 698,
+   "dtP50": 16.7,
+   "dtP95": 16.8,
+   "dtMax": 66.7,
+   "longFrames": 1,
+   "path": 1.8,
+   "peakSpeed": 2.26,
+   "settleMs": 1042,
+   "reversals": 0,
+   "overshoot": 0
+  }
+ },
+ "reframes": [
+  {
+   "t": 10618,
+   "reason": "mode",
+   "mode": "work",
+   "requested": "work",
+   "phase": "arrival",
+   "ms": 23.9,
+   "fill": 0.604
+  },
+  {
+   "t": 24017,
+   "reason": "arrived",
+   "mode": "work",
+   "requested": "work",
+   "phase": "diagnosis",
+   "ms": 2.3,
+   "fill": 0.552
+  },
+  {
+   "t": 30167,
+   "reason": "mode",
+   "mode": "property",
+   "requested": "property",
+   "phase": "diagnosis",
+   "ms": 8,
+   "fill": 0.87
+  },
+  {
+   "t": 33517,
+   "reason": "mode",
+   "mode": "work",
+   "requested": "work",
+   "phase": "diagnosis",
+   "ms": 2.4,
+   "fill": 0.552
+  },
+  {
+   "t": 36884,
+   "reason": "mode",
+   "mode": "detail",
+   "requested": "detail",
+   "phase": "diagnosis",
+   "ms": 2.2,
+   "fill": 0.68
+  },
+  {
+   "t": 40250,
+   "reason": "mode",
+   "mode": "property",
+   "requested": "property",
+   "phase": "diagnosis",
+   "ms": 6,
+   "fill": 0.87
+  },
+  {
+   "t": 43600,
+   "reason": "mode",
+   "mode": "detail",
+   "requested": "detail",
+   "phase": "diagnosis",
+   "ms": 1.9,
+   "fill": 0.68
+  },
+  {
+   "t": 46966,
+   "reason": "mode",
+   "mode": "work",
+   "requested": "work",
+   "phase": "diagnosis",
+   "ms": 2,
+   "fill": 0.552
+  },
+  {
+   "t": 50583,
+   "reason": "layout",
+   "mode": "work",
+   "requested": "work",
+   "phase": "diagnosis",
+   "ms": 2.1,
+   "fill": 0.553
+  },
+  {
+   "t": 53783,
+   "reason": "layout",
+   "mode": "work",
+   "requested": "work",
+   "phase": "diagnosis",
+   "ms": 2.2,
+   "fill": 0.552
+  },
+  {
+   "t": 100181,
+   "reason": "phase",
+   "mode": "work",
+   "requested": "work",
+   "phase": "repair",
+   "ms": 2.6,
+   "fill": 0.552
+  },
+  {
+   "t": 104314,
+   "reason": "mode",
+   "mode": "work",
+   "requested": "work",
+   "phase": "repair",
+   "ms": 1.9,
+   "fill": 0.552
+  },
+  {
+   "t": 107664,
+   "reason": "mode",
+   "mode": "detail",
+   "requested": "detail",
+   "phase": "repair",
+   "ms": 1.9,
+   "fill": 0.681
+  },
+  {
+   "t": 111047,
+   "reason": "mode",
+   "mode": "work",
+   "requested": "work",
+   "phase": "repair",
+   "ms": 1.6,
+   "fill": 0.552
+  }
+ ],
+ "walkup": {
+  "cam": [
+   [
+    17,
+    -52,
+    54,
+    106
+   ],
+   [
+    117,
+    -51.907,
+    54.052,
+    106.009
+   ],
+   [
+    217,
+    -50.52,
+    54.805,
+    106.074
+   ],
+   [
+    317,
+    -45.779,
+    57.101,
+    105.475
+   ],
+   [
+    417,
+    -34.78,
+    61.01,
+    99.711
+   ],
+   [
+    517,
+    -18.58,
+    62.512,
+    76.936
+   ],
+   [
+    617,
+    -12.11,
+    50.419,
+    20.168
+   ],
+   [
+    717,
+    -37.977,
+    26.011,
+    -47.084
+   ],
+   [
+    817,
+    -71.47,
+    11.253,
+    -83.836
+   ],
+   [
+    917,
+    -94.658,
+    5.043,
+    -99.959
+   ],
+   [
+    1017,
+    -106.622,
+    2.773,
+    -106.349
+   ],
+   [
+    1117,
+    -110.755,
+    2.124,
+    -108.298
+   ],
+   [
+    1217,
+    -111.215,
+    2.055,
+    -108.508
+   ],
+   [
+    1317,
+    -111.215,
+    2.055,
+    -108.508
+   ],
+   [
+    1417,
+    -111.215,
+    2.055,
+    -108.508
+   ],
+   [
+    1517,
+    -111.215,
+    2.055,
+    -108.508
+   ],
+   [
+    1617,
+    -111.215,
+    2.055,
+    -108.508
+   ],
+   [
+    1717,
+    -111.215,
+    2.055,
+    -108.508
+   ],
+   [
+    1817,
+    -111.215,
+    2.055,
+    -108.459
+   ],
+   [
+    1983,
+    -111.211,
+    2.055,
+    -108.117
+   ],
+   [
+    2083,
+    -111.211,
+    2.055,
+    -108.062
+   ],
+   [
+    2184,
+    -111.211,
+    2.055,
+    -108.074
+   ],
+   [
+    2284,
+    -111.211,
+    2.055,
+    -108.141
+   ],
+   [
+    2383,
+    -111.212,
+    2.055,
+    -108.231
+   ],
+   [
+    2483,
+    -111.213,
+    2.055,
+    -108.312
+   ],
+   [
+    2583,
+    -111.216,
+    2.055,
+    -108.389
+   ],
+   [
+    2683,
+    -111.219,
+    2.055,
+    -108.464
+   ],
+   [
+    2783,
+    -111.224,
+    2.055,
+    -108.542
+   ],
+   [
+    2883,
+    -111.229,
+    2.055,
+    -108.621
+   ],
+   [
+    2983,
+    -111.236,
+    2.055,
+    -108.704
+   ],
+   [
+    3083,
+    -111.243,
+    2.055,
+    -108.794
+   ],
+   [
+    3183,
+    -111.251,
+    2.055,
+    -108.891
+   ],
+   [
+    3283,
+    -111.26,
+    2.055,
+    -108.999
+   ],
+   [
+    3383,
+    -111.27,
+    2.055,
+    -109.11
+   ],
+   [
+    3483,
+    -111.28,
+    2.055,
+    -109.232
+   ],
+   [
+    3583,
+    -111.292,
+    2.055,
+    -109.359
+   ],
+   [
+    3683,
+    -111.303,
+    2.055,
+    -109.49
+   ],
+   [
+    3783,
+    -111.315,
+    2.055,
+    -109.627
+   ],
+   [
+    3883,
+    -111.327,
+    2.055,
+    -109.761
+   ],
+   [
+    3983,
+    -111.339,
+    2.055,
+    -109.9
+   ],
+   [
+    4083,
+    -111.352,
+    2.055,
+    -110.039
+   ],
+   [
+    4183,
+    -111.364,
+    2.055,
+    -110.179
+   ],
+   [
+    4283,
+    -111.377,
+    2.055,
+    -110.324
+   ],
+   [
+    4383,
+    -111.389,
+    2.055,
+    -110.461
+   ],
+   [
+    4483,
+    -111.402,
+    2.055,
+    -110.601
+   ],
+   [
+    4583,
+    -111.414,
+    2.055,
+    -110.745
+   ],
+   [
+    4683,
+    -111.427,
+    2.055,
+    -110.886
+   ],
+   [
+    4783,
+    -111.44,
+    2.055,
+    -111.03
+   ],
+   [
+    4883,
+    -111.452,
+    2.055,
+    -111.172
+   ],
+   [
+    4983,
+    -111.465,
+    2.055,
+    -111.313
+   ],
+   [
+    5083,
+    -111.477,
+    2.055,
+    -111.455
+   ],
+   [
+    5183,
+    -111.49,
+    2.055,
+    -111.599
+   ],
+   [
+    5283,
+    -111.503,
+    2.055,
+    -111.741
+   ],
+   [
+    5383,
+    -111.515,
+    2.055,
+    -111.882
+   ],
+   [
+    5483,
+    -111.528,
+    2.055,
+    -112.025
+   ],
+   [
+    5583,
+    -111.54,
+    2.055,
+    -112.167
+   ],
+   [
+    5683,
+    -111.553,
+    2.055,
+    -112.309
+   ],
+   [
+    5783,
+    -111.565,
+    2.055,
+    -112.45
+   ],
+   [
+    5883,
+    -111.578,
+    2.055,
+    -112.592
+   ],
+   [
+    5983,
+    -111.59,
+    2.055,
+    -112.735
+   ],
+   [
+    6083,
+    -111.603,
+    2.055,
+    -112.877
+   ],
+   [
+    6183,
+    -111.615,
+    2.055,
+    -113.02
+   ],
+   [
+    6283,
+    -111.628,
+    2.055,
+    -113.163
+   ],
+   [
+    6383,
+    -111.64,
+    2.055,
+    -113.305
+   ],
+   [
+    6483,
+    -111.653,
+    2.055,
+    -113.447
+   ],
+   [
+    6583,
+    -111.665,
+    2.055,
+    -113.589
+   ],
+   [
+    6683,
+    -111.678,
+    2.055,
+    -113.732
+   ],
+   [
+    6783,
+    -111.69,
+    2.055,
+    -113.874
+   ],
+   [
+    6883,
+    -111.702,
+    2.055,
+    -114.015
+   ],
+   [
+    6983,
+    -111.715,
+    2.055,
+    -114.158
+   ],
+   [
+    7083,
+    -111.727,
+    2.055,
+    -114.3
+   ],
+   [
+    7183,
+    -111.74,
+    2.055,
+    -114.445
+   ],
+   [
+    7283,
+    -111.752,
+    2.055,
+    -114.588
+   ],
+   [
+    7383,
+    -111.765,
+    2.055,
+    -114.73
+   ],
+   [
+    7483,
+    -111.777,
+    2.055,
+    -114.871
+   ],
+   [
+    7583,
+    -111.789,
+    2.055,
+    -115.016
+   ],
+   [
+    7683,
+    -111.801,
+    2.055,
+    -115.157
+   ],
+   [
+    7783,
+    -111.814,
+    2.055,
+    -115.3
+   ],
+   [
+    7883,
+    -111.826,
+    2.055,
+    -115.441
+   ],
+   [
+    7983,
+    -111.838,
+    2.055,
+    -115.583
+   ],
+   [
+    8083,
+    -111.85,
+    2.055,
+    -115.725
+   ],
+   [
+    8183,
+    -111.862,
+    2.055,
+    -115.866
+   ],
+   [
+    8283,
+    -111.874,
+    2.055,
+    -116.009
+   ],
+   [
+    8383,
+    -111.886,
+    2.055,
+    -116.15
+   ],
+   [
+    8483,
+    -111.898,
+    2.055,
+    -116.292
+   ],
+   [
+    8583,
+    -111.911,
+    2.055,
+    -116.435
+   ],
+   [
+    8683,
+    -111.923,
+    2.055,
+    -116.576
+   ],
+   [
+    8783,
+    -111.935,
+    2.055,
+    -116.72
+   ],
+   [
+    8883,
+    -111.947,
+    2.055,
+    -116.862
+   ],
+   [
+    8983,
+    -111.958,
+    2.055,
+    -117.004
+   ],
+   [
+    9083,
+    -111.97,
+    2.055,
+    -117.147
+   ],
+   [
+    9183,
+    -111.982,
+    2.055,
+    -117.291
+   ],
+   [
+    9283,
+    -111.994,
+    2.055,
+    -117.433
+   ],
+   [
+    9383,
+    -112.006,
+    2.055,
+    -117.575
+   ],
+   [
+    9483,
+    -112.018,
+    2.055,
+    -117.717
+   ],
+   [
+    9583,
+    -112.029,
+    2.055,
+    -117.861
+   ],
+   [
+    9683,
+    -112.041,
+    2.055,
+    -118.002
+   ],
+   [
+    9783,
+    -112.052,
+    2.055,
+    -118.146
+   ],
+   [
+    9883,
+    -112.064,
+    2.055,
+    -118.289
+   ],
+   [
+    9983,
+    -112.075,
+    2.055,
+    -118.431
+   ],
+   [
+    10083,
+    -112.087,
+    2.055,
+    -118.574
+   ],
+   [
+    10183,
+    -112.098,
+    2.055,
+    -118.716
+   ],
+   [
+    10283,
+    -112.109,
+    2.055,
+    -118.859
+   ],
+   [
+    10383,
+    -112.12,
+    2.055,
+    -118.999
+   ],
+   [
+    10483,
+    -112.125,
+    2.056,
+    -119.113
+   ],
+   [
+    10583,
+    -112.123,
+    2.059,
+    -119.181
+   ],
+   [
+    10683,
+    -112.112,
+    2.063,
+    -119.188
+   ],
+   [
+    10783,
+    -112.096,
+    2.07,
+    -119.125
+   ],
+   [
+    10883,
+    -112.081,
+    2.078,
+    -118.993
+   ],
+   [
+    10983,
+    -112.076,
+    2.089,
+    -118.79
+   ],
+   [
+    11083,
+    -112.09,
+    2.102,
+    -118.523
+   ],
+   [
+    11183,
+    -112.133,
+    2.116,
+    -118.203
+   ],
+   [
+    11283,
+    -112.217,
+    2.132,
+    -117.83
+   ],
+   [
+    11383,
+    -112.351,
+    2.149,
+    -117.419
+   ],
+   [
+    11483,
+    -112.544,
+    2.167,
+    -116.973
+   ],
+   [
+    11583,
+    -112.8,
+    2.185,
+    -116.506
+   ],
+   [
+    11683,
+    -113.122,
+    2.203,
+    -116.04
+   ],
+   [
+    11783,
+    -113.511,
+    2.222,
+    -115.594
+   ],
+   [
+    11883,
+    -113.964,
+    2.24,
+    -115.186
+   ],
+   [
+    11983,
+    -114.482,
+    2.257,
+    -114.827
+   ],
+   [
+    12083,
+    -115.046,
+    2.273,
+    -114.538
+   ],
+   [
+    12183,
+    -115.648,
+    2.289,
+    -114.328
+   ],
+   [
+    12283,
+    -116.274,
+    2.303,
+    -114.204
+   ],
+   [
+    12383,
+    -116.91,
+    2.316,
+    -114.169
+   ],
+   [
+    12483,
+    -117.538,
+    2.327,
+    -114.221
+   ],
+   [
+    12583,
+    -118.151,
+    2.337,
+    -114.358
+   ],
+   [
+    12683,
+    -118.73,
+    2.345,
+    -114.569
+   ],
+   [
+    12783,
+    -119.272,
+    2.352,
+    -114.849
+   ],
+   [
+    12883,
+    -119.768,
+    2.358,
+    -115.185
+   ],
+   [
+    12983,
+    -120.212,
+    2.362,
+    -115.566
+   ],
+   [
+    13083,
+    -120.598,
+    2.366,
+    -115.973
+   ],
+   [
+    13183,
+    -120.932,
+    2.368,
+    -116.399
+   ],
+   [
+    13283,
+    -121.213,
+    2.369,
+    -116.829
+   ],
+   [
+    13383,
+    -121.438,
+    2.369,
+    -117.231
+   ],
+   [
+    13483,
+    -121.592,
+    2.37,
+    -117.541
+   ],
+   [
+    13583,
+    -121.593,
+    2.371,
+    -117.543
+   ],
+   [
+    13683,
+    -121.6,
+    2.376,
+    -117.554
+   ],
+   [
+    13783,
+    -121.617,
+    2.39,
+    -117.583
+   ],
+   [
+    13883,
+    -121.65,
+    2.416,
+    -117.637
+   ],
+   [
+    13983,
+    -121.702,
+    2.456,
+    -117.727
+   ],
+   [
+    14083,
+    -121.776,
+    2.511,
+    -117.863
+   ],
+   [
+    14183,
+    -121.871,
+    2.57,
+    -118.06
+   ],
+   [
+    14283,
+    -121.979,
+    2.604,
+    -118.333
+   ],
+   [
+    14383,
+    -122.071,
+    2.58,
+    -118.64
+   ],
+   [
+    14483,
+    -122.126,
+    2.522,
+    -118.885
+   ],
+   [
+    14583,
+    -122.157,
+    2.465,
+    -119.068
+   ],
+   [
+    14683,
+    -122.175,
+    2.421,
+    -119.195
+   ],
+   [
+    14783,
+    -122.185,
+    2.392,
+    -119.276
+   ],
+   [
+    14883,
+    -122.191,
+    2.376,
+    -119.32
+   ],
+   [
+    14983,
+    -122.193,
+    2.368,
+    -119.34
+   ],
+   [
+    15083,
+    -122.193,
+    2.367,
+    -119.344
+   ],
+   [
+    15183,
+    -122.193,
+    2.367,
+    -119.344
+   ],
+   [
+    15283,
+    -122.193,
+    2.367,
+    -119.344
+   ],
+   [
+    15383,
+    -122.193,
+    2.367,
+    -119.344
+   ],
+   [
+    15483,
+    -122.193,
+    2.367,
+    -119.344
+   ],
+   [
+    15583,
+    -122.193,
+    2.367,
+    -119.344
+   ],
+   [
+    15683,
+    -122.193,
+    2.367,
+    -119.344
+   ],
+   [
+    15783,
+    -122.193,
+    2.367,
+    -119.344
+   ],
+   [
+    15883,
+    -122.193,
+    2.367,
+    -119.344
+   ],
+   [
+    15983,
+    -122.193,
+    2.367,
+    -119.344
+   ],
+   [
+    16083,
+    -122.193,
+    2.367,
+    -119.344
+   ],
+   [
+    16183,
+    -122.193,
+    2.367,
+    -119.344
+   ],
+   [
+    16283,
+    -122.193,
+    2.367,
+    -119.344
+   ],
+   [
+    16383,
+    -122.193,
+    2.367,
+    -119.344
+   ],
+   [
+    16483,
+    -122.193,
+    2.367,
+    -119.344
+   ],
+   [
+    16583,
+    -122.193,
+    2.367,
+    -119.344
+   ],
+   [
+    16683,
+    -122.193,
+    2.367,
+    -119.344
+   ],
+   [
+    16783,
+    -122.193,
+    2.367,
+    -119.344
+   ]
+  ],
+  "tech": [
+   [
+    16,
+    -112.8,
+    -110.97,
+    "walking"
+   ],
+   [
+    216,
+    -114.21,
+    -113.42,
+    "walking"
+   ],
+   [
+    416,
+    -115.61,
+    -115.87,
+    "walking"
+   ],
+   [
+    616,
+    -117.02,
+    -118.33,
+    "walking"
+   ],
+   [
+    817,
+    -118.42,
+    -120.78,
+    "walking"
+   ],
+   [
+    1016,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    1216,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    1416,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    1617,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    1816,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    2083,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    2283,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    2483,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    2683,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    2883,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    3083,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    3283,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    3483,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    3683,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    3883,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    4083,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    4283,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    4483,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    4683,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    4883,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    5083,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    5283,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    5483,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    5683,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    5883,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    6083,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    6283,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    6483,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    6683,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    6883,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    7083,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    7283,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    7483,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    7683,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    7883,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    8083,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    8283,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    8483,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    8683,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    8883,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    9083,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    9283,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    9483,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    9683,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    9883,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    10083,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    10283,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    10483,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    10683,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    10883,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    11083,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    11283,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    11483,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    11683,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    11883,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    12083,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    12283,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    12483,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    12683,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    12883,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    13083,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    13283,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    13483,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    13682,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    13882,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    14082,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    14282,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    14482,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    14682,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    14882,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    15083,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    15282,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    15482,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    15682,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    15882,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    16082,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    16282,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    16482,
+    -118.54,
+    -120.98,
+    "working"
+   ],
+   [
+    16682,
+    -118.54,
+    -120.98,
+    "working"
+   ]
+  ],
+  "reframes": [
+   {
+    "t": 33,
+    "reason": "mode",
+    "mode": "work",
+    "requested": "work",
+    "phase": "arrival",
+    "ms": 23.9,
+    "fill": 0.604
+   },
+   {
+    "t": 13432,
+    "reason": "arrived",
+    "mode": "work",
+    "requested": "work",
+    "phase": "diagnosis",
+    "ms": 2.3,
+    "fill": 0.552
+   }
+  ]
+ }
+}

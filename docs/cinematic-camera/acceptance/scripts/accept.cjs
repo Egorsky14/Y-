@@ -274,7 +274,9 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
       await still(`${name}-c-10s`);
     } else await sleep(10_000);
     const later = await camNow();
-    metrics.controls[name] = { before: geo(before), released: geo(released), moved: dd(before, released), driftAfter10s: dd(released, later), serviceView: await ev(() => window.__ego.app.getState().serviceView?.mode ?? null) };
+    // Profiling build only: how the camera drifted relative to its own line of sight (1 = straight along it, a dolly).
+    const along = profileBuild ? await ev(([a, b]) => { const c = window.__egoThree.camera; const d = c.getWorldDirection(c.position.clone()); const m = [b[0] - a[0], b[1] - a[1], b[2] - a[2]]; const n = Math.hypot(...m); return n < 1e-3 ? null : +Math.abs((m[0] * d.x + m[1] * d.y + m[2] * d.z) / n).toFixed(3); }, [released, later]) : null;
+    metrics.controls[name] = { before: geo(before), released: geo(released), moved: dd(before, released), driftAfter10s: dd(released, later), driftAlongView: along, serviceView: await ev(() => window.__ego.app.getState().serviceView?.mode ?? null) };
   };
   const cx = Math.round(W * (portraitPhone ? 0.5 : 0.45)), cy = Math.round(H * 0.55);
   if (!touch) {
