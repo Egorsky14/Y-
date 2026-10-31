@@ -62,6 +62,19 @@ const RULES: Record<ServiceMode, Rules> = {
   detail: { fill: 0.68, elevations: [0.2, 0.28, 0.36, 0.46], band: [0.22, 0.4], elevationCost: 3, minDistance: 1.9, maxDistance: 5, side: [0.9, 2.0], sideReject: 2.4, weights: { roof: 4, wall: 1.5, plant: 3.5, pole: 3.5, background: 0.3, foreground: 8, sky: 0.6 } },
 };
 
+/**
+ * Adjustments to a mode's rules for one request: a short landscape screen lets the property shot
+ * stand farther off and lower, a walking technician may be followed from any side and farther away.
+ * `sideReject: null` turns the from-behind rejection off.
+ */
+export type RuleTuning = Partial<Omit<Rules, 'sideReject' | 'weights'>> & { sideReject?: number | null };
+
+function rulesFor(mode: ServiceMode, tune?: RuleTuning): Rules {
+  if (!tune) return RULES[mode];
+  const { sideReject, ...rest } = tune;
+  return { ...RULES[mode], ...rest, sideReject: sideReject === null ? undefined : (sideReject ?? RULES[mode].sideReject) };
+}
+
 /** Clearance (m) the camera keeps from each kind of obstacle. */
 const CLEARANCE: Record<OccluderKind, number> = { wall: 0.9, roof: 0.9, plant: 0.5, pole: 0.4, subject: 0.5 };
 
@@ -129,6 +142,18 @@ function aim(v: ViewSpec): THREE.Vector3 {
   return pos;
 }
 
+/** Whether any point lands under one of the UI rectangles to avoid (canvas fractions from the top left). */
+function underUi(points: V3[], avoid: SafeArea['avoid']): boolean {
+  if (!avoid?.length) return false;
+  for (const p of points) {
+    _p.set(p.x, p.y, p.z).project(_cam);
+    const x = (_p.x + 1) / 2;
+    const y = (1 - _p.y) / 2;
+    for (const [l, t, r, b] of avoid) if (x > l && x < r && y > t && y < b) return true;
+  }
+  return false;
+}
+
 /** Where the subject lands in the free area: its fill share and centre, or null when part of it falls outside. */
 function project(points: V3[], f: ReturnType<typeof frameOf>, margin = 0.94): { fill: number; center: [number, number] } | null {
   let x0 = Infinity;
@@ -180,8 +205,7 @@ export type Rejection = string;
  * geometry, a key point hidden, part of the subject off the free area, or the technician seen
  * from behind. Expects setLens() to have been called for this aspect and safe area.
  */
-function evaluate(v: ViewSpec, subject: Subject, boxes: THREE.Box3[], mode: ServiceMode, f: ReturnType<typeof frameOf>, fill: number, strict = true): CompositionReport | Rejection {
-  const rules = RULES[mode];
+function evaluate(v: ViewSpec, subject: Subject, boxes: THREE.Box3[], mode: ServiceMode, f: ReturnType<typeof frameOf>, fill: number, strict = true, rules: Rules = RULES[mode], avoid?: SafeArea['avoid']): CompositionReport | Rejection {
   const cam = aim(v);
   if (cam.y < 0.55) return 'camera too low';
   for (const b of boxes) {
@@ -198,6 +222,9 @@ function evaluate(v: ViewSpec, subject: Subject, boxes: THREE.Box3[], mode: Serv
   }
   const placed = project(subject.frame, f);
   if (!placed) return 'subject not inside the free area';
+  // What must stay out from under the UI cards: the key points (head, hands, panel, unit top; for the property shot the unit,
+  // technician and van) and, in close shots, the top of his head. The rest of the group may pass under a card's corner.
+  if (underUi(mode === 'property' ? subject.key : [subject.frame[0], ...subject.key], avoid)) return 'subject under the UI';
   if (strict) for (const p of subject.key) if (segmentBlocked(cam, _key.set(p.x, p.y, p.z), boxes)) return `key point hidden (${subject.key.indexOf(p)})`;
 
   // Sight-line grid across the free area.
@@ -249,17 +276,17 @@ const AZ_STEPS = 30;
  * Target fill for a mode on this screen shape. On an upright phone the work group (wider than tall)
  * fills the width long before the height, so Watch Work comes a little closer there.
  */
-function targetFill(mode: ServiceMode, aspect: number): number {
-  return RULES[mode].fill * (mode === 'work' && aspect < 1 ? 1.25 : 1);
+function targetFill(mode: ServiceMode, aspect: number, rules: Rules = RULES[mode]): number {
+  return rules.fill * (mode === 'work' && aspect < 1 ? 1.25 : 1);
 }
 
 /**
  * Best-composed view of `subject` for a mode, or null when no candidate is usable (the caller
  * falls back: Detail to Watch Work, Watch Work to the occlusion solver).
  */
-export function composeView(subject: Subject, boxes: THREE.Box3[], aspect: number, mode: ServiceMode, safe: SafeArea = NO_SAFE_AREA): Composed | null {
-  const rules = RULES[mode];
-  const fill = targetFill(mode, aspect);
+export function composeView(subject: Subject, boxes: THREE.Box3[], aspect: number, mode: ServiceMode, safe: SafeArea = NO_SAFE_AREA, tune?: RuleTuning, accept?: (v: ViewSpec) => boolean): Composed | null {
+  const rules = rulesFor(mode, tune);
+  const fill = targetFill(mode, aspect, rules);
   const f = frameOf(safe);
   setLens(aspect, safe);
   let best: Composed | null = null;
@@ -274,9 +301,18 @@ export function composeView(subject: Subject, boxes: THREE.Box3[], aspect: numbe
     // (narrow side yards often leave a clear spot either side of the ideal distance).
     for (const k of [1, 0.85, 1.2, 1.45]) {
       v.distance = THREE.MathUtils.clamp(fitted * k, rules.minDistance, rules.maxDistance);
-      const report = evaluate(v, subject, boxes, mode, f, fill);
+      const report = evaluate(v, subject, boxes, mode, f, fill, true, rules, safe.avoid);
       if (typeof report === 'string') continue;
-      if (!best || report.cost < best.report.cost - 1e-9) best = { ...v, report };
+      if (!best || report.cost < best.report.cost - 1e-9) {
+        // An extra condition from the caller (a walking shot must keep working further along his path),
+        // checked only for a would-be best. It may aim the shared lens elsewhere, so the lens is reset after.
+        if (accept) {
+          const ok = accept({ ...v, target: { ...v.target } });
+          setLens(aspect, safe);
+          if (!ok) continue;
+        }
+        best = { ...v, report };
+      }
       return;
     }
   };
@@ -296,8 +332,9 @@ export function composeView(subject: Subject, boxes: THREE.Box3[], aspect: numbe
  * With strict false the key-point and side-on checks are skipped, so an older camera that fails
  * them can still be measured for size, clutter and coverage.
  */
-export function scoreView(v: ViewSpec, subject: Subject, boxes: THREE.Box3[], aspect: number, mode: ServiceMode, safe: SafeArea = NO_SAFE_AREA, strict = true): CompositionReport | Rejection {
+export function scoreView(v: ViewSpec, subject: Subject, boxes: THREE.Box3[], aspect: number, mode: ServiceMode, safe: SafeArea = NO_SAFE_AREA, strict = true, tune?: RuleTuning): CompositionReport | Rejection {
   const f = frameOf(safe);
   setLens(aspect, safe);
-  return evaluate(v, subject, boxes, mode, f, targetFill(mode, aspect), strict);
+  const rules = rulesFor(mode, tune);
+  return evaluate(v, subject, boxes, mode, f, targetFill(mode, aspect, rules), strict, rules, safe.avoid);
 }

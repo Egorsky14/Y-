@@ -34,9 +34,17 @@ export interface CameraCommand {
    * Close view of a work site: points that must stay visible. After the player stops orbiting near
    * the target, a blocked view eases to the nearest clear one (cameraOcclusion.ts).
    */
-  watch?: { lotIds: string[]; points: { x: number; y: number; z: number }[] };
+  watch?: { lotIds: string[]; points: { x: number; y: number; z: number }[]; cabinet?: { min: { x: number; y: number; z: number }; max: { x: number; y: number; z: number } } };
   /** Issued by the service camera itself (ServiceDirector); any other command ends the service view. */
   service?: boolean;
+  /**
+   * Keep following a walking crew member after the flight: the view (target and camera together,
+   * so the heading never changes) slides by `weight` × how far the named object has moved from
+   * `anchor`, eased every frame.
+   */
+  track?: { object: string; anchor: { x: number; z: number }; weight: number };
+  /** Seconds for an orbit flight (default 1.1). */
+  duration?: number;
 }
 
 /** Service camera modes: the property establishing shot, watching the work, the close-up of the hands and tools. */

@@ -30,13 +30,23 @@ export function measureSafeArea(canvas: HTMLElement | null): SafeArea {
     const r = visibleRect(el);
     if (r && r.top - c.top > c.height / 2) bottom = Math.max(bottom, (c.bottom - r.top) / c.height);
   }
-  bottom = Math.min(0.15, bottom);
-  if (!panel) return { right: 0, bottom, top };
+  bottom = Math.min(0.2, bottom);
+  // The camera bar under the HUD (phones) and a collapsed inspector card are small: rather than give up a whole
+  // band of the screen, the shot keeps its subject out from under them.
+  const avoid: [number, number, number, number][] = [];
+  const rect = (r: DOMRect): [number, number, number, number] => [(r.left - c.left) / c.width, (r.top - c.top) / c.height, (r.right - c.left) / c.width, (r.bottom - c.top) / c.height];
+  if (barTop) avoid.push(rect(barTop));
+  if (!panel) return { right: 0, bottom, top, avoid };
   // A sheet spanning most of the width covers the bottom; otherwise it is a side panel.
-  if (panel.width > c.width * 0.7) return { right: 0, bottom: clamp01(Math.max(bottom, (c.bottom - panel.top) / c.height)), top };
-  // A side panel collapsed to its header only takes the top corner, above the work: the full width is free.
-  if (panel.height < c.height * 0.3) return { right: 0, bottom, top };
-  return { right: clamp01((c.right - panel.left) / c.width), bottom, top };
+  if (panel.width > c.width * 0.7) return { right: 0, bottom: clamp01(Math.max(bottom, (c.bottom - panel.top) / c.height)), top, avoid };
+  // A side panel collapsed to its header only takes the top corner: the full width stays free and the subject keeps
+  // out from under the card. On short landscape screens the card reaches deep into the view (a quarter of its height
+  // or more below the HUD): there its width counts as covered, and the shot is centred in the part beside it.
+  if (panel.height < c.height * 0.3) {
+    if ((panel.bottom - c.top) / c.height - top > 0.15) return { right: clamp01((c.right - panel.left) / c.width), bottom, top, avoid };
+    return { right: 0, bottom, top, avoid: [...avoid, rect(panel)] };
+  }
+  return { right: clamp01((c.right - panel.left) / c.width), bottom, top, avoid };
 }
 
 /** The element's box when it is actually drawn (not display:none or visibility:hidden), else null. */

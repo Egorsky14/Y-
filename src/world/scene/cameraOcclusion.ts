@@ -145,6 +145,12 @@ export interface SafeArea {
   bottom: number;
   /** Top HUD bar; optional so older callers (right/bottom only) keep working. */
   top?: number;
+  /**
+   * Smaller UI pieces inside the free area that the subject must not sit under (a collapsed
+   * inspector card, the camera bar under the HUD), as canvas fractions [left, top, right, bottom]
+   * measured from the top-left corner.
+   */
+  avoid?: [number, number, number, number][];
 }
 
 export const NO_SAFE_AREA: SafeArea = { right: 0, bottom: 0, top: 0 };

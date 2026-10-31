@@ -505,4 +505,15 @@ h4 { font-size: 13px; color: var(--muted); text-transform: uppercase; letter-spa
 @media (max-width: 600px) and (orientation: portrait) {
   .service-bar { left: 50%; }
 }
+/* Laptop widths: the bottom row (action bar left, world controls right) leaves no room between them
+   for the bar, so it sits just above the row, still centred; the tutorial hint and error banner move
+   up above it. */
+@media (min-width: 901px) and (max-width: 1560px) and (min-height: 561px) {
+  .service-bar { bottom: 92px; }
+  .app-ui:has(.service-bar) .hint, .app-ui:has(.service-bar) .error-banner { bottom: 152px; }
+}
+/* Phones and short screens: toasts and celebrations start below the camera bar instead of under it. */
+@media (max-width: 900px), (max-height: 560px) {
+  .app-ui:has(.service-bar) .toasts, .app-ui:has(.service-bar) .celebration { top: calc(max(8px, env(safe-area-inset-top)) + 112px); }
+}
 .inspector-notice { margin-top: 6px; cursor: pointer; }

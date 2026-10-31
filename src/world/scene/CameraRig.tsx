@@ -39,6 +39,8 @@ interface Watch {
   boxes: THREE.Box3[];
   /** Clock time at which to check the view after the player lets go (damping settles first). */
   checkAt: number | null;
+  /** The serviced cabinet (service views), which zoom stops short of. */
+  cabinet: THREE.Box3 | null;
 }
 
 function sphericalOf(offset: THREE.Vector3): Sph {
@@ -59,6 +61,26 @@ const WATCH_RADIUS = 8;
  * and holds off for a while after one, so it never fights the player.
  */
 export const cameraInput = { dragging: false, lastInput: -Infinity };
+
+/** A walking crew member the view follows (CameraCommand.track) and how far it has slid so far. */
+interface Track {
+  object: string;
+  anchor: THREE.Vector3;
+  weight: number;
+  shift: THREE.Vector3;
+}
+
+/** How quickly the followed view catches up with the walker (1/s): at walking pace it trails by ~0.3 m, and never jerks. */
+const TRACK_RATE = 3.5;
+
+/**
+ * Room the service camera keeps around the technician's body (radius from his axis, up to head
+ * height) and the serviced cabinet, so zooming in stops short of them instead of passing inside.
+ * Smaller than the composer's own clearances, so composed shots never touch them.
+ */
+const BODY_CLEARANCE = 0.95;
+const BODY_HEIGHT = 2.1;
+const CABINET_CLEARANCE = 0.35;
 
 /** Closest zoom and lowest angle: tighter while a service camera frames the work (Detail shots sit 2-3 m off, 12° up). */
 const MIN_DISTANCE = 5;
@@ -104,10 +126,12 @@ export function CameraRig() {
   const keys = useRef<Set<string>>(new Set());
   const followLast = useRef<THREE.Vector3 | null>(null);
   const watch = useRef<Watch | null>(null);
+  const track = useRef<Track | null>(null);
   const interacting = useRef(false);
   const gl = useThree((s) => s.gl);
+  const scene = useThree((s) => s.scene);
   // UI-covered part of the view (open inspector), measured a few times a second and eased.
-  const safe = useRef<Required<SafeArea>>({ right: 0, bottom: 0, top: 0 });
+  const safe = useRef<Required<Omit<SafeArea, 'avoid'>>>({ right: 0, bottom: 0, top: 0 });
   const safeTarget = useRef<SafeArea>({ right: 0, bottom: 0, top: 0 });
   const safeTick = useRef(0);
 
@@ -134,6 +158,7 @@ export function CameraRig() {
     const fromTarget = c.target.clone();
     const fromPos = camera.position.clone();
     const offset = fromPos.clone().sub(fromTarget);
+    track.current = command.track ? { object: command.track.object, anchor: new THREE.Vector3(command.track.anchor.x, 0, command.track.anchor.z), weight: command.track.weight, shift: new THREE.Vector3() } : null;
     let toTarget: THREE.Vector3;
     let toPos: THREE.Vector3;
     if (command.type === 'reset') {
@@ -158,7 +183,8 @@ export function CameraRig() {
       if (!command.service && !useApp.getState().photo.on) toPos = withinFreeLimits(toTarget, toPos);
       if (command.watch) {
         const boxes = [...occludersOf(command.watch.lotIds), ...obstaclesNear(command.target.x, command.target.z, 20)];
-        watch.current = { target: new THREE.Vector3(command.target.x, 0, command.target.z), points: command.watch.points, boxes, checkAt: null };
+        const cab = command.watch.cabinet;
+        watch.current = { target: new THREE.Vector3(command.target.x, 0, command.target.z), points: command.watch.points, boxes, checkAt: null, cabinet: cab ? new THREE.Box3(new THREE.Vector3(cab.min.x, cab.min.y, cab.min.z), new THREE.Vector3(cab.max.x, cab.max.y, cab.max.z)) : null };
       } else {
         watch.current = null;
       }
@@ -167,7 +193,7 @@ export function CameraRig() {
         const to = sphericalOf(toPos.clone().sub(toTarget));
         // Swing the short way round.
         to.azimuth = from.azimuth + Math.atan2(Math.sin(to.azimuth - from.azimuth), Math.cos(to.azimuth - from.azimuth));
-        flight.current = { fromTarget, toTarget, fromPos, toPos, t: 0, duration: 1.1, orbit: { from, to } };
+        flight.current = { fromTarget, toTarget, fromPos, toPos, t: 0, duration: command.duration ?? 1.1, orbit: { from, to } };
         return;
       }
     } else if (command.type === 'follow' && command.vehicleId) {
@@ -187,6 +213,7 @@ export function CameraRig() {
     const c = controls.current;
     if (!c) return;
     const follow = useApp.getState().followVehicleId;
+    followWalker(c, dt);
     if (flight.current) {
       const f = flight.current;
       f.t = Math.min(1, f.t + dt / f.duration);
@@ -263,9 +290,72 @@ export function CameraRig() {
     }
     applyLimits(c);
     c.update();
+    if (!flight.current) keepClearOfWork(c);
     applySafeArea(dt);
     settleWatchedView(c);
   });
+
+  /**
+   * Following a walking technician (CameraCommand.track): the whole view slides with him, target and
+   * camera together, so the heading the player or the director chose is kept. The slide is eased
+   * every frame (no stop-and-go between updates) and carries on through a flight in progress (its
+   * end points slide too), so landing and following join up without a jolt.
+   */
+  function followWalker(c: MapControlsImpl, dt: number) {
+    const t = track.current;
+    if (!t) return;
+    if (!useApp.getState().serviceView) {
+      track.current = null;
+      return;
+    }
+    const o = scene.getObjectByName(t.object);
+    if (!o || !o.visible) return;
+    const p = o.getWorldPosition(new THREE.Vector3());
+    const want = new THREE.Vector3((p.x - t.anchor.x) * t.weight, 0, (p.z - t.anchor.z) * t.weight);
+    const step = want.sub(t.shift).multiplyScalar(1 - Math.exp(-dt * TRACK_RATE));
+    if (step.lengthSq() < 1e-10) return;
+    t.shift.add(step);
+    const f = flight.current;
+    if (f) {
+      f.fromTarget.add(step);
+      f.toTarget.add(step);
+      f.fromPos.add(step);
+      f.toPos.add(step);
+    } else {
+      c.target.add(step);
+      camera.position.add(step);
+    }
+    watch.current?.target.add(step);
+  }
+
+  /**
+   * While the service camera is on, zooming or orbiting stops short of the technician's body and
+   * the serviced cabinet: the camera is moved back out along its line to the target, never sideways,
+   * so the player's angle is kept and only the zoom is limited.
+   */
+  function keepClearOfWork(c: MapControlsImpl) {
+    const view = useApp.getState().serviceView;
+    if (!view) return;
+    const job = getGameState()?.jobs[view.jobId];
+    const tech = job?.technicianId ? scene.getObjectByName(`employee:${job.technicianId}`) : undefined;
+    const body = tech?.visible ? tech.getWorldPosition(new THREE.Vector3()) : null;
+    const unit = watch.current?.cabinet ?? null;
+    const inside = (p: THREE.Vector3) =>
+      p.y < 0.45 ||
+      (body !== null && p.y < BODY_HEIGHT && Math.hypot(p.x - body.x, p.z - body.z) < BODY_CLEARANCE) ||
+      (unit !== null && p.x > unit.min.x - CABINET_CLEARANCE && p.x < unit.max.x + CABINET_CLEARANCE && p.y < unit.max.y + CABINET_CLEARANCE && p.z > unit.min.z - CABINET_CLEARANCE && p.z < unit.max.z + CABINET_CLEARANCE);
+    if (!inside(camera.position)) return;
+    const dir = camera.position.clone().sub(c.target);
+    const dist = dir.length();
+    dir.normalize();
+    for (let d = dist + 0.05; d < dist + 6; d += 0.05) {
+      const p = c.target.clone().addScaledVector(dir, d);
+      if (!inside(p)) {
+        camera.position.copy(p);
+        return;
+      }
+    }
+  }
 
   /**
    * Zoom and tilt limits. A service camera may come closer and lower than free play allows; after
@@ -322,7 +412,8 @@ export function CameraRig() {
   /**
    * A watched close view (serviceCloseUpCamera) that the player has orbited or zoomed into a blocked
    * angle eases to the nearest clear one, once, shortly after they let go: never during a drag, and
-   * never in Photo Mode. Panning away from the site ends the watch.
+   * never in Photo Mode. With the service camera on, the player's angle wins: only a camera left
+   * inside solid geometry is moved, closer along its own line. Panning away from the site ends the watch.
    */
   function settleWatchedView(c: MapControlsImpl) {
     const w = watch.current;
@@ -335,6 +426,23 @@ export function CameraRig() {
     }
     if (w.checkAt === null || performance.now() < w.checkAt) return;
     w.checkAt = null;
+    if (useApp.getState().serviceView) {
+      // The service camera respects the player's own angle: it only steps in when the camera has been
+      // left inside a wall, roof, trunk or crown, and then just slides closer along the same line.
+      const from = sphericalOf(camera.position.clone().sub(c.target));
+      const solid = (d: number) => {
+        const p = c.target.clone().add(offsetOf({ ...from, distance: d }));
+        return w.boxes.some((b) => p.x > b.min.x - 0.15 && p.x < b.max.x + 0.15 && p.y > b.min.y - 0.15 && p.y < b.max.y + 0.15 && p.z > b.min.z - 0.15 && p.z < b.max.z + 0.15);
+      };
+      if (!solid(from.distance)) return;
+      for (let d = from.distance - 0.25; d >= SERVICE_MIN_DISTANCE; d -= 0.25) {
+        if (solid(d)) continue;
+        const toPos = c.target.clone().add(offsetOf({ ...from, distance: d }));
+        flight.current = { fromTarget: c.target.clone(), toTarget: c.target.clone(), fromPos: camera.position.clone(), toPos, t: 0, duration: 0.5 };
+        return;
+      }
+      return;
+    }
     const current = { target: { x: c.target.x, y: c.target.y, z: c.target.z }, ...sphericalOf(camera.position.clone().sub(c.target)) };
     if (visibility(current, w.points, w.boxes) === 1) return;
     const solved = solveClearView(current, w.points, w.boxes, size.width / Math.max(1, size.height));

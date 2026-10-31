@@ -2,8 +2,8 @@ import * as THREE from 'three';
 import { condenserPosition, curbParking, HOUSE_HALF_WIDTH, HOUSE_LOTS, lotById, lotLocalToWorld, workPosition, type Lot } from '@/game/world/cityLayout';
 import type { GameState } from '@/game/simulation/types';
 import { collectHouseOccluders } from '../buildings/HouseBuilder';
-import { cameraPosition, NO_SAFE_AREA, registeredOccluders, registerOccluders, solveClearView, tagOccluder, type SafeArea } from './cameraOcclusion';
-import { composeView, type Composed, type ServiceMode, type Subject } from './cameraComposition';
+import { cameraPosition, NO_SAFE_AREA, registeredOccluders, registerOccluders, solveClearView, tagOccluder, type SafeArea, type ViewSpec } from './cameraOcclusion';
+import { composeView, scoreView, type Composed, type RuleTuning, type ServiceMode, type Subject } from './cameraComposition';
 import { obstaclesNear } from './cameraObstacles';
 
 /**
@@ -136,6 +136,12 @@ export interface ServiceViewOptions {
   standing?: boolean;
   /** Keep close to this heading (following the technician as he walks: no swings between updates). */
   keepAzimuth?: number;
+  /**
+   * Walking: where he will be further along his way. The view follows him by sliding (CameraRig
+   * track, WALK_TRACK_WEIGHT), so the walking shot is only taken if, slid that far, it still sees him
+   * at each of these points.
+   */
+  ahead?: { x: number; z: number }[];
 }
 
 /** Footprint and height of the house itself (body and roof, not the garden walls), from its registered parts. */
@@ -209,7 +215,9 @@ export function serviceSubject(lot: Lot, mode: ServiceMode, opts: ServiceViewOpt
       corner(1, 1, 0.02), corner(1, -1, 0.02), corner(-1, 1, 0.02), corner(-1, -1, 0.02),
       ...(opts.techPos ? [] : [P(bag.x, 0.25, bag.z)]),
     ];
-    return { frame, key: [P(tech.x, head, tech.z), hands, P(unit.x, top, unit.z), panel], focus: P((tech.x + unit.x) / 2, 0.55, (tech.z + unit.z) / 2), tech: techFacing, preferredAzimuth: preferred };
+    // Walking up he is the subject, with the unit he heads for: his head and body and the unit top in sight (his hands and the panel come into play once he kneels).
+    const key = opts.standing ? [P(tech.x, head, tech.z), P(tech.x, 1.0, tech.z), P(unit.x, top, unit.z)] : [P(tech.x, head, tech.z), hands, P(unit.x, top, unit.z), panel];
+    return { frame, key, focus: P((tech.x + unit.x) / 2, 0.55, (tech.z + unit.z) / 2), tech: techFacing, preferredAzimuth: preferred };
   }
   if (opts.phase === 'repair') {
     // The tool works on the cabinet near the technician: frame head, hands, the near top edge and the panel.
@@ -241,6 +249,13 @@ export function serviceObstacles(lot: Lot, mode: ServiceMode, focus: { x: number
   return out;
 }
 
+/** The serviced cabinet's box (as the composer sees it), which the camera's zoom stops short of. */
+function cabinetBox(lot: Lot) {
+  const unit = condenserPosition(lot);
+  const half = (lot.style === 'premium' ? 1.08 : 0.92) / 2;
+  return { min: { x: unit.x - half, y: 0, z: unit.z - half }, max: { x: unit.x + half, y: lot.style === 'premium' ? 1.1 : 0.96, z: unit.z + half } };
+}
+
 /** A composed view as a camera command (ground orbit target on the same sight line as the aim point). */
 function toCommand(view: Composed, lot: Lot, subject: Subject) {
   const cam = cameraPosition(view);
@@ -257,9 +272,25 @@ function toCommand(view: Composed, lot: Lot, subject: Subject) {
     elevation: Math.asin(cam.y / distance),
     orbit: true,
     service: true,
-    watch: { lotIds: nearbyLotIds(lot), points: subject.key },
+    watch: { lotIds: nearbyLotIds(lot), points: subject.key, cabinet: cabinetBox(lot) },
   };
 }
+
+/**
+ * Following the technician as he walks up: he may be seen from any side (he faces the unit, so a
+ * street-side camera is behind him) and from farther off while he is still far from it, with the
+ * body and the unit in sight instead of the hands and panel.
+ */
+export const WALKING: RuleTuning = { maxDistance: 20, sideReject: null, side: [0.4, 2.7], fill: 0.5 };
+
+/**
+ * A short, wide free area (landscape phones under the HUD, camera bar and action bar): the property
+ * group of a big house only fits from farther off, and a lower camera keeps it shallower on screen.
+ */
+const SHORT_SCREEN_PROPERTY: RuleTuning = { maxDistance: 90, elevations: [0.36, 0.44, 0.52, 0.62], band: [0.4, 0.68] };
+
+/** How far the walking shot's aim point moves per metre the technician walks (its focus is midway between him and the unit). */
+export const WALK_TRACK_WEIGHT = 0.5;
 
 /**
  * The camera for a service mode at a lot: the best-composed view (cameraComposition.ts) for this
@@ -268,18 +299,31 @@ function toCommand(view: Composed, lot: Lot, subject: Subject) {
  */
 export function serviceViewCamera(lot: Lot, mode: ServiceMode, aspect: number, safe: SafeArea = NO_SAFE_AREA, opts: ServiceViewOptions = {}) {
   const t0 = performance.now();
-  const tryMode = (m: ServiceMode) => {
+  const walking = opts.standing && opts.techPos;
+  // Walking: each later position of his, with what the slid view must see there.
+  const ahead = walking
+    ? (opts.ahead ?? []).map((p) => {
+        const s = serviceSubject(lot, 'work', { ...opts, techPos: p });
+        return { dx: (p.x - opts.techPos!.x) * WALK_TRACK_WEIGHT, dz: (p.z - opts.techPos!.z) * WALK_TRACK_WEIGHT, subject: s, boxes: serviceObstacles(lot, 'work', s.focus) };
+      })
+    : [];
+  const stillSeesHim = (v: ViewSpec) => ahead.every((a) => typeof scoreView({ ...v, target: { x: v.target.x + a.dx, y: v.target.y, z: v.target.z + a.dz } }, a.subject, a.boxes, aspect, 'work', safe, true, WALKING) !== 'string');
+  const tryMode = (m: ServiceMode, tune?: RuleTuning, lookAhead = true) => {
     const subject = serviceSubject(lot, m, opts);
     if (opts.keepAzimuth !== undefined) {
       subject.preferredAzimuth = opts.keepAzimuth;
       subject.preferWeight = 3;
     }
-    const view = composeView(subject, serviceObstacles(lot, m, subject.focus), aspect, m, safe);
+    const walk = m !== 'property' && walking;
+    const view = composeView(subject, serviceObstacles(lot, m, subject.focus), aspect, m, safe, tune ?? (walk ? WALKING : undefined), walk && lookAhead && ahead.length ? stillSeesHim : undefined);
     return view ? { command: toCommand(view, lot, subject), report: view.report } : null;
   };
   // Walking up to the unit there is no close work to show yet: Detail waits as Watch Work.
   const asked = mode === 'detail' && (opts.phase === 'arrival' || opts.standing) ? 'work' : mode;
-  const shot = tryMode(asked) ?? (asked === 'detail' ? tryMode('work') : null);
+  // Property first with its own rules, then (short landscape screens) from farther off and lower,
+  // before ever falling back to the uncomposed site camera.
+  // Walking with no shot that sees him all the way: the best one for now (the director re-aims later if needed).
+  const shot = tryMode(asked) ?? (asked === 'detail' ? tryMode('work') : asked === 'property' ? tryMode('property', SHORT_SCREEN_PROPERTY) : walking ? tryMode(asked, undefined, false) : null);
   if (shot) return { ...shot, mode: shot.report.mode, ms: performance.now() - t0 };
   if (mode === 'property') return { command: { ...serviceSiteCamera(lot), service: true }, report: null, mode, ms: performance.now() - t0 };
   return { command: { ...serviceCloseUpCamera(lot, aspect, undefined, safe), service: true }, report: null, mode: 'work' as ServiceMode, ms: performance.now() - t0 };

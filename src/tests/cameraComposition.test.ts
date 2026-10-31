@@ -4,7 +4,7 @@ import { condenserPosition, curbParking, HOUSE_LOTS, lotById, workPosition } fro
 import { cameraPosition, occluderKind, type SafeArea } from '@/world/scene/cameraOcclusion';
 import { obstaclesNear } from '@/world/scene/cameraObstacles';
 import { composeView, scoreView, type CompositionReport } from '@/world/scene/cameraComposition';
-import { serviceCloseUpCamera, serviceObstacles, serviceSubject, serviceViewCamera } from '@/world/scene/serviceCall';
+import { approachPath, curbDoor, pathLength, samplePath, serviceCloseUpCamera, serviceObstacles, serviceSubject, serviceViewCamera, WALK_TRACK_WEIGHT, WALKING } from '@/world/scene/serviceCall';
 
 /**
  * Cinematic service camera: the composed Property, Watch Work and Detail shots
@@ -238,5 +238,94 @@ describe('solver', () => {
     const property = (performance.now() - t1) / HOUSE_LOTS.length;
     expect(closeUp).toBeLessThan(30);
     expect(property).toBeLessThan(80);
+  });
+});
+
+// Free areas exactly as the game measures them during the service camera (acceptance captures,
+// docs/cinematic-camera/acceptance): HUD and camera bar, bottom row, and the collapsed inspector card
+// or the camera bar under the HUD as rectangles the subject keeps out from under.
+const GAME_SCREENS: [string, number, SafeArea][] = [
+  ['desktop 1920x1080', 1920 / 1080, { right: 0, bottom: 0.079, top: 0.085, avoid: [[1534 / 1920, 86 / 1080, 1906 / 1920, 176 / 1080]] }],
+  ['laptop 1366x768, bar above the bottom row', 1366 / 768, { right: 0, bottom: 0.185, top: 0.12, avoid: [[980 / 1366, 86 / 768, 1352 / 1366, 176 / 768]] }],
+  ['phone portrait 390x844', 390 / 844, { right: 0, bottom: 0.175, top: 0.135, avoid: [[59 / 390, 64 / 844, 330 / 390, 114 / 844]] }],
+  // Short landscape screens: the collapsed card reaches deep into the view, so its width counts as covered.
+  ['iPhone landscape 750x340', 750 / 340, { right: 383 / 750, bottom: 0.194, top: 0.2, avoid: [[52 / 750, 64 / 340, 323 / 750, 114 / 340]] }],
+  ['phone landscape 844x390', 844 / 390, { right: 388 / 844, bottom: 0.15, top: 0.2, avoid: [[96 / 844, 64 / 390, 367 / 844, 114 / 390]] }],
+];
+
+describe('acceptance regressions', () => {
+  for (const [name, aspect, safe] of GAME_SCREENS) {
+    it(`composes Property, Watch Work and Detail on every lot, clear of the UI cards (${name})`, () => {
+      for (const lot of HOUSE_LOTS) {
+        // Property: never the uncomposed site camera (it hid the van under the action bar on landscape phones).
+        const p = serviceViewCamera(lot, 'property', aspect, safe, { phase: 'diagnosis' });
+        expect(p.report, `${lot.id} property composed`).not.toBeNull();
+        expect(p.mode).toBe('property');
+        for (const phase of ['diagnosis', 'repair'] as const) {
+          const w = serviceViewCamera(lot, 'work', aspect, safe, { phase });
+          expect(w.report, `${lot.id} work composed (${phase})`).not.toBeNull();
+          const d = serviceViewCamera(lot, 'detail', aspect, safe, { phase });
+          expect(d.report, `${lot.id} detail composed (${phase})`).not.toBeNull();
+        }
+      }
+    });
+
+    it(`follows the technician with a composed shot all the way from the van to the unit (${name})`, () => {
+      const missing: string[] = [];
+      for (const lot of HOUSE_LOTS) {
+        const from = curbDoor(curbParking(lot), 0.4);
+        const path = approachPath(lot, from, 0);
+        const len = pathLength(path);
+        for (let i = 0; i <= 4; i++) {
+          const at = samplePath(path, (len * i) / 4);
+          const shot = serviceViewCamera(lot, 'work', aspect, safe, { phase: 'arrival', techPos: at, standing: true });
+          if (!shot.report) missing.push(`${lot.id}@${i}/8`);
+        }
+      }
+      expect(missing, 'walking positions without a composed shot').toEqual([]);
+    });
+
+    it(`picks a walking shot from the van door that, slid along after him, still sees him at the unit (${name})`, () => {
+      const lost: string[] = [];
+      for (const lot of HOUSE_LOTS) {
+        const from = curbDoor(curbParking(lot), 0.4);
+        const spot = workPosition(lot, 0);
+        const ahead = [0.25, 0.5, 0.75, 0.95].map((k) => ({ x: from.x + (spot.x - from.x) * k, z: from.z + (spot.z - from.z) * k }));
+        const shot = serviceViewCamera(lot, 'work', aspect, safe, { phase: 'arrival', techPos: from, standing: true, ahead });
+        expect(shot.report, lot.id).not.toBeNull();
+        // The same check the director makes as he walks: the view slid by WALK_TRACK_WEIGHT × his progress.
+        const c = shot.command;
+        const ground = { x: c.target.x, y: 0, z: c.target.z };
+        for (const p of ahead) {
+          const s = serviceSubject(lot, 'work', { techPos: p, standing: true });
+          const slid = { target: { x: ground.x + (p.x - from.x) * WALK_TRACK_WEIGHT, y: 0, z: ground.z + (p.z - from.z) * WALK_TRACK_WEIGHT }, azimuth: c.azimuth, elevation: c.elevation, distance: c.distance };
+          if (typeof scoreView(slid, s, serviceObstacles(lot, 'work', s.focus), aspect, 'work', safe, true, WALKING) === 'string') lost.push(`${lot.id}@${ahead.indexOf(p)}`);
+        }
+      }
+      // Every lot: no re-aim needed on the way.
+      expect(lost.length, `lots where the slid walking view loses him: ${lost.join(' ')}`).toBe(0);
+    });
+  }
+
+  it('turns down a view that puts the subject under a UI card', () => {
+    const subject = serviceSubject(TUTORIAL, 'work');
+    const boxes = serviceObstacles(TUTORIAL, 'work', subject.focus);
+    const shot = serviceViewCamera(TUTORIAL, 'work', 16 / 9, { right: 0, bottom: 0, top: 0 });
+    const pose = { target: { x: shot.command.target.x, y: 0, z: shot.command.target.z }, azimuth: shot.command.azimuth, elevation: shot.command.elevation, distance: shot.command.distance };
+    expect(typeof scoreView(pose, subject, boxes, 16 / 9, 'work', { right: 0, bottom: 0, top: 0 })).not.toBe('string');
+    expect(scoreView(pose, subject, boxes, 16 / 9, 'work', { right: 0, bottom: 0, top: 0, avoid: [[0.25, 0, 0.75, 1]] })).toBe('subject under the UI');
+  });
+
+  it('hands every close shot the serviced cabinet, which zoom stops short of', () => {
+    for (const lot of [TUTORIAL, lotById('n-o-1')!, lotById('a-s-2')!]) {
+      const shot = serviceViewCamera(lot, 'detail', 390 / 844, GAME_SCREENS[2][2], { phase: 'diagnosis' });
+      const cab = (shot.command as { watch?: { cabinet?: { min: { x: number; z: number }; max: { x: number; z: number } } } }).watch?.cabinet;
+      expect(cab, lot.id).toBeDefined();
+      const unit = condenserPosition(lot);
+      expect(unit.x).toBeGreaterThan(cab!.min.x);
+      expect(unit.x).toBeLessThan(cab!.max.x);
+      expect(unit.z).toBeGreaterThan(cab!.min.z);
+      expect(unit.z).toBeLessThan(cab!.max.z);
+    }
   });
 });
