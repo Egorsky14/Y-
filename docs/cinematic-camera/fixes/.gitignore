@@ -2,3 +2,4 @@
 /after/*/*.jpg
 /mask/**/*.jpg
 /strips/**/*.jpg
+!/after/sheets/*.jpg
