@@ -511,12 +511,13 @@ function walkingCamera(lot: Lot, aspect: number, safe: SafeArea, opts: ServiceVi
     const holds = points.length
       ? (v: ViewSpec) => {
           const plan = planFor(groundOrbit(v), turn);
-          if (!points.every((a) => followFailure(orbitView(walkPose(plan, a.p)), lot, a.p, aspect, safe, a.subject, a.boxes) === null)) return false;
-          // All the way along his path, between the look-ahead points too, the camera never passes through a tree, a pole or a wall.
-          return steps.every((p) => {
+          // All the way along his path, between the look-ahead points too, the camera never passes through a tree, a pole
+          // or a wall (checked first: it is cheap, and it turns down most plans that fail).
+          const clear = steps.every((p) => {
             const c = cameraPosition(orbitView(walkPose(plan, p)));
             return !along.some((b) => b.distanceToPoint(c) < WALK_PATH_CLEARANCE);
           });
+          return clear && points.every((a) => followFailure(orbitView(walkPose(plan, a.p)), lot, a.p, aspect, safe, a.subject, a.boxes) === null);
         }
       : undefined;
     const view = composeView(subject, boxes, aspect, 'work', safe, WALKING, holds);
