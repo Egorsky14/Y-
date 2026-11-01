@@ -1,0 +1,24 @@
+{
+  "label": "after",
+  "viewport": {
+    "width": 1920,
+    "height": 1080
+  },
+  "sample": {
+    "mean": 16.806289308163606,
+    "p95": 16.80000000000291,
+    "worst": 33.400000000001455,
+    "frames": 477,
+    "calls": 1767,
+    "triangles": 2858211,
+    "onsite": 10,
+    "workers": 10
+  },
+  "days": {
+    "completed": 18,
+    "roofDone": 8,
+    "stuck": 0,
+    "packingOverAfterHours": 0,
+    "cash": 27470
+  }
+}

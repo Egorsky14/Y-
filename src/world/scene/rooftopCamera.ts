@@ -36,7 +36,7 @@ type P = { x: number; y: number; z: number };
 const P = (x: number, y: number, z: number): P => ({ x, y, z });
 
 /** Taller subjects (a whole ladder) may be framed from further off; property views of a commercial roof are wide. */
-const LADDER_TUNING: RuleTuning = { maxDistance: 15, minDistance: 4.5, fill: 0.62, elevations: [0.2, 0.3, 0.4, 0.5], band: [0.25, 0.5] };
+const LADDER_TUNING: RuleTuning = { maxDistance: 12, minDistance: 4, fill: 0.66, elevations: [0.12, 0.18, 0.26, 0.34], band: [0.22, 0.48] };
 const GROUND_TUNING: RuleTuning = { maxDistance: 13, minDistance: 4, elevations: [0.22, 0.3, 0.38, 0.48], band: [0.25, 0.48] };
 const PROPERTY_TUNING: RuleTuning = { maxDistance: 80, minDistance: 16 };
 

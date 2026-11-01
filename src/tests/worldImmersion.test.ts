@@ -131,3 +131,48 @@ describe('tool bag placement', () => {
     expect(Math.abs(BAG_LOCAL.x) - 0.23).toBeGreaterThan(0.18 + 0.1);
   });
 });
+
+describe('technician elbows', () => {
+  /** Shoulder, elbow and hand world positions for an arm IK solution (same hierarchy as the rig). */
+  function arm(side: 1 | -1, pitch: number, pY: number, sol: { arm: [number, number, number]; fore: number }) {
+    const torso = new THREE.Object3D();
+    torso.position.set(0, pY + 0.06, 0);
+    torso.rotation.set(pitch, 0, 0);
+    const sh = new THREE.Object3D();
+    sh.position.set(side * SHOULDER_X, 0.5, 0);
+    sh.rotation.set(...sol.arm);
+    const el = new THREE.Object3D();
+    el.position.set(0, -0.3, 0);
+    el.rotation.set(sol.fore, 0, 0);
+    const hand = new THREE.Object3D();
+    hand.position.set(0, -0.31, 0);
+    torso.add(sh);
+    sh.add(el);
+    el.add(hand);
+    torso.updateMatrixWorld(true);
+    return { sh: sh.getWorldPosition(new THREE.Vector3()), el: el.getWorldPosition(new THREE.Vector3()), hand: hand.getWorldPosition(new THREE.Vector3()) };
+  }
+  it('never raises the elbow above both the shoulder and the hand (the premium cabinet brace included)', () => {
+    for (const [pitch, pY] of [[0.42, KNEEL.pelvisY], [0.54, 0.93], [0.1, 0.95]] as const) {
+      for (const side of [1, -1] as const) {
+        for (let x = -0.3; x <= 0.31; x += 0.15) {
+          for (let y = 0.4; y <= 1.3; y += 0.15) {
+            for (let z = 0.3; z <= 0.75; z += 0.15) {
+              const sol = armIK(side, { x: side * Math.abs(x), y: y + (pY - KNEEL.pelvisY) * 0.6, z }, pitch, pY);
+              const p = arm(side, pitch, pY, sol);
+              const target = new THREE.Vector3(side * Math.abs(x), y + (pY - KNEEL.pelvisY) * 0.6, z);
+              if (p.sh.distanceTo(target) > 0.58) continue; // out of reach: only the direction matters there
+              expect(p.hand.distanceTo(target), JSON.stringify({ side, x, y, z, pitch })).toBeLessThan(0.02);
+              // (A hand raised close in front of the chest lets the elbow rise a few centimetres as it swings out: allowed.)
+              expect(p.el.y, JSON.stringify({ side, x, y, z, pitch })).toBeLessThanOrEqual(Math.max(p.sh.y, p.hand.y) + 0.06);
+            }
+          }
+        }
+      }
+    }
+    // The free hand braced on a premium home's 1.08 m cabinet top (the old pole put this elbow over his head).
+    const brace = armIK(-1, { x: -0.2, y: 1.14, z: 0.61 }, 0.42, KNEEL.pelvisY);
+    const b = arm(-1, 0.42, KNEEL.pelvisY, brace);
+    expect(b.el.y).toBeLessThan(b.sh.y);
+  });
+});

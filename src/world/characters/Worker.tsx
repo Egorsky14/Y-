@@ -273,9 +273,9 @@ export function armIK(side: 1 | -1, target: { x: number; y: number; z: number },
   const n = new THREE.Vector3(dx / len, dy / len, dz / len);
   const a1 = Math.acos(THREE.MathUtils.clamp((UPPER_ARM * UPPER_ARM + d * d - FOREARM * FOREARM) / (2 * UPPER_ARM * d), -1, 1));
   const flex = Math.PI - Math.acos(THREE.MathUtils.clamp((UPPER_ARM * UPPER_ARM + FOREARM * FOREARM - d * d) / (2 * UPPER_ARM * FOREARM), -1, 1));
-  // The elbow sits behind and below the shoulder-to-hand line: the upper arm leans from the target
-  // direction toward the back (or down, when reaching straight back).
-  const pole = new THREE.Vector3(0, -0.35, -1);
+  // The elbow drops below the shoulder-to-hand line, a little out to its own side and back. (A pole pointing only
+  // back flipped to "up" for targets above and in front of the shoulder, raising the elbow over the head.)
+  const pole = new THREE.Vector3(side * 0.45, -1, -0.3);
   const m = pole.clone().addScaledVector(n, -pole.dot(n));
   if (m.lengthSq() < 1e-6) m.set(0, -1, 0).addScaledVector(n, n.y);
   m.normalize();
@@ -343,7 +343,7 @@ export function Worker({ role, look, anim, scale = 1, pace = 1, work, motion }: 
   const hands = { relaxedL: useRef<THREE.Mesh>(null), relaxedR: useRef<THREE.Mesh>(null), gripL: useRef<THREE.Mesh>(null), gripR: useRef<THREE.Mesh>(null) };
   const anchors = { socket: useRef<THREE.Group>(null), probeEnd: useRef<THREE.Group>(null) };
   const leads = useRef<LeadsHandle>(null);
-  const blend = useRef<Pose>({});
+  const blend = useRef<Record<string, THREE.Quaternion>>({});
   const stride = useRef(0);
 
   const materials = useMemo(
@@ -551,7 +551,7 @@ export function Worker({ role, look, anim, scale = 1, pace = 1, work, motion }: 
           look(0, top, face + 0.45, lean, pelvisY);
         } else if (fetch > 0.5 && bag) {
           // Reach into the tool bag set down beside the hip: hand to the handles, the other hand on the thigh.
-          ik(-1, bag.x, 0.42, bag.z, lean, pelvisY, twist, roll);
+          ik(-1, bag.x * 0.88, 0.47, bag.z, lean, pelvisY, twist, roll);
           ik(1, 0.16, 0.5, 0.36, lean, pelvisY, twist, roll);
           look(bag.x, 0.3, bag.z, lean, pelvisY, twist);
         } else if (fetch > 0.5) {
@@ -562,7 +562,8 @@ export function Worker({ role, look, anim, scale = 1, pace = 1, work, motion }: 
         } else {
           // Wrench turns: small arcs at the valve/terminal; the forearm rolls with each pull.
           const pull = Math.sin(t * 3.2);
-          ik(1, 0.12 + pull * 0.03, 0.5 + pull * 0.035, face - 0.03, lean, pelvisY);
+          // The hand stops a little short of the panel; the wrench's head reaches it.
+          ik(1, 0.12 + pull * 0.03, 0.52 + pull * 0.035, face - 0.09, lean, pelvisY);
           ik(-1, -0.2, top + 0.02, face + 0.12, lean, pelvisY);
           const fr = pose.foreR!;
           pose.foreR = [fr[0], pull * 0.5, fr[2]];
@@ -701,17 +702,17 @@ export function Worker({ role, look, anim, scale = 1, pace = 1, work, motion }: 
         pelvisY = PELVIS_Y - Math.abs(shift) * 0.01;
       }
     }
-    // Blend every joint toward its target so state changes never pop.
+    // Blend every joint toward its target so state changes never pop. Rotations are slerped: blending Euler angles
+    // component by component swings an arm the long way round (over the head) when an IK solution wraps past ±π.
     const k = Math.min(1, dt * 7);
     const cur = blend.current;
     for (const name of Object.keys(refs) as (keyof typeof refs)[]) {
       const target = pose[name] ?? [0, 0, 0];
-      const c = cur[name] ?? [target[0], target[1], target[2]];
-      c[0] += (target[0] - c[0]) * k;
-      c[1] += (target[1] - c[1]) * k;
-      c[2] += (target[2] - c[2]) * k;
+      const goal = BLEND_Q.setFromEuler(BLEND_E.set(target[0], target[1], target[2]));
+      const c = cur[name] ?? goal.clone();
+      c.slerp(goal, k);
       cur[name] = c;
-      r[name]!.rotation.set(c[0], c[1], c[2]);
+      r[name]!.quaternion.copy(c);
     }
     const hs = heightState.current;
     hs.pelvis += (pelvisY - hs.pelvis) * k;
@@ -864,6 +865,8 @@ export function Worker({ role, look, anim, scale = 1, pace = 1, work, motion }: 
   );
 }
 
+const BLEND_Q = new THREE.Quaternion();
+const BLEND_E = new THREE.Euler();
 const LOD_POS = new THREE.Vector3();
 const LOD_SPHERE = new THREE.Sphere();
 const LOD_FRUSTUM = new THREE.Frustum();

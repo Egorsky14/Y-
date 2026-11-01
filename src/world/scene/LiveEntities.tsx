@@ -84,12 +84,15 @@ function VehicleView({ id }: { id: string }) {
         const park = { x: Math.sin(site.pose.heading), z: Math.cos(site.pose.heading) };
         const uTurn = fwd.x * park.x + fwd.z * park.z < 0;
         const a = first ? { x: site.pose.x, z: site.pose.z } : { x: g.position.x, z: g.position.z };
-        // Longer pulls (into a commercial lot's side drive) take a wider curve and proportionally longer.
+        // Rooftop service poses (a commercial lot's side drive) can be far off the street: a wider curve and
+        // proportionally longer. House curb pulls keep their short, fixed curve.
+        const siteJobNow = v.jobId ? state.jobs[v.jobId] : undefined;
+        const long = !!siteJobNow && isRoofJob(state, siteJobNow);
         const dist = Math.hypot(site.pose.x - a.x, site.pose.z - a.z);
-        const reach = Math.max(uTurn ? 6 : 3, Math.min(14, dist * 0.35));
+        const reach = long ? Math.max(uTurn ? 6 : 3, Math.min(14, dist * 0.35)) : uTurn ? 6 : 3;
         pk.curve = [a, { x: a.x + fwd.x * reach, z: a.z + fwd.z * reach }, { x: site.pose.x - park.x * reach, z: site.pose.z - park.z * reach }, { x: site.pose.x, z: site.pose.z }];
         pk.t = first ? 1 : 0;
-        pk.seconds = Math.max(PARK_SECONDS * (uTurn ? 2 : 1), dist / 6);
+        pk.seconds = long ? Math.max(PARK_SECONDS * (uTurn ? 2 : 1), dist / 6) : PARK_SECONDS * (uTurn ? 2 : 1);
         pk.framed = first;
       }
       pk.t = Math.min(1, pk.t + (dt * visualPace(state.speed)) / pk.seconds);

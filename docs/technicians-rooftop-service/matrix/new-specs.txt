@@ -1,0 +1,16 @@
+# new and camera specs on working tree after 338bf02 (slerp blend, ladder framing)
+desktop-1080p|technician-showcase.spec.ts exit=0 1 passed 0 failed secs=52
+desktop-1080p|rooftop-camera.spec.ts exit=0 1 passed 0 failed secs=85
+phone-390x844|rooftop-camera.spec.ts exit=0 1 passed 0 failed secs=83
+desktop-1080p|technician-load.spec.ts exit=0 1 passed 0 failed secs=32
+desktop-1080p|service-camera.spec.ts exit=1 0 passed 1 failed secs=31
+iphone-portrait|service-camera.spec.ts exit=1 0 passed 1 failed secs=30
+desktop-1080p|service-camera-feedback.spec.ts exit=0 1 passed 0 failed secs=45
+# service-camera.spec.ts failed above: the long-pull park curve (for rooftop service poses) also lengthened house curb
+# pulls, so the technician stepped out later and the followed view stood still 1.25-1.5 s (limit 1 s). Fixed by scaling
+# the curve for rooftop jobs only; rerun on the fixed build:
+desktop-1080p|service-camera.spec.ts exit=0 1 passed
+iphone-portrait|service-camera.spec.ts exit=0 1 passed
+laptop-768p|service-camera.spec.ts exit=0 1 passed
+small-1024|service-camera.spec.ts exit=0 1 passed
+iphone-landscape|service-camera.spec.ts exit=0 1 passed
