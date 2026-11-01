@@ -110,6 +110,18 @@
       "source": "blender 5.2.3 (tools/blender/yard_kit.py)",
       "license": "project",
       "compression": "EXT_meshopt_compression (lossless, welded)"
+    },
+    {
+      "id": "technician",
+      "category": "characters",
+      "file": "models/characters/technician.glb",
+      "bytes": 750016,
+      "meshes": 116,
+      "triangles": 65424,
+      "description": "EGO HVAC technician parts library: continuous skinned body in three builds and a distant LOD, four face shapes, hair styles, beards, cap, work boots and polo, belt, pocket and trim details, all skinned to the 13-bone game rig; the game merges the parts each character wears per material",
+      "source": "blender 5.2.3 (tools/blender/technician.py)",
+      "license": "project",
+      "compression": "EXT_meshopt_compression (lossless, welded)"
     }
   ]
 }

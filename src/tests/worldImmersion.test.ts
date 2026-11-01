@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import * as THREE from 'three';
 import { HQ_LOT, hqParkingStalls } from '@/game/world/cityLayout';
-import { armIK, KNEEL } from '@/world/characters/Worker';
+import { armIK, KNEEL, SHOULDER_X } from '@/world/characters/Worker';
 import { BAG_LOCAL } from '@/world/scene/serviceCall';
 import { HQ, HQ_OPERATIONS_SOLIDS } from '@/world/buildings/HeadquartersBuilder';
 import { HQ_STAFF_ROW, HQ_VISITOR_CARS, parkedCarSpots } from '@/world/vehicles/parkedCarSpots';
@@ -18,7 +18,7 @@ function handPosition(side: 1 | -1, torsoPitch: number, pelvisY: number, arm: [n
   torso.position.set(0, pelvisY + 0.06, 0);
   torso.rotation.set(torsoPitch, yaw, roll);
   const shoulder = new THREE.Object3D();
-  shoulder.position.set(side * 0.25, 0.5, 0);
+  shoulder.position.set(side * SHOULDER_X, 0.5, 0);
   shoulder.rotation.set(arm[0], arm[1], arm[2]);
   const elbow = new THREE.Object3D();
   elbow.position.set(0, -0.3, 0);

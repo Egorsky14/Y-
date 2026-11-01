@@ -1,10 +1,15 @@
 import { useImperativeHandle, useMemo, useRef } from 'react';
 import * as THREE from 'three';
-import { useFrame } from '@react-three/fiber';
+import { createPortal, useFrame } from '@react-three/fiber';
+import { useGLTF } from '@react-three/drei';
 import type { EmployeeRole } from '@/game/employees/roles';
 import { PALETTE } from '../assets/palette';
 import { wordmarkTexture } from '../assets/textures';
 import * as BGU from 'three/examples/jsm/utils/BufferGeometryUtils.js';
+import { appearanceFor, buildCharacter, CHARACTER_URL, PELVIS_Y, SHOULDER_X } from './technicianModel';
+
+export { SHOULDER_X };
+useGLTF.preload(CHARACTER_URL);
 
 export type WorkerAnim = 'idle' | 'walk' | 'carry' | 'inspect' | 'stand-inspect' | 'repair' | 'install' | 'train' | 'celebrate';
 
@@ -19,25 +24,6 @@ interface WorkerProps {
   work?: { face: number; top: number; bag?: { x: number; z: number } };
 }
 
-const SKIN = ['#f1c7a6', '#d9a57c', '#b97a52', '#8d5a3b', '#f6d7bf', '#6b4430'];
-const HAIR = ['#2b1d14', '#4a2f1d', '#8a6a3c', '#1a1a1a', '#b3833f', '#5a5a5a'];
-const SHIRT: Record<EmployeeRole, string> = { technician: '#1d2126', installer: '#2a2f36', dispatcher: '#f3f4f6', 'comfort-advisor': '#1b8f86' };
-const PANTS: Record<EmployeeRole, string> = { technician: '#3a3f46', installer: '#4a4238', dispatcher: '#2c3340', 'comfort-advisor': '#2c3340' };
-
-const PELVIS_Y = 0.95;
-
-/**
- * Shared body geometry (built once for every worker): a lathed torso that tapers from chest to
- * waist and is flattened front to back, rounded hips, work boots with a rounded toe cap and a
- * lugged sole, and mitten-shaped hands. Replaces the earlier boxes, which read as blocks at the
- * close service-call camera.
- */
-const lathe = (pts: [number, number][], segs = 20, depth = 0.62) => {
-  const g = new THREE.LatheGeometry(pts.map(([r, y]) => new THREE.Vector2(r, y)), segs);
-  g.scale(1, 1, depth);
-  g.computeVertexNormals();
-  return g;
-};
 /**
  * A gloved hand in the forearm frame (wrist at the origin, fingers toward -y, palm facing +z):
  * a broad palm with a knuckle ridge, four two-segment fingers of natural lengths fanned slightly
@@ -132,82 +118,20 @@ const WRENCH = {
 };
 
 const GEO = {
-  torso: lathe([[0.001, 0], [0.165, 0.0], [0.168, 0.1], [0.178, 0.22], [0.198, 0.36], [0.205, 0.44], [0.19, 0.5], [0.15, 0.55], [0.08, 0.58], [0.001, 0.585]]),
-  hem: lathe([[0.17, 0], [0.172, 0.035]], 20, 0.64),
-  hips: lathe([[0.001, -0.1], [0.12, -0.1], [0.165, -0.05], [0.17, 0.04], [0.16, 0.1], [0.001, 0.1]], 18, 0.7),
-  boot: (() => {
-    const g = new THREE.CapsuleGeometry(0.062, 0.17, 4, 12);
-    g.rotateX(Math.PI / 2);
-    g.scale(1.12, 0.95, 1);
-    g.translate(0, 0.03, 0.07);
-    return g;
-  })(),
-  sole: (() => {
-    const s = new THREE.Shape();
-    const w = 0.075;
-    s.moveTo(-w, -0.1);
-    s.lineTo(w, -0.1);
-    s.quadraticCurveTo(w + 0.008, 0.16, 0, 0.255);
-    s.quadraticCurveTo(-w - 0.008, 0.16, -w, -0.1);
-    const g = new THREE.ExtrudeGeometry(s, { depth: 0.035, bevelEnabled: true, bevelThickness: 0.006, bevelSize: 0.006, bevelSegments: 1, curveSegments: 8 });
-    g.rotateX(Math.PI / 2);
-    g.translate(0, -0.005, 0);
-    return g;
-  })(),
-  shaft: new THREE.CylinderGeometry(0.068, 0.074, 0.14, 12),
-  hand: (() => {
-    const g = new THREE.SphereGeometry(0.045, 12, 10);
-    g.scale(0.85, 1.25, 0.6);
-    return g;
-  })(),
   /** Work gloves (per side): relaxed, and closed in a grip for the hand that holds a tool. */
   glove: ([-1, 1] as const).map((side) => buildGlove(side, 0)),
   gloveGrip: ([-1, 1] as const).map((side) => buildGlove(side, 1)),
-  /** Cap peak: a thin, gently curved half-ellipse projecting forward from the crown's rim. */
-  visor: (() => {
-    const sh = new THREE.Shape();
-    sh.moveTo(-0.1, 0);
-    sh.quadraticCurveTo(-0.098, 0.085, 0, 0.1);
-    sh.quadraticCurveTo(0.098, 0.085, 0.1, 0);
-    sh.quadraticCurveTo(0, 0.022, -0.1, 0);
-    const g = new THREE.ExtrudeGeometry(sh, { depth: 0.008, bevelEnabled: true, bevelThickness: 0.002, bevelSize: 0.002, bevelSegments: 1, curveSegments: 10 });
-    g.rotateX(Math.PI / 2);
-    // Curve the sides down slightly, as a broken-in cap peak.
-    const pos = g.attributes.position;
-    for (let i = 0; i < pos.count; i++) pos.setY(i, pos.getY(i) - pos.getX(i) * pos.getX(i) * 1.4);
-    g.computeVertexNormals();
-    return g;
-  })(),
-  cargo: new THREE.BoxGeometry(0.035, 0.13, 0.12),
-  collar: new THREE.CylinderGeometry(0.07, 0.098, 0.055, 14, 1, true),
-  belt: lathe([[0.176, 0], [0.18, 0.05]], 20, 0.66),
-  pouch: (() => {
-    const g = new THREE.CapsuleGeometry(0.045, 0.06, 3, 8);
-    g.scale(1.1, 1, 0.75);
-    return g;
-  })(),
+  /** EGO HVAC prints follow the shirt's curve: a shallow cylinder segment rather than a flat card. */
+  backPrint: new THREE.CylinderGeometry(0.17, 0.17, 0.07, 16, 1, true, Math.PI - 0.8, 1.6),
+  chestPrint: new THREE.CylinderGeometry(0.15, 0.15, 0.032, 10, 1, true, -0.62, 0.48),
 };
 let backPrint: THREE.MeshStandardMaterial | null = null;
 function backPrintMaterial(): THREE.MeshStandardMaterial {
-  backPrint ??= new THREE.MeshStandardMaterial({ map: wordmarkTexture('light', false), transparent: true, alphaTest: 0.1, roughness: 0.8, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2 });
+  backPrint ??= new THREE.MeshStandardMaterial({ map: wordmarkTexture('light', false), transparent: true, alphaTest: 0.1, roughness: 0.8, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -4, side: THREE.DoubleSide });
   return backPrint;
 }
 
 const mat = (color: string, roughness = 0.85, metalness = 0) => new THREE.MeshStandardMaterial({ color, roughness, metalness });
-
-function Limb({ length, radius, color, taper = 0.85 }: { length: number; radius: number; color: THREE.Material; taper?: number }) {
-  // Tapered limb: a capsule with a slightly narrower lower end reads as a forearm or shin rather than a tube.
-  return (
-    <group>
-      <mesh position={[0, -length / 2, 0]} material={color} castShadow>
-        <capsuleGeometry args={[radius, length - radius * 2, 4, 12]} />
-      </mesh>
-      <mesh position={[0, -length + radius * 0.6, 0]} material={color} scale={[taper, 1, taper]}>
-        <sphereGeometry args={[radius, 10, 8]} />
-      </mesh>
-    </group>
-  );
-}
 
 interface LeadsHandle {
   update: (socket: THREE.Vector3, probeEnd: THREE.Vector3, clip: THREE.Vector3) => void;
@@ -324,7 +248,7 @@ export function armIK(side: 1 | -1, target: { x: number; y: number; z: number },
   // Into the torso frame: undo the torso's lean, twist and side bend (Euler XYZ about the waist pivot),
   // then measure from the shoulder.
   const local = new THREE.Vector3(target.x, target.y - (pelvisY + 0.06), target.z).applyMatrix4(new THREE.Matrix4().makeRotationFromEuler(new THREE.Euler(torsoPitch, torsoYaw, torsoRoll, 'XYZ')).invert());
-  const dx = local.x - side * 0.25 * heavy;
+  const dx = local.x - side * SHOULDER_X * heavy;
   const dy = local.y - 0.5;
   const dz = local.z;
   const len = Math.max(1e-4, Math.hypot(dx, dy, dz));
@@ -351,26 +275,30 @@ export function armIK(side: 1 | -1, target: { x: number; y: number; z: number },
   return { arm: [e.x, e.y, e.z], fore: -flex };
 }
 
+/** Beyond this distance (m) the character switches to the distant mesh and stops posing its hands and tools. */
+const FAR_LOD = 26;
+
 /**
- * Stylized-realistic worker (~1.8 m): articulated shoulders, elbows, hips and knees driven by
- * procedural clips per job state, blended across state changes. Feet stay on the ground.
+ * Stylized-realistic worker (~1.8 m): a Blender-authored continuous skinned body (technicianModel.ts)
+ * whose shoulders, elbows, hips and knees are driven by procedural clips per job state, blended across
+ * state changes. Feet stay on the ground.
  */
 export function Worker({ role, look, anim, scale = 1, pace = 1, work }: WorkerProps) {
   const root = useRef<THREE.Group>(null);
-  const refs = {
-    pelvis: useRef<THREE.Group>(null), torso: useRef<THREE.Group>(null), head: useRef<THREE.Group>(null),
-    armL: useRef<THREE.Group>(null), armR: useRef<THREE.Group>(null), foreL: useRef<THREE.Group>(null), foreR: useRef<THREE.Group>(null),
-    legL: useRef<THREE.Group>(null), legR: useRef<THREE.Group>(null), shinL: useRef<THREE.Group>(null), shinR: useRef<THREE.Group>(null),
-    footL: useRef<THREE.Group>(null), footR: useRef<THREE.Group>(null),
-  };
+  const { scene: characterScene } = useGLTF(CHARACTER_URL);
+  const appearance = useMemo(() => appearanceFor(look), [look]);
+  const character = useMemo(() => buildCharacter(characterScene, appearance, role), [characterScene, appearance, role]);
+  const refs = useMemo(() => Object.fromEntries(Object.entries(character.bones).map(([k, b]) => [k, { current: b }])) as unknown as Record<keyof typeof character.bones, { current: THREE.Object3D | null }>, [character]);
   const bag = useRef<THREE.Group>(null);
   const meter = useRef<THREE.Group>(null);
   const wrench = useRef<THREE.Group>(null);
   const tablet = useRef<THREE.Group>(null);
   const load = useRef<THREE.Group>(null);
   const phase = ((look % 100) / 100) * Math.PI * 2;
-  const build = 0.94 + ((look >> 5) % 7) * 0.02; // height variation 0.94–1.06
-  const heavy = 0.92 + ((look >> 2) % 5) * 0.04; // torso width variation
+  const build = appearance.height;
+  // The shoulders sit at SHOULDER_X for every build (the builds differ in girth, not joint positions).
+  const heavy = 1;
+  const lod = useRef({ far: false, skipped: 0, skippedDt: 0 });
   const heightState = useRef({ pelvis: PELVIS_Y, root: 0, z: 0 });
   const clockT = useRef(0);
   const lastAnim = useRef<WorkerAnim | null>(null);
@@ -383,34 +311,42 @@ export function Worker({ role, look, anim, scale = 1, pace = 1, work }: WorkerPr
 
   const materials = useMemo(
     () => ({
-      skin: mat(SKIN[look % SKIN.length]),
-      hair: mat(HAIR[(look >> 3) % HAIR.length], 0.9),
-      shirt: mat(SHIRT[role]),
-      pants: mat(PANTS[role]),
-      boot: mat('#4a3423', 0.78),
-      sole: mat('#18140f', 0.95),
+      skin: mat(appearance.skin, 0.62),
       teal: new THREE.MeshStandardMaterial({ color: PALETTE.egoTeal, emissive: PALETTE.egoTeal, emissiveIntensity: 0.2, roughness: 0.7 }),
-      belt: mat('#1c1d20', 0.85),
-      leather: mat('#5b3f27', 0.75),
-      buckle: mat('#c9ced3', 0.35, 0.8),
       tool: mat('#f2c230', 0.6),
       steel: mat('#b9bfc5', 0.4, 0.7),
       dark: mat('#1d1f22', 0.7),
       white: mat('#f4f5f7', 0.7),
-      hiVis: new THREE.MeshStandardMaterial({ color: '#f6a21c', emissive: '#f6a21c', emissiveIntensity: 0.15, roughness: 0.8 }),
-      reflective: new THREE.MeshStandardMaterial({ color: '#d8dde2', roughness: 0.3, metalness: 0.4 }),
-      hat: mat(role === 'installer' ? '#f2c230' : '#15181d', 0.8),
-      kneePad: mat('#23262a', 0.8),
       glove: mat('#2f3338', 0.75),
-      pocket: mat(PANTS[role] === '#3a3f46' ? '#353a40' : '#40392f', 0.9),
       probe: mat('#c4262e', 0.5),
-      eye: mat('#1a1511', 0.5),
       screen: new THREE.MeshStandardMaterial({ color: '#8fd9ff', emissive: '#4fb3ff', emissiveIntensity: 0.6, roughness: 0.3 }),
     }),
-    [look, role],
+    [appearance],
   );
 
-  useFrame((_, dt) => {
+  useFrame(({ camera }, frameDt) => {
+    // Level of detail: the distant mesh past FAR_LOD; far away or off screen, the pose updates on every
+    // fourth frame with the time summed, so clips stay in step but cost a quarter.
+    const L = lod.current;
+    const rootNow = root.current;
+    let cheap = false;
+    if (rootNow) {
+      const p = rootNow.getWorldPosition(LOD_POS);
+      const far = camera.position.distanceTo(p) > FAR_LOD;
+      if (far !== L.far) {
+        L.far = far;
+        character.near.visible = !far;
+        character.far.visible = far;
+      }
+      LOD_FRUSTUM.setFromProjectionMatrix(LOD_MATRIX.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse));
+      cheap = far || !LOD_FRUSTUM.intersectsSphere(LOD_SPHERE.set(p.setY(p.y + 0.9), 1.3));
+    }
+    if (cheap && ++L.skipped % 4 !== 0) {
+      L.skippedDt += frameDt;
+      return;
+    }
+    const dt = frameDt + L.skippedDt;
+    L.skippedDt = 0;
     // Animation time follows the game: paused games freeze the crew, fast-forward brisks them up
     // (capped so loops never look frantic). Joint blending still settles in real time.
     const workPace = Math.min(pace, 1.5);
@@ -489,14 +425,14 @@ export function Worker({ role, look, anim, scale = 1, pace = 1, work }: WorkerPr
         // Heel strike then toe-off.
         set('footL', Math.max(0, sw) * 0.25 - Math.max(0, -sw) * 0.15);
         set('footR', Math.max(0, -sw) * 0.25 - Math.max(0, sw) * 0.15);
-        set('armL', -sw * 0.38, 0, 0.07);
+        set('armL', -sw * 0.38, 0, -0.07);
         set('foreL', -0.32 - Math.max(0, -sw) * 0.25);
         if (anim === 'carry') {
-          set('armR', 0.1, 0, -0.16);
+          set('armR', 0.1, 0, 0.07);
           set('foreR', -0.1);
           showBag = true;
         } else {
-          set('armR', sw * 0.38, 0, -0.07);
+          set('armR', sw * 0.38, 0, 0.07);
           set('foreR', -0.32 - Math.max(0, sw) * 0.25);
         }
         // Counter-rotation of shoulders against hips, a slight forward lean, a level gaze.
@@ -650,10 +586,10 @@ export function Worker({ role, look, anim, scale = 1, pace = 1, work }: WorkerPr
         set('legR', 0, 0, -0.05 + shift * 0.025);
         set('shinL', 0.03 + Math.max(0, -shift) * 0.06);
         set('shinR', 0.03 + Math.max(0, shift) * 0.06);
-        set('armL', Math.sin(t * 1.1) * 0.03, 0, 0.12);
+        set('armL', Math.sin(t * 1.1) * 0.03, 0, -0.06);
         set('foreL', -0.25);
-        set('armR', 0.15, 0, -0.32);
-        set('foreR', -0.9);
+        set('armR', 0.1, 0, 0.07);
+        set('foreR', -0.38);
         set('torso', Math.sin(t * 1.2) * 0.012, 0, shift * 0.025);
         set('head', 0.03, Math.sin(t * 0.4) * 0.35);
         pelvisY = PELVIS_Y - Math.abs(shift) * 0.01;
@@ -703,108 +639,39 @@ export function Worker({ role, look, anim, scale = 1, pace = 1, work }: WorkerPr
   });
 
   const tech = role === 'technician' || role === 'installer';
-  // Boot meshes are placed relative to the ankle pivot (the foot group sits at the bottom of the shin).
-  const Boot = ({ side }: { side: 1 | -1 }) => (
-    <group>
-      <mesh geometry={GEO.boot} material={materials.boot} castShadow />
-      <mesh geometry={GEO.sole} position={[0, 0.0, 0]} material={materials.sole} />
-      <mesh geometry={GEO.shaft} position={[side * 0.0, 0.1, 0.0]} material={materials.boot} />
-      <mesh position={[0, 0.17, 0]} material={materials.pants}>
-        <cylinderGeometry args={[0.072, 0.076, 0.06, 12]} />
-      </mesh>
-    </group>
-  );
+  const b = character.bones;
+  const hand = (side: 1 | -1) =>
+    tech ? (
+      <>
+        <mesh ref={side < 0 ? hands.relaxedL : hands.relaxedR} geometry={GEO.glove[side < 0 ? 0 : 1]} position={[0, -0.27, 0.005]} material={materials.glove} castShadow />
+        <mesh ref={side < 0 ? hands.gripL : hands.gripR} geometry={GEO.gloveGrip[side < 0 ? 0 : 1]} position={[0, -0.27, 0.005]} material={materials.glove} castShadow visible={false} />
+      </>
+    ) : (
+      <>
+        <mesh ref={side < 0 ? hands.relaxedL : hands.relaxedR} geometry={GEO.glove[side < 0 ? 0 : 1]} position={[0, -0.27, 0.005]} scale={0.9} material={materials.skin} castShadow />
+        <mesh ref={side < 0 ? hands.gripL : hands.gripR} geometry={GEO.gloveGrip[side < 0 ? 0 : 1]} position={[0, -0.27, 0.005]} scale={0.9} material={materials.skin} castShadow visible={false} />
+      </>
+    );
 
   return (
     <group ref={root} scale={scale * build}>
       {tech && <TestLeads ref={leads} />}
-      <group ref={refs.pelvis} position={[0, PELVIS_Y, 0]}>
-        <mesh geometry={GEO.hips} position={[0, -0.02, 0]} material={materials.pants} castShadow scale={[heavy, 1, 1]} />
-        {/* Legs: thigh → knee → shin → ankle/foot */}
-        {([-1, 1] as const).map((side) => (
-          <group key={side} ref={side < 0 ? refs.legL : refs.legR} position={[side * 0.1, -0.05, 0]}>
-            <Limb length={0.46} radius={0.082} color={materials.pants} />
-            {tech && <mesh geometry={GEO.cargo} position={[side * 0.083, -0.25, 0.01]} material={materials.pocket} />}
-            <group ref={side < 0 ? refs.shinL : refs.shinR} position={[0, -0.45, 0]}>
-              <Limb length={0.42} radius={0.07} color={materials.pants} taper={0.8} />
-              {tech && (
-                <mesh position={[0, -0.1, 0.07]} material={materials.kneePad}>
-                  <boxGeometry args={[0.13, 0.14, 0.05]} />
-                </mesh>
-              )}
-              <group ref={side < 0 ? refs.footL : refs.footR} position={[0, -0.42, 0]}>
-                <Boot side={side} />
-              </group>
-            </group>
-          </group>
-        ))}
-        {/* Torso */}
-        <group ref={refs.torso} position={[0, 0.06, 0]}>
-          <mesh geometry={GEO.torso} position={[0, 0.03, 0]} material={materials.shirt} castShadow scale={[heavy, 1, 1]} />
-          <mesh geometry={GEO.hem} position={[0, 0.02, 0]} material={materials.shirt} scale={[heavy, 1, 1]} />
-          {role === 'technician' && <mesh position={[0, 0.36, -0.128]} rotation={[0, Math.PI, 0]} material={backPrintMaterial()}><planeGeometry args={[0.26, 0.065]} /></mesh>}
-          {/* Trapezius slope from the collar to each shoulder */}
-          {([-1, 1] as const).map((side) => (
-            <mesh key={side} position={[side * 0.15 * heavy, 0.535, 0]} rotation={[0, 0, side * -0.42]} scale={[1, 0.55, 0.75]} material={materials.shirt}>
-              <sphereGeometry args={[0.1, 10, 8]} />
-            </mesh>
-          ))}
-          {/* Collar, teal shoulder piping, name patch and back logo */}
-          <mesh geometry={GEO.collar} position={[0, 0.58, 0.005]} material={role === 'dispatcher' ? materials.white : materials.shirt} scale={[1, 1, 0.85]} />
-          <mesh position={[0, 0.53, 0.112]} rotation={[-0.25, 0, 0]} material={role === 'dispatcher' ? materials.white : materials.teal}>
-            <boxGeometry args={[0.026, 0.09, 0.008]} />
+      <primitive object={character.root} />
+      {createPortal(
+        <>
+          {/* EGO HVAC on the back and the left chest, a name patch on the right; prints follow the shirt's curve. */}
+          {role === 'technician' && <mesh geometry={GEO.backPrint} position={[0, 0.37, 0.05]} material={backPrintMaterial()} />}
+          {role !== 'dispatcher' && <mesh geometry={GEO.chestPrint} position={[0, 0.385, -0.056]} material={backPrintMaterial()} />}
+          <mesh position={[0.088, 0.385, 0.094]} rotation={[-0.15, 0.32, 0]} material={materials.white}>
+            <boxGeometry args={[0.07, 0.02, 0.004]} />
           </mesh>
-          {([-1, 1] as const).map((side) => (
-            <mesh key={side} position={[side * 0.17 * heavy, 0.52, 0.0]} material={materials.teal} rotation={[0, 0, side * 0.3]}>
-              <boxGeometry args={[0.1, 0.012, 0.2]} />
-            </mesh>
-          ))}
-          <mesh position={[-0.1, 0.42, 0.12]} material={materials.white}>
-            <boxGeometry args={[0.09, 0.03, 0.01]} />
-          </mesh>
-          <mesh position={[0.1, 0.42, 0.12]} material={materials.teal}>
-            <boxGeometry args={[0.05, 0.05, 0.01]} />
-          </mesh>
-          {role !== 'technician' && (
-            <mesh position={[0, 0.36, -0.12]} material={materials.teal}>
-              <boxGeometry args={[0.16, 0.08, 0.01]} />
-            </mesh>
-          )}
-          {role === 'installer' && (
-            <group>
-              <mesh position={[0, 0.3, 0]} material={materials.hiVis} scale={[heavy, 1, 1]}>
-                <boxGeometry args={[0.44, 0.44, 0.26]} />
-              </mesh>
-              {[0.2, 0.34].map((y) => (
-                <mesh key={y} position={[0, y, 0]} material={materials.reflective} scale={[heavy, 1, 1]}>
-                  <boxGeometry args={[0.45, 0.03, 0.27]} />
-                </mesh>
-              ))}
-            </group>
-          )}
-          {tech && (
-            <group position={[0, 0.02, 0]}>
-              <mesh geometry={GEO.belt} position={[0, -0.025, 0]} material={materials.belt} scale={[heavy, 1, 1]} />
-              <mesh position={[0, 0.0, 0.118]} material={materials.buckle}>
-                <boxGeometry args={[0.05, 0.04, 0.012]} />
-              </mesh>
-              <mesh geometry={GEO.pouch} position={[0.17 * heavy, -0.07, 0.07]} rotation={[0, -0.5, 0]} material={materials.leather} />
-              <mesh geometry={GEO.pouch} position={[-0.17 * heavy, -0.07, 0.07]} rotation={[0, 0.5, 0]} material={materials.leather} scale={[0.85, 0.85, 0.85]} />
-              <mesh position={[0.12, -0.08, -0.14]} material={materials.dark}>
-                <boxGeometry args={[0.07, 0.1, 0.04]} />
-              </mesh>
-              <mesh position={[-0.16, -0.06, 0.15]} material={materials.tool}>
-                <boxGeometry args={[0.06, 0.06, 0.03]} />
-              </mesh>
-            </group>
-          )}
           {/* Boxed unit carried in front of the chest during installs */}
           <group ref={load} position={[0, 0.12, 0.42]} visible={false}>
             <mesh castShadow>
               <boxGeometry args={[0.56, 0.46, 0.5]} />
               <meshStandardMaterial color="#d9cfbf" roughness={0.9} />
             </mesh>
-            <mesh position={[0, 0, 0]}>
+            <mesh>
               <boxGeometry args={[0.58, 0.06, 0.08]} />
               <meshStandardMaterial color="#1d1f22" roughness={0.8} />
             </mesh>
@@ -812,177 +679,86 @@ export function Worker({ role, look, anim, scale = 1, pace = 1, work }: WorkerPr
               <boxGeometry args={[0.2, 0.08, 0.005]} />
             </mesh>
           </group>
-          {/* Neck and head with face features, hair or headwear */}
-          <mesh position={[0, 0.62, 0]} material={materials.skin}>
-            <cylinderGeometry args={[0.055, 0.07, 0.1, 10]} />
-          </mesh>
-          <group ref={refs.head} position={[0, 0.775, 0]} scale={0.92}>
-            <mesh material={materials.skin} castShadow scale={[0.95, 1.08, 1]}>
-              <sphereGeometry args={[0.125, 18, 14]} />
+        </>,
+        b.torso,
+      )}
+      {tech &&
+        createPortal(
+          <mesh position={[0, 0.172, 0.094]} rotation={[-0.35, 0, 0]} material={materials.teal}>
+            <boxGeometry args={[0.036, 0.026, 0.006]} />
+          </mesh>,
+          b.head,
+        )}
+      {createPortal(
+        <>
+          {hand(-1)}
+          <group ref={bag} position={[0, -0.52, 0]} visible={false}>
+            <mesh material={materials.dark} castShadow>
+              <boxGeometry args={[0.22, 0.26, 0.4]} />
             </mesh>
-            <mesh position={[0, -0.05, 0.02]} material={materials.skin} scale={[0.85, 0.9, 0.9]}>
-              <sphereGeometry args={[0.1, 12, 10]} />
+            <mesh position={[0, 0.16, 0]} material={materials.dark}>
+              <torusGeometry args={[0.07, 0.015, 6, 12]} />
             </mesh>
-            {([-1, 1] as const).map((side) => (
-              <group key={side}>
-                <mesh position={[side * 0.045, 0.01, 0.112]} material={materials.white} scale={[1, 0.7, 0.5]}>
-                  <sphereGeometry args={[0.022, 8, 6]} />
-                </mesh>
-                <mesh position={[side * 0.045, 0.01, 0.122]} material={materials.eye}>
-                  <sphereGeometry args={[0.011, 8, 6]} />
-                </mesh>
-                <mesh position={[side * 0.047, 0.045, 0.115]} material={materials.hair} rotation={[0, 0, side * 0.15]}>
-                  <boxGeometry args={[0.05, 0.012, 0.012]} />
-                </mesh>
-                <mesh position={[side * 0.125, -0.005, 0]} material={materials.skin} scale={[0.5, 1, 0.8]}>
-                  <sphereGeometry args={[0.03, 8, 6]} />
-                </mesh>
-              </group>
-            ))}
-            <mesh position={[0, -0.02, 0.128]} material={materials.skin} scale={[0.6, 1, 1]}>
-              <sphereGeometry args={[0.025, 8, 6]} />
+            <mesh position={[0, 0.02, 0.201]} material={materials.teal}>
+              <boxGeometry args={[0.14, 0.04, 0.005]} />
             </mesh>
-            <mesh position={[0, -0.065, 0.11]} material={materials.eye} scale={[1, 0.3, 0.3]}>
-              <sphereGeometry args={[0.03, 8, 6]} />
+            <mesh position={[0.08, 0.14, 0.1]} material={materials.steel}>
+              <boxGeometry args={[0.02, 0.1, 0.02]} />
             </mesh>
-            {role === 'technician' ? (
-              <group position={[0, 0.045, 0]}>
-                <mesh material={materials.hat}>
-                  <sphereGeometry args={[0.135, 16, 10, 0, Math.PI * 2, 0, Math.PI / 2]} />
-                </mesh>
-                <mesh geometry={GEO.visor} position={[0, -0.004, 0.105]} rotation={[0.16, 0, 0]} material={materials.hat} castShadow />
-                <mesh position={[0, 0.06, 0.12]} material={materials.teal}>
-                  <boxGeometry args={[0.04, 0.05, 0.01]} />
-                </mesh>
-                <mesh position={[0, -0.02, -0.08]} material={materials.hair} scale={[1, 0.5, 1]}>
-                  <sphereGeometry args={[0.13, 12, 8, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2]} />
-                </mesh>
-              </group>
-            ) : role === 'installer' ? (
-              <group position={[0, 0.07, 0]}>
-                <mesh material={materials.hat}>
-                  <sphereGeometry args={[0.15, 16, 10, 0, Math.PI * 2, 0, Math.PI / 2]} />
-                </mesh>
-                <mesh position={[0, -0.02, 0]} material={materials.hat}>
-                  <cylinderGeometry args={[0.175, 0.175, 0.03, 18]} />
-                </mesh>
-                <mesh position={[0, 0.08, 0]} material={materials.hat}>
-                  <boxGeometry args={[0.05, 0.03, 0.28]} />
-                </mesh>
-              </group>
-            ) : (
-              <group>
-                <mesh position={[0, 0.045, -0.01]} material={materials.hair} scale={[1.02, 0.85, 1.05]}>
-                  <sphereGeometry args={[0.135, 16, 10, 0, Math.PI * 2, 0, Math.PI / 2]} />
-                </mesh>
-                <mesh position={[0, 0.0, -0.06]} material={materials.hair} scale={[1, 0.6, 0.9]}>
-                  <sphereGeometry args={[0.13, 12, 8, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2]} />
-                </mesh>
-              </group>
-            )}
-            {role === 'dispatcher' && (
-              <group>
-                <mesh position={[0.13, 0, 0]} material={materials.dark}>
-                  <boxGeometry args={[0.04, 0.08, 0.08]} />
-                </mesh>
-                <mesh position={[0, 0.1, 0]} material={materials.dark} rotation={[0, 0, 0]}>
-                  <torusGeometry args={[0.135, 0.01, 6, 20, Math.PI]} />
-                </mesh>
-              </group>
-            )}
           </group>
-          {/* Arms: shoulder → elbow → hand with a thumb */}
-          {([-1, 1] as const).map((side) => (
-            <group key={side} ref={side < 0 ? refs.armL : refs.armR} position={[side * 0.25 * heavy, 0.5, 0]}>
-              {/* Deltoid: part of the arm, so it turns with it instead of standing out as a ball. */}
-              <mesh position={[0, -0.035, 0]} scale={[0.95, 1.25, 1]} material={materials.shirt}>
-                <sphereGeometry args={[0.072, 10, 8]} />
-              </mesh>
-              <Limb length={0.3} radius={0.06} color={materials.shirt} />
-              {/* Short sleeve hem: the shirt ends above the elbow. */}
-              <mesh position={[0, -0.2, 0]} material={materials.shirt}>
-                <cylinderGeometry args={[0.068, 0.072, 0.05, 12]} />
-              </mesh>
-              <group ref={side < 0 ? refs.foreL : refs.foreR} position={[0, -0.3, 0]}>
-                <Limb length={0.28} radius={0.05} color={materials.skin} taper={0.75} />
-                {tech ? (
-                  <>
-                    <mesh ref={side < 0 ? hands.relaxedL : hands.relaxedR} geometry={GEO.glove[side < 0 ? 0 : 1]} position={[0, -0.27, 0.005]} material={materials.glove} castShadow />
-                    <mesh ref={side < 0 ? hands.gripL : hands.gripR} geometry={GEO.gloveGrip[side < 0 ? 0 : 1]} position={[0, -0.27, 0.005]} material={materials.glove} castShadow visible={false} />
-                  </>
-                ) : (
-                  <>
-                    <mesh geometry={GEO.hand} position={[0, -0.31, 0.01]} material={materials.skin} />
-                    <mesh position={[side * -0.04, -0.28, 0.025]} material={materials.skin} rotation={[0, 0, side * 0.5]}>
-                      <boxGeometry args={[0.025, 0.05, 0.025]} />
-                    </mesh>
-                  </>
-                )}
-                {side < 0 ? (
-                  <>
-                    <group ref={bag} position={[0, -0.52, 0]} visible={false}>
-                      <mesh material={materials.dark} castShadow>
-                        <boxGeometry args={[0.22, 0.26, 0.4]} />
-                      </mesh>
-                      <mesh position={[0, 0.16, 0]} material={materials.dark}>
-                        <torusGeometry args={[0.07, 0.015, 6, 12]} />
-                      </mesh>
-                      <mesh position={[0, 0.02, 0.201]} material={materials.teal}>
-                        <boxGeometry args={[0.14, 0.04, 0.005]} />
-                      </mesh>
-                      <mesh position={[0.08, 0.14, 0.1]} material={materials.steel}>
-                        <boxGeometry args={[0.02, 0.1, 0.02]} />
-                      </mesh>
-                    </group>
-                    <group ref={meter} position={[0, -0.36, 0.035]} rotation={[-1.25, 0, 0]} visible={false}>
-                      <mesh geometry={METER.body} material={materials.tool} castShadow />
-                      <mesh geometry={METER.face} position={[0, -0.005, 0.0205]} material={materials.dark} />
-                      <mesh geometry={METER.jaw} position={[0, 0.125, 0]} material={materials.dark} />
-                      <mesh geometry={METER.screen} position={[0, 0.045, 0.0232]} material={materials.screen} />
-                      <mesh geometry={METER.dial} position={[0, -0.01, 0.0245]} material={materials.steel} />
-                      {[-0.018, 0, 0.018].map((x) => (
-                        <mesh key={x} geometry={METER.button} position={[x, -0.055, 0.0232]} material={materials.white} />
-                      ))}
-                      <group ref={anchors.socket} position={[LEAD_SOCKET.x, LEAD_SOCKET.y, LEAD_SOCKET.z]} />
-                    </group>
-                    <group ref={tablet} position={[0.02, -0.34, 0.08]} rotation={[-0.6, 0, 0]} visible={false}>
-                      <mesh material={materials.dark}>
-                        <boxGeometry args={[0.2, 0.26, 0.015]} />
-                      </mesh>
-                      <mesh position={[0, 0, 0.009]} material={materials.screen}>
-                        <boxGeometry args={[0.17, 0.22, 0.004]} />
-                      </mesh>
-                    </group>
-                  </>
-                ) : (
-                  <>
-                    <group ref={probe} position={[0, -0.36, 0.03]} rotation={[0.15, 0, 0]} visible={false}>
-                      <mesh material={materials.probe}>
-                        <cylinderGeometry args={[0.007, 0.009, 0.15, 8]} />
-                      </mesh>
-                      <mesh position={[0, -0.05, 0]} material={materials.probe}>
-                        <cylinderGeometry args={[0.013, 0.013, 0.008, 10]} />
-                      </mesh>
-                      <group ref={anchors.probeEnd} position={[0, 0.075, 0]} />
-                      <mesh position={[0, -0.09, 0]} material={materials.steel}>
-                        <cylinderGeometry args={[0.0015, 0.003, 0.04, 4]} />
-                      </mesh>
-                    </group>
-                    <group ref={wrench} position={[0, -0.33, 0.04]} rotation={[0.3, 0, 0]} visible={false}>
-                      <mesh geometry={WRENCH.handle} material={materials.steel} castShadow />
-                      <mesh geometry={WRENCH.head} position={[0, 0.13, 0]} material={materials.steel} />
-                      <mesh geometry={WRENCH.worm} position={[0, 0.105, 0.004]} material={materials.dark} />
-                      <mesh position={[0, -0.04, 0]} material={materials.probe}>
-                        <boxGeometry args={[0.034, 0.1, 0.016]} />
-                      </mesh>
-                    </group>
-                  </>
-                )}
-              </group>
-            </group>
-          ))}
-        </group>
-      </group>
+          <group ref={meter} position={[0, -0.36, 0.035]} rotation={[-1.25, 0, 0]} visible={false}>
+            <mesh geometry={METER.body} material={materials.tool} castShadow />
+            <mesh geometry={METER.face} position={[0, -0.005, 0.0205]} material={materials.dark} />
+            <mesh geometry={METER.jaw} position={[0, 0.125, 0]} material={materials.dark} />
+            <mesh geometry={METER.screen} position={[0, 0.045, 0.0232]} material={materials.screen} />
+            <mesh geometry={METER.dial} position={[0, -0.01, 0.0245]} material={materials.steel} />
+            {[-0.018, 0, 0.018].map((x) => (
+              <mesh key={x} geometry={METER.button} position={[x, -0.055, 0.0232]} material={materials.white} />
+            ))}
+            <group ref={anchors.socket} position={[LEAD_SOCKET.x, LEAD_SOCKET.y, LEAD_SOCKET.z]} />
+          </group>
+          <group ref={tablet} position={[0.02, -0.34, 0.08]} rotation={[-0.6, 0, 0]} visible={false}>
+            <mesh material={materials.dark}>
+              <boxGeometry args={[0.2, 0.26, 0.015]} />
+            </mesh>
+            <mesh position={[0, 0, 0.009]} material={materials.screen}>
+              <boxGeometry args={[0.17, 0.22, 0.004]} />
+            </mesh>
+          </group>
+        </>,
+        b.foreL,
+      )}
+      {createPortal(
+        <>
+          {hand(1)}
+          <group ref={probe} position={[0, -0.36, 0.03]} rotation={[0.15, 0, 0]} visible={false}>
+            <mesh material={materials.probe}>
+              <cylinderGeometry args={[0.007, 0.009, 0.15, 8]} />
+            </mesh>
+            <mesh position={[0, -0.05, 0]} material={materials.probe}>
+              <cylinderGeometry args={[0.013, 0.013, 0.008, 10]} />
+            </mesh>
+            <group ref={anchors.probeEnd} position={[0, 0.075, 0]} />
+            <mesh position={[0, -0.09, 0]} material={materials.steel}>
+              <cylinderGeometry args={[0.0015, 0.003, 0.04, 4]} />
+            </mesh>
+          </group>
+          <group ref={wrench} position={[0, -0.33, 0.04]} rotation={[0.3, 0, 0]} visible={false}>
+            <mesh geometry={WRENCH.handle} material={materials.steel} castShadow />
+            <mesh geometry={WRENCH.head} position={[0, 0.13, 0]} material={materials.steel} />
+            <mesh geometry={WRENCH.worm} position={[0, 0.105, 0.004]} material={materials.dark} />
+            <mesh position={[0, -0.04, 0]} material={materials.probe}>
+              <boxGeometry args={[0.034, 0.1, 0.016]} />
+            </mesh>
+          </group>
+        </>,
+        b.foreR,
+      )}
     </group>
   );
 }
+
+const LOD_POS = new THREE.Vector3();
+const LOD_SPHERE = new THREE.Sphere();
+const LOD_FRUSTUM = new THREE.Frustum();
+const LOD_MATRIX = new THREE.Matrix4();

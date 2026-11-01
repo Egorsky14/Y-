@@ -358,7 +358,9 @@ function WorkerView({ id }: { id: string }) {
       <primitive object={contact} />
       <Selectable selection={{ kind: 'employee', id }} ringRadius={1.1} ringOffset={[0, 0.07, 0]}>
         {/* The rig is modelled at ~1.8 m tall: draw it at true scale next to the 0.96 m condenser. */}
-        <Worker role={info.role} look={info.look} anim={anim} pace={pace} work={work} />
+        <Suspense fallback={null}>
+          <Worker role={info.role} look={info.look} anim={anim} pace={pace} work={work} />
+        </Suspense>
         <mesh position={[0, 1.0, 0]} visible={false}>
           <boxGeometry args={[1, 2.1, 1]} />
           <meshBasicMaterial />
