@@ -1,5 +1,6 @@
 import { useApp, useGame, type ServiceCameraMode } from '@/app/store';
 import { lotById, COMPETITOR_LOT, WAREHOUSE_LOT } from '@/game/world/cityLayout';
+import { equipmentPlacement } from '@/game/world/rooftops';
 import { VEHICLE_SPECS, upgradeById } from '@/game/fleet/vehicleCatalog';
 import { ATTRIBUTE_KEYS, ATTRIBUTE_LABELS } from '@/game/employees/attributes';
 import { ROLE_LABELS, xpToNextLevel } from '@/game/employees/roles';
@@ -128,7 +129,7 @@ function CustomerInspector({ lotId, onClose, preferredJobId }: { lotId: string; 
     <>
       <Head
         title={customer.name}
-        subtitle={`${customer.address} · ${lot.style?.replace('-', ' ')} home`}
+        subtitle={lot.kind === 'commercial' ? `${customer.address} · commercial` : `${customer.address} · ${lot.style?.replace('-', ' ')} home`}
         onClose={onClose}
         notice={active ? DECISION[active.status] : undefined}
         tag={
@@ -149,7 +150,7 @@ function CustomerInspector({ lotId, onClose, preferredJobId }: { lotId: string; 
         <Section title="Equipment">
           <KV
             items={[
-              ['System', customer.equipment.type === 'split-ac-gas-furnace' ? 'Split AC + gas furnace' : customer.equipment.type === 'heat-pump' ? 'Heat pump' : 'Rooftop package unit'],
+              ['System', customer.equipment.type === 'split-ac-gas-furnace' ? 'Split AC + gas furnace' : customer.equipment.type === 'heat-pump' ? 'Heat pump' : equipmentPlacement(customer) === 'roof' ? 'Rooftop package unit' : 'Package unit (ground)'],
               ['Brand / size', `${customer.equipment.brand} · ${customer.equipment.tonnage} ton`],
               ['Age', `${customer.equipment.ageYears} years · ${customer.equipment.seer} SEER`],
               ['Refrigerant', customer.equipment.refrigerant],

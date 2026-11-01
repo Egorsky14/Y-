@@ -8,6 +8,13 @@ import { mainCanvas, measureSafeArea } from '@/ui/safeArea';
 import type { SafeArea } from './cameraOcclusion';
 import { cameraInput, cameraMotion } from './CameraRig';
 import { curbDoor, followFailure, serviceViewCamera, siteFor, WALK_AHEAD, type ServicePhase } from './serviceCall';
+import { isRoofJob, roofSpec } from '@/game/world/rooftops';
+import { ladderVisuals, roofPlanFor } from './rooftopChoreo';
+import { roofStageGroup, rooftopServiceCamera, type RoofStageGroup } from './rooftopCamera';
+
+/** Rooftop calls: follow the technician once he has moved this far on the ground (m) or up the ladder. */
+const ROOF_FOLLOW_STEP = 3;
+const ROOF_FOLLOW_MIN_INTERVAL = 1200;
 
 /**
  * The service camera's director. While the player uses the service camera at a job (Property,
@@ -64,6 +71,8 @@ interface Framed {
   misses: number;
   /** The walk being followed (from where he was framed to his spot) and the share of it from which its plan keeps him in sight. */
   walk: { from: { x: number; z: number }; spot: { x: number; z: number }; holdsFrom: number } | null;
+  /** Rooftop calls: the stage group framed (on the ground, on the ladder, on the roof) and where he was in 3D. */
+  roof?: { group: RoofStageGroup; at3: THREE.Vector3 };
 }
 
 /** Two measured free areas differ enough to recompose (bars and panels moved, a card appeared). */
@@ -107,6 +116,44 @@ export function ServiceDirector() {
     return null;
   }
 
+  /** The rooftop call's lead technician: drawn position (with height), facing, stage group, and the vehicle's ladder. */
+  function roofTech(v: ServiceView) {
+    const state = getGameState();
+    const job = state?.jobs[v.jobId];
+    if (!state || !job?.technicianId || !job.vehicleId) return null;
+    const o = scene.getObjectByName(`employee:${job.technicianId}`);
+    if (!o) return null;
+    const pos = o.getWorldPosition(new THREE.Vector3());
+    const stage = window.__egoWorkerStage?.[job.technicianId];
+    return { pos, heading: o.rotation.y, group: roofStageGroup(stage), ladder: ladderVisuals.get(job.vehicleId) ?? null, visible: o.visible };
+  }
+
+  function frameRoof(v: ServiceView, reason: string, follow = false) {
+    const state = getGameState()!;
+    const job = state.jobs[v.jobId];
+    const lot = lotById(v.lotId)!;
+    const vehicle = job.vehicleId ? state.vehicles[job.vehicleId] : undefined;
+    const spec = roofSpec(lot.id);
+    const plan = spec && vehicle ? roofPlanFor(spec, vehicle.classId) : null;
+    const tech = roofTech(v);
+    const canvas = mainCanvas();
+    const aspect = (canvas?.clientWidth ?? window.innerWidth) / Math.max(1, canvas?.clientHeight ?? window.innerHeight);
+    const safe = measureSafeArea(canvas);
+    if (!plan || !controls) return;
+    const offset = camera.position.clone().sub(controls.target);
+    // Before he steps out (or once back in the van) the van stands in for him; the property view frames the site.
+    const stand = tech?.visible ? tech : { pos: new THREE.Vector3(plan.van.x, 0, plan.van.z), heading: plan.van.heading, group: 'ground' as RoofStageGroup, ladder: tech?.ladder ?? null };
+    const shot = rooftopServiceCamera(lot, plan, v.mode, aspect, safe, { group: stand.group, tech: { pos: stand.pos, heading: stand.heading }, ladder: stand.ladder, keepAzimuth: follow ? Math.atan2(offset.x, offset.z) : undefined });
+    if (!shot) return;
+    let command: Omit<CameraCommand, 'id'> = shot.command;
+    if (reason === 'follow') command = { ...command, duration: 1.6 };
+    else if (reason === 'stage') command = { ...command, duration: 1.8 };
+    useApp.getState().camera(command);
+    const phase = phaseOf(job.status);
+    framed.current = { rev: v.rev, phase, safe, tech: { x: stand.pos.x, z: stand.pos.z }, walking: false, at: performance.now(), misses: 0, walk: null, roof: { group: stand.group, at3: stand.pos.clone() } };
+    window.__egoServiceView = { requested: v.mode, mode: shot.mode, phase, reason, roof: stand.group, ms: +shot.ms.toFixed(1), report: shot.report, aspect: +aspect.toFixed(3), safe };
+  }
+
   function frame(v: ServiceView, reason: string, follow = false) {
     const state = getGameState();
     const job = state?.jobs[v.jobId];
@@ -115,6 +162,7 @@ export function ServiceDirector() {
       useApp.getState().setServiceView(null);
       return;
     }
+    if (isRoofJob(state!, job)) return frameRoof(v, reason, follow);
     const phase = phaseOf(job.status);
     const canvas = mainCanvas();
     const aspect = (canvas?.clientWidth ?? window.innerWidth) / Math.max(1, canvas?.clientHeight ?? window.innerHeight);
@@ -207,6 +255,18 @@ export function ServiceDirector() {
       return;
     }
     if (useApp.getState().photo.on || cameraInput.dragging || performance.now() - cameraInput.lastInput < HANDS_OFF) return;
+    if (isRoofJob(state!, job)) {
+      // Rooftop call: reframe when he moves between the ground, the ladder and the roof, when the job moves on or the
+      // layout changes, and follow him (on the player's heading) as he walks or climbs.
+      const rt = roofTech(v);
+      const group = rt?.visible ? rt.group : 'ground';
+      if (!f.roof || group !== f.roof.group) return frameRoof(v, 'stage');
+      if (phase !== f.phase) return frameRoof(v, 'phase');
+      if (layoutChanged(measureSafeArea(mainCanvas()), f.safe)) return frameRoof(v, 'layout');
+      if (v.mode === 'property' || !rt?.visible || cameraMotion.flying) return;
+      if (group !== 'roof' && rt.pos.distanceTo(f.roof.at3) > ROOF_FOLLOW_STEP && performance.now() - f.at > ROOF_FOLLOW_MIN_INTERVAL) frameRoof(v, 'follow', true);
+      return;
+    }
     const tech = techOf(v);
     const walking = !!tech?.walking && phase !== 'done';
     // The simulation moves the job on (arriving → diagnosing) while he is still walking up: the

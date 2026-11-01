@@ -8,6 +8,7 @@ import { VEHICLE_SPECS } from '@/game/fleet/vehicleCatalog';
 import { etaMinutes } from '@/game/fleet/fleet';
 import { Bar, Money, Section, minutesLabel } from '../components/common';
 import { ROLE_LABELS } from '@/game/employees/roles';
+import { isRoofJob, roofAccess, ROOF_LADDER, vehicleHasLadder } from '@/game/world/rooftops';
 import { performanceSummary, toolsOnSite } from '@/game/equipment/performance';
 import { toolDef } from '@/game/equipment/catalog';
 
@@ -18,8 +19,34 @@ export function JobFlow({ jobId }: { jobId: string }) {
   return (
     <>
       <AutomationStatus job={job} />
+      <RoofAccessNote job={job} />
       <JobStep job={job} />
     </>
+  );
+}
+
+/**
+ * Rooftop equipment (rooftops.ts): before the call is taken or dispatched, how the roof is reached (the vehicle's
+ * extension ladder at a certified access point) or why it cannot be (no safe access, or no ladder on the vehicle).
+ */
+function RoofAccessNote({ job }: { job: Job }) {
+  const note = useGameWith(
+    (s) => {
+      if (!isRoofJob(s, job) || (job.status !== 'lead' && job.status !== 'accepted')) return null;
+      const access = roofAccess(s, job);
+      if (!access.ok) return { ok: false, text: access.message };
+      const ladders = Object.values(s.vehicles).filter((v) => vehicleHasLadder(v));
+      const free = ladders.filter((v) => vehicleAvailable(v));
+      if (ladders.length === 0) return { ok: false, text: 'Rooftop unit: none of your vehicles carries the ' + ROOF_LADDER.name + '. Fit a ladder rack (Fleet) to take rooftop calls.' };
+      return { ok: true, text: 'Rooftop unit: reached by the ' + ROOF_LADDER.name + ' from a vehicle with a ladder rack (' + (free.length ? free.map((v) => v.nickname).join(', ') + ' available' : 'none at HQ right now') + ').' };
+    },
+    [job.id, job.status],
+  );
+  if (!note) return null;
+  return (
+    <div className={'tag ' + (note.ok ? 'teal' : 'amber')} data-testid="roof-access-note" role="status" style={{ whiteSpace: 'normal', lineHeight: 1.35 }}>
+      {note.text}
+    </div>
   );
 }
 
@@ -61,7 +88,7 @@ function JobStep({ job }: { job: Job }) {
       return <EnrouteStep job={job} />;
     case 'arriving':
     case 'diagnosing':
-      return <PhaseStep job={job} title={job.status === 'arriving' ? 'Technician walking to the equipment' : 'Diagnostic in progress'} body="Measuring: static pressure, capacitance, amperage, refrigerant pressures." />;
+      return <PhaseStep job={job} title={job.status === 'arriving' ? (isRoofJob(useApp.getState().engine!.state, job) ? 'Setting up the ladder and climbing to the roof' : 'Technician walking to the equipment') : 'Diagnostic in progress'} body="Measuring: static pressure, capacitance, amperage, refrigerant pressures." />;
     case 'awaiting-diagnosis':
       return <DiagnosisStep job={job} />;
     case 'quoted':
