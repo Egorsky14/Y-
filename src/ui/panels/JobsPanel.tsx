@@ -4,6 +4,7 @@ import { PanelShell, Tabs } from './PanelShell';
 import { JobFlow } from './JobFlow';
 import { faultById } from '@/game/jobs/faults';
 import { lotById } from '@/game/world/cityLayout';
+import { equipmentPlacement } from '@/game/world/rooftops';
 import { serviceSiteCamera } from '@/world/scene/serviceCall';
 import { Money } from '../components/common';
 import { attentionQueue, waitingOnWarranty } from '@/game/operations/automation';
@@ -38,7 +39,7 @@ export function JobsPanel() {
             return (
               <div key={j.id} className={`list-item ${current?.id === j.id ? 'selected' : ''}`} onClick={() => setSelected(j.id)} data-testid={`job-row-${j.id}`}>
                 <div>
-                  <div className="name">{c.name} <span className={`tag ${c.channel === 'direct' ? 'teal' : 'blue'}`} style={{ marginLeft: 6 }}>{c.channel === 'direct' ? 'Direct' : 'Warranty'}</span>{j.kind !== 'service' && <span className="tag amber" style={{ marginLeft: 6 }}>{j.kind}</span>}</div>
+                  <div className="name">{c.name} <span className={`tag ${c.channel === 'direct' ? 'teal' : 'blue'}`} style={{ marginLeft: 6 }}>{c.channel === 'direct' ? 'Direct' : 'Warranty'}</span>{j.kind !== 'service' && <span className="tag amber" style={{ marginLeft: 6 }}>{j.kind}</span>}{equipmentPlacement(c) === 'roof' && <span className="tag" style={{ marginLeft: 6 }} data-testid="rooftop-tag">Rooftop</span>}</div>
                   <div className="sub">{c.address} · {j.status === 'completed' && j.chosenDiagnosis ? faultById(j.chosenDiagnosis).name : j.complaint}</div>
                   {tab === 'attention' && (j.attention && !j.attention.resolved ? <div className="sub attention-text" data-testid={`attention-row-${j.id}`}>{j.attention.blocking ? 'Decide: ' : 'Note: '}{j.attention.text}</div> : <div className="sub">Waiting on the warranty company's authorization. Nothing to do.</div>)}
                 </div>

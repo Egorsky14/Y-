@@ -58,3 +58,4 @@ own camera input still ends or overrides the service camera as before.
 | Save/load mid-climb and mid-descent | `persistence/` |
 | Performance | `perf/` |
 | Browser matrix | `matrix/browser-matrix.txt` |
+| Rooftop visual review (12 moments, close-ups, video, fixes, discoverability) | `visual-review/REPORT.md` |

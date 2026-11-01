@@ -445,6 +445,9 @@ export function Worker({ role, look, anim, scale = 1, pace = 1, work, motion }: 
     };
     const face = work?.face ?? 0.56; // root to the cabinet's service face (m)
     const top = work?.top ?? 0.96; // cabinet height
+    // Where a kneeling technician braces the free hand: on the top of a ground condenser, flat on the service panel of a
+    // taller cabinet (a rooftop unit's top is out of reach from the knees).
+    const brace = (out: number) => (top > 1.2 ? { y: 1.05, z: face - 0.03 } : { y: top + 0.02, z: face + out });
     // Smooth 0..1 window inside a looping cycle.
     const win = (u: number, a: number, b: number, fade = 0.5) => THREE.MathUtils.smoothstep(u, a - fade, a) * (1 - THREE.MathUtils.smoothstep(u, b, b + fade));
     const bump01 = (u: number, a: number, b: number) => (u <= a || u >= b ? 0 : Math.sin(((u - a) / (b - a)) * Math.PI));
@@ -557,14 +560,14 @@ export function Worker({ role, look, anim, scale = 1, pace = 1, work, motion }: 
         } else if (fetch > 0.5) {
           // Crew without the bag: reach down beside the knee.
           ik(1, 0.48, 0.12, 0.2, lean, pelvisY, twist);
-          ik(-1, -0.2, top + 0.02, face + 0.1, lean, pelvisY, twist);
+          ik(-1, -0.2, brace(0.1).y, brace(0.1).z, lean, pelvisY, twist);
           look(0.5, 0.1, 0.25, lean, pelvisY, twist);
         } else {
           // Wrench turns: small arcs at the valve/terminal; the forearm rolls with each pull.
           const pull = Math.sin(t * 3.2);
           // The hand stops a little short of the panel; the wrench's head reaches it.
           ik(1, 0.12 + pull * 0.03, 0.52 + pull * 0.035, face - 0.09, lean, pelvisY);
-          ik(-1, -0.2, top + 0.02, face + 0.12, lean, pelvisY);
+          ik(-1, -0.2, brace(0.12).y, brace(0.12).z, lean, pelvisY);
           const fr = pose.foreR!;
           pose.foreR = [fr[0], pull * 0.5, fr[2]];
           showWrench = true;

@@ -12,8 +12,10 @@ import type { LadderPose, RoofPlan } from './rooftopChoreo';
  * calls (cameraComposition.ts) with rooftop subjects:
  *  - ground stages (at the van, carrying, raising and extending the ladder): the technician head to boots with the
  *    ladder's ends; Property adds the van, the access wall and the rooftop unit;
- *  - ladder stages (stepping on, climbing, over the parapet): the whole ladder from its feet to above the edge, with him
- *    on it (a taller subject: the shot may stand further off);
+ *  - ladder stages (stepping on, climbing, over the parapet): him on the ladder with the rungs round him (a metre
+ *    below his boots to a metre above his head; the ladder's foot while he is near the ground; ServiceDirector
+ *    follows the climb). Framing the whole ladder made the shot stand so far off that he was small, or fall back to
+ *    Property when no spot that far was clear;
  *  - roof stages (walking to the unit, at its service side): the technician and the cabinet on the deck, as at a ground
  *    condenser but at roof height; Detail closes in on his hands and the service panel.
  * Obstacles are the building's walls and parapets (registered by the building), the other rooftop units, the parked van,
@@ -39,6 +41,12 @@ const P = (x: number, y: number, z: number): P => ({ x, y, z });
 const LADDER_TUNING: RuleTuning = { maxDistance: 12, minDistance: 4, fill: 0.66, elevations: [0.12, 0.18, 0.26, 0.34], band: [0.22, 0.48] };
 const GROUND_TUNING: RuleTuning = { maxDistance: 13, minDistance: 4, elevations: [0.22, 0.3, 0.38, 0.48], band: [0.25, 0.48] };
 const PROPERTY_TUNING: RuleTuning = { maxDistance: 80, minDistance: 16 };
+/**
+ * Before falling back to the Property overview, Watch Work tries looking down into the spot from above: a narrow side
+ * yard between the house and its boundary wall, or a deck hemmed in by a pergola and the upper storey, has no clear
+ * eye-level view, and the overview then showed him tiny across the house.
+ */
+const OVERHEAD_TUNING: RuleTuning = { maxDistance: 15, minDistance: 4, elevations: [0.62, 0.78, 0.95], band: [0.6, 1.0], sideReject: null, clearanceScale: 0.5 };
 
 export interface RooftopTech {
   pos: THREE.Vector3;
@@ -81,7 +89,16 @@ export function rooftopSubject(plan: RoofPlan, mode: ServiceMode, group: RoofSta
     return { frame, key: [unitTop, head, P(van.x, 2.2, van.z)], focus: P(c.x, c.y * 0.6, c.z), preferredAzimuth: outAz + 0.75 };
   }
   if (group === 'ladder') {
-    const frame = [head, feet, ...ladderEnds];
+    const rungs: P[] = [];
+    if (ladder && ladder.mode === 'world') {
+      // The stretch of ladder from a metre below his boots to a metre above his head (its foot while he is low on it).
+      const along = (y: number) => Math.max(0, (y - ladder.foot.y) / Math.max(0.2, ladder.axis.y));
+      for (const y of [t.y - 1.0, t.y + 2.9]) {
+        const e = ladder.foot.clone().addScaledVector(ladder.axis, along(y));
+        rungs.push(P(e.x, e.y, e.z));
+      }
+    }
+    const frame = [head, feet, ...rungs];
     return { frame, key: [head, chest], focus: P(t.x, t.y + 1.0, t.z), tech: { x: t.x, z: t.z, facing: tech.heading }, preferredAzimuth: outAz + 0.85 };
   }
   if (group === 'ground') {
@@ -121,7 +138,12 @@ export function rooftopObstacles(lot: Lot, plan: RoofPlan, focus: P, mode: Servi
   }
   const v = plan.van;
   const along = Math.abs(Math.sin(v.heading)) > 0.5;
-  out.push(tagOccluder(new THREE.Box3(new THREE.Vector3(v.x - (along ? 2.95 : 1.0), 0, v.z - (along ? 1.0 : 2.95)), new THREE.Vector3(v.x + (along ? 2.95 : 1.0), 2.45, v.z + (along ? 1.0 : 2.95))), 'wall'));
+  const hx = along ? 2.95 : 1.0;
+  const hz = along ? 1.0 : 2.95;
+  out.push(tagOccluder(new THREE.Box3(new THREE.Vector3(v.x - hx, 0, v.z - hz), new THREE.Vector3(v.x + hx, 2.45, v.z + hz)), 'wall'));
+  // Above the van, up to about two storeys: no camera perched on its roof, no shot across its roof and ladder rack
+  // (the van then filled the foreground of the ladder views). Property frames the van itself, from above.
+  if (mode !== 'property') out.push(tagOccluder(new THREE.Box3(new THREE.Vector3(v.x - hx, 2.45, v.z - hz), new THREE.Vector3(v.x + hx, 6.0, v.z + hz)), 'roof'));
   return out;
 }
 
@@ -137,20 +159,20 @@ function groundOrbit(view: ViewSpec) {
 
 export function rooftopServiceCamera(lot: Lot, plan: RoofPlan, mode: ServiceMode, aspect: number, safe: SafeArea = NO_SAFE_AREA, opts: { group: RoofStageGroup; tech: RooftopTech; ladder: LadderPose | null; keepAzimuth?: number }) {
   const t0 = performance.now();
-  const attempt = (m: ServiceMode) => {
+  const attempt = (m: ServiceMode, overhead = false) => {
     const subject = rooftopSubject(plan, m, opts.group, opts.tech, opts.ladder);
     if (opts.keepAzimuth !== undefined) {
       subject.preferredAzimuth = opts.keepAzimuth;
       subject.preferWeight = 2;
     }
-    const tune = m === 'property' ? PROPERTY_TUNING : opts.group === 'ladder' ? LADDER_TUNING : opts.group === 'ground' ? GROUND_TUNING : undefined;
+    const tune = overhead ? OVERHEAD_TUNING : m === 'property' ? PROPERTY_TUNING : opts.group === 'ladder' ? LADDER_TUNING : opts.group === 'ground' ? GROUND_TUNING : undefined;
     const composeAs: ServiceMode = m === 'property' ? 'property' : opts.group === 'roof' ? m : 'work';
     const view = composeView(subject, rooftopObstacles(lot, plan, subject.focus, m), aspect, composeAs, safe, tune);
     return view ? { view, subject } : null;
   };
   // Detail away from the unit has no close work to show: it frames as Watch Work until he is at the unit.
   const asked: ServiceMode = mode === 'detail' && opts.group !== 'roof' ? 'work' : mode;
-  const shot = attempt(asked) ?? (asked === 'detail' ? attempt('work') : null) ?? (asked !== 'property' ? attempt('property') : null);
+  const shot = attempt(asked) ?? (asked === 'detail' ? attempt('work') : null) ?? (asked !== 'property' ? (attempt('work', true) ?? attempt('property')) : null);
   if (!shot) return null;
   return {
     command: {

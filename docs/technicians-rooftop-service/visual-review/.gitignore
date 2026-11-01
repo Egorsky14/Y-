@@ -1,0 +1,4 @@
+# Raw captures, video frames and the videos (about 360 MB) stay local: the labeled sheets in sheets/ carry them.
+# Regenerate with e2e/rooftop-review.spec.ts and e2e/rooftop-video.spec.ts (REPORT.md).
+before/
+after/

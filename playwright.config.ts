@@ -24,7 +24,7 @@ export default defineConfig({
     // The banking layout check also runs on phones with touch: iPhone 14 in Safari (390×664, browser
     // bars visible) and the full 390×844 screen (installed web app, no browser bars).
     { name: 'iphone-portrait', use: { ...devices['iPhone 14'], browserName: 'chromium' }, testMatch: /(mobile|banking-layout|service-camera(-feedback)?)\.spec\.ts/ },
-    { name: 'phone-390x844', use: { ...devices['iPhone 14'], viewport: { width: 390, height: 844 }, browserName: 'chromium' }, testMatch: /(banking-layout|supply|automation|rooftop-camera|technician-showcase)\.spec\.ts/ },
+    { name: 'phone-390x844', use: { ...devices['iPhone 14'], viewport: { width: 390, height: 844 }, browserName: 'chromium' }, testMatch: /(banking-layout|supply|automation|rooftop-camera|technician-showcase|rooftop-review)\.spec\.ts/ },
     // The supply depot workflow also runs on a landscape phone (short screen, side inspector).
     { name: 'iphone-landscape', use: { ...devices['iPhone 14 landscape'], browserName: 'chromium' }, testMatch: /(mobile|supply|service-camera(-feedback)?|rooftop-camera)\.spec\.ts/ },
     { name: 'android-portrait', use: { ...devices['Pixel 7'], browserName: 'chromium' }, testMatch: /mobile\.spec\.ts/ },

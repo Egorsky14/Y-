@@ -49,6 +49,13 @@ any context reset. What was built and how: `README.md`.
 - Real phones not tested (Chromium emulation only): a preview-stage playtest item. Frame times are vsync-capped at
   60 fps on the owner's machine.
 
+## Rooftop visual review (after the Preview of 250a0d0)
+
+Owner playtest found rooftop work hard to see. `visual-review/REPORT.md`: deterministic captures of both rooftop jobs
+(desktop, phone, video); fixed the climbing hands, the kneeling RTU repair arm, and the Watch Work camera on the ladder
+(aerial fallback, van foreground); added rooftop indicators (inspector note, Show rooftop unit, pin and Jobs tag).
+Local only, not pushed.
+
 ## Next action
 
 Owner authorization to push the branch and create a Vercel Preview; then a playtest on a real phone (not done locally:

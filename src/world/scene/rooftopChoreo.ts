@@ -268,10 +268,10 @@ export function roofPlan(spec: RoofSpec, klass: VehicleClass, van: { x: number; 
     const fL = limb(0, 0, 0.1);
     const fR = limb(RUNG, 1, 0.1);
     const hR = limb(0.15, 6, 0.08);
-    const hL = limb(0.15 + RUNG, 5, 0.08);
+    const hL = limb(0.15 + RUNG, 7, 0.08);
     const rootAlong = (fL.along + fR.along) / 2 - 0.05;
     const point = (along: number, side: number, away: number, depth: number) => F.clone().addScaledVector(axis, along).addScaledVector(across, side).addScaledVector(fc, depth + away);
-    const pos = F.clone().addScaledVector(axis, Math.max(0, rootAlong)).addScaledVector(fc, 0.16);
+    const pos = F.clone().addScaledVector(axis, Math.max(0, rootAlong)).addScaledVector(fc, 0.36);
     return {
       stage,
       u,

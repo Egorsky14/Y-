@@ -5,6 +5,7 @@ import { getGameState, useApp, useGame } from '@/app/store';
 import { registerLabel } from '@/world/interactions/labels';
 import { lotById } from '@/game/world/cityLayout';
 import { etaMinutes } from '@/game/fleet/fleet';
+import { equipmentPlacement } from '@/game/world/rooftops';
 
 /**
  * DOM layer for world-anchored labels: job pins over houses, status tags over moving
@@ -15,7 +16,7 @@ export function WorldLabels() {
   const jobs = useGame((s) =>
     Object.values(s.jobs)
       .filter((j) => !['completed', 'declined', 'expired', 'cancelled'].includes(j.status))
-      .map((j) => ({ id: j.id, lotId: s.customers[j.customerId].lotId, status: j.status, kind: j.kind })),
+      .map((j) => ({ id: j.id, lotId: s.customers[j.customerId].lotId, status: j.status, kind: j.kind, roof: equipmentPlacement(s.customers[j.customerId]) === 'roof' })),
   );
   const vehicles = useGame((s) => Object.values(s.vehicles).filter((v) => v.status === 'enroute' || v.status === 'returning').map((v) => ({ id: v.id, nickname: v.nickname, status: v.status, eta: Math.max(0, Math.round(etaMinutes(v))) })));
   const trainees = useGame((s) => Object.values(s.employees).filter((e) => e.status === 'training').map((e) => ({ id: e.id, name: e.name })));
@@ -42,7 +43,7 @@ function useAnchor(id: string, getPosition: (out: THREE.Vector3) => boolean, ref
   );
 }
 
-function JobPin({ id, lotId, status, kind }: { id: string; lotId: string; status: string; kind: string }) {
+function JobPin({ id, lotId, status, kind, roof }: { id: string; lotId: string; status: string; kind: string; roof: boolean }) {
   const select = useApp((s) => s.select);
   const camera = useApp((s) => s.camera);
   const lot = lotById(lotId);
@@ -92,6 +93,8 @@ function JobPin({ id, lotId, status, kind }: { id: string; lotId: string; status
     >
       <span className="job-pin-dot" />
       {label}
+      {/* Rooftop calls (a ladder climb) are marked so they stand out among the ground calls. */}
+      {roof && <span className="job-pin-roof">· Rooftop</span>}
     </button>
   );
 }

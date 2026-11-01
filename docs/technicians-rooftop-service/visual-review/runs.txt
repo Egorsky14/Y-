@@ -1,0 +1,17 @@
+# visual review runs (dist from npm run build of the working tree with the fixes; one worker)
+# before set (src/ of 250a0d0, fixes stashed, then restored identical): desktop-1080p|rooftop-review.spec.ts -g "review: plaza" exit=0 1 passed; desktop-1080p(1280x720)|rooftop-video.spec.ts exit=0 2 passed
+desktop-1080p|rooftop-review.spec.ts exit=0 3 passed secs=304 freeRamMB=6229
+phone-390x844|rooftop-review.spec.ts exit=0 3 passed secs=304 freeRamMB=6152
+desktop-1080p(1280x720)|rooftop-video.spec.ts exit=0 2 passed secs=248 freeRamMB=6191
+desktop-1080p|rooftop-camera.spec.ts exit=1 1 failed secs=31 freeRamMB=6203
+phone-390x844|rooftop-camera.spec.ts exit=1 1 failed secs=30 freeRamMB=6132
+  -> fix: van keep-out box only outside Property (it blocked the van key point); runs below are after this fix
+desktop-1080p|rooftop-camera.spec.ts exit=0 1 passed secs=81 freeRamMB=6224
+phone-390x844|rooftop-camera.spec.ts exit=0 1 passed secs=79 freeRamMB=6233
+desktop-1080p|rooftop-service.spec.ts exit=0 1 passed secs=131 freeRamMB=6145
+desktop-1080p|rooftop-service.spec.ts (ROOF_LOT=a-n-4) exit=0 1 passed secs=162 freeRamMB=6199
+desktop-1080p|rooftop-persistence.spec.ts exit=0 1 passed secs=78 freeRamMB=6203
+desktop-1080p|gameplay.spec.ts exit=0 1 passed secs=88 freeRamMB=6167
+iphone-portrait|mobile.spec.ts exit=0 1 passed secs=40 freeRamMB=6201
+desktop-1080p|service-camera.spec.ts exit=0 1 passed secs=51 freeRamMB=6184
+desktop-1080p(1280x720)|rooftop-video.spec.ts (final, re-recorded) exit=0 2 passed secs=247 freeRamMB=6183

@@ -12,8 +12,9 @@ import { isRoofJob, roofSpec } from '@/game/world/rooftops';
 import { ladderVisuals, roofPlanFor } from './rooftopChoreo';
 import { roofStageGroup, rooftopServiceCamera, type RoofStageGroup } from './rooftopCamera';
 
-/** Rooftop calls: follow the technician once he has moved this far on the ground (m) or up the ladder. */
+/** Rooftop calls: follow the technician once he has moved this far on the ground (m), and up the ladder (the ladder shot frames the rungs round him). */
 const ROOF_FOLLOW_STEP = 3;
+const ROOF_LADDER_FOLLOW_STEP = 1.4;
 const ROOF_FOLLOW_MIN_INTERVAL = 1200;
 
 /**
@@ -264,7 +265,7 @@ export function ServiceDirector() {
       if (phase !== f.phase) return frameRoof(v, 'phase');
       if (layoutChanged(measureSafeArea(mainCanvas()), f.safe)) return frameRoof(v, 'layout');
       if (v.mode === 'property' || !rt?.visible || cameraMotion.flying) return;
-      if (group !== 'roof' && rt.pos.distanceTo(f.roof.at3) > ROOF_FOLLOW_STEP && performance.now() - f.at > ROOF_FOLLOW_MIN_INTERVAL) frameRoof(v, 'follow', true);
+      if (group !== 'roof' && rt.pos.distanceTo(f.roof.at3) > (group === 'ladder' ? ROOF_LADDER_FOLLOW_STEP : ROOF_FOLLOW_STEP) && performance.now() - f.at > ROOF_FOLLOW_MIN_INTERVAL) frameRoof(v, 'follow', true);
       return;
     }
     const tech = techOf(v);

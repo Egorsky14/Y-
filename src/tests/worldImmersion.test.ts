@@ -40,6 +40,8 @@ describe('technician arm IK', () => {
     [0.4, 0.53, -1, { x: -0.12, y: 0.85, z: 0.42 }],
     [0.42, 0.93, 1, { x: 0.22, y: 0.98, z: 0.6 }],
     [0.1, 0.92, 1, { x: 0.12, y: 1.0, z: 0.33 }],
+    // Kneeling at a rooftop unit: the free hand flat on its service panel (Worker `brace`).
+    [0.42, 0.53, -1, { x: -0.2, y: 1.05, z: 0.59 }],
   ];
   it('puts the hand on reachable targets within 2 cm', () => {
     for (const [lean, pY, side, target] of cases) {

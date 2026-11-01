@@ -1,6 +1,6 @@
 import { useApp, useGame, type ServiceCameraMode } from '@/app/store';
 import { lotById, COMPETITOR_LOT, WAREHOUSE_LOT } from '@/game/world/cityLayout';
-import { equipmentPlacement } from '@/game/world/rooftops';
+import { accessFor, equipmentPlacement, roofSpec, ROOF_LADDER, servicedUnit } from '@/game/world/rooftops';
 import { VEHICLE_SPECS, upgradeById } from '@/game/fleet/vehicleCatalog';
 import { ATTRIBUTE_KEYS, ATTRIBUTE_LABELS } from '@/game/employees/attributes';
 import { ROLE_LABELS, xpToNextLevel } from '@/game/employees/roles';
@@ -113,6 +113,43 @@ function LotInspector({ lotId, onClose, preferredJobId }: { lotId: string; onClo
   return <CustomerInspector lotId={lotId} onClose={onClose} preferredJobId={preferredJobId} />;
 }
 
+/**
+ * A property with its equipment on the roof, between calls: what is up there, how a technician reaches it, and a view
+ * of the unit and the ladder's access point (from the street, the roof's cabinets sit behind the parapet).
+ */
+function RoofSiteNote({ lotId }: { lotId: string }) {
+  const camera = useApp((s) => s.camera);
+  const spec = roofSpec(lotId);
+  const unit = spec ? servicedUnit(spec) : null;
+  if (!spec || !unit) return null;
+  const access = accessFor(spec);
+  const lot = lotById(lotId)!;
+  const show = () => {
+    const out = access?.out ?? { x: 0, z: -1 };
+    const at = access ? { x: (unit.center.x + access.foot.x) / 2, z: (unit.center.z + access.foot.z) / 2 } : unit.center;
+    camera({ type: 'focus', target: at, distance: lot.kind === 'commercial' ? 30 : 22, azimuth: Math.atan2(out.x, out.z) + 0.6, elevation: 0.62 });
+  };
+  return (
+    <div className="card" data-testid="roof-site-note" style={{ fontSize: 13, lineHeight: 1.4 }}>
+      {access ? (
+        <>
+          <b>Rooftop unit.</b> The system is on the roof ({spec.edgeY.toFixed(1)} m up). On a call here your technician takes the {ROOF_LADDER.name} off the van&apos;s rack, sets it at the access point, climbs up and works at the
+          unit; select the call and press <i>Watch</i> to follow it.
+        </>
+      ) : (
+        <>
+          <b>Rooftop units out of ladder reach.</b> The roof edge is {spec.edgeY.toFixed(1)} m up, beyond a {ROOF_LADDER.name}, with no roof hatch: calls from here can&apos;t be taken.
+        </>
+      )}
+      <div style={{ marginTop: 8 }}>
+        <button className="btn small" onClick={show} data-testid="show-rooftop-unit">
+          Show rooftop unit
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function CustomerInspector({ lotId, onClose, preferredJobId }: { lotId: string; onClose: () => void; preferredJobId?: string }) {
   const customer = useGame((s) => Object.values(s.customers).find((c) => c.lotId === lotId));
   const jobs = useGame((s) => (customer ? Object.values(s.jobs).filter((j) => j.customerId === customer.id) : []));
@@ -147,6 +184,7 @@ function CustomerInspector({ lotId, onClose, preferredJobId }: { lotId: string; 
             No open service call. Customers call when their equipment fails; reputation and marketing bring more direct calls.
           </div>
         )}
+        {!active && equipmentPlacement(customer) === 'roof' && <RoofSiteNote lotId={lot.id} />}
         <Section title="Equipment">
           <KV
             items={[
