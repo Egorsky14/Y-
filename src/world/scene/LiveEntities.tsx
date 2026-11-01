@@ -21,6 +21,9 @@ import { BAG_LOCAL, bagWorldPosition, EXIT_DELAY, EXIT_SECONDS, GAUGES_DELAY, PA
 declare global {
   interface Window {
     __egoWorkers?: Record<string, { x: number; z: number; y: number; status: string }>;
+    /** Debug and evidence capture: each worker's facing and service-call arrival stage. */
+    __egoWorkerHeading?: Record<string, number>;
+    __egoWorkerStage?: Record<string, string | null>;
   }
 }
 
@@ -284,6 +287,8 @@ function WorkerView({ id }: { id: string }) {
       }
       if (stage !== a.stage) setStage(a.stage);
       (window.__egoWorkers ??= {})[id] = { x: g.position.x, z: g.position.z, y: g.position.y, status: e.status };
+      (window.__egoWorkerHeading ??= {})[id] = g.rotation.y;
+      (window.__egoWorkerStage ??= {})[id] = a.stage;
       return;
     }
     a.jobId = null;
@@ -315,6 +320,8 @@ function WorkerView({ id }: { id: string }) {
       g.rotation.y += d * Math.min(1, dt * 7);
     }
     (window.__egoWorkers ??= {})[id] = { x: g.position.x, z: g.position.z, y: g.position.y, status: e.status };
+    (window.__egoWorkerHeading ??= {})[id] = g.rotation.y;
+    (window.__egoWorkerStage ??= {})[id] = null;
   });
 
   if (!info) return null;
