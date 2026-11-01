@@ -11,7 +11,22 @@ import { appearanceFor, buildCharacter, CHARACTER_URL, PELVIS_Y, SHOULDER_X } fr
 export { SHOULDER_X };
 useGLTF.preload(CHARACTER_URL);
 
-export type WorkerAnim = 'idle' | 'walk' | 'carry' | 'inspect' | 'stand-inspect' | 'repair' | 'install' | 'train' | 'celebrate';
+export type WorkerAnim = 'idle' | 'walk' | 'carry' | 'inspect' | 'stand-inspect' | 'repair' | 'install' | 'train' | 'celebrate' | 'ladder-carry' | 'reach' | 'raise' | 'pull' | 'climb' | 'step-over';
+
+/**
+ * Per-frame targets for the ladder and rooftop clips (rooftopChoreo.ts), in the character's own frame (metres,
+ * +z forward, as the work props): hands and feet for IK, the walking pace of the legs, how far through a
+ * stage the character is, and the foot pitch that keeps the soles level on a leaning ladder.
+ */
+export interface WorkerMotion {
+  handL?: THREE.Vector3;
+  handR?: THREE.Vector3;
+  footL?: THREE.Vector3;
+  footR?: THREE.Vector3;
+  pace: number;
+  u: number;
+  footPitch: number;
+}
 
 interface WorkerProps {
   role: EmployeeRole;
@@ -22,6 +37,8 @@ interface WorkerProps {
   pace?: number;
   /** At a unit: distance from the character root to the cabinet's service face, the cabinet height (m), and where the tool bag sits in the character's frame (lead technician only). */
   work?: { face: number; top: number; bag?: { x: number; z: number } };
+  /** Ladder and rooftop clips read their targets from here every frame. */
+  motion?: { current: WorkerMotion | null };
 }
 
 /**
@@ -275,6 +292,26 @@ export function armIK(side: 1 | -1, target: { x: number; y: number; z: number },
   return { arm: [e.x, e.y, e.z], fore: -flex };
 }
 
+const THIGH = 0.45;
+const SHIN = 0.42;
+
+/**
+ * Two-bone leg IK in the character frame (rig metres): thigh, knee and ankle rotations that put the ankle on the
+ * target with the knee bending forward, the sole kept level with the character's frame (plus footPitch).
+ */
+export function legIK(side: 1 | -1, target: { x: number; y: number; z: number }, pelvisY: number, pelvisZ = 0, footPitch = 0): { leg: [number, number, number]; shin: number; foot: number } {
+  const dx = target.x - side * 0.1;
+  const dy = target.y - (pelvisY - 0.05);
+  const dz = target.z - pelvisZ;
+  const ds = THREE.MathUtils.clamp(Math.hypot(dy, dz), 0.18, THIGH + SHIN - 0.002);
+  const toward = Math.atan2(-dz, -dy);
+  const a1 = Math.acos(THREE.MathUtils.clamp((THIGH * THIGH + ds * ds - SHIN * SHIN) / (2 * THIGH * ds), -1, 1));
+  const knee = Math.PI - Math.acos(THREE.MathUtils.clamp((THIGH * THIGH + SHIN * SHIN - ds * ds) / (2 * THIGH * SHIN), -1, 1));
+  const thigh = toward - a1;
+  const spread = Math.asin(THREE.MathUtils.clamp(dx / Math.max(0.2, Math.hypot(dx, dy, dz)), -0.5, 0.5));
+  return { leg: [thigh, 0, spread], shin: knee, foot: -(thigh + knee) + footPitch };
+}
+
 /** Beyond this distance (m) the character switches to the distant mesh and stops posing its hands and tools. */
 const FAR_LOD = 26;
 
@@ -283,7 +320,7 @@ const FAR_LOD = 26;
  * whose shoulders, elbows, hips and knees are driven by procedural clips per job state, blended across
  * state changes. Feet stay on the ground.
  */
-export function Worker({ role, look, anim, scale = 1, pace = 1, work }: WorkerProps) {
+export function Worker({ role, look, anim, scale = 1, pace = 1, work, motion }: WorkerProps) {
   const root = useRef<THREE.Group>(null);
   const { scene: characterScene } = useGLTF(CHARACTER_URL);
   const appearance = useMemo(() => appearanceFor(look), [look]);
@@ -410,6 +447,7 @@ export function Worker({ role, look, anim, scale = 1, pace = 1, work }: WorkerPr
     const top = work?.top ?? 0.96; // cabinet height
     // Smooth 0..1 window inside a looping cycle.
     const win = (u: number, a: number, b: number, fade = 0.5) => THREE.MathUtils.smoothstep(u, a - fade, a) * (1 - THREE.MathUtils.smoothstep(u, b, b + fade));
+    const bump01 = (u: number, a: number, b: number) => (u <= a || u >= b ? 0 : Math.sin(((u - a) / (b - a)) * Math.PI));
 
     switch (anim) {
       case 'walk':
@@ -577,6 +615,74 @@ export function Worker({ role, look, anim, scale = 1, pace = 1, work }: WorkerPr
         set('armL', -0.4, 0, 0.3);
         set('foreL', -1.0);
         rootY = Math.max(0, k) * 0.08;
+        break;
+      }
+      case 'ladder-carry':
+      case 'reach':
+      case 'raise':
+      case 'pull':
+      case 'climb':
+      case 'step-over': {
+        const m = motion?.current;
+        const mp = m?.pace ?? 0;
+        if (anim === 'climb' && m?.footL && m.footR) {
+          // On the rungs: pelvis between the feet and hands, legs and arms placed by IK.
+          pelvisY = THREE.MathUtils.clamp((m.footL.y + m.footR.y) / (2 * s) + 0.8, 0.7, 1.0);
+          pelvisZ = -0.03;
+          for (const [side, f] of [[-1, m.footL], [1, m.footR]] as const) {
+            const sol = legIK(side, { x: f.x / s, y: f.y / s, z: f.z / s }, pelvisY, pelvisZ, m.footPitch);
+            set(side < 0 ? 'legL' : 'legR', ...sol.leg);
+            set(side < 0 ? 'shinL' : 'shinR', sol.shin);
+            set(side < 0 ? 'footL' : 'footR', sol.foot);
+          }
+          set('torso', 0.06);
+        } else if (anim === 'step-over') {
+          // A high step over the parapet: one knee up, then the other, the body upright.
+          const u = m?.u ?? 0;
+          const kl = bump01(u, 0.02, 0.55);
+          const kr = bump01(u, 0.4, 0.98);
+          set('legL', -1.25 * kl, 0, 0.05);
+          set('shinL', 1.5 * kl);
+          set('footL', -0.25 * kl);
+          set('legR', -1.25 * kr, 0, -0.05);
+          set('shinR', 1.5 * kr);
+          set('footR', -0.25 * kr);
+          pelvisY = PELVIS_Y - 0.06 * Math.max(kl, kr);
+          set('torso', 0.18);
+        } else if (mp > 0.01) {
+          // Walking (with the ladder on the shoulder, or stepping while raising it): the walk cycle's legs.
+          stride.current += dt * 7.2 * pace * mp;
+          const sw = Math.sin(stride.current + phase);
+          const c = Math.cos(stride.current + phase);
+          const amp = anim === 'ladder-carry' ? 0.45 : 0.32;
+          set('legL', sw * amp - 0.05);
+          set('legR', -sw * amp - 0.05);
+          set('shinL', Math.max(0, -c) * 0.85 + 0.08);
+          set('shinR', Math.max(0, c) * 0.85 + 0.08);
+          set('footL', Math.max(0, sw) * 0.2 - Math.max(0, -sw) * 0.12);
+          set('footR', Math.max(0, -sw) * 0.2 - Math.max(0, sw) * 0.12);
+          rootY = Math.abs(c) * 0.02;
+          set('torso', anim === 'raise' ? -0.06 : 0.05, sw * 0.05);
+        } else {
+          pelvisY = stand(anim === 'pull' ? 0.08 : 0.03);
+          set('torso', anim === 'raise' || anim === 'reach' ? -0.08 : anim === 'pull' ? 0.1 : 0.04);
+        }
+        const torsoPitch = pose.torso?.[0] ?? 0;
+        if (m?.handL) ik(-1, m.handL.x, m.handL.y, m.handL.z, torsoPitch, pelvisY);
+        else {
+          set('armL', 0.05, 0, -0.06);
+          set('foreL', -0.3);
+        }
+        if (m?.handR) ik(1, m.handR.x, m.handR.y, m.handR.z, torsoPitch, pelvisY);
+        else {
+          set('armR', 0.05, 0, 0.06);
+          set('foreR', -0.3);
+        }
+        // Eyes on the hands (or ahead).
+        const hl = m?.handL;
+        const hr = m?.handR;
+        if (hl && hr) look((hl.x + hr.x) / 2, (hl.y + hr.y) / 2, Math.max(0.2, (hl.z + hr.z) / 2), torsoPitch, pelvisY);
+        else set('head', anim === 'climb' ? -0.25 : -0.04);
         break;
       }
       default: {

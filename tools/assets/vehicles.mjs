@@ -239,7 +239,8 @@ export function fullSizeVan() {
   root.name = 'full-size-van';
   root.add(b.build('body'));
   const rackB = new Builder();
-  ladderRack(rackB, w, 3.6, -0.7, roof + 0.14, 2, true);
+  // The extension ladder is the game's own animated object (rooftop kit), placed on this rack at runtime.
+  ladderRack(rackB, w, 3.6, -0.7, roof + 0.14, 0, true);
   root.add(rackB.build('rack'));
   addWheels(root, { w, wheelR, front: 1.85, rear: -1.75, width: 0.27 });
   return root;
@@ -327,7 +328,7 @@ export function compactVan() {
   root.name = 'compact-van';
   root.add(b.build('body'));
   const rackB = new Builder();
-  ladderRack(rackB, w, 2.9, -0.5, roof + 0.12, 1, false);
+  ladderRack(rackB, w, 2.9, -0.5, roof + 0.12, 0, false);
   root.add(rackB.build('rack'));
   addWheels(root, { w, wheelR, front: 1.5, rear: -1.4, width: 0.24 });
   return root;
@@ -400,8 +401,6 @@ export function pickup() {
     for (const s of [-1, 1]) rackB.add('steel', new THREE.BoxGeometry(0.05, 1.1, 0.05), { position: [s * (w / 2 - 0.2), belt + 0.55, z] });
     rackB.add('steel', new THREE.BoxGeometry(w - 0.3, 0.05, 0.05), { position: [0, 2.4, z] });
   }
-  for (const s of [-1, 1]) rackB.add('aluminum', new THREE.BoxGeometry(0.035, 0.08, 2.6), { position: [s * 0.21, 2.48, -1.5] });
-  for (let k = 0; k < 9; k++) rackB.add('aluminum', new THREE.CylinderGeometry(0.014, 0.014, 0.42, 6), { position: [0, 2.48, -2.65 + k * 0.3], rotation: [0, 0, Math.PI / 2] });
   root.add(rackB.build('rack'));
   addWheels(root, { w, wheelR, front: 1.95, rear: -1.75, width: 0.28 });
   return root;

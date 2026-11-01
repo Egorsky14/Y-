@@ -17,6 +17,8 @@ import { CompetitorBuilding, Park, SupplyWarehouse } from '../buildings/Commerci
 import { Vegetation } from '../city/Vegetation';
 import { JobMarkers, JobSiteProps, Vehicles, Workers } from './LiveEntities';
 import { HOUSE_LOTS } from '@/game/world/cityLayout';
+import { equipmentPlacement } from '@/game/world/rooftops';
+import { CommercialSites, ResidentialRooftopUnits } from '../buildings/CommercialSites';
 import { LabelProjector } from '../interactions/LabelProjector';
 import { RenderProbe } from './RenderProbe';
 import { StudioEnvironment } from './StudioEnvironment';
@@ -41,7 +43,7 @@ function Houses() {
   // Outdoor units by system generation, as "lot:generation|…"; changes only when a system is replaced.
   const generations = useGame((s) =>
     Object.values(s.customers)
-      .map((c) => `${c.lotId}:${condenserGeneration(c.equipment)}`)
+      .map((c) => `${c.lotId}:${equipmentPlacement(c) === 'roof' ? 'roof' : condenserGeneration(c.equipment)}`)
       .sort()
       .join('|'),
   );
@@ -51,6 +53,7 @@ function Houses() {
     <>
       <primitive object={statics} />
       <primitive object={condensers} />
+      <ResidentialRooftopUnits />
       {HOUSE_LOTS.map((lot) => (
         <House key={lot.id} lot={lot} hasActiveJob={active.has(lot.id)} />
       ))}
@@ -107,6 +110,7 @@ export function GameScene() {
         <Headquarters />
         <SupplyWarehouse />
         <CompetitorBuilding />
+        <CommercialSites />
         <Park />
         <Vehicles />
         <Workers />

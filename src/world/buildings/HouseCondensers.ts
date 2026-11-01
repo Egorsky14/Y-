@@ -87,6 +87,7 @@ function addUnit(b: MeshBuilder, lot: Lot, gen: CondenserGeneration): void {
  */
 export function buildHouseCondensers(lots: Lot[], generations: Record<string, CondenserGeneration>, materials: (key: string) => THREE.Material = resolve): THREE.Group {
   const b = new MeshBuilder(materials, UV_SCALES);
-  for (const lot of lots) addUnit(b, lot, generations[lot.id] ?? 'standard');
+  // A home whose packaged unit is on its roof (rooftops.ts) has no ground condenser.
+  for (const lot of lots) if ((generations[lot.id] as string) !== 'roof') addUnit(b, lot, generations[lot.id] ?? 'standard');
   return b.build('house-condensers');
 }

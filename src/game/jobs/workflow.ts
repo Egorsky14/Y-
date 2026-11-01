@@ -122,7 +122,7 @@ export function onVehicleArrived(state: GameState, vehicle: Vehicle): void {
   job.status = 'arriving';
   if (isRoofJob(state, job)) {
     // The ladder comes off the rack, is carried to the access point and footed, and the technician climbs up.
-    job.phaseTotal = BALANCE.roofAccessMinutes;
+    job.phaseTotal = roofSpec(customer.lotId)?.accessMinutes ?? BALANCE.roofAccessMinutes;
     job.phaseRemaining = job.phaseTotal;
     job.log.push(`Arrived at ${customer.address}. Taking the extension ladder off ${vehicle.nickname} and setting it at the roof access.`);
     return;
@@ -527,7 +527,8 @@ function returnCrewToHq(state: GameState, job: Job): void {
   // Rooftop jobs: the crew still has to collect the tools, climb down and stow the ladder. The job is closed
   // (its money is booked); crew and vehicle stay on site until the pack-up phase ends (tick.ts).
   if (vehicle && vehicle.status === 'onsite' && isRoofJob(state, job) && !vehicle.packUp) {
-    vehicle.packUp = { jobId: job.id, remaining: BALANCE.roofPackUpMinutes, total: BALANCE.roofPackUpMinutes };
+    const minutes = roofSpec(state.customers[job.customerId].lotId)?.packUpMinutes ?? BALANCE.roofPackUpMinutes;
+    vehicle.packUp = { jobId: job.id, remaining: minutes, total: minutes };
     job.log.push(`Tools collected. Climbing down and stowing the ladder on ${vehicle.nickname}.`);
     return;
   }

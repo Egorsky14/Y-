@@ -81,6 +81,12 @@ export interface RoofSpec {
   van: { x: number; z: number; heading: number };
   /** Walking path (ground) from the van's ladder rack to the ladder foot, excluding both ends. */
   approach: Vec2[];
+  /**
+   * Game minutes for the access phase (ladder off the rack, carried, footed, raised and climbed, to the unit) and the
+   * pack-up (back down, ladder stowed): bounded per site, sized to the walk and climb this site needs.
+   */
+  accessMinutes: number;
+  packUpMinutes: number;
 }
 
 /** The 4:1 rule: the ladder foot stands a quarter of the rest height out from the wall. */
@@ -114,7 +120,10 @@ function plazaSpec(): RoofSpec {
     servicedUnitId: 'rtu-1',
     // Side drive north of the building, nose east; the rack's rear roller is at the van's back (west).
     van: { x: 167.5, z: -76.2, heading: Math.PI / 2 },
-    approach: [{ x: 167.6, z: -73.6 }],
+    // Round the van's back corner, clear of its body, to the ladder foot.
+    approach: [{ x: 164.0, z: -74.4 }],
+    accessMinutes: 40,
+    packUpMinutes: 40,
   };
 }
 
@@ -147,6 +156,8 @@ function modernSpec(lot: Lot): RoofSpec {
     van: { ...van, heading: lotLocalHeading(lot, 1, 0) },
     // Up the west side yard, clear of the garage corner and the driveway.
     approach: [W(-10.2, -16.5), W(-9.9, -7.2), W(-9.8, 1.2)],
+    accessMinutes: 56,
+    packUpMinutes: 56,
   };
 }
 
@@ -164,6 +175,8 @@ function officeSpec(): RoofSpec {
     servicedUnitId: 'rtu-a',
     van: { x: 150, z: -150, heading: Math.PI / 2 },
     approach: [],
+    accessMinutes: 40,
+    packUpMinutes: 40,
   };
 }
 

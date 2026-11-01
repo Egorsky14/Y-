@@ -7,7 +7,11 @@ import { VehicleGltf, WHEEL_RADIUS, type VehicleRig } from '../vehicles/VehicleG
 import { contactBlob } from '../assets/contactShadow';
 import { useCallback } from 'react';
 import { WORKDAY_END } from '@/game/simulation/time';
-import { Worker, type WorkerAnim } from '../characters/Worker';
+import { Worker, type WorkerAnim, type WorkerMotion } from '../characters/Worker';
+import { isRoofJob, roofSpec, servicedUnit } from '@/game/world/rooftops';
+import { frameAt, frameQuat, ladderVisuals, rackPose, ROOF_PARK_SHARE, roofPlanFor, type ChoreoFrame } from './rooftopChoreo';
+import { ROOFTOP_KIT_URL } from '../buildings/CommercialSites';
+import type { VehicleClass } from '@/game/fleet/vehicleCatalog';
 import { Selectable } from '../interactions/Selectable';
 import { PALETTE } from '../assets/palette';
 import { HOUSE_HALF_WIDTH, condenserPosition, condenserSideDir, lotById, lotLocalToWorld, workPosition } from '@/game/world/cityLayout';
@@ -24,8 +28,11 @@ declare global {
     /** Debug and evidence capture: each worker's facing and service-call arrival stage. */
     __egoWorkerHeading?: Record<string, number>;
     __egoWorkerStage?: Record<string, string | null>;
+    /** Evidence capture: a lot's roof data (rooftops.ts). */
+    __egoRoofSpec?: typeof roofSpec;
   }
 }
+if (typeof window !== 'undefined') window.__egoRoofSpec = roofSpec;
 
 /** Vehicles read their live position from the simulation every frame and smooth toward it. */
 export function Vehicles() {
@@ -76,14 +83,20 @@ function VehicleView({ id }: { id: string }) {
         const fwd = { x: Math.sin(g.rotation.y), z: Math.cos(g.rotation.y) };
         const park = { x: Math.sin(site.pose.heading), z: Math.cos(site.pose.heading) };
         const uTurn = fwd.x * park.x + fwd.z * park.z < 0;
-        const reach = uTurn ? 6 : 3;
         const a = first ? { x: site.pose.x, z: site.pose.z } : { x: g.position.x, z: g.position.z };
+        // Longer pulls (into a commercial lot's side drive) take a wider curve and proportionally longer.
+        const dist = Math.hypot(site.pose.x - a.x, site.pose.z - a.z);
+        const reach = Math.max(uTurn ? 6 : 3, Math.min(14, dist * 0.35));
         pk.curve = [a, { x: a.x + fwd.x * reach, z: a.z + fwd.z * reach }, { x: site.pose.x - park.x * reach, z: site.pose.z - park.z * reach }, { x: site.pose.x, z: site.pose.z }];
         pk.t = first ? 1 : 0;
-        pk.seconds = PARK_SECONDS * (uTurn ? 2 : 1);
+        pk.seconds = Math.max(PARK_SECONDS * (uTurn ? 2 : 1), dist / 6);
         pk.framed = first;
       }
       pk.t = Math.min(1, pk.t + (dt * visualPace(state.speed)) / pk.seconds);
+      // Rooftop jobs: the pull-in takes at most the first share of the access phase (the choreography has the rest),
+      // so it never holds the technician back and a loaded save resumes in step.
+      const siteJob = v.jobId ? state.jobs[v.jobId] : undefined;
+      if (siteJob?.status === 'arriving' && siteJob.phaseTotal > 0 && isRoofJob(state, siteJob)) pk.t = Math.max(pk.t, Math.min(1, (1 - siteJob.phaseRemaining / siteJob.phaseTotal) / ROOF_PARK_SHARE));
       const [p0, p1, p2, p3] = pk.curve;
       const u = ease(pk.t);
       const m = 1 - u;
@@ -172,8 +185,60 @@ function VehicleView({ id }: { id: string }) {
           <meshBasicMaterial />
         </mesh>
       </Selectable>
+      {upgrades.split(',').includes('ladder-rack') && (
+        <Suspense fallback={null}>
+          <LadderView id={id} classId={classId as VehicleClass} rig={rig} />
+        </Suspense>
+      )}
     </group>
   );
+}
+
+/**
+ * The vehicle's extension ladder (rooftop kit base and fly sections): one object, on the rack (following the chassis
+ * as it rolls and pitches) or wherever the technician working with it has it this frame (rooftopChoreo.ts).
+ */
+function LadderView({ id, classId, rig }: { id: string; classId: VehicleClass; rig: React.RefObject<VehicleRig | null> }) {
+  const { scene } = useGLTF(ROOFTOP_KIT_URL);
+  const ladder = useMemo(() => {
+    const root = new THREE.Group();
+    root.name = 'ladder:' + id;
+    const base = scene.getObjectByName('ladder-base')!.clone(true);
+    const fly = scene.getObjectByName('ladder-fly')!.clone(true);
+    for (const o of [base, fly]) {
+      o.position.set(0, 0, 0);
+      o.rotation.set(0, 0, 0);
+      o.traverse((m) => {
+        if ((m as THREE.Mesh).isMesh) {
+          m.castShadow = true;
+          m.receiveShadow = true;
+        }
+      });
+      root.add(o);
+    }
+    return { root, fly };
+  }, [scene, id]);
+  useFrame(() => {
+    const pose = ladderVisuals.get(id) ?? rackPose(classId);
+    const holder = ladder.root.parent;
+    if (!holder) return;
+    const q = frameQuat(pose);
+    if (pose.mode === 'rack') {
+      // On the rack: the vehicle's frame, turned with the chassis about the vehicle's origin.
+      const ch = rig.current?.chassis;
+      const cq = ch ? new THREE.Quaternion().setFromEuler(ch.rotation) : new THREE.Quaternion();
+      ladder.root.position.copy(pose.foot).applyQuaternion(cq);
+      ladder.root.quaternion.copy(cq).multiply(q);
+    } else {
+      // In the world: into the vehicle's frame.
+      holder.updateMatrixWorld(true);
+      const m = new THREE.Matrix4().compose(pose.foot, q, new THREE.Vector3(1, 1, 1));
+      m.premultiply(holder.matrixWorld.clone().invert());
+      m.decompose(ladder.root.position, ladder.root.quaternion, ladder.root.scale);
+    }
+    ladder.fly.position.set(0, pose.fly, 0);
+  });
+  return <primitive object={ladder.root} />;
 }
 
 /** Soft ground contact under a fleet vehicle (the sun shadow leaves the tyres floating otherwise). */
@@ -203,7 +268,8 @@ function WorkerView({ id }: { id: string }) {
     const e = s.employees[id];
     if (!e) return null;
     const job = e.jobId ? s.jobs[e.jobId] : undefined;
-    return { role: e.role, look: e.look, status: e.status, jobId: e.jobId, jobStatus: job?.status, lotId: job ? s.customers[job.customerId]?.lotId : undefined, crew: job ? Math.max(0, [job.technicianId, ...job.crewIds].indexOf(id)) : 0 };
+    const unit = job && isRoofJob(s, job) ? servicedUnit(roofSpec(s.customers[job.customerId].lotId)!) : null;
+    return { role: e.role, look: e.look, status: e.status, jobId: e.jobId, jobStatus: job?.status, lotId: job ? s.customers[job.customerId]?.lotId : undefined, crew: job ? Math.max(0, [job.technicianId, ...job.crewIds].indexOf(id)) : 0, roofUnit: unit ? { height: unit.size.height } : null };
   });
   const pace = useGame((s) => visualPace(s.speed));
   const arrival = useRef<{ jobId: string | null; stage: ArrivalStage; t: number; walked: number; from: { x: number; z: number }; out: { x: number; z: number }; path: { x: number; z: number }[] }>({
@@ -213,6 +279,11 @@ function WorkerView({ id }: { id: string }) {
   const [stage, setStage] = useState<ArrivalStage | null>(null);
   // Soft ground contact under the crew member (kneeling or standing).
   const contact = useMemo(() => contactBlob(0.95, 0.85, 0.34, [0, 0.022, 0.05]), []);
+  // Rooftop jobs (rooftopChoreo.ts): which sequence plays and how far into it, the clip it asks for, and the
+  // hand and foot targets the rig reads every frame.
+  const roofRun = useRef<{ jobId: string | null; seq: 'up' | 'work' | 'down' | null; t: number }>({ jobId: null, seq: null, t: 0 });
+  const [roofAnim, setRoofAnim] = useState<WorkerAnim | null>(null);
+  const motion = useRef<WorkerMotion | null>(null);
 
   useFrame((_, dt) => {
     const s = getGameState();
@@ -231,6 +302,85 @@ function WorkerView({ id }: { id: string }) {
     const lot = job ? lotById(s.customers[job.customerId].lotId) : undefined;
     const van = job?.vehicleId ? vanVisuals.get(job.vehicleId) : undefined;
     const a = arrival.current;
+    const r = roofRun.current;
+    const vehicle = job?.vehicleId ? s.vehicles[job.vehicleId] : undefined;
+    const spec = job && lot && isRoofJob(s, job) ? roofSpec(lot.id) : null;
+    const plan = spec && vehicle ? roofPlanFor(spec, vehicle.classId) : null;
+    if (job && plan && vehicle && (e.status === 'walking' || e.status === 'working')) {
+      // The lead technician does the ladder; anyone else riding along waits by the van.
+      const idx = Math.max(0, [job.technicianId, ...job.crewIds].indexOf(e.id));
+      const down = vehicle.packUp?.jobId === job.id;
+      const seq = down ? 'down' : job.status === 'arriving' ? 'up' : 'work';
+      if (r.jobId !== job.id || r.seq !== seq) {
+        r.jobId = job.id;
+        r.seq = seq;
+        r.t = 0;
+      }
+      // Own pace, but never behind the simulated phase (a loaded save resumes at the matching point; at high game
+      // speed the sequence plays briskly instead of lagging).
+      const step = dt * visualPace(s.speed);
+      let frame: ChoreoFrame | null = null;
+      if (seq === 'up') {
+        if (!van?.settled) {
+          g.visible = false;
+          ladderVisuals.delete(vehicle.id);
+          if (roofAnim !== 'walk') setRoofAnim('walk');
+          (window.__egoWorkerStage ??= {})[id] = 'roof:riding';
+          return;
+        }
+        // The van's pull-in has the first share of the access phase (VehicleView); the choreography the rest.
+        const prog = job.phaseTotal > 0 ? 1 - Math.max(0, job.phaseRemaining) / job.phaseTotal : 1;
+        const floor = Math.max(0, (prog - ROOF_PARK_SHARE) / (1 - ROOF_PARK_SHARE));
+        r.t = Math.min(plan.upTotal, Math.max(r.t + step, floor * plan.upTotal));
+        frame = frameAt(plan.up, r.t);
+      } else if (seq === 'down') {
+        const p = vehicle.packUp!;
+        const prog = 1 - Math.max(0, p.remaining) / p.total;
+        r.t = Math.min(plan.downTotal, Math.max(r.t + step, prog * plan.downTotal));
+        frame = frameAt(plan.down, r.t);
+      }
+      if (idx > 0) {
+        // A second crew member: beside the van's door.
+        g.position.set(plan.van.x, 0, plan.van.z);
+        g.visible = !!frame || seq === 'work';
+      } else if (frame) {
+        g.position.copy(frame.pos);
+        g.rotation.order = 'YXZ';
+        g.rotation.set(frame.lean, frame.heading, 0);
+        g.visible = !(seq === 'down' && r.t >= plan.downTotal);
+        ladderVisuals.set(vehicle.id, frame.ladder);
+        // Hands and feet into the character's frame.
+        g.updateMatrixWorld(true);
+        const inv = g.matrixWorld.clone().invert();
+        const local = (v?: THREE.Vector3) => (v ? v.clone().applyMatrix4(inv) : undefined);
+        motion.current = { handL: local(frame.limbs.handL), handR: local(frame.limbs.handR), footL: local(frame.limbs.footL), footR: local(frame.limbs.footR), pace: frame.pace, u: frame.u, footPitch: -frame.lean };
+        const wanted: WorkerAnim = frame.anim === 'hidden' || frame.anim === 'work' ? 'idle' : frame.anim;
+        if (roofAnim !== wanted) setRoofAnim(wanted);
+        if (seq === 'up' && r.t >= plan.upTotal) siteFor(job.id).arrived.add(e.id);
+      } else {
+        // At the rooftop unit: kneeling or standing at its service side, on the deck; the ladder stays footed.
+        g.position.copy(plan.workSpot);
+        g.rotation.order = 'YXZ';
+        g.rotation.set(0, plan.workHeading, 0);
+        ladderVisuals.set(vehicle.id, frameAt(plan.up, plan.upTotal).ladder);
+        siteFor(job.id).arrived.add(e.id);
+        if (roofAnim !== null) setRoofAnim(null);
+      }
+      if (stage !== null) setStage(null);
+      (window.__egoWorkers ??= {})[id] = { x: g.position.x, z: g.position.z, y: g.position.y, status: e.status };
+      (window.__egoWorkerHeading ??= {})[id] = g.rotation.y;
+      (window.__egoWorkerStage ??= {})[id] = frame ? 'roof:' + frame.stage : 'roof:work';
+      return;
+    }
+    if (r.jobId) {
+      // Left the rooftop job (in the van, or reassigned): back to the plain frame.
+      r.jobId = null;
+      r.seq = null;
+      g.rotation.order = 'XYZ';
+      g.rotation.x = 0;
+      g.position.y = 0;
+      if (roofAnim !== null) setRoofAnim(null);
+    }
     if (job && lot?.kind === 'house' && (e.status === 'walking' || e.status === 'working')) {
       const idx = Math.max(0, [job.technicianId, ...job.crewIds].indexOf(e.id));
       if (a.jobId !== job.id) {
@@ -325,8 +475,8 @@ function WorkerView({ id }: { id: string }) {
   });
 
   if (!info) return null;
-  const anim: WorkerAnim =
-    stage === 'exit' || stage === 'walk'
+  const anim: WorkerAnim = roofAnim ??
+    (stage === 'exit' || stage === 'walk'
       ? 'carry'
       : stage === 'turn' || stage === 'riding'
         ? 'idle'
@@ -342,12 +492,16 @@ function WorkerView({ id }: { id: string }) {
               : 'stand-inspect'
         : info.status === 'training'
           ? 'train'
-          : 'idle';
+          : 'idle');
   // At a house unit: how far the work spot is from the cabinet's service face, so the rig's IK puts
   // hands and tools on the cabinet (cityLayout: workPosition and condenserPosition; unit 0.92 m, 1.08 m on premium homes).
   const workLot = info.lotId ? lotById(info.lotId) : undefined;
   const work = (() => {
-    if (!workLot || workLot.kind !== 'house') return undefined;
+    if (!workLot) return undefined;
+    // At a rooftop unit: the work spot is 0.62 m from its service face; the cabinet stands on its curb or rails.
+    const roof = info.roofUnit;
+    if (roof) return { face: 0.62, top: roof.height, bag: info.crew === 0 ? BAG_LOCAL : undefined };
+    if (workLot.kind !== 'house') return undefined;
     const c = condenserPosition(workLot);
     const w = workPosition(workLot, info.crew);
     const size = workLot.style === 'premium' ? 1.08 : 0.92;
@@ -359,7 +513,7 @@ function WorkerView({ id }: { id: string }) {
       <Selectable selection={{ kind: 'employee', id }} ringRadius={1.1} ringOffset={[0, 0.07, 0]}>
         {/* The rig is modelled at ~1.8 m tall: draw it at true scale next to the 0.96 m condenser. */}
         <Suspense fallback={null}>
-          <Worker role={info.role} look={info.look} anim={anim} pace={pace} work={work} />
+          <Worker role={info.role} look={info.look} anim={anim} pace={pace} work={work} motion={motion} />
         </Suspense>
         <mesh position={[0, 1.0, 0]} visible={false}>
           <boxGeometry args={[1, 2.1, 1]} />
@@ -475,12 +629,45 @@ function JobSiteEquipment({ jobId, flags }: { jobId: string; flags: string }) {
   return <primitive object={kit} name="jobsite-equipment" />;
 }
 
+/**
+ * Rooftop jobs: the tool bag set down on the roof deck beside the technician at the unit's service side (the gauge
+ * manifold and hoses of the ground kit are built for a condenser's valves, so they stay in the van).
+ */
+function RoofSiteBag({ jobId, lotId }: { jobId: string; lotId: string }) {
+  const { scene } = useGLTF(KIT_URL);
+  const spec = roofSpec(lotId);
+  const unit = spec ? servicedUnit(spec) : null;
+  const bag = useMemo(() => {
+    const src = scene.getObjectByName('bag');
+    if (!src || !spec || !unit) return null;
+    const b = src.clone(true);
+    b.traverse((o) => {
+      if ((o as THREE.Mesh).isMesh) {
+        o.castShadow = true;
+        o.receiveShadow = true;
+      }
+    });
+    // Beside his hip on the free-hand side (BAG_LOCAL in his frame: +z toward the unit).
+    const yaw = Math.atan2(-unit.serviceDir.x, -unit.serviceDir.z);
+    const w = unit.workSpot;
+    b.position.set(w.x + BAG_LOCAL.x * Math.cos(yaw) + BAG_LOCAL.z * Math.sin(yaw), spec.deckY + 0.06, w.z - BAG_LOCAL.x * Math.sin(yaw) + BAG_LOCAL.z * Math.cos(yaw));
+    b.rotation.set(0, yaw, 0);
+    b.visible = false;
+    return b;
+  }, [scene, spec, unit]);
+  useEffect(() => () => void siteVisuals.delete(jobId), [jobId]);
+  useFrame(() => {
+    if (bag) bag.visible = (siteVisuals.get(jobId)?.arrived.size ?? 0) > 0;
+  });
+  return bag ? <primitive object={bag} name="roof-kit" /> : null;
+}
+
 /** Tools staged beside the condenser while a technician is on site: tool bag, gauge manifold with hoses, a recovery cylinder on installs, and the company equipment that came along. */
 export function JobSiteProps() {
   const sites = useGame((s) =>
     Object.values(s.jobs)
       .filter((j) => ['arriving', 'diagnosing', 'awaiting-diagnosis', 'quoted', 'awaiting-authorization', 'repairing', 'installing'].includes(j.status))
-      .map((j) => `${j.id}:${s.customers[j.customerId].lotId}:${j.status === 'installing' ? 'i' : 'r'}:${siteEquipment(s, j)}`)
+      .map((j) => `${j.id}:${s.customers[j.customerId].lotId}:${isRoofJob(s, j) ? 'roof' : j.status === 'installing' ? 'i' : 'r'}:${siteEquipment(s, j)}`)
       .join('|'),
   );
   if (!sites) return null;
@@ -490,6 +677,7 @@ export function JobSiteProps() {
         const [id, lotId, kind, equipment] = entry.split(':');
         const lot = lotById(lotId);
         if (!lot) return null;
+        if (kind === 'roof') return <RoofSiteBag key={id} jobId={id} lotId={lotId} />;
         // The kit's frame is the unit's: house-local axes, origin at the unit centre. The premium
         // house has a larger unit (1.08 m): shift so the couplers still meet its valves and face.
         const premium = lot.style === 'premium';

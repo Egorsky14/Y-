@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { condenserPosition, curbParking, HOUSE_HALF_WIDTH, HOUSE_LOTS, lotById, lotLocalToWorld, workPosition, type Lot } from '@/game/world/cityLayout';
 import type { GameState } from '@/game/simulation/types';
+import { isRoofJob, roofSpec } from '@/game/world/rooftops';
 import { collectHouseOccluders } from '../buildings/HouseBuilder';
 import { cameraPosition, NO_SAFE_AREA, registeredOccluders, registerOccluders, segmentBlocked, solveClearView, tagOccluder, type SafeArea, type ViewSpec } from './cameraOcclusion';
 import { composeView, scoreView, type Composed, type RuleTuning, type ServiceMode, type Subject } from './cameraComposition';
@@ -579,7 +580,10 @@ export function siteParking(state: GameState, vehicleId: string): { lot: Lot; po
   const v = state.vehicles[vehicleId];
   const job = v?.jobId ? state.jobs[v.jobId] : undefined;
   const lot = job ? lotById(state.customers[job.customerId]?.lotId) : undefined;
-  if (!v || v.status !== 'onsite' || !lot || lot.kind !== 'house') return null;
+  if (!v || v.status !== 'onsite' || !lot || !job) return null;
+  // Rooftop jobs: the van parks at the roof's service pose, near the ladder access point (rooftops.ts).
+  if (isRoofJob(state, job)) return { lot, pose: roofSpec(lot.id)!.van };
+  if (lot.kind !== 'house') return null;
   return { lot, pose: curbParking(lot) };
 }
 

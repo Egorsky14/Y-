@@ -113,7 +113,7 @@ describe('a rooftop repair call', () => {
     const cashBefore = s.finance.cash;
     const job = rooftopCall(engine);
     advanceUntil(engine, (st) => st.jobs[job.id].status === 'arriving');
-    expect(s.jobs[job.id].phaseTotal).toBe(BALANCE.roofAccessMinutes);
+    expect(s.jobs[job.id].phaseTotal).toBe(roofSpec(PLAZA)!.accessMinutes);
     // The technician ends the access phase at the rooftop unit's work spot (on the roof).
     advanceUntil(engine, (st) => st.jobs[job.id].status === 'diagnosing');
     const spot = jobWorkSpot(s, s.jobs[job.id], 0);
@@ -129,7 +129,7 @@ describe('a rooftop repair call', () => {
     expect(v.packUp?.jobId).toBe(job.id);
     expect(s.employees[OWNER].jobId).toBe(job.id);
     const entries = ledgerFor(s, job.id);
-    advanceUntil(engine, () => !s.vehicles[VAN].packUp, BALANCE.roofPackUpMinutes + 1);
+    advanceUntil(engine, () => !s.vehicles[VAN].packUp, roofSpec(PLAZA)!.packUpMinutes + 1);
     expect(['returning', 'parked']).toContain(s.vehicles[VAN].status);
     expect(s.employees[OWNER].jobId).toBeUndefined();
     // Nothing more booked by the pack-up; one fee, one repair, one parts entry.

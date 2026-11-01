@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import * as THREE from 'three';
-import { STREETS, ROAD_WIDTH, SIDEWALK_WIDTH, HOUSE_LOTS, inwardDir, HQ_LOT, WAREHOUSE_LOT, COMPETITOR_LOT } from '@/game/world/cityLayout';
+import { STREETS, ROAD_WIDTH, SIDEWALK_WIDTH, HOUSE_LOTS, inwardDir, HQ_LOT, WAREHOUSE_LOT, COMPETITOR_LOT, COMMERCIAL_LOTS } from '@/game/world/cityLayout';
 import { MeshBuilder } from '../assets/pbr';
 import { STATIC_MATERIALS, UV_SCALES } from '../buildings/materials';
 import { signTexture } from '../assets/textures';
@@ -132,7 +132,7 @@ function buildRoads(): THREE.Group {
   }
 
   // Driveway aprons (curb cut) for every lot that touches a street, including commercial lots.
-  const lots = [...HOUSE_LOTS, HQ_LOT, WAREHOUSE_LOT, COMPETITOR_LOT];
+  const lots = [...HOUSE_LOTS, HQ_LOT, WAREHOUSE_LOT, COMPETITOR_LOT, ...COMMERCIAL_LOTS];
   for (const lot of lots) {
     const dir = inwardDir(lot.facing);
     const horizontal = dir.z !== 0;

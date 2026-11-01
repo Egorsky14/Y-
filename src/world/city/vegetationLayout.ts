@@ -1,4 +1,4 @@
-import { HOUSE_LOTS, HQ_LOT, PARK_LOT, ROAD_WIDTH, SIDEWALK_WIDTH, STREETS, WORLD_HALF, type Lot } from '@/game/world/cityLayout';
+import { COMMERCIAL_LOTS, HOUSE_LOTS, HQ_LOT, PARK_LOT, ROAD_WIDTH, SIDEWALK_WIDTH, STREETS, WORLD_HALF, type Lot } from '@/game/world/cityLayout';
 import { makeDecoRng } from '../assets/random';
 import { yardPlan, type Species } from './yardLayout';
 import { greenbelts } from './greenbelt';
@@ -54,6 +54,11 @@ export function collectInstances(density: number): Instance[] {
         out.push({ species: rnd() < 0.7 ? 'palm' : 'mesquite', x, z, rotation: rnd() * Math.PI * 2, scale: 0.85 + rnd() * 0.4, tint: 0.95 + rnd() * 0.1 });
       }
     }
+  }
+  // Keep the commercial driveways clear (filtered afterwards, so the random sequence of every other tree is unchanged).
+  for (let i = out.length - 1; i >= 0; i--) {
+    const t = out[i];
+    if (COMMERCIAL_LOTS.some((l) => Math.abs(t.x - (l.curb.x + 9.2)) < 0.5 && Math.abs(t.z - l.curb.z) < 7)) out.splice(i, 1);
   }
   // Headquarters: fan palms along the north bed and the street, date palms in the lot island,
   // mesquites at the staff patio, agave and shrubs at the sign and planters.
