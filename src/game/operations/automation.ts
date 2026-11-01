@@ -6,6 +6,7 @@ import { measurementAccuracy } from '../employees/attributes';
 import { effectiveAccuracy, jobTools, readGain } from '../equipment/performance';
 import { pushEvent } from '../simulation/events';
 import { absoluteMinutes } from '../simulation/time';
+import { isRoofJob } from '../world/rooftops';
 
 /**
  * Automated Operations Center (HQ upgrade). Two independent settings:
@@ -142,6 +143,8 @@ function autoDiagnose(state: GameState, job: Job): void {
 
 /** True when the diagnosed fault on this system calls for a full replacement conversation. */
 export function replacementWarranted(state: GameState, job: Job): boolean {
+  // Rooftop package units are only repaired (replacement needs a crane lift, not offered yet).
+  if (isRoofJob(state, job)) return false;
   const fault = faultById(job.chosenDiagnosis!);
   const age = state.customers[job.customerId].equipment.ageYears;
   return fault.replacementCandidate && age >= fault.replacementAgeYears;

@@ -20,6 +20,7 @@ import { VEHICLE_SPECS } from '../fleet/vehicleCatalog';
 import { lotById, workPosition } from '../world/cityLayout';
 import { raiseAttention } from '../operations/automation';
 import { diagMultiplier, effectiveAccuracy, jobTools, qualityStars, readGain, readTools, repairMultiplier, toolsOnSite, vehicleAtJob, workmanship } from '../equipment/performance';
+import { isRoofJob, roofAccess, roofSpec, servicedUnit } from '../world/rooftops';
 
 export type ActionResult = { ok: true } | { ok: false; reason: string };
 
@@ -41,6 +42,11 @@ export function acceptLead(state: GameState, jobId: string): ActionResult {
   const job = state.jobs[jobId];
   if (!job) return { ok: false, reason: 'Unknown job.' };
   if (job.status !== 'lead') return { ok: false, reason: 'This call is no longer a lead.' };
+  // A rooftop unit nobody can safely reach is not a call to take on: the lead stays open and expires normally.
+  if (isRoofJob(state, job)) {
+    const access = roofAccess(state, job);
+    if (!access.ok) return { ok: false, reason: access.message };
+  }
   job.status = 'accepted';
   job.acceptedAt = absoluteMinutes(state.clock);
   job.log.push('Call accepted. Waiting for dispatch.');
@@ -69,6 +75,11 @@ export function dispatchJob(state: GameState, jobId: string, technicianId: strin
   if (!vehicleAvailable(vehicle)) return { ok: false, reason: `${vehicle.nickname} is not at headquarters.` };
   if (job.kind === 'replacement') return { ok: false, reason: 'Replacements need an installation crew dispatch.' };
   const customer = state.customers[job.customerId];
+  // Rooftop equipment: the building needs a certified access point and the vehicle the extension ladder.
+  if (isRoofJob(state, job)) {
+    const access = roofAccess(state, job, vehicle);
+    if (!access.ok) return { ok: false, reason: access.message };
+  }
   const route = routeFromHqToLot(vehicle, customer.lotId);
   if (!route) return { ok: false, reason: 'No road route to the customer.' };
 
@@ -109,9 +120,26 @@ export function onVehicleArrived(state: GameState, vehicle: Vehicle): void {
     return;
   }
   job.status = 'arriving';
+  if (isRoofJob(state, job)) {
+    // The ladder comes off the rack, is carried to the access point and footed, and the technician climbs up.
+    job.phaseTotal = BALANCE.roofAccessMinutes;
+    job.phaseRemaining = job.phaseTotal;
+    job.log.push(`Arrived at ${customer.address}. Taking the extension ladder off ${vehicle.nickname} and setting it at the roof access.`);
+    return;
+  }
   job.phaseTotal = BALANCE.arrivalWalkMinutes;
   job.phaseRemaining = job.phaseTotal;
   job.log.push(`Arrived at ${customer.address}. Walking to the equipment.`);
+}
+
+/** Where a crew member works at this job: the rooftop unit's service side, or the ground unit. */
+export function jobWorkSpot(state: GameState, job: Job, crewIndex: number): { x: number; z: number } {
+  const lot = lotById(state.customers[job.customerId].lotId)!;
+  if (isRoofJob(state, job)) {
+    const unit = servicedUnit(roofSpec(lot.id)!);
+    if (unit) return crewIndex === 0 ? unit.workSpot : { x: unit.workSpot.x + unit.serviceDir.z * 1.2 * crewIndex, z: unit.workSpot.z - unit.serviceDir.x * 1.2 * crewIndex };
+  }
+  return workPosition(lot, crewIndex);
 }
 
 function techFor(state: GameState, job: Job): Employee | undefined {
@@ -123,15 +151,13 @@ export function advanceJobPhase(state: GameState, job: Job, dt: number): void {
   if (job.phaseRemaining <= 0) return;
   job.phaseRemaining -= dt;
   const tech = techFor(state, job);
-  const customer = state.customers[job.customerId];
-  const lot = lotById(customer.lotId)!;
   const crew = [job.technicianId, ...job.crewIds].filter((id): id is string => !!id).map((id) => state.employees[id]).filter(Boolean);
 
   if (job.status === 'arriving') {
     const t = 1 - Math.max(0, job.phaseRemaining) / job.phaseTotal;
     const vehicle = job.vehicleId ? state.vehicles[job.vehicleId] : undefined;
     crew.forEach((e, i) => {
-      const target = workPosition(lot, i);
+      const target = jobWorkSpot(state, job, i);
       const from = vehicle ? vehicle.position : target;
       e.position = { x: from.x + (target.x - from.x) * t, z: from.z + (target.z - from.z) * t };
     });
@@ -248,6 +274,8 @@ export function submitQuote(state: GameState, jobId: string, req: QuoteRequest):
   job.recommendation = req.recommendation;
 
   if (req.recommendation === 'replace') {
+    // A packaged rooftop unit is replaced with a crane lift, not carried up a ladder: not offered yet.
+    if (isRoofJob(state, job)) return { ok: false, reason: 'Replacing a rooftop package unit needs a crane lift, which EGO HVAC does not offer yet. Recommend a repair.' };
     const avail = replacementAvailable(state);
     if (!avail.ok) return { ok: false, reason: avail.reason! };
     const tier = tierById(req.equipmentTierId ?? 'standard');
@@ -495,6 +523,30 @@ export function recomputeReputation(state: GameState): void {
 }
 
 function returnCrewToHq(state: GameState, job: Job): void {
+  const vehicle = job.vehicleId ? state.vehicles[job.vehicleId] : undefined;
+  // Rooftop jobs: the crew still has to collect the tools, climb down and stow the ladder. The job is closed
+  // (its money is booked); crew and vehicle stay on site until the pack-up phase ends (tick.ts).
+  if (vehicle && vehicle.status === 'onsite' && isRoofJob(state, job) && !vehicle.packUp) {
+    vehicle.packUp = { jobId: job.id, remaining: BALANCE.roofPackUpMinutes, total: BALANCE.roofPackUpMinutes };
+    job.log.push(`Tools collected. Climbing down and stowing the ladder on ${vehicle.nickname}.`);
+    return;
+  }
+  leaveSite(state, job);
+}
+
+/** Advances a rooftop pack-up; when it ends the crew gets in and the vehicle leaves. */
+export function advancePackUp(state: GameState, vehicle: Vehicle, dt: number): void {
+  const p = vehicle.packUp;
+  if (!p) return;
+  p.remaining -= dt;
+  if (p.remaining > 0) return;
+  vehicle.packUp = undefined;
+  const job = state.jobs[p.jobId];
+  if (job) leaveSite(state, job);
+  else parkVehicle(state, vehicle);
+}
+
+function leaveSite(state: GameState, job: Job): void {
   const vehicle = job.vehicleId ? state.vehicles[job.vehicleId] : undefined;
   const customer = state.customers[job.customerId];
   const crew = [job.technicianId, ...job.crewIds].filter((id): id is string => !!id).map((id) => state.employees[id]).filter(Boolean);

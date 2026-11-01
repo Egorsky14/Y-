@@ -2,11 +2,12 @@ import { describe, expect, it } from 'vitest';
 import { advanceUntil, expectOk, newEngine } from './helpers';
 import type { GameEngine } from '@/game/simulation/engine';
 import type { Employee, GameState, Job, Vehicle } from '@/game/simulation/types';
+import { SAVE_SCHEMA_VERSION } from '@/game/simulation/types';
 import { reconcileCash } from '@/game/economy/ledger';
 import { spawnLead } from '@/game/jobs/leads';
 import { faultById } from '@/game/jobs/faults';
 import { hqParkingStalls } from '@/game/world/cityLayout';
-import { attentionQueue, evidenceConfidence, technicianCount } from '@/game/operations/automation';
+import { attentionQueue, evidenceConfidence, replacementWarranted, technicianCount } from '@/game/operations/automation';
 import { deserialize, serialize } from '@/persistence/save';
 import { createNewGame } from '@/game/simulation/newGame';
 import { GameEngine as Engine } from '@/game/simulation/engine';
@@ -58,7 +59,7 @@ function addTech(s: GameState, id: string, skill: number): Employee {
 }
 
 function addVan(s: GameState, id: string, stall: number): Vehicle {
-  const v: Vehicle = { ...s.vehicles[VAN], id, nickname: `Unit ${stall + 1}`, stall, position: { ...hqParkingStalls(16)[stall].pos }, heading: hqParkingStalls(16)[stall].heading, passengerIds: [], jobId: undefined, driverId: undefined, route: undefined, status: 'parked', upgrades: [], financing: undefined };
+  const v: Vehicle = { ...s.vehicles[VAN], id, nickname: `Unit ${stall + 1}`, stall, position: { ...hqParkingStalls(16)[stall].pos }, heading: hqParkingStalls(16)[stall].heading, passengerIds: [], jobId: undefined, driverId: undefined, route: undefined, status: 'parked', upgrades: ['ladder-rack'], financing: undefined };
   s.vehicles[id] = v;
   return v;
 }
@@ -373,7 +374,7 @@ describe('robustness', () => {
     const legacy = JSON.parse(JSON.stringify(s));
     delete legacy.company.automation;
     const loaded = deserialize(JSON.stringify({ schemaVersion: 3, savedAt: '', appVersion: '0.1.0', state: legacy }));
-    expect(loaded.schemaVersion).toBe(4);
+    expect(loaded.schemaVersion).toBe(SAVE_SCHEMA_VERSION);
     expect(loaded.company.automation).toEqual({ diagnostics: false, closing: false });
   });
 });
@@ -477,7 +478,8 @@ describe('a ten-technician company on automation', () => {
     expect((kinds['uncertain-diagnosis'] ?? 0) / completed.length).toBeLessThan(0.15);
     // (Checked from each job's history: a later notice can replace the attention field.)
     const askedReplacement = (j: Job) => j.log.some((l) => l.startsWith('Owner attention:') && l.includes('full replacement'));
-    const warranted = (j: Job) => !!j.chosenDiagnosis && faultById(j.chosenDiagnosis).replacementCandidate && s.customers[j.customerId].equipment.ageYears >= faultById(j.chosenDiagnosis).replacementAgeYears;
+    // (Rooftop package units are only repaired: replacementWarranted never asks for those.)
+    const warranted = (j: Job) => !!j.chosenDiagnosis && replacementWarranted(s, j);
     for (const j of service.filter((x) => x.status === 'completed')) expect(askedReplacement(j), j.id).toBe(warranted(j));
     // Nothing orphaned: open blocking items belong to jobs still waiting in that status, and every
     // job waiting on a decision has an open item.

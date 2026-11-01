@@ -1,6 +1,7 @@
 import { SAVE_SCHEMA_VERSION, type GameState } from '@/game/simulation/types';
 import { emptyBanking, upgradeLoan } from '@/game/economy/banking/loans';
 import { grantStarterKit, returnOrphanTools } from '@/game/equipment/inventory';
+import { commercialCustomers } from '@/game/customers/generate';
 
 export const SAVE_KEY = 'ego-hvac-v3:save';
 export const AUTOSAVE_KEY = 'ego-hvac-v3:autosave';
@@ -43,6 +44,9 @@ export function migrate(envelope: SaveEnvelope): GameState {
   returnOrphanTools(state);
   // Schema 3 → 4: Operations Center. Automation starts off; jobs have no attention items.
   state.company.automation ??= { diagnostics: false, closing: false };
+  // Schema 4 → 5: rooftop service. The commercial customers (fixed records) join older campaigns; equipment
+  // placement is derived from the customer's system and building, so existing customers keep theirs.
+  for (const c of commercialCustomers()) state.customers[c.id] ??= c;
   state.schemaVersion = SAVE_SCHEMA_VERSION;
   return state;
 }

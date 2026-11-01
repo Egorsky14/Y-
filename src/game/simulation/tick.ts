@@ -1,7 +1,7 @@
 import type { GameState, Vehicle } from './types';
 import { processBankingDay } from '../economy/banking/banking';
 import { MINUTES_PER_DAY, CAMPAIGN_DAYS } from './time';
-import { advanceJobPhase, isActiveJob, onVehicleArrived, parkVehicle } from '../jobs/workflow';
+import { advanceJobPhase, advancePackUp, isActiveJob, onVehicleArrived, parkVehicle } from '../jobs/workflow';
 import { expireLeads, processLeadSchedule, scheduleLeadsForDay, spawnLead } from '../jobs/leads';
 import { sampleRoute, vehicleSpeed, refreshUsedListings } from '../fleet/fleet';
 import { VEHICLE_SPECS } from '../fleet/vehicleCatalog';
@@ -37,6 +37,8 @@ function step(state: GameState, dt: number): void {
   state.elapsedMinutes += dt;
 
   for (const vehicle of Object.values(state.vehicles)) moveVehicle(state, vehicle, dt);
+  // Rooftop jobs: crews still packing up (ladder down and stowed) before their vehicle leaves.
+  for (const vehicle of Object.values(state.vehicles)) if (vehicle.packUp) advancePackUp(state, vehicle, dt);
   for (const job of Object.values(state.jobs)) if (isActiveJob(job)) advanceJobPhase(state, job, dt);
   // Operations Center: act on findings and quotes in the same step they appear.
   runOperations(state);

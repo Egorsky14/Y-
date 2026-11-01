@@ -36,6 +36,10 @@ export const BALANCE = {
   leadLifetimeMinutes: 240,
   diagnosticBaseMinutes: 40,
   arrivalWalkMinutes: 1.5,
+  /** Rooftop jobs: ladder off the rack, carried and footed at the access point, and the climb, before the diagnostic starts. */
+  roofAccessMinutes: 8,
+  /** Rooftop jobs: tools collected, the climb down and the ladder back on the rack, before the van leaves. */
+  roofPackUpMinutes: 6,
   minutesPerRealSecond: 1,
 };
 

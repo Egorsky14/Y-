@@ -8,7 +8,7 @@ import type { Vec2 } from '../world/geometry';
 import type { RngState } from './rng';
 import type { GameClock } from './time';
 
-export const SAVE_SCHEMA_VERSION = 4;
+export const SAVE_SCHEMA_VERSION = 5;
 
 export type CustomerChannel = 'warranty' | 'direct';
 
@@ -217,6 +217,11 @@ export interface Vehicle {
   /** Parking stall index at HQ. */
   stall: number;
   financing?: { loanId: string } | { leaseId: string };
+  /**
+   * Rooftop jobs (schema 5): after the job closes, the crew collects the tools, climbs down and stows the ladder
+   * before the vehicle leaves. Remaining and total game minutes; the job id it belongs to.
+   */
+  packUp?: { jobId: string; remaining: number; total: number };
 }
 
 export interface LedgerEntry {

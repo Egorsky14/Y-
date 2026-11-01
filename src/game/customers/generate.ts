@@ -37,12 +37,51 @@ export function generateCustomers(rng: RngState, warrantyShare = 0.8): Record<st
       lotId: lot.id,
       address: addressFor(lot.id, i),
       channel,
-      equipment: randomEquipment(rng),
+      equipment: houseEquipment(lot.style, randomEquipment(rng)),
       trust: Math.round(nextRange(rng, 35, 60)),
       history: [],
       warrantyCompany: channel === 'warranty' ? randomWarrantyCompany(rng) : undefined,
     };
     customers[customer.id] = customer;
   });
+  for (const c of commercialCustomers()) customers[c.id] = c;
   return customers;
+}
+
+/**
+ * Modern flat-roofed homes are built around a rooftop packaged unit (rooftops.ts): their system type is set
+ * after the random draw, so the random sequence (and every other customer) is unchanged.
+ */
+function houseEquipment(style: string | undefined, e: Equipment): Equipment {
+  return style === 'modern' ? { ...e, type: 'package-unit' } : e;
+}
+
+/**
+ * The commercial customers (cityLayout COMMERCIAL_LOTS): fixed records, no random draws, so new games and
+ * migrated saves get exactly the same accounts. Both run packaged rooftop units; the office roof is out of
+ * reach of a portable ladder (rooftops.ts).
+ */
+export function commercialCustomers(): Customer[] {
+  return [
+    {
+      id: 'cust-cm-plaza',
+      name: 'Desert Sun Dental',
+      lotId: 'cm-plaza',
+      address: 'Mesquite Plaza, 610 Mesquite St',
+      channel: 'direct',
+      equipment: { type: 'package-unit', brand: 'Carrier', tonnage: 7.5, ageYears: 13, refrigerant: 'R-410A', condition: 52, seer: 12 },
+      trust: 50,
+      history: [],
+    },
+    {
+      id: 'cust-cm-office',
+      name: 'Red Rock Title Co.',
+      lotId: 'cm-office',
+      address: 'Desert Ridge Offices, 1240 Mesquite St',
+      channel: 'direct',
+      equipment: { type: 'package-unit', brand: 'Trane', tonnage: 10, ageYears: 9, refrigerant: 'R-410A', condition: 66, seer: 13 },
+      trust: 45,
+      history: [],
+    },
+  ];
 }

@@ -40,7 +40,7 @@ export type HouseStyle = 'ranch' | 'two-story' | 'premium' | 'spanish' | 'modern
 
 export interface Lot {
   id: string;
-  kind: 'house' | 'hq' | 'warehouse' | 'competitor' | 'park';
+  kind: 'house' | 'hq' | 'warehouse' | 'competitor' | 'park' | 'commercial';
   /** Center of the lot footprint. */
   center: Vec2;
   width: number;
@@ -147,7 +147,17 @@ export const HOUSE_LOTS: Lot[] = [
   ...rowOfHouses('s-o', EAST_BLOCK_XS, 100, 'north', 'st-s', 7),
 ];
 
-export const ALL_LOTS: Lot[] = [HQ_LOT, WAREHOUSE_LOT, COMPETITOR_LOT, PARK_LOT, ...HOUSE_LOTS];
+/**
+ * Commercial customers east of Mesquite St, facing it: a low-rise retail strip whose flat roof carries
+ * packaged rooftop units (reached by a portable extension ladder at its north parapet), and a two-storey
+ * office whose roof is too high for one (see rooftops.ts). The curb point is the strip's driveway.
+ */
+export const COMMERCIAL_LOTS: Lot[] = [
+  { id: 'cm-plaza', kind: 'commercial', name: 'Mesquite Plaza', center: { x: 174, z: -50 }, width: 64, depth: 70, facing: 'west', streetId: 'av-e', curb: { x: 130, z: -77 } },
+  { id: 'cm-office', kind: 'commercial', name: 'Desert Ridge Offices', center: { x: 174, z: -150 }, width: 64, depth: 70, facing: 'west', streetId: 'av-e', curb: { x: 130, z: -150 } },
+];
+
+export const ALL_LOTS: Lot[] = [HQ_LOT, WAREHOUSE_LOT, COMPETITOR_LOT, PARK_LOT, ...HOUSE_LOTS, ...COMMERCIAL_LOTS];
 
 export function lotById(id: string): Lot | undefined {
   return ALL_LOTS.find((l) => l.id === id);

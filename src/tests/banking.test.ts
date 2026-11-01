@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { createNewGame } from '@/game/simulation/newGame';
 import { applyAction } from '@/game/simulation/actions';
 import type { GameState, Loan } from '@/game/simulation/types';
+import { SAVE_SCHEMA_VERSION } from '@/game/simulation/types';
 import { FINANCING_CATEGORIES, postTransaction, reconcileCash, totalLoanBalance } from '@/game/economy/ledger';
 import { amortizationSchedule, dailyInterest, loanTotals, monthlyPayment, splitInstallment } from '@/game/economy/banking/amortization';
 import { availableCredit, creditLineOwed, processBankingDay } from '@/game/economy/banking/banking';
@@ -470,7 +471,7 @@ describe('save and load', () => {
     legacy.finance.loans = [{ id: 'loan-old', principal: 30000, balance: 29000, monthlyPayment: 621.13, aprPercent: 8.9, nextPaymentDay: 41, purpose: 'Full-size van Unit 2' }];
     const state = migrate({ schemaVersion: 1, savedAt: '', appVersion: '0.1.0', state: legacy } as SaveEnvelope);
     // Migrations run forward to the current schema (4 = operations center).
-    expect(state.schemaVersion).toBe(4);
+    expect(state.schemaVersion).toBe(SAVE_SCHEMA_VERSION);
     expect(state.finance.banking.creditScore).toBe(52);
     const loan = state.finance.loans[0];
     expect(loan.kind).toBe('vehicle');

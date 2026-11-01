@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { advanceUntil, expectOk, newEngine } from './helpers';
 import type { GameEngine } from '@/game/simulation/engine';
 import type { GameState, Job } from '@/game/simulation/types';
+import { SAVE_SCHEMA_VERSION } from '@/game/simulation/types';
 import { reconcileCash } from '@/game/economy/ledger';
 import { balanceSheet, cashFlows } from '@/game/economy/balanceSheet';
 import { spawnLead } from '@/game/jobs/leads';
@@ -422,7 +423,7 @@ describe('save and load', () => {
     const legacy = JSON.parse(JSON.stringify(s));
     delete legacy.tools;
     const loaded = deserialize(JSON.stringify({ schemaVersion: 2, savedAt: '', appVersion: '0.1.0', state: legacy }));
-    expect(loaded.schemaVersion).toBe(4);
+    expect(loaded.schemaVersion).toBe(SAVE_SCHEMA_VERSION);
     expect(toolsHeldBy(loaded, { kind: 'employee', id: OWNER }).map((t) => t.defId).sort()).toEqual([...STARTER_KIT].sort());
     expect(balanceSheet(loaded).equity).toBe(balanceSheet(s).equity);
     expect(loaded.finance.ledger).toEqual(s.finance.ledger);
