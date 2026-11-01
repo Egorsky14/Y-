@@ -227,3 +227,56 @@ describe('rooftop persistence and time', () => {
     for (const id of Object.keys(before)) expect(loaded.customers[id].equipment, id).toEqual(before[id].equipment);
   });
 });
+
+describe('rooftop jobs alongside the rest of the company', () => {
+  /** A second technician and a second ladder van (copies of the owner's record and the starter van). */
+  function secondCrew(engine: GameEngine) {
+    const s = engine.state;
+    s.employees['emp-t2'] = { ...structuredClone(s.employees[OWNER]), id: 'emp-t2', name: 'Second Tech', isOwner: false, look: 777, status: 'idle', jobId: undefined, vehicleId: undefined };
+    s.vehicles['veh-2'] = { ...structuredClone(s.vehicles[VAN]), id: 'veh-2', nickname: 'Unit 2', stall: 1, status: 'parked', jobId: undefined, driverId: undefined, passengerIds: [], route: undefined, upgrades: ['ladder-rack'] };
+  }
+
+  it('runs two rooftop calls at once with their own technicians and vans (one ladder each)', () => {
+    const engine = newEngine(11);
+    const s = engine.state;
+    secondCrew(engine);
+    const modern = HOUSE_LOTS.find((l) => l.style === 'modern')!;
+    const a = spawnLead(s, { channel: 'direct', preferredLotId: PLAZA, faultId: 'contactor' })!;
+    const b = spawnLead(s, { channel: 'direct', preferredLotId: modern.id, faultId: 'contactor' })!;
+    for (const j of [a, b]) expectOk(engine.dispatch({ type: 'accept-lead', jobId: j.id }));
+    expectOk(engine.dispatch({ type: 'dispatch', jobId: a.id, technicianId: OWNER, vehicleId: VAN }));
+    expectOk(engine.dispatch({ type: 'dispatch', jobId: b.id, technicianId: 'emp-t2', vehicleId: 'veh-2' }));
+    let guard = 0;
+    while (!['veh-1', 'veh-2'].every((v) => s.vehicles[v].status === 'parked') && guard++ < 6000) {
+      for (const id of [a.id, b.id]) {
+        const j = s.jobs[id];
+        if (j.status === 'awaiting-diagnosis') engine.dispatch({ type: 'choose-diagnosis', jobId: id, faultId: j.faultId });
+        if (j.status === 'quoted') engine.dispatch({ type: 'submit-quote', jobId: id, quote: { recommendation: 'repair', priceAdjust: 0.8 } });
+      }
+      // Each vehicle packs up its own job only.
+      for (const v of ['veh-1', 'veh-2']) if (s.vehicles[v].packUp) expect(s.vehicles[v].packUp!.jobId).toBe(v === 'veh-1' ? a.id : b.id);
+      engine.advanceMinutes(1);
+    }
+    expect(s.jobs[a.id].status).toBe('completed');
+    expect(s.jobs[b.id].status).toBe('completed');
+    expect(s.employees[OWNER].status).toBe('idle');
+    expect(s.employees['emp-t2'].status).toBe('idle');
+    expect(reconcileCash(s).ok).toBe(true);
+  });
+
+  it('nobody is fired and no van is sold while a rooftop crew is still packing up (no orphan ladder or worker)', () => {
+    const engine = newEngine(5);
+    const s = engine.state;
+    secondCrew(engine);
+    const job = spawnLead(s, { channel: 'direct', preferredLotId: PLAZA, faultId: 'contactor' })!;
+    expectOk(engine.dispatch({ type: 'accept-lead', jobId: job.id }));
+    expectOk(engine.dispatch({ type: 'dispatch', jobId: job.id, technicianId: 'emp-t2', vehicleId: 'veh-2' }));
+    approveRepair(engine, job.id);
+    advanceUntil(engine, () => !!s.vehicles['veh-2'].packUp);
+    expect(engine.dispatch({ type: 'fire', employeeId: 'emp-t2' }).ok).toBe(false);
+    expect(engine.dispatch({ type: 'sell-vehicle', vehicleId: 'veh-2' }).ok).toBe(false);
+    advanceUntil(engine, () => s.vehicles['veh-2'].status === 'parked');
+    expect(s.employees['emp-t2'].jobId).toBeUndefined();
+    expect(s.vehicles['veh-2'].packUp).toBeUndefined();
+  });
+});
