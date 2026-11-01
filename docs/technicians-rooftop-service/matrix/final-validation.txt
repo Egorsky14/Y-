@@ -4,3 +4,9 @@ desktop-1080p|rooftop-service.spec.ts (a-n-4) exit=0 1 passed 0 failed secs=168
 desktop-1080p|rooftop-camera.spec.ts exit=0 1 passed 0 failed secs=85
 phone-390x844|rooftop-camera.spec.ts exit=0 1 passed 0 failed secs=83
 # batch stopped here by Claude Code (system low on memory); remaining specs not run on ed5d28a
+# completion run on 961d3f3 (2026-10-31), dist from npm run build; orphaned project vite preview servers (2) stopped first
+desktop-1080p|rooftop-persistence.spec.ts exit=0 1 passed 0 failed secs=81 freeRAM/commitMB before=5830/18845 after=5326/18475 leftoverBrowsers=0 (query faulty in this line; verified 0 right after)
+desktop-1080p|rooftop-sites.spec.ts exit=0 1 passed 0 failed secs=27 freeRAM/commitMB before=5436/18658 after=5444/18729 leftoverBrowsers=0
+desktop-1080p|technician-perf.spec.ts exit=0 1 passed 0 failed secs=31 freeRAM/commitMB before=4431/17689 after=4746/18050 leftoverBrowsers=0
+desktop-1080p|service-camera-feedback.spec.ts exit=0 1 passed 0 failed secs=41 freeRAM/commitMB before=4755/18088 after=4771/18217 leftoverBrowsers=0
+iphone-portrait|service-camera.spec.ts exit=0 1 passed 0 failed secs=54 freeRAM/commitMB before=4754/18213 after=4654/18166 leftoverBrowsers=0
