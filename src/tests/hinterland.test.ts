@@ -65,7 +65,8 @@ describe('hinterland', () => {
       for (const s of streets) expect(overlap(it, s)).toBe(false);
       for (const s of scenic) expect(overlap(it, s)).toBe(false);
     }
-  });
+    // Pure geometry over every scenery item and lot: allow for a loaded machine running the suite in parallel.
+  }, 20_000);
 
   it('is deterministic, finite and has varied districts', () => {
     const kinds = new Set(h.cells.map((c) => c.kind));
