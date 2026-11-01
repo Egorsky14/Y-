@@ -1,0 +1,6 @@
+# final validation on ed5d28a, dist from npm run build
+desktop-1080p|rooftop-service.spec.ts (cm-plaza) exit=0 1 passed 0 failed secs=136
+desktop-1080p|rooftop-service.spec.ts (a-n-4) exit=0 1 passed 0 failed secs=168
+desktop-1080p|rooftop-camera.spec.ts exit=0 1 passed 0 failed secs=85
+phone-390x844|rooftop-camera.spec.ts exit=0 1 passed 0 failed secs=83
+# batch stopped here by Claude Code (system low on memory); remaining specs not run on ed5d28a
