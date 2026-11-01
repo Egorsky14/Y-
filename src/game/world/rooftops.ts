@@ -121,7 +121,7 @@ function plazaSpec(): RoofSpec {
     // Side drive north of the building, nose east; the rack's rear roller is at the van's back (west).
     van: { x: 167.5, z: -76.2, heading: Math.PI / 2 },
     // Round the van's back corner, clear of its body, to the ladder foot.
-    approach: [{ x: 164.0, z: -74.4 }],
+    approach: [{ x: 163.0, z: -73.4 }],
     accessMinutes: 40,
     packUpMinutes: 40,
   };

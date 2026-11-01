@@ -216,7 +216,9 @@ export function roofPlan(spec: RoofSpec, klass: VehicleClass, van: { x: number; 
   // He steps back a little while the ladder comes off; the carry starts where he ends up.
   // (far enough that the ladder's back half, behind his shoulder, clears the van's rear doors).
   const retrieveEnd = rearSpot.clone().addScaledVector(vf, -1.6);
-  const carryPath = [retrieveEnd, ...spec.approach.map((p) => flat(p)), footOut];
+  // Straight back from the van first, so the ladder's back half swings clear of it when he turns.
+  const clearOfVan = retrieveEnd.clone().addScaledVector(vf, -1.5);
+  const carryPath = [retrieveEnd, clearOfVan, ...spec.approach.map((p) => flat(p)), footOut];
   const deckY = spec.deckY + 0.06;
   const landing = flat(access.landing, deckY);
   const workSpot = flat(unit.workSpot, deckY);
@@ -367,7 +369,7 @@ export function roofPlan(spec: RoofSpec, klass: VehicleClass, van: { x: number; 
   // Beside the lying ladder, not on it: facing out he shoulders it on his +x side.
   const outHeadingDown = wallHeading + Math.PI;
   const pickSpot = pickEnd.clone().addScaledVector(v3(Math.cos(outHeadingDown), 0, -Math.sin(outHeadingDown)), -0.2);
-  const backPath = [pickSpot, ...[...spec.approach].reverse().map((p) => flat(p)), rearSpot.clone().addScaledVector(vf, -0.35)];
+  const backPath = [pickSpot, ...[...spec.approach].reverse().map((p) => flat(p)), rearSpot.clone().addScaledVector(vf, -1.85), rearSpot.clone().addScaledVector(vf, -0.35)];
   const stowSpot = rearSpot.clone().addScaledVector(vf, -0.35);
   const stowEnd = stowSpot.clone().addScaledVector(vf, 0.3);
   const toDoor = [stowEnd, rear.clone().addScaledVector(vr, 0.9), doorOut];
