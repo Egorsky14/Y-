@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import { createPortal, useFrame } from '@react-three/fiber';
 import { useGLTF } from '@react-three/drei';
 import type { EmployeeRole } from '@/game/employees/roles';
+import { useApp } from '@/app/store';
 import { PALETTE } from '../assets/palette';
 import { appearanceFor, buildCharacter, CHARACTER_URL, PELVIS_Y, type BoneName, type Lod } from './technicianModel';
 import { RIG_BONES, RIG_MEASURES } from './rigData.generated';
@@ -15,6 +16,8 @@ declare global {
   interface Window {
     /** Test hook: when set, each character records the furthest any hand or foot fell short of its target (m). */
     __egoContact?: Record<string, number>;
+    /** Test hook: when set, characters add their CPU time here (performance benchmark). */
+    __egoCharCost?: { ms: number };
   }
 }
 
@@ -207,6 +210,8 @@ export const KNEEL = {
 /** Beyond these distances (m) the character draws its simpler meshes; past the far one its pose also updates less often. */
 const LOD_MID = 13;
 const LOD_FAR = 40;
+/** The game's quality setting scales those distances: lower settings drop to the simpler meshes sooner. */
+const LOD_REACH = { low: 0.5, medium: 0.75, high: 1, ultra: 1.4 } as const;
 
 const smooth01 = THREE.MathUtils.smoothstep;
 /** What a hand is doing with its fingers, by clip. */
@@ -272,7 +277,7 @@ export function Worker({ role, look, anim, scale = 1, pace = 1, work, motion }: 
     [],
   );
 
-  useFrame(({ camera }, frameDt) => {
+  const tick = (camera: THREE.Camera, frameDt: number) => {
     // Level of detail: simpler meshes with distance; far away or off screen, the pose updates on every fourth frame with
     // the time summed, so clips stay in step but cost a quarter. The hands are only posed when they can be seen.
     const L = lod.current;
@@ -281,7 +286,8 @@ export function Worker({ role, look, anim, scale = 1, pace = 1, work, motion }: 
     if (rootNow) {
       const p = rootNow.getWorldPosition(LOD_POS);
       const dist = camera.position.distanceTo(p);
-      const level: Lod = dist > LOD_FAR ? 2 : dist > LOD_MID ? 1 : 0;
+      const reach = LOD_REACH[useApp.getState().settings.quality];
+      const level: Lod = dist > LOD_FAR * reach ? 2 : dist > LOD_MID * reach ? 1 : 0;
       if (level !== L.level) {
         L.level = level;
         character.lods.forEach((m, i) => (m.visible = i === level));
@@ -449,7 +455,7 @@ export function Worker({ role, look, anim, scale = 1, pace = 1, work, motion }: 
         if (up < 0.5) {
           // Probing: tool hand on the panel terminals (small careful moves), meter held up in the other hand.
           const jitter = Math.sin(t * 2.3) * 0.022;
-          hand(1, 0.13 + jitter, 0.62 + Math.sin(t * 1.7) * 0.025, face - 0.035, [0.05, -0.15, 1], [-1, -0.2, 0]);
+          hand(1, 0.13 + jitter, 0.62 + up * 0.5 + Math.sin(t * 1.7) * 0.025, face - 0.035 - up * 0.1, [0.05, -0.15, 1], [-1, -0.2, 0]);
           hand(-1, -0.14, 0.84, 0.44, [0.35, 0.1, 1], [0.2, 1, -0.1]);
           showProbe = true;
           gripR = PINCH;
@@ -585,6 +591,14 @@ export function Worker({ role, look, anim, scale = 1, pace = 1, work, motion }: 
         } else {
           pelvisY = stand(anim === 'pull' ? 0.08 : 0.03);
           torsoPitch = anim === 'raise' || anim === 'reach' ? -0.08 : anim === 'pull' ? 0.1 : 0.04;
+          // Anything to pick up from low down is a squat and a bent back, not an arm stretched through the air.
+          const lowest = Math.min(m?.handL ? m.handL.y / s : 2, m?.handR ? m.handR.y / s : 2);
+          const low = THREE.MathUtils.clamp((0.95 - lowest) / 0.8, 0, 1);
+          if (low > 0) {
+            pelvisY -= low * 0.42;
+            pelvisZ -= low * 0.1;
+            torsoPitch = THREE.MathUtils.lerp(torsoPitch, 0.82, low);
+          }
           set('torso', torsoPitch);
         }
         if (m?.handL) {
@@ -668,11 +682,17 @@ export function Worker({ role, look, anim, scale = 1, pace = 1, work, motion }: 
     for (const [side, h] of [[-1, want.handL], [1, want.handR]] as const) {
       h.weight += ((h.has ? 1 : 0) - h.weight) * fade;
       clavicle(side, h);
-      if (h.weight > 0.002) worst = Math.max(worst, solveArm(r, side, h.at, { hand: h.hasRot ? h.rot : null, weight: h.weight }));
+      if (h.weight > 0.002) {
+        const short = solveArm(r, side, h.at, { hand: h.hasRot ? h.rot : null, weight: h.weight });
+        if (h.has && h.weight > 0.9) worst = Math.max(worst, short);
+      }
     }
     for (const [side, f] of [[-1, want.footL], [1, want.footR]] as const) {
       f.weight += ((f.has ? 1 : 0) - f.weight) * fade;
-      if (f.weight > 0.002) worst = Math.max(worst, solveLeg(r, side, f.at, { pitch: f.pitch, weight: f.weight }));
+      if (f.weight > 0.002) {
+        const short = solveLeg(r, side, f.at, { pitch: f.pitch, weight: f.weight });
+        if (f.has && f.weight > 0.9) worst = Math.max(worst, short);
+      }
       const toeGoal = f.has ? f.toe : 0;
       // The toes stay down while the foot rolls over them, which is a bend upward at the ball.
       r[side < 0 ? 'toeL' : 'toeR'].quaternion.setFromAxisAngle(X_AXIS, -toeGoal);
@@ -706,6 +726,13 @@ export function Worker({ role, look, anim, scale = 1, pace = 1, work, motion }: 
         leads.current.update(a, b, clip);
       } else leads.current.hide();
     }
+  };
+  useFrame(({ camera }, frameDt) => {
+    const cost = window.__egoCharCost;
+    if (!cost) return tick(camera, frameDt);
+    const t0 = performance.now();
+    tick(camera, frameDt);
+    cost.ms += performance.now() - t0;
   });
 
   const tech = role === 'technician' || role === 'installer';

@@ -439,7 +439,7 @@ def add_skirt(verts, faces, uvs, weights, normals, depth=0.014):
     return verts, np.concatenate([faces, extra]), np.concatenate([uvs, extra_uv]), weights
 
 
-def garment(name, tint, region, v, inflate, smooth_iters, shape=None, snap=None, skirt=0.014):
+def garment(name, tint, region, v, inflate, smooth_iters, shape=None, snap=None, skirt=0.014, tuck=None):
     """A shell of body faces in a region of the morph v: smoothed, inflated, folded, hems snapped."""
     mask = np.isin(FACE_REGION, region)
     ids, faces, uvs = cut(mask)
@@ -464,6 +464,8 @@ def garment(name, tint, region, v, inflate, smooth_iters, shape=None, snap=None,
     p += vertex_normals(p, faces) * fold_height(p0, tint)[:, None] * 0.32
     if snap:
         p[rim] = snap(p[rim])
+    if tuck:
+        p -= n0 * tuck(p0)[:, None]
     p, faces, uvs, w = add_skirt(p, faces, uvs, w, vertex_normals(p, faces), skirt) if skirt else (p, faces, uvs, w)
     return Piece(name, tint, p, faces, uvs, w)
 
@@ -520,13 +522,15 @@ def snap_shirt(p):
     out = snap_sleeve(p)
     t, _ = arm_param(p)
     low = (p[:, 1] < WAIST_Y + 0.12) & (t < 0.4)
-    out[low, 1] = WAIST_Y - 0.012
+    out[low, 1] = WAIST_Y - 0.05
     return out
 
 
 def snap_hem(p):
     """Trouser hem: a clean, level, round opening over the boot."""
     out = p.copy()
+    # The waistband: a level top edge above the belt line.
+    out[out[:, 1] > WAIST_Y - 0.15, 1] = WAIST_Y + 0.014
     for s in "LR":
         ankle, knee = JOINTS[f"foot{s}"], JOINTS[f"shin{s}"]
         low = (out[:, 1] < WAIST_Y - 0.15) & (out[:, 0] * ankle[0] > 0)
@@ -543,7 +547,7 @@ def snap_hem(p):
 def dress(v, build):
     pieces = []
     shirt_inflate = lambda q: 0.0035 + (0.003 + 0.009 * smoothstep(WAIST_Y + 0.28, WAIST_Y + 0.05, q[:, 1])) * smoothstep(WAIST_Y - 0.005, WAIST_Y + 0.05, q[:, 1]) + 0.004 * smoothstep(0.2, 0.7, arm_param(q)[0]) * (_arm_w[cut(np.isin(FACE_REGION, ["shirt"]))[0]] > 0.5)
-    pieces.append(garment(f"shirt_{build}", "shirt", ["shirt"], v, shirt_inflate, 26, shape=sleeve_shape, snap=snap_shirt))
+    pieces.append(garment(f"shirt_{build}", "shirt", ["shirt"], v, shirt_inflate, 26, shape=sleeve_shape, snap=snap_shirt, tuck=lambda q: 0.02 * smoothstep(WAIST_Y + 0.02, WAIST_Y - 0.01, q[:, 1])))
     profile = [(ANKLE_Y, 0.07), (JOINTS["shinL"][1] - 0.14, 0.077), (JOINTS["shinL"][1], 0.083), (JOINTS["shinL"][1] + 0.22, 0.1), (HIP_Y, 0.118)]
     # Heavier men fill out the cloth more; the profile only ever adds.
     pants_ids = cut(np.isin(FACE_REGION, ["pants"]))[0]
@@ -909,30 +913,54 @@ def cap_piece():
         # An ellipsoid cut flat-ish at the top gives the panels' shape instead of a dome; the back dips to the nape.
         d = smax(crown(q), q[:, 1] - top, 0.022)
         d = smax(d, (base - 0.018 * np.clip((cz - q[:, 2]) / rz, 0, 1)) - q[:, 1], 0.002)
-        # The bill: curved down at its sides, tapering forward.
-        bx = np.abs(q[:, 0]) / (rx * 0.98)
-        by = base - 0.003 - 0.016 * bx * bx - 0.010 * np.clip((q[:, 2] - z_front) / 0.085, 0, 1)
-        brim = Ellipsoid((0.0, by.mean() * 0, z_front - 0.012), (rx * 0.98, 1.0, 0.092), "head")
-        plan = np.sqrt((q[:, 0] / (rx * 0.98)) ** 2 + ((q[:, 2] - (z_front - 0.012)) / 0.092) ** 2) - 1
-        sheet = np.maximum(np.abs(q[:, 1] - by) - 0.0032, plan * 0.06)
-        sheet = np.maximum(sheet, (z_front - 0.03) - q[:, 2])
-        _ = brim
-        d = smin(d, sheet, 0.0045)
         return smin(d, Ellipsoid((0.0, top - 0.0005, cz), (0.008, 0.004, 0.008), "head")(q), 0.002)
 
-    lo = (-rx - 0.02, base - 0.05, cz - rz - 0.02)
-    hi = (rx + 0.02, top + 0.012, z_front + 0.11)
+    lo = (-rx - 0.02, base - 0.03, cz - rz - 0.02)
+    hi = (rx + 0.02, top + 0.012, z_front + 0.02)
     v, f = weld_quads(fn, lo, hi, 0.004, smooth=2)
     f = fix_winding_to_outside(v, f, fn)
-    # Mapped by angle round the crown and by height; the bill keeps a plain patch.
+    # The crown is mapped by angle round it and by height, the seam at the back.
     az = np.arctan2(v[:, 0], v[:, 2] - cz) / (2 * np.pi) + 0.5
     hgt = np.clip((v[:, 1] - base) / (top - base), 0, 1)
-    is_brim = (v[:, 2] > z_front - 0.002) | (v[:, 1] < base - 0.0005)
-    u = np.where(is_brim, 0.02, az)
-    w = np.where(is_brim, 0.02, 0.1 + 0.9 * hgt)
-    uvs = acc_uv("cap", u, w)[f]
+    uvs = acc_uv("cap", az, 0.1 + 0.9 * hgt)[f]
     span = uvs[:, :, 0].max(1) - uvs[:, :, 0].min(1)
     uvs[span > 0.06, :, 0] = uvs[span > 0.06, :, 0].min(1, keepdims=True)
+    # The bill: a curved stiff sheet with real thickness, wider than the head's front, rounded in plan.
+    I, J = 8, 14
+    wx = rx * 0.99
+    zc = z_front - 0.018
+    reach_z = 0.098
+    rows = []
+    for layer, dy in ((0, 0.0028), (1, -0.0028)):
+        for i in range(I + 1):
+            t = i / I
+            z = (z_front - 0.03) + (zc + reach_z - (z_front - 0.03)) * t
+            half = wx * np.sqrt(max(0.0, 1 - ((z - zc) / reach_z) ** 2))
+            for j in range(J + 1):
+                sx = -1 + 2 * j / J
+                x = half * sx
+                y = base - 0.002 - 0.02 * (x / wx) ** 2 - 0.012 * t + dy
+                rows.append([x, y, z])
+    bv = np.array(rows)
+    grid = (I + 1) * (J + 1)
+    bf = []
+    idx = lambda L, i, j: L * grid + i * (J + 1) + j
+    for i in range(I):
+        for j in range(J):
+            bf.append([idx(0, i, j), idx(0, i, j + 1), idx(0, i + 1, j + 1), idx(0, i + 1, j)])
+            bf.append([idx(1, i, j), idx(1, i + 1, j), idx(1, i + 1, j + 1), idx(1, i, j + 1)])
+    # Rim round the three free edges.
+    for i in range(I):
+        bf.append([idx(0, i, 0), idx(0, i + 1, 0), idx(1, i + 1, 0), idx(1, i, 0)])
+        bf.append([idx(0, i + 1, J), idx(0, i, J), idx(1, i, J), idx(1, i + 1, J)])
+    for j in range(J):
+        bf.append([idx(0, I, j), idx(0, I, j + 1), idx(1, I, j + 1), idx(1, I, j)])
+    bf = np.array(bf)[:, ::-1]  # Outward: top sheet up, bottom sheet down, rim out.
+    buv = acc_uv("cap", 0.02 + 0.05 * (bv[:, 0] - bv[:, 0].min()) / np.ptp(bv[:, 0]), 0.02 + 0.05 * (bv[:, 2] - bv[:, 2].min()) / np.ptp(bv[:, 2]))[bf]
+    base_n = len(v)
+    v = np.concatenate([v, bv])
+    f = np.concatenate([f, bf + base_n])
+    uvs = np.concatenate([uvs, buv])
     wts = np.zeros((len(v), len(BONES)), dtype=np.float32)
     wts[:, BONE_INDEX["head"]] = 1
     return Piece("cap", "cap", v, f, uvs, wts), {"base": base, "top": top, "cz": cz, "rz": rz}
@@ -949,7 +977,7 @@ def collar_piece(v, build):
     th = np.arctan2(pts[:, 0] - c[0], pts[:, 2] - c[2])
     r = np.hypot(pts[:, 0] - c[0], pts[:, 2] - c[2])
     N = 36
-    gap = 0.34
+    gap = 0.2
     thetas = np.linspace(gap, 2 * np.pi - gap, N)
     bins = (thetas + np.pi) % (2 * np.pi) - np.pi
     radius = []
@@ -957,7 +985,7 @@ def collar_piece(v, build):
         d = np.abs(np.arctan2(np.sin(th - t), np.cos(th - t)))
         radius.append(r[d < 0.35].max() if (d < 0.35).any() else r.mean())
     radius = np.array(radius)
-    for _ in range(6):
+    for _ in range(16):
         radius = np.convolve(np.r_[radius[0], radius, radius[-1]], [0.25, 0.5, 0.25], "valid")
     # Rows of the loft: (height above the base, extra radius): inside of the stand, its top, the roll, then the leaf.
     rows = [(-0.012, 0.012), (0.018, 0.012), (0.03, 0.015), (0.029, 0.02), (0.012, 0.026), (-0.012, 0.033), (-0.028, 0.044)]
@@ -1146,10 +1174,10 @@ def build_atlas(boot_info, cap_info):
         # Hairs of the brow: a curved band above the socket, thinning outward.
         bx = (P[..., 0] - eye[0]) * sx
         by = P[..., 1] - (eye[1] + 0.0215 + 0.008 * np.cos(np.clip(bx / 0.03, -1.5, 1.5)) - 0.0035 * smoothstep(0.012, 0.03, bx))
-        band = np.exp(-((by / 0.0046) ** 2)) * smoothstep(0.034, 0.024, np.abs(bx - 0.002)) * (P[..., 2] > eye[2] - 0.022) * (R == 1)
+        band = np.exp(-((by / 0.0034) ** 2)) * smoothstep(0.034, 0.024, np.abs(bx - 0.002)) * (P[..., 2] > eye[2] - 0.022) * (R == 1)
         strands = 0.72 + 0.28 * np.sin(bx * 900 + by * 300 + _noise3(P, 240.0, 6.0) * 3.0)
         brow = np.clip(band * strands * 1.15, 0, 1)
-        albedo = albedo * (1 - 0.74 * brow)[..., None]
+        albedo = albedo * (1 - 0.56 * brow)[..., None]
         height += brow * 0.00022
         # Eye socket and lid crease.
         sock = np.exp(-(ellipsoid_dist(P, eye + np.array([0.0, 0.002, 0.012]), (0.024, 0.016, 0.018)) ** 2)) * (R == 1)
@@ -1198,16 +1226,15 @@ def build_atlas(boot_info, cap_info):
     for by in (NECK_Y - 0.038, NECK_Y - 0.078):
         d = np.hypot(px, P[..., 1] - by)
         btn = shirt & front & (d < 0.0058)
-        albedo[btn] = np.array([0.02, 0.022, 0.025])
-        alpha[btn] = 0
+        # Tinted like the shirt, a little darker and glossier: a button of the shirt's own colour.
+        albedo[btn] = 0.42
         rough[btn] = 0.45
-        height[btn] += 0.0004
     # --- Brand: small on the wearer's chest, large across the back, on the cloth rather than floating above it.
     paint_logo(albedo, alpha, P, shirt, (0.098, NECK_Y - 0.122, 0), 0.098, flip=False, facing=1)
     paint_logo(albedo, alpha, P, shirt, (0.0, NECK_Y - 0.165, 0), 0.25, flip=True, facing=-1)
     # A name patch on the other side of the chest.
-    patch = shirt & front & (np.abs(P[..., 0] + 0.098) < 0.038) & (np.abs(P[..., 1] - (NECK_Y - 0.122)) < 0.0105)
-    albedo[patch] = np.array([0.85, 0.86, 0.87])
+    patch = shirt & front & (np.abs(P[..., 0] + 0.098) < 0.03) & (np.abs(P[..., 1] - (NECK_Y - 0.122)) < 0.008)
+    albedo[patch] = np.array([0.5, 0.51, 0.52])
     alpha[patch] = 0
     height[patch] += 0.0005
     # --- Pants: cotton twill, reinforced knees, side seams, a tinted base.
@@ -1285,9 +1312,16 @@ def build_atlas(boot_info, cap_info):
     height[y0:y1, x0:x1] = 0.00005 * np.sin((u + v) * 900) - 0.00045 * np.exp(-((panel / 0.035) ** 2)) * (v > 0.12)
     rough[y0:y1, x0:x1] = 0.85
     # Six panels' stitching; the teal badge sits on the front panel, drawn as the bolt's rectangle.
-    badge = (np.abs(u - 0.5) < 0.034) & (v > 0.3) & (v < 0.6)
-    albedo[y0:y1, x0:x1][badge] = np.array([0.0088, 0.651, 0.558])
-    alpha[y0:y1, x0:x1][badge] = 0
+    # The bolt from the wordmark (x 40..135, y 38..218 of its 1024 x 256 canvas) on the front panel.
+    lpx, lw, lh = LOGO
+    bu = (u - 0.5) / 0.03 * 0.5 + 0.5
+    bv = (v - 0.3) / 0.34
+    inside = (bu > 0) & (bu < 1) & (bv > 0) & (bv < 1)
+    ix = np.clip(((40 + bu * 95) / 1024 * lw).astype(int), 0, lw - 1)
+    iy = np.clip(((256 - (218 - bv * 180)) / 256 * lh).astype(int), 0, lh - 1)
+    bolt = inside & (lpx[iy, ix, 3] > 0.5)
+    albedo[y0:y1, x0:x1][bolt] = np.array([0.0088, 0.651, 0.558])
+    alpha[y0:y1, x0:x1][bolt] = 0
     # Hair: dense strands, tinted.
     sl, u, v = grid("hair")
     y0, y1, x0, x1 = sl
@@ -1495,7 +1529,7 @@ def face_protect(piece):
 
 
 # LOD budgets (triangles per piece): near / normal gameplay / distant crowd.
-BUDGET = {"head": (4600, 1100, 240), "arms": (3400, 900, 160), "shirt": (3200, 1100, 240), "pants": (3000, 1000, 240), "boot": (900, 260, 60), "cap": (900, 280, 70), "collar": (420, 140, 0), "belt": (800, 260, 0), "pocket": (120, 0, 0), "hair": (700, 150, 0), "beard": (420, 0, 0), "eyes": (280, 90, 0)}
+BUDGET = {"head": (4600, 1100, 240), "arms": (3400, 900, 160), "shirt": (3200, 1100, 240), "pants": (3000, 1000, 240), "boot": (900, 260, 60), "cap": (900, 280, 70), "collar": (440, 140, 0), "belt": (800, 260, 0), "pocket": (120, 0, 0), "hair": (700, 150, 0), "beard": (420, 0, 0), "eyes": (280, 90, 0)}
 LOD_SUFFIX = ("", "_lod1", "_lod2")
 
 

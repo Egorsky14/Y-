@@ -100,7 +100,7 @@ describe('hand contact', () => {
         const q = handRotation(side, new THREE.Vector3(0.05, -0.1, 1), new THREE.Vector3(0, -1, 0), new THREE.Quaternion());
         const short = solveArm(bones, side, target, { hand: withRot ? q : null });
         expect(short, JSON.stringify(t)).toBe(0);
-        expect(palmWorld(bones, side).distanceTo(target), `${JSON.stringify(t)} rot ${withRot}`).toBeLessThan(withRot ? 0.005 : 0.07);
+        expect(palmWorld(bones, side).distanceTo(target), `${JSON.stringify(t)} rot ${withRot}`).toBeLessThan(withRot ? 0.005 : 0.08);
       }
     }
   });

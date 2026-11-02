@@ -48,6 +48,13 @@ const HALF_W = 0.24;
 /** Retracted fly offset (its foot this far up the base). */
 const FLY_HOME = 0.2;
 /** With the ball of a boot on a rung, where the ankle is: along the rails above the rung, and out from it (generation 3 rig). */
+/** Where the ladder's rail sits on him: the top of the shoulder, measured on the generation 3 rig. */
+const STAND_OFF = 0.3;
+const SHOULDER_X = 0.19;
+const SHOULDER_TOP = 1.5;
+/** How high his palms reach standing flat-footed, and how high a van's rear step lifts him. */
+const FLAT_REACH = 2.04;
+const STEP_UP = 0.36;
 const ANKLE_OVER_RUNG = RIG_MEASURES.ankleHeight + 0.018;
 const ANKLE_OFF_RUNG = RIG_MEASURES.ballZ - 0.019;
 /** Height (along the axis) of the technician's hands while walking the ladder up, and of the top end at the start. */
@@ -136,13 +143,31 @@ function carryPose(pos: V3, heading: number, lead: 1 | -1, fly = FLY_HOME): { la
   // Feet → top along his heading (lead +1) or against it (-1); the leading end is raised a little either way.
   const axis = f.clone().multiplyScalar(lead * Math.cos(tilt)).addScaledVector(UP, lead > 0 ? Math.sin(tilt) : -Math.sin(tilt));
   const across = UP.clone().addScaledVector(axis, -UP.dot(axis)).normalize();
-  const shoulder = pos.clone().addScaledVector(side, 0.2).addScaledVector(UP, 1.56);
+  const shoulder = pos.clone().addScaledVector(side, SHOULDER_X).addScaledVector(UP, SHOULDER_TOP);
   const center = shoulder.clone().addScaledVector(across, HALF_W + 0.025);
   const foot = center.clone().addScaledVector(axis, -BASE_LEN / 2);
   const rail = center.clone().addScaledVector(across, -HALF_W - 0.02);
-  const handR = rail.clone().addScaledVector(f, 0.34).addScaledVector(side, -0.02);
-  const handL = rail.clone().addScaledVector(f, -0.26).addScaledVector(side, -0.04);
+  // The near hand steadies the rail ahead of the shoulder; the other comes across the chest to it.
+  const handR = rail.clone().addScaledVector(f, 0.26).addScaledVector(side, -0.01).addScaledVector(UP, -0.015);
+  const handL = rail.clone().addScaledVector(f, 0.36).addScaledVector(side, -0.03).addScaledVector(UP, -0.015);
   return { ladder: { mode: 'world', foot, axis: axis.normalize(), across, fly }, handL, handR };
+}
+
+/**
+ * The ladder coming off a tall rack: slid t (0..1) of 1.7 m rearward, with its rear end tipped down `tip` metres at the
+ * start, as a drop-down rack lowers it over the rear roller, levelling out again as it comes free.
+ */
+function tippedRack(on: LadderPose, vf: V3, t: number, tip: number): LadderPose {
+  const foot = on.foot.clone().addScaledVector(vf, -1.7 * t);
+  // Out on its roller, the near end comes down into his reach; on tall racks it starts tipped so the step can reach it.
+  const endDrop = Math.max(tip, on.foot.y - (FLAT_REACH - 0.06));
+  const drop = tip + (endDrop - tip) * ease(t);
+  if (drop <= 0) return { ...on, foot };
+  foot.y -= drop;
+  const roller = 2.0;
+  const axis = on.axis.clone().multiplyScalar(roller).addScaledVector(UP, drop).normalize();
+  const across = on.across.clone();
+  return { ...on, foot, axis, across };
 }
 
 /** Interpolates two world ladder poses (slerped frame, lerped feet). */
@@ -208,12 +233,17 @@ export function roofPlan(spec: RoofSpec, klass: VehicleClass, van: { x: number; 
   const rear = v3(van.x, 0, van.z).addScaledVector(vf, -(rack.half + 0.62)).addScaledVector(vr, -rack.x);
   // Facing rearward his +x is the van's right: stand left of the ladder line so it passes over that shoulder.
   const rearSpot = rear.clone().addScaledVector(vr, -0.2);
+  // Up on the step at the ladder's end, as a technician does to reach a roof rack; tall racks tip the ladder's end down
+  // over their rear roller (a drop-down rack), so the hands really reach it.
+  const reachSpot = rearSpot.clone().addScaledVector(vf, 0.34);
+  reachSpot.y = STEP_UP;
+  const tipDown = Math.max(0, RACK[klass].y - (FLAT_REACH + STEP_UP) + 0.06);
   const rearHeading = van.heading + Math.PI;
   const footOut = F.clone().addScaledVector(out, BASE_LEN / 2);
   /** Where he stands, and how far up the rails his hands are, while walking the ladder up at angle phi. */
   const raiseHold = (phi: number) => {
     const along = Math.min(BASE_LEN - 0.25, RAISE_HANDS / Math.max(0.3, Math.sin(phi)));
-    return { along, stand: F.clone().addScaledVector(out, Math.max(0.55, along * Math.cos(Math.min(phi, Math.PI / 2)) + 0.3)) };
+    return { along, stand: F.clone().addScaledVector(out, Math.max(STAND_OFF, along * Math.cos(Math.min(phi, Math.PI / 2)) + 0.3)) };
   };
   const raiseStart = raiseHold(phi0).stand;
   const toRack = [doorOut, rear.clone().addScaledVector(vr, 0.9), rearSpot];
@@ -271,8 +301,9 @@ export function roofPlan(spec: RoofSpec, klass: VehicleClass, van: { x: number; 
     };
     const fL = limb(0, 0, 0.1);
     const fR = limb(RUNG, 1, 0.1);
-    const hR = limb(0.15, 6, 0.08);
-    const hL = limb(0.15 + RUNG, 7, 0.08);
+    // Five rungs above the feet: arms bent, chest clear of the ladder, as a climber holds it.
+    const hR = limb(0.15, 5, 0.08);
+    const hL = limb(0.15 + RUNG, 6, 0.08);
     const rootAlong = (fL.along + fR.along) / 2 - 0.05;
     const point = (along: number, side: number, away: number, depth: number) => F.clone().addScaledVector(axis, along).addScaledVector(across, side).addScaledVector(fc, depth + away);
     const pos = F.clone().addScaledVector(axis, Math.max(0, rootAlong)).addScaledVector(fc, 0.36);
@@ -298,7 +329,8 @@ export function roofPlan(spec: RoofSpec, klass: VehicleClass, van: { x: number; 
     const k = ease(u);
     const pos = p0.clone().multiplyScalar((1 - k) * (1 - k)).addScaledVector(apex, 2 * k * (1 - k)).addScaledVector(landing, k * k);
     const railTop = (side: number) => F.clone().addScaledVector(axisFinal, edgeAlong + 0.5).addScaledVector(across, side * 0.24);
-    const limbs: Limbs = u < 0.55 ? { handL: railTop(1), handR: railTop(-1) } : {};
+    const toTop = ease(clamp01(u / 0.22));
+    const limbs: Limbs = u < 0.55 ? { handL: climbEnd.limbs.handL!.clone().lerp(railTop(1), toTop), handR: climbEnd.limbs.handR!.clone().lerp(railTop(-1), toTop) } : {};
     return still(stage, u, 'step-over', pos, wallHeading, ladderFinal, limbs, 0, leanFinal * (1 - clamp01(u / 0.6)));
   };
 
@@ -313,14 +345,26 @@ export function roofPlan(spec: RoofSpec, klass: VehicleClass, van: { x: number; 
   });
   add(up, 'retrieve', 3.2, (u) => {
     // Pull it rearward off the rack (feet first), then lower it onto the shoulder.
-    const slid = rackW.foot.clone().addScaledVector(vf, -1.7);
-    const off = { ...rackW, foot: slid };
+    const onRoller = (t: number): LadderPose => tippedRack(rackW, vf, t, tipDown);
+    const off = onRoller(1);
     const carry = carryPose(retrieveEnd, rearHeading, -1);
-    const ladder = u < 0.55 ? { ...rackW, foot: rackW.foot.clone().lerp(slid, ease(u / 0.55)) } : blendLadder(off, carry.ladder, ease((u - 0.55) / 0.45));
+    const ladder = u < 0.55 ? onRoller(ease(u / 0.55)) : blendLadder(off, carry.ladder, ease((u - 0.55) / 0.45));
     // Hands on the lower rail above him, following the ladder down.
     const grip = (along: number) => ladder.foot.clone().addScaledVector(ladder.axis, along).addScaledVector(ladder.across, -HALF_W).addScaledVector(UP, -0.03);
-    const limbs = u < 0.55 ? { handR: grip(0.4 + 1.7 * ease(u / 0.55)), handL: grip(0.1 + 1.7 * ease(u / 0.55)) } : { handR: carry.handR.clone().lerp(grip(2.2), 1 - ease((u - 0.55) / 0.45)), handL: carry.handL.clone().lerp(grip(1.6), 1 - ease((u - 0.55) / 0.45)) };
-    return still('retrieve', u, 'reach', rearSpot.clone().lerp(retrieveEnd, ease(u)), rearHeading, u < 0.55 ? { ...ladder, mode: 'world' } : ladder, limbs);
+    const slide = ease(u / 0.55);
+    // Hand over hand as it comes: near the end at first, then shifting to the point of balance as it lowers.
+    const low = ease(clamp01((u - 0.55) / 0.45));
+    // At the transition the hands are on the near end; then they go to the balance point as it lowers to the shoulder.
+    const limbs = u < 0.55 ? { handR: grip(0.32 + 0.1 * slide), handL: grip(0.06 + 0.1 * slide) } : { handR: grip(0.42 + 1.5 * low).lerp(carry.handR, low), handL: grip(0.16 + 1.5 * low).lerp(carry.handL, low) };
+    // Up onto the step, then back down with the ladder as it comes, staying under its near end until it is on him.
+    const up = ease(clamp01(u / 0.12));
+    const offStep = ease(clamp01((u - 0.16) / 0.3));
+    const under = rackW.foot.clone().addScaledVector(vf, -1.7 - 0.36).addScaledVector(vr, -0.2);
+    under.y = 0;
+    const pos = rearSpot.clone().lerp(reachSpot, up);
+    pos.lerp(under, offStep);
+    pos.lerp(retrieveEnd, low);
+    return still('retrieve', u, 'reach', pos, rearHeading, u < 0.55 ? { ...ladder, mode: 'world' } : ladder, limbs);
   });
   add(up, 'carry', pathLength(carryPath) / SPEED.carry, (u) => {
     const w = walkAlong(carryPath, u, 0.95);
@@ -333,8 +377,10 @@ export function roofPlan(spec: RoofSpec, klass: VehicleClass, van: { x: number; 
     const pos = footOut.clone().lerp(raiseStart, ease(u));
     const carry = carryPose(footOut, wallHeading, -1).ladder;
     const ladder = blendLadder(carry, pivot(phi0), ease(u));
-    const top = ladder.foot.clone().addScaledVector(ladder.axis, BASE_LEN - 0.25);
-    return still('set', u, 'raise', pos, wallHeading, ladder, { handL: top.clone().addScaledVector(across, HALF_W), handR: top.clone().addScaledVector(across, -HALF_W) }, 0.6);
+    // His hands slide along the rails as the far end goes down, staying within reach of where he is.
+    const along = lerp(BASE_LEN / 2, BASE_LEN - 0.25, ease(u));
+    const top = ladder.foot.clone().addScaledVector(ladder.axis, along);
+    return still('set', u, 'raise', pos, wallHeading, ladder, { handL: top.clone().addScaledVector(ladder.across, HALF_W), handR: top.clone().addScaledVector(ladder.across, -HALF_W) }, 0.6);
   });
   add(up, 'raise', 3.2, (u) => {
     // Walk it up hand over hand toward its feet, then lean it on the wall.
@@ -348,16 +394,18 @@ export function roofPlan(spec: RoofSpec, klass: VehicleClass, van: { x: number; 
   add(up, 'extend', 1.8, (u) => {
     // Pull the halyard hand over hand: the fly runs up and the top settles onto the edge.
     const ladder = leaning(lerp(FLY_HOME, flyFinal, ease(u)));
-    const base = F.clone().addScaledVector(out, 0.5);
+    const base = F.clone().addScaledVector(out, STAND_OFF);
     const pull = (ph: number) => ladder.foot.clone().addScaledVector(ladder.axis, 1.15 + 0.35 * (0.5 + 0.5 * Math.sin(u * Math.PI * 7 + ph))).addScaledVector(face(ladder.axis), 0.05);
     return still('extend', u, 'pull', base, wallHeading, ladder, { handL: pull(0).addScaledVector(across, 0.05), handR: pull(Math.PI).addScaledVector(across, -0.05) });
   });
-  const groundStand = F.clone().addScaledVector(out, 0.5);
+  const groundStand = F.clone().addScaledVector(out, STAND_OFF);
   /** Stepping in to the ladder: hands to the rungs, first foot onto the bottom rung. */
   const mount = (stage: string, u: number): ChoreoFrame => {
     const c = climbFrame('climb', 0, 0);
     const k = ease(u);
-    return { ...c, stage, u, pos: groundStand.clone().lerp(c.pos, k), lean: c.lean * k, pace: u < 0.6 ? 0.4 : 0 };
+    const chest = (side: number) => F.clone().addScaledVector(c.ladder.axis, 1.45).addScaledVector(across, side).addScaledVector(faceFinal, 0.0);
+    const limbs = { ...c.limbs, handL: chest(0.17).lerp(c.limbs.handL!, k), handR: chest(-0.17).lerp(c.limbs.handR!, k) };
+    return { ...c, stage, u, limbs, pos: groundStand.clone().lerp(c.pos, k), lean: c.lean * k, pace: u < 0.6 ? 0.4 : 0 };
   };
   add(up, 'mount', 0.9, (u) => mount('mount', u));
   add(up, 'climb', climbTop / SPEED.climb, (u) => climbFrame('climb', u, u * climbTop));
@@ -396,7 +444,7 @@ export function roofPlan(spec: RoofSpec, klass: VehicleClass, van: { x: number; 
   add(down, 'retract', 1.6, (u) => {
     const ladder = leaning(lerp(flyFinal, FLY_HOME, ease(u)));
     const pull = (ph: number) => ladder.foot.clone().addScaledVector(ladder.axis, 1.2 + 0.3 * (0.5 + 0.5 * Math.sin(u * Math.PI * 6 + ph))).addScaledVector(face(ladder.axis), 0.05);
-    return still('retract', u, 'pull', F.clone().addScaledVector(out, 0.5), wallHeading, ladder, { handL: pull(0).addScaledVector(across, 0.05), handR: pull(Math.PI).addScaledVector(across, -0.05) });
+    return still('retract', u, 'pull', F.clone().addScaledVector(out, STAND_OFF), wallHeading, ladder, { handL: pull(0).addScaledVector(across, 0.05), handR: pull(Math.PI).addScaledVector(across, -0.05) });
   });
   add(down, 'lower', 3.0, (u) => {
     const f = up.find((s) => s.name === 'raise')!.frame(1 - u);
@@ -434,12 +482,24 @@ export function roofPlan(spec: RoofSpec, klass: VehicleClass, van: { x: number; 
   add(down, 'stow', 2.4, (u) => {
     // Lift the leading end onto the rear roller and push the ladder forward onto the rack.
     const carry = carryPose(stowSpot, van.heading, 1);
-    const lifted = { ...rackW, foot: rackW.foot.clone().addScaledVector(vf, -1.7) };
+    const lifted = tippedRack(rackW, vf, 1, tipDown);
     // Facing the van, top end first: the carried ladder's frame matches the rack's (feet rearward, top forward).
-    const ladder = u < 0.45 ? blendLadder(carry.ladder, lifted, ease(u / 0.45)) : { ...rackW, foot: lifted.foot.clone().lerp(rackW.foot, ease((u - 0.45) / 0.55)) };
+    const ladder = u < 0.45 ? blendLadder(carry.ladder, lifted, ease(u / 0.45)) : tippedRack(rackW, vf, 1 - ease((u - 0.45) / 0.55), tipDown);
     const grip = (along: number) => ladder.foot.clone().addScaledVector(ladder.axis, along).addScaledVector(ladder.across, -HALF_W).addScaledVector(UP, -0.03);
-    const pos = stowSpot.clone().addScaledVector(vf, 0.3 * ease(u));
-    return still('stow', u, 'reach', pos, van.heading, u >= 1 ? onRack : ladder, { handR: grip(0.35), handL: grip(0.05) });
+    // Hands from the carry grip onto the near end while it goes up on the roller, then he follows it in, up on the rear
+    // step for the final push, and back down.
+    const toEnd = ease(clamp01(u / 0.45));
+    const follow = ease(clamp01((u - 0.45) / 0.45));
+    const under = rackW.foot.clone().addScaledVector(vf, -1.7 - 0.36).addScaledVector(vr, -0.2);
+    under.y = 0;
+    const pos = stowSpot.clone().lerp(under, toEnd);
+    pos.lerp(reachSpot, follow);
+    const back = ease(clamp01((u - 0.86) / 0.14));
+    pos.lerp(stowEnd, back);
+    const handsOff = u > 0.88;
+    const handR = carry.handR.clone().lerp(grip(0.35), toEnd);
+    const handL = carry.handL.clone().lerp(grip(0.05), toEnd);
+    return still('stow', u, 'reach', pos, van.heading, u >= 1 ? onRack : ladder, handsOff ? {} : { handR, handL });
   });
   add(down, 'to-door', pathLength(toDoor) / SPEED.walk, (u) => {
     const w = walkAlong(toDoor, u);

@@ -67,7 +67,7 @@ export function appearanceFor(look: number): Appearance {
   };
 }
 
-const SHIRT: Record<EmployeeRole, string> = { technician: '#1b1f24', installer: '#2a2f36', dispatcher: '#f3f4f6', 'comfort-advisor': '#1b8f86' };
+const SHIRT: Record<EmployeeRole, string> = { technician: '#30353c', installer: '#3b4149', dispatcher: '#f3f4f6', 'comfort-advisor': '#1b8f86' };
 const PANTS: Record<EmployeeRole, string> = { technician: '#3a3f46', installer: '#4a4238', dispatcher: '#2c3340', 'comfort-advisor': '#2c3340' };
 const CAP: Record<EmployeeRole, string> = { technician: '#15181d', installer: '#f2c230', dispatcher: '#15181d', 'comfort-advisor': '#15181d' };
 const isField = (role: EmployeeRole) => role === 'technician' || role === 'installer';

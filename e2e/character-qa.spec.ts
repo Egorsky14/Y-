@@ -90,6 +90,45 @@ test('renders the character: no shader errors, and its mesh is on screen', async
   expect(logged.filter((l) => /shader|program|404|pageerror/i.test(l))).toEqual([]);
 });
 
+test('the crew: different people, side by side, in every role', async ({ page }) => {
+  test.setTimeout(240_000);
+  await start(page);
+  await page.evaluate(() => {
+    const s = window.__ego!.getState() as S;
+    const owner = s.employees['emp-owner'];
+    // Looks chosen to walk through faces (bits 4+), builds (bits 2+) and roles.
+    const looks = [16, 33, 50, 67, 84, 101, 4, 148, 2100, 3300, 1280, 700];
+    const roles = ['technician', 'technician', 'technician', 'technician', 'technician', 'technician', 'installer', 'installer', 'dispatcher', 'comfort-advisor', 'dispatcher', 'comfort-advisor'];
+    looks.forEach((look, i) => {
+      const id = `emp-crew-${i}`;
+      s.employees[id] = { ...structuredClone(owner), id, name: `Crew ${i}`, isOwner: false, look, role: roles[i], status: 'idle', position: { x: 36 + i * 1.05, z: 34 } };
+    });
+    window.__ego!.advanceMinutes(0.01);
+  });
+  await page.waitForTimeout(2500);
+  // Everyone stands side by side along x at z = 34, facing -x; the camera looks at them from their front quarter.
+  const aim = async (name: string, x: number, y: number, distance: number, elevation: number) => {
+    await page.evaluate(
+      ({ x, y, distance, elevation }) => {
+        const app = window.__ego!.app.getState() as S;
+        app.setPhoto({ on: true });
+        const az = -Math.PI / 2 - 0.55;
+        const dir = { x: Math.sin(az) * Math.cos(elevation), y: Math.sin(elevation), z: Math.cos(az) * Math.cos(elevation) };
+        const cam = { x: x + dir.x * distance, y: y + dir.y * distance, z: 34 + dir.z * distance };
+        const reach = cam.y / dir.y;
+        app.camera({ type: 'focus', target: { x: cam.x - dir.x * reach, z: cam.z - dir.z * reach }, distance: reach, azimuth: az, elevation, targetY: 0 } as S);
+      },
+      { x, y, distance, elevation },
+    );
+    await page.waitForTimeout(1900);
+    await shot(page, name);
+  };
+  await aim('12-crew-row', 41.8, 0.95, 9.5, 0.12);
+  await aim('12-crew-faces-a', 37.6, 1.6, 2.2, 0.06);
+  await aim('12-crew-faces-b', 40.8, 1.6, 2.2, 0.06);
+  await aim('12-crew-faces-c', 44.0, 1.6, 2.2, 0.06);
+});
+
 test('standing, and a ground-level job', async ({ page }) => {
   test.setTimeout(600_000);
   const errors: string[] = [];
@@ -109,7 +148,8 @@ test('standing, and a ground-level job', async ({ page }) => {
   await speed(page, 0);
   await page.evaluate(() => {
     const w = window.__egoWorkers!['emp-owner'];
-    (window.__ego!.app.getState() as S).camera({ type: 'focus', target: { x: w.x, z: w.z }, distance: 26, azimuth: 0.7, elevation: 0.8, targetY: 0 } as S);
+    // The normal free-play view of him: nothing here is closer than a player's camera goes.
+    (window.__ego!.app.getState() as S).camera({ type: 'focus', target: { x: w.x, z: w.z }, distance: 22, azimuth: -0.5, elevation: 0.9, targetY: 0 } as S);
   });
   await page.waitForTimeout(1700);
   await shot(page, '01-gameplay-distance');
