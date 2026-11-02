@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import type { VehicleClass } from '@/game/fleet/vehicleCatalog';
 import { ROOF_LADDER, accessFor, ladderLength, servicedUnit, type RoofAccessPoint, type RoofSpec, type RooftopUnit } from '@/game/world/rooftops';
 import { curbDoor, ease, pathLength, samplePath } from './serviceCall';
+import { RIG_MEASURES } from '../characters/rigData.generated';
 
 /**
  * Visual choreography of a rooftop service call (rooftops.ts decides what is possible; the simulation decides
@@ -46,6 +47,9 @@ const FLY_LEN = 3.6;
 const HALF_W = 0.24;
 /** Retracted fly offset (its foot this far up the base). */
 const FLY_HOME = 0.2;
+/** With the ball of a boot on a rung, where the ankle is: along the rails above the rung, and out from it (generation 3 rig). */
+const ANKLE_OVER_RUNG = RIG_MEASURES.ankleHeight + 0.018;
+const ANKLE_OFF_RUNG = RIG_MEASURES.ballZ - 0.019;
 /** Height (along the axis) of the technician's hands while walking the ladder up, and of the top end at the start. */
 const RAISE_HANDS = 1.85;
 const RAISE_START_TOP = 1.6;
@@ -281,8 +285,8 @@ export function roofPlan(spec: RoofSpec, klass: VehicleClass, van: { x: number; 
       lean: leanFinal,
       pace: 0,
       ladder,
-      // Ankles just behind the rung (balls of the feet on it), hands round the rungs.
-      limbs: { footL: point(fL.along + 0.045, 0.11, fL.away, 0.065), footR: point(fR.along + 0.045, -0.11, fR.away, 0.065), handL: point(hL.along, 0.17, hL.away, 0.03), handR: point(hR.along, -0.17, hR.away, 0.03) },
+      // Balls of the boots on the rungs (so the ankles sit up and back from them), palms on the rungs.
+      limbs: { footL: point(fL.along + ANKLE_OVER_RUNG, 0.11, fL.away, ANKLE_OFF_RUNG), footR: point(fR.along + ANKLE_OVER_RUNG, -0.11, fR.away, ANKLE_OFF_RUNG), handL: point(hL.along, 0.17, hL.away, 0.0), handR: point(hR.along, -0.17, hR.away, 0.0) },
     };
   };
   const climbEnd = climbFrame('climb', 1, climbTop);

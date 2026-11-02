@@ -1,52 +1,28 @@
 import * as THREE from 'three';
 import * as BGU from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import type { EmployeeRole } from '@/game/employees/roles';
-import { PALETTE } from '../assets/palette';
+import { RIG_BONES, RIG_MEASURES, RIG_ORDER, type BoneName } from './rigData.generated';
 
 /**
- * The Blender-authored character (tools/blender/technician.py → public/models/characters/technician.glb):
- * a continuous skinned body in three builds, four face shapes, hair, beards, cap, boots and uniform
- * details, all skinned to one 13-bone armature named like the game rig (Worker.tsx).
+ * The next-generation technician (tools/blender/technician_v3.py → public/models/characters/technician-v3.glb): real
+ * human anatomy from CC0 MakeHuman data, garments as geometry, 43 bones, one painted atlas. See
+ * docs/graphics-revolution-3/PIPELINE.md.
  *
- * Per character the parts it wears are merged into one skinned mesh per material (about ten draw calls
- * for the whole figure), cached per appearance, and bound to a fresh skeleton built from the joint table
- * below. The bind matrices are computed here from that table, so every bone's zero rotation is the
- * canonical rig pose (Worker.tsx's clips set rotations relative to it) and Blender's bone rolls never
- * matter. Appearance is a pure function of the employee's `look` seed: same employee, same face, on
- * every load; it never touches attributes or skills.
+ * A character is a single merged skinned mesh per level of detail, and all characters share one material: one draw call
+ * each. What differs between employees is carried in the vertex colours (a tint per region) and in which parts they
+ * wear, so appearance stays a pure function of the employee's `look` seed and never touches attributes or skills.
  */
 
-export const CHARACTER_URL = `${import.meta.env.BASE_URL}models/characters/technician.glb`;
-
-/** Shoulder joints sit this far either side of the spine (rig metres), as in the Blender script. */
-export const SHOULDER_X = 0.2;
-/** The arms are modelled abducted this far (radians) so their surface stays clear of the torso. */
-const ARM_ABDUCT = 0.3;
-export const PELVIS_Y = 0.95;
-
-type BoneName = 'pelvis' | 'torso' | 'head' | 'armL' | 'armR' | 'foreL' | 'foreR' | 'legL' | 'legR' | 'shinL' | 'shinR' | 'footL' | 'footR';
-export const BONE_NAMES: BoneName[] = ['pelvis', 'torso', 'head', 'armL', 'armR', 'foreL', 'foreR', 'legL', 'legR', 'shinL', 'shinR', 'footL', 'footR'];
-/** Parent and local offset of every bone in the canonical pose (rig metres). */
-const RIG: Record<BoneName, { parent: BoneName | null; at: [number, number, number] }> = {
-  pelvis: { parent: null, at: [0, PELVIS_Y, 0] },
-  torso: { parent: 'pelvis', at: [0, 0.06, 0] },
-  head: { parent: 'torso', at: [0, 0.585, 0] },
-  armL: { parent: 'torso', at: [-SHOULDER_X, 0.5, 0] },
-  armR: { parent: 'torso', at: [SHOULDER_X, 0.5, 0] },
-  foreL: { parent: 'armL', at: [0, -0.3, 0] },
-  foreR: { parent: 'armR', at: [0, -0.3, 0] },
-  legL: { parent: 'pelvis', at: [-0.1, -0.05, 0] },
-  legR: { parent: 'pelvis', at: [0.1, -0.05, 0] },
-  shinL: { parent: 'legL', at: [0, -0.45, 0] },
-  shinR: { parent: 'legR', at: [0, -0.45, 0] },
-  footL: { parent: 'shinL', at: [0, -0.42, 0] },
-  footR: { parent: 'shinR', at: [0, -0.42, 0] },
-};
+export const CHARACTER_URL = `${import.meta.env.BASE_URL}models/characters/technician-v3.glb`;
+export type { BoneName };
+export const BONE_NAMES: readonly BoneName[] = RIG_ORDER;
+export const PELVIS_Y: number = RIG_MEASURES.pelvisY;
 
 export type Build = 'slim' | 'avg' | 'heavy';
-export type FaceShape = 'oval' | 'square' | 'round' | 'long';
+export type FaceShape = 'oval' | 'square' | 'round' | 'long' | 'broad' | 'weathered';
 export type HairStyle = 'crop' | 'buzz' | 'curly' | 'swept' | 'receding' | 'bald';
 export type Beard = 'none' | 'mustache' | 'goatee' | 'full';
+export type Lod = 0 | 1 | 2;
 
 export interface Appearance {
   build: Build;
@@ -55,59 +31,75 @@ export interface Appearance {
   beard: Beard;
   skin: string;
   hairColor: string;
-  /** Uniform height scale (0.94–1.06). */
+  /** Uniform height scale (0.94 to 1.06). */
   height: number;
 }
 
-const SKIN = ['#e6b48f', '#d09a70', '#b07650', '#8a5a3c', '#eec09c', '#644130'];
-const HAIR_COLORS = ['#2b1d14', '#4a2f1d', '#8a6a3c', '#1a1a1a', '#b3833f', '#5a5a5a'];
-const FACES: FaceShape[] = ['oval', 'square', 'round', 'long'];
+/**
+ * Faces are different people (see HEADS in the Blender script), so each draws its complexion and hair colour from what
+ * suits it; a skin tone is not just painted onto one face.
+ */
+const FACE_LOOKS: Record<FaceShape, { skin: string[]; hair: string[] }> = {
+  oval: { skin: ['#e6b48f', '#eec09c', '#d9a57f'], hair: ['#4a2f1d', '#2b1d14', '#8a6a3c', '#b3833f'] },
+  square: { skin: ['#d09a70', '#e0ad86', '#c58c63'], hair: ['#2b1d14', '#1a1a1a', '#4a2f1d'] },
+  round: { skin: ['#d8ab82', '#c99a72', '#e2b891'], hair: ['#121212', '#1a1a1a', '#2b1d14'] },
+  long: { skin: ['#6e4630', '#5a3826', '#7e5238'], hair: ['#121212', '#1a1a1a'] },
+  broad: { skin: ['#a8724e', '#b98259', '#946243'], hair: ['#1a1a1a', '#2b1d14', '#3a2616'] },
+  weathered: { skin: ['#dcaa86', '#cf9b78', '#e3b591'], hair: ['#5a5a5a', '#8d8d8d', '#6e6456'] },
+};
+const FACES: FaceShape[] = ['oval', 'square', 'round', 'long', 'broad', 'weathered'];
 const HAIRS: HairStyle[] = ['crop', 'buzz', 'curly', 'swept', 'receding', 'bald'];
 const BEARDS: Beard[] = ['none', 'none', 'mustache', 'none', 'goatee', 'full', 'none'];
 
-/** Deterministic appearance from an employee's look seed (the same bits the old rig used for skin, hair and height). */
+/** Deterministic appearance from an employee's look seed. */
 export function appearanceFor(look: number): Appearance {
   const heavy = (look >> 2) % 5;
+  const face = FACES[(look >> 4) % FACES.length];
+  const palette = FACE_LOOKS[face];
   return {
     build: heavy === 0 ? 'slim' : heavy === 4 ? 'heavy' : 'avg',
-    face: FACES[(look >> 4) % FACES.length],
+    face,
     hair: HAIRS[(look >> 7) % HAIRS.length],
     beard: BEARDS[(look >> 10) % BEARDS.length],
-    skin: SKIN[look % SKIN.length],
-    hairColor: HAIR_COLORS[(look >> 3) % HAIR_COLORS.length],
+    skin: palette.skin[look % palette.skin.length],
+    hairColor: palette.hair[(look >> 3) % palette.hair.length],
     height: 0.94 + ((look >> 5) % 7) * 0.02,
   };
 }
 
-const SHIRT: Record<EmployeeRole, string> = { technician: '#1d2126', installer: '#2a2f36', dispatcher: '#f3f4f6', 'comfort-advisor': '#1b8f86' };
+const SHIRT: Record<EmployeeRole, string> = { technician: '#1b1f24', installer: '#2a2f36', dispatcher: '#f3f4f6', 'comfort-advisor': '#1b8f86' };
 const PANTS: Record<EmployeeRole, string> = { technician: '#3a3f46', installer: '#4a4238', dispatcher: '#2c3340', 'comfort-advisor': '#2c3340' };
+const CAP: Record<EmployeeRole, string> = { technician: '#15181d', installer: '#f2c230', dispatcher: '#15181d', 'comfort-advisor': '#15181d' };
+const isField = (role: EmployeeRole) => role === 'technician' || role === 'installer';
 
-/** Parts a character wears, by name prefix in the GLB (`<part>__<material>`). */
-export function partsFor(a: Appearance, role: EmployeeRole, lod: boolean): string[] {
-  const field = role === 'technician' || role === 'installer';
+/** Parts a character wears at a level of detail, by name prefix in the GLB (`<part><lod>__<tint>`). */
+export function partsFor(a: Appearance, role: EmployeeRole, lod: Lod | boolean): string[] {
+  const level: Lod = lod === true ? 2 : lod === false ? 0 : lod;
+  const field = isField(role);
   const b = a.build;
-  const parts = lod ? ['body_lod'] : [`body_${b}`, `collar_${b}`, `placket_${b}`, `buttons_${b}`, `sleeveL_${b}`, `sleeveR_${b}`, 'lacesL', 'lacesR'];
-  if (lod) parts.push('head_lod', 'bootlodL', 'bootlodR');
-  else parts.push(`head_${a.face}`, 'bootL', 'bootR', 'soleL', 'soleR', `eyes_${a.face}`, `iris_${a.face}`, `brows_${a.face}`);
-  // Under a cap only close-cut hair shows (fuller styles would push through the crown).
-  const hair = field && (a.hair === 'curly' || a.hair === 'swept') ? 'crop' : a.hair;
-  if (hair !== 'bald' && !lod) parts.push(`hair_${hair}_${a.face}`);
-  if (a.beard !== 'none' && !lod) parts.push(`beard_${a.beard}_${a.face}`);
-  if (field) {
-    parts.push(lod ? 'cap_lod' : 'cap', `belt_${b}`);
-    if (!lod) parts.push(`buckle_${b}`, `pouches_${b}`, `piping_${b}`, `sleevetrimL_${b}`, `sleevetrimR_${b}`, `pocketL_${b}`, `pocketR_${b}`, `kneeL_${b}`, `kneeR_${b}`);
-  } else if (!lod) {
-    parts.push(`belt_${b}`, `buckle_${b}`, `sleevetrimL_${b}`, `sleevetrimR_${b}`);
+  const f = a.face;
+  // Under a cap the close crop painted on the scalp is all that shows.
+  const hair = field || a.hair === 'bald' ? null : a.hair;
+  const near = [`shirt_${b}`, `pants_${b}`, `arms_${b}`, `head_${f}`, 'bootL', 'bootR'];
+  const out = [...near];
+  if (field) out.push('cap');
+  if (level < 2) {
+    out.push(`collar_${b}`, `belt_${b}`, `eyes_${f}`);
+    if (hair) out.push(`hair_${hair}_${f}`);
+    if (a.beard !== 'none') out.push(`beard_${a.beard}_${f}`);
   }
-  return parts;
+  if (level === 0) out.push(`pocketL_${b}`, `pocketR_${b}`);
+  return out;
 }
 
 interface Library {
-  /** Geometry by GLB object name, with skin indices remapped to BONE_NAMES order. */
+  /** Geometry by GLB object name, with skin indices remapped to RIG_ORDER. */
   pieces: Map<string, THREE.BufferGeometry>;
 }
 
 const libraries = new WeakMap<THREE.Object3D, Library>();
+const KEEP = ['position', 'normal', 'uv', 'skinIndex', 'skinWeight'];
+const BONE_INDEX = new Map<string, number>(RIG_ORDER.map((n, i) => [n, i]));
 
 function library(scene: THREE.Object3D): Library {
   let lib = libraries.get(scene);
@@ -118,16 +110,22 @@ function library(scene: THREE.Object3D): Library {
     if (!mesh.isSkinnedMesh) return;
     const g = mesh.geometry.clone();
     // Joint order of this mesh's skin → canonical bone order.
-    const map = mesh.skeleton.bones.map((bone) => BONE_NAMES.indexOf(bone.name as BoneName));
+    const map = mesh.skeleton.bones.map((bone) => BONE_INDEX.get(bone.name) ?? 0);
     const idx = g.getAttribute('skinIndex') as THREE.BufferAttribute;
     const out = new Uint16Array(idx.count * 4);
-    for (let i = 0; i < idx.count * 4; i++) out[i] = Math.max(0, map[idx.array[i] as number]);
+    for (let i = 0; i < idx.count * 4; i++) out[i] = map[idx.array[i] as number];
     g.setAttribute('skinIndex', new THREE.Uint16BufferAttribute(out, 4));
-    // Keep only what the materials use; the merge needs identical attribute sets.
-    for (const k of Object.keys(g.attributes)) if (!['position', 'normal', 'skinIndex', 'skinWeight'].includes(k)) g.deleteAttribute(k);
+    for (const k of Object.keys(g.attributes)) if (!KEEP.includes(k)) g.deleteAttribute(k);
     const sw = g.getAttribute('skinWeight');
-    if (sw.array.constructor !== Float32Array) g.setAttribute('skinWeight', new THREE.Float32BufferAttribute(Array.from({ length: sw.count * 4 }, (_, i) => sw.array[i] / (sw.normalized ? (sw.array instanceof Uint8Array ? 255 : 65535) : 1)), 4));
-    if (g.index) g.setIndex(g.index.clone());
+    if (sw.array.constructor !== Float32Array) {
+      const div = !sw.normalized ? 1 : sw.array instanceof Uint8Array ? 255 : 65535;
+      g.setAttribute('skinWeight', new THREE.Float32BufferAttribute(Array.from({ length: sw.count * 4 }, (_, i) => (sw.array[i] as number) / div), 4));
+    }
+    const uv = g.getAttribute('uv');
+    if (uv.array.constructor !== Float32Array) {
+      const div = !uv.normalized ? 1 : uv.array instanceof Uint8Array ? 255 : 65535;
+      g.setAttribute('uv', new THREE.Float32BufferAttribute(Array.from({ length: uv.count * 2 }, (_, i) => (uv.array[i] as number) / div), 2));
+    }
     pieces.set(mesh.name, g);
   });
   lib = { pieces };
@@ -135,127 +133,198 @@ function library(scene: THREE.Object3D): Library {
   return lib;
 }
 
-/** Merged geometry per material for an appearance (cached: technicians who look alike share it). */
-const assemblies = new Map<string, Map<string, THREE.BufferGeometry>>();
+const SUFFIX: Record<Lod, string> = { 0: '', 1: '_lod1', 2: '_lod2' };
 
-function assemble(scene: THREE.Object3D, a: Appearance, role: EmployeeRole, lod: boolean): Map<string, THREE.BufferGeometry> {
-  const field = role === 'technician' || role === 'installer';
-  const key = `${a.build}|${a.face}|${a.hair}|${a.beard}|${field}|${role === 'technician' || role === 'installer' ? 'f' : 'o'}|${lod}`;
+/** Merged shape for one set of parts, with the tint name of each run of vertices. */
+interface Assembly {
+  geometry: THREE.BufferGeometry;
+  runs: { tint: string; count: number }[];
+}
+
+const assemblies = new Map<string, Assembly>();
+
+function assemble(scene: THREE.Object3D, parts: string[], lod: Lod): Assembly {
+  const key = `${lod}|${parts.join(',')}`;
   const known = assemblies.get(key);
   if (known) return known;
   const lib = library(scene);
-  const byMaterial = new Map<string, THREE.BufferGeometry[]>();
-  const wanted = partsFor(a, role, lod);
-  for (const [name, g] of lib.pieces) {
-    const [part, material] = name.split('__');
-    if (!wanted.includes(part)) continue;
-    const list = byMaterial.get(material) ?? [];
-    list.push(g);
-    byMaterial.set(material, list);
+  const list: THREE.BufferGeometry[] = [];
+  const runs: Assembly['runs'] = [];
+  for (const part of parts) {
+    // A part with no mesh at this level is simply absent from it.
+    for (const tint of ['skin', 'shirt', 'pants', 'hair', 'cap', 'abs']) {
+      const g = lib.pieces.get(`${part}${SUFFIX[lod]}__${tint}`);
+      if (g) {
+        list.push(g);
+        runs.push({ tint, count: g.getAttribute('position').count });
+      }
+    }
   }
-  const merged = new Map<string, THREE.BufferGeometry>();
-  for (const [material, list] of byMaterial) {
-    const g = list.length === 1 ? list[0] : BGU.mergeGeometries(list, false);
-    if (!g) continue;
-    g.computeBoundingSphere();
-    merged.set(material, g);
-  }
-  assemblies.set(key, merged);
-  return merged;
+  const geometry = BGU.mergeGeometries(list, false)!;
+  geometry.computeBoundingSphere();
+  const made = { geometry, runs };
+  assemblies.set(key, made);
+  return made;
 }
 
-const materialCache = new Map<string, THREE.Material>();
-function sharedMaterial(key: string, make: () => THREE.Material): THREE.Material {
-  let m = materialCache.get(key);
-  if (!m) materialCache.set(key, (m = make()));
+const srgbToLinear = new THREE.Color();
+/** The skin paint is a ratio against this level (technician_v3.py SKIN_BASE). */
+const SKIN_BASE = 0.88;
+
+function tintColours(a: Appearance, role: EmployeeRole): Record<string, [number, number, number]> {
+  const c = (hex: string, k = 1): [number, number, number] => {
+    srgbToLinear.set(hex);
+    return [srgbToLinear.r * k, srgbToLinear.g * k, srgbToLinear.b * k];
+  };
+  return { skin: c(a.skin, 1 / SKIN_BASE), shirt: c(SHIRT[role]), pants: c(PANTS[role]), hair: c(a.hairColor), cap: c(CAP[role]), abs: [1, 1, 1] };
+}
+
+const tinted = new Map<string, THREE.BufferGeometry>();
+
+/** One employee's geometry: the shared shape with their own colours; the vertex data itself is not duplicated. */
+function dressed(scene: THREE.Object3D, a: Appearance, role: EmployeeRole, lod: Lod): THREE.BufferGeometry {
+  const parts = partsFor(a, role, lod);
+  const key = `${lod}|${parts.join(',')}|${a.skin}|${a.hairColor}|${role}`;
+  const known = tinted.get(key);
+  if (known) return known;
+  const base = assemble(scene, parts, lod);
+  const count = base.geometry.getAttribute('position').count;
+  const colour = new Float32Array(count * 3);
+  const tints = tintColours(a, role);
+  let at = 0;
+  for (const run of base.runs) {
+    const t = tints[run.tint];
+    for (let i = 0; i < run.count; i++, at += 3) {
+      colour[at] = t[0];
+      colour[at + 1] = t[1];
+      colour[at + 2] = t[2];
+    }
+  }
+  const g = new THREE.BufferGeometry();
+  g.index = base.geometry.index;
+  for (const k of KEEP) g.setAttribute(k, base.geometry.getAttribute(k));
+  g.setAttribute('color', new THREE.BufferAttribute(colour, 3));
+  g.boundingSphere = base.geometry.boundingSphere;
+  tinted.set(key, g);
+  return g;
+}
+
+// ---------------------------------------------------------------- the shared material
+let shared: THREE.MeshStandardMaterial | null = null;
+
+/** Full textures on large screens; half on phones, which also saves three quarters of the memory. */
+export function textureSize(): 1024 | 2048 {
+  const coarse = typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches;
+  const small = typeof innerWidth === 'number' && Math.max(innerWidth, innerHeight) < 1300;
+  return coarse || small ? 1024 : 2048;
+}
+
+function loadTexture(name: string, size: number, srgb: boolean): THREE.Texture {
+  const t = new THREE.TextureLoader().load(`${import.meta.env.BASE_URL}models/characters/tex/technician-${name}-${size}.webp`);
+  t.flipY = false; // glTF texture coordinates.
+  t.colorSpace = srgb ? THREE.SRGBColorSpace : THREE.NoColorSpace;
+  t.anisotropy = 4;
+  t.generateMipmaps = true;
+  t.minFilter = THREE.LinearMipmapLinearFilter;
+  return t;
+}
+
+/**
+ * Atlas channels: albedo; normal; ORM = occlusion (red), a code (green) and roughness (blue). The code replaces plain
+ * metalness: under 0.3 means "tinted by the region's vertex colour", above means absolute colour, and near 1 means metal.
+ * It is in green because lossy WebP keeps luma at full resolution and subsamples chroma, which would turn a mask in blue
+ * to mush; and it is not in alpha because canvas-encoded images cannot keep colour under alpha.
+ */
+export function characterMaterial(): THREE.MeshStandardMaterial {
+  if (shared) return shared;
+  const size = textureSize();
+  const orm = loadTexture('orm', size, false);
+  const m = new THREE.MeshStandardMaterial({
+    map: loadTexture('albedo', size, true),
+    normalMap: loadTexture('normal', size === 2048 ? 1024 : 512, false),
+    normalScale: new THREE.Vector2(1, 1),
+    roughnessMap: orm,
+    aoMap: orm,
+    aoMapIntensity: 1,
+    roughness: 1,
+    metalness: 1,
+    vertexColors: true,
+  });
+  m.name = 'technician';
+  m.onBeforeCompile = (shader) => {
+    shader.fragmentShader = shader.fragmentShader
+      .replace(
+        '#include <color_fragment>',
+        `vec4 charOrm = texture2D( roughnessMap, vRoughnessMapUv );
+         float charTint = 1.0 - smoothstep( 0.2, 0.35, charOrm.g );
+         diffuseColor.rgb *= mix( vec3( 1.0 ), vColor.rgb, charTint );`,
+      )
+      .replace('#include <roughnessmap_fragment>', 'float roughnessFactor = roughness * charOrm.b;')
+      .replace('#include <metalnessmap_fragment>', 'float metalnessFactor = smoothstep( 0.72, 0.95, charOrm.g );');
+  };
+  m.customProgramCacheKey = () => 'technician-v3';
+  shared = m;
   return m;
-}
-
-/** Material for one region of the character, shared by everyone wearing the same colour. */
-function materialFor(region: string, a: Appearance, role: EmployeeRole): THREE.Material {
-  const std = (color: string, roughness: number, metalness = 0, extra: THREE.MeshStandardMaterialParameters = {}) =>
-    sharedMaterial(`${region}:${color}:${roughness}`, () => new THREE.MeshStandardMaterial({ color, roughness, metalness, ...extra }));
-  switch (region) {
-    case 'shirt':
-      return std(SHIRT[role], 0.86);
-    case 'pants':
-      return std(PANTS[role], 0.9);
-    case 'pocket':
-      return std(role === 'installer' ? '#40392f' : '#33383e', 0.9);
-    case 'skin':
-      return std(a.skin, 0.62);
-    case 'hair':
-      return std(a.hairColor, 0.88);
-    case 'leather':
-      return std('#5a3d26', 0.72);
-    case 'sole':
-      return std('#17130f', 0.95);
-    case 'gear':
-      return std('#1c1d20', 0.8);
-    case 'cap':
-      return std(role === 'installer' ? '#f2c230' : '#15181d', 0.78);
-    case 'teal':
-      return sharedMaterial('teal', () => new THREE.MeshStandardMaterial({ color: PALETTE.egoTeal, emissive: PALETTE.egoTeal, emissiveIntensity: 0.25, roughness: 0.6 }));
-    case 'metal':
-      return std('#c9ced3', 0.35, 0.8);
-    case 'eye':
-      return std('#eef0f2', 0.45);
-    case 'iris':
-      return std('#2a1d14', 0.3);
-    default:
-      return std('#808080', 0.8);
-  }
 }
 
 export interface CharacterRig {
   /** Holds the skinned meshes and the skeleton; scale it for the character's height. */
   root: THREE.Group;
   bones: Record<BoneName, THREE.Bone>;
-  /** The detailed figure and the distant one (same skeleton). */
-  near: THREE.Group;
-  far: THREE.Group;
+  lods: [THREE.SkinnedMesh, THREE.SkinnedMesh, THREE.SkinnedMesh];
 }
 
-/** A character instance: a fresh skeleton in the canonical bind pose and the merged meshes of its appearance. */
-export function buildCharacter(scene: THREE.Object3D, a: Appearance, role: EmployeeRole): CharacterRig {
+/** Builds a skeleton from the generated rig table, posed at bind or at the canonical zero pose. */
+export function buildSkeleton(): { root: THREE.Group; bones: Record<BoneName, THREE.Bone> } {
   const root = new THREE.Group();
   root.name = 'character';
   const bones = {} as Record<BoneName, THREE.Bone>;
-  for (const name of BONE_NAMES) {
+  for (const name of RIG_ORDER) {
     const b = new THREE.Bone();
     b.name = name;
-    b.position.set(...RIG[name].at);
+    b.position.fromArray(RIG_BONES[name].at);
     bones[name] = b;
   }
-  for (const name of BONE_NAMES) {
-    const parent = RIG[name].parent;
-    if (parent) bones[parent].add(bones[name]);
+  for (const name of RIG_ORDER) {
+    const parent = RIG_BONES[name].parent;
+    if (parent) bones[parent as BoneName].add(bones[name]);
     else root.add(bones[name]);
   }
-  // Bind in the modelled pose (arms abducted), then hand the clips the canonical zero pose.
-  bones.armL.rotation.z = -ARM_ABDUCT;
-  bones.armR.rotation.z = ARM_ABDUCT;
-  root.updateMatrixWorld(true);
-  const skeleton = new THREE.Skeleton(BONE_NAMES.map((n) => bones[n]));
-  const near = new THREE.Group();
-  const far = new THREE.Group();
-  near.name = 'character-near';
-  far.name = 'character-far';
-  for (const [group, lod] of [[near, false], [far, true]] as const) {
-    for (const [region, g] of assemble(scene, a, role, lod)) {
-      const mesh = new THREE.SkinnedMesh(g, materialFor(region, a, role));
-      mesh.name = `character:${region}`;
-      mesh.castShadow = region !== 'eye' && region !== 'iris' && region !== 'teal';
-      mesh.receiveShadow = !lod;
-      // Skinned bounds move with the pose; the figure is small, so skip culling per mesh (the character is culled as a whole).
-      mesh.frustumCulled = false;
-      mesh.bind(skeleton, new THREE.Matrix4());
-      group.add(mesh);
-    }
-    root.add(group);
+  return { root, bones };
+}
+
+/** Puts a skeleton in the pose the meshes were modelled in (MakeHuman's A-pose). */
+export function setBindPose(bones: Record<BoneName, THREE.Bone>): void {
+  for (const name of RIG_ORDER) {
+    bones[name].quaternion.fromArray(RIG_BONES[name].bind);
+    bones[name].position.fromArray(RIG_BONES[name].at);
   }
-  far.visible = false;
-  bones.armL.rotation.z = 0;
-  bones.armR.rotation.z = 0;
-  return { root, bones, near, far };
+}
+
+/** Back to the canonical pose the clips work from: every rotation zero, limbs hanging. */
+export function setCanonicalPose(bones: Record<BoneName, THREE.Bone>): void {
+  for (const name of RIG_ORDER) bones[name].quaternion.identity();
+  bones.pelvis.position.y = PELVIS_Y;
+}
+
+/** A character instance: a fresh skeleton and the merged meshes of its appearance, one per level of detail. */
+export function buildCharacter(scene: THREE.Object3D, a: Appearance, role: EmployeeRole): CharacterRig {
+  const { root, bones } = buildSkeleton();
+  setBindPose(bones);
+  root.updateMatrixWorld(true);
+  const skeleton = new THREE.Skeleton(RIG_ORDER.map((n) => bones[n]));
+  const material = characterMaterial();
+  const lods = ([0, 1, 2] as Lod[]).map((lod) => {
+    const mesh = new THREE.SkinnedMesh(dressed(scene, a, role, lod), material);
+    mesh.name = `character:lod${lod}`;
+    mesh.castShadow = true;
+    mesh.receiveShadow = lod < 2;
+    mesh.frustumCulled = false; // Skinned bounds move with the pose; the character is culled as a whole.
+    mesh.bind(skeleton, new THREE.Matrix4());
+    mesh.visible = lod === 0;
+    root.add(mesh);
+    return mesh;
+  }) as unknown as CharacterRig['lods'];
+  setCanonicalPose(bones);
+  return { root, bones, lods };
 }

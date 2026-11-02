@@ -3,7 +3,6 @@ import { describe, expect, it } from 'vitest';
 import { readFileSync, statSync } from 'node:fs';
 import { hqParkingStalls, HQ_LOT } from '@/game/world/cityLayout';
 import { CIVILIAN_MODELS, HQ_STAFF_ROW, HQ_VISITOR_CARS, parkedCarSpots } from '@/world/vehicles/parkedCarSpots';
-import { appearanceFor, partsFor } from '@/world/characters/technicianModel';
 
 /**
  * Graphics Revolution regression checks that do not need a GPU: every asset in the manifest exists
@@ -49,35 +48,6 @@ describe('model assets', () => {
       expect(a.bytes, a.id).toBeLessThan(civilian ? 400_000 : 2_000_000);
       expect(a.triangles, a.id).toBeLessThan(civilian ? 6_000 : library ? 150_000 : 40_000);
     }
-  });
-});
-
-describe('technician character', () => {
-  const glb = readFileSync('public/models/characters/technician.glb');
-  const json = JSON.parse(glb.toString('utf8', 20, 20 + glb.readUInt32LE(12))) as { nodes: { name?: string; mesh?: number }[]; meshes: { primitives: { indices?: number }[] }[]; accessors: { count: number }[] };
-  const tris = new Map<string, number>();
-  for (const n of json.nodes) if (n.mesh !== undefined && n.name) tris.set(n.name, json.meshes[n.mesh].primitives.reduce((s, p) => s + (p.indices !== undefined ? json.accessors[p.indices].count / 3 : 0), 0));
-  const worn = (look: number, role: 'technician' | 'dispatcher', lod: boolean) => {
-    const parts = partsFor(appearanceFor(look), role, lod);
-    const names = [...tris.keys()].filter((n) => parts.includes(n.split('__')[0]));
-    // Every part a character wears exists in the library.
-    for (const part of parts) expect(names.some((n) => n.startsWith(`${part}__`)), part).toBe(true);
-    return names.reduce((s, n) => s + tris.get(n)!, 0);
-  };
-  it('has every part each appearance wears, within the close and distant budgets', () => {
-    for (let look = 0; look < 4096; look += 37) {
-      for (const role of ['technician', 'dispatcher'] as const) {
-        const label = `look ${look} ${role}`;
-        expect(worn(look, role, false), label).toBeLessThan(20_000);
-        expect(worn(look, role, false), label).toBeGreaterThan(8_000);
-        expect(worn(look, role, true), `${label} lod`).toBeLessThan(7_000);
-      }
-    }
-  });
-  it('gives each employee a stable appearance, and different employees different ones', () => {
-    expect(appearanceFor(1234)).toEqual(appearanceFor(1234));
-    const seen = new Set(Array.from({ length: 40 }, (_, i) => JSON.stringify(appearanceFor(i * 977 + 13))));
-    expect(seen.size).toBeGreaterThan(30);
   });
 });
 

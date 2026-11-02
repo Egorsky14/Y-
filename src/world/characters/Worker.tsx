@@ -4,12 +4,19 @@ import { createPortal, useFrame } from '@react-three/fiber';
 import { useGLTF } from '@react-three/drei';
 import type { EmployeeRole } from '@/game/employees/roles';
 import { PALETTE } from '../assets/palette';
-import { wordmarkTexture } from '../assets/textures';
-import * as BGU from 'three/examples/jsm/utils/BufferGeometryUtils.js';
-import { appearanceFor, buildCharacter, CHARACTER_URL, PELVIS_Y, SHOULDER_X } from './technicianModel';
+import { appearanceFor, buildCharacter, CHARACTER_URL, PELVIS_Y, type BoneName, type Lod } from './technicianModel';
+import { RIG_BONES, RIG_MEASURES } from './rigData.generated';
+import { handRotation, poseFingers, solveArm, solveLeg, type FingerPose } from './rigSolver';
+import { bodyAt, footAt, strideLength } from './gait';
 
-export { SHOULDER_X };
 useGLTF.preload(CHARACTER_URL);
+
+declare global {
+  interface Window {
+    /** Test hook: when set, each character records the furthest any hand or foot fell short of its target (m). */
+    __egoContact?: Record<string, number>;
+  }
+}
 
 export type WorkerAnim = 'idle' | 'walk' | 'carry' | 'inspect' | 'stand-inspect' | 'repair' | 'install' | 'train' | 'celebrate' | 'ladder-carry' | 'reach' | 'raise' | 'pull' | 'climb' | 'step-over';
 
@@ -33,55 +40,12 @@ interface WorkerProps {
   look: number;
   anim: WorkerAnim;
   scale?: number;
-  /** Walk-cycle rate multiplier, matched to how fast the character covers ground (1 ≈ 1.5 m/s); 0 freezes every clip (game paused). */
+  /** How fast the game runs for this character's work clips; 0 freezes them (game paused). Walking follows real ground speed. */
   pace?: number;
   /** At a unit: distance from the character root to the cabinet's service face, the cabinet height (m), and where the tool bag sits in the character's frame (lead technician only). */
   work?: { face: number; top: number; bag?: { x: number; z: number } };
   /** Ladder and rooftop clips read their targets from here every frame. */
   motion?: { current: WorkerMotion | null };
-}
-
-/**
- * A gloved hand in the forearm frame (wrist at the origin, fingers toward -y, palm facing +z):
- * a broad palm with a knuckle ridge, four two-segment fingers of natural lengths fanned slightly
- * apart, and a two-segment thumb opposed across the palm. `grip` 0 is relaxed, 1 closes the hand
- * round a handle. Earlier gloves were a single mitten block, which read as a paddle up close.
- */
-function buildGlove(side: -1 | 1, grip: number): THREE.BufferGeometry {
-  const parts: THREE.BufferGeometry[] = [];
-  const up = new THREE.Vector3(0, 1, 0);
-  const seg = (from: THREE.Vector3, dir: THREE.Vector3, length: number, radius: number) => {
-    const g = new THREE.CapsuleGeometry(radius, Math.max(0.001, length - radius * 2), 3, 7);
-    g.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(up, dir.clone().normalize()));
-    g.translate(from.x + (dir.x * length) / 2, from.y + (dir.y * length) / 2, from.z + (dir.z * length) / 2);
-    parts.push(g);
-    return from.clone().addScaledVector(dir.clone().normalize(), length);
-  };
-  // Palm and back of the hand, with the cuff over the wrist.
-  parts.push(new THREE.CapsuleGeometry(0.031, 0.04, 3, 9).scale(1.32, 1, 0.6).translate(0, -0.042, 0));
-  parts.push(new THREE.CapsuleGeometry(0.011, 0.07, 2, 6).rotateZ(Math.PI / 2).translate(0, -0.07, 0.004));
-  parts.push(new THREE.CylinderGeometry(0.046, 0.041, 0.045, 12).translate(0, 0.012, 0));
-  // Fingers from the thumb side outward: index, middle, ring, little.
-  const len = [0.05, 0.055, 0.052, 0.042];
-  for (let i = 0; i < 4; i++) {
-    const x = -side * (0.026 - i * 0.0175);
-    const knuckle = new THREE.Vector3(x, -0.072, 0.004);
-    const c1 = -(0.22 + grip * 0.95) - i * 0.03 * (1 - grip);
-    const c2 = c1 - (0.25 + grip * 1.05);
-    const spread = -side * (0.06 - i * 0.04) * (1 - grip);
-    const d1 = new THREE.Vector3(Math.sin(spread), -Math.cos(c1), -Math.sin(c1));
-    const d2 = new THREE.Vector3(Math.sin(spread), -Math.cos(c2), -Math.sin(c2));
-    const mid = seg(knuckle, d1, len[i] * 0.55, 0.0092);
-    seg(mid, d2, len[i] * 0.5, 0.0085);
-  }
-  // Thumb: from the heel of the palm, out and forward, its tip curling across the palm in a grip.
-  const base = new THREE.Vector3(-side * 0.03, -0.03, 0.012);
-  const t1 = new THREE.Vector3(-side * (0.55 - grip * 0.2), -0.62, 0.55 + grip * 0.15);
-  const t2 = new THREE.Vector3(side * (0.15 + grip * 0.55), -0.75, 0.4 + grip * 0.25);
-  seg(seg(base, t1, 0.038, 0.011), t2, 0.032, 0.0095);
-  const flat = parts.map((p) => (p.index ? p.toNonIndexed() : p));
-  for (const p of flat) for (const k of Object.keys(p.attributes)) if (!['position', 'normal'].includes(k)) p.deleteAttribute(k);
-  return BGU.mergeGeometries(flat, false)!;
 }
 
 /**
@@ -133,20 +97,6 @@ const WRENCH = {
   head: new THREE.TorusGeometry(0.03, 0.012, 6, 14, Math.PI * 1.4).rotateZ(-Math.PI * 0.2),
   worm: new THREE.CylinderGeometry(0.007, 0.007, 0.03, 10).rotateZ(Math.PI / 2),
 };
-
-const GEO = {
-  /** Work gloves (per side): relaxed, and closed in a grip for the hand that holds a tool. */
-  glove: ([-1, 1] as const).map((side) => buildGlove(side, 0)),
-  gloveGrip: ([-1, 1] as const).map((side) => buildGlove(side, 1)),
-  /** EGO HVAC prints follow the shirt's curve: a shallow cylinder segment rather than a flat card. */
-  backPrint: new THREE.CylinderGeometry(0.17, 0.17, 0.07, 16, 1, true, Math.PI - 0.8, 1.6),
-  chestPrint: new THREE.CylinderGeometry(0.15, 0.15, 0.032, 10, 1, true, -0.62, 0.48),
-};
-let backPrint: THREE.MeshStandardMaterial | null = null;
-function backPrintMaterial(): THREE.MeshStandardMaterial {
-  backPrint ??= new THREE.MeshStandardMaterial({ map: wordmarkTexture('light', false), transparent: true, alphaTest: 0.1, roughness: 0.8, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -4, side: THREE.DoubleSide });
-  return backPrint;
-}
 
 const mat = (color: string, roughness = 0.85, metalness = 0) => new THREE.MeshStandardMaterial({ color, roughness, metalness });
 
@@ -234,98 +184,62 @@ function TestLeads({ ref }: { ref: React.Ref<LeadsHandle> }) {
 const LEAD_GEO_STEEL = new THREE.MeshStandardMaterial({ color: '#b9bfc5', roughness: 0.4, metalness: 0.7 });
 
 /** Joint rotation targets for one pose; everything not named returns to zero. */
-type Pose = Record<string, [number, number, number]>;
+type Pose = Partial<Record<BoneName, [number, number, number]>>;
+
+const V = RIG_MEASURES;
+/** Where a standing foot's ankle goes (rig metres), each side of the centre line. */
+const STANCE_X = 0.115;
 
 /**
- * Kneeling at the unit (rig metres and radians). The kneeling (R) thigh is near vertical with the knee
- * joint 7 cm up, so the knee pad rests on the ground; that shin rises 0.25 rad toward a tucked-toe
- * ankle about 16 cm up, the boot angled down to the toes. The forward (L) shin is vertical and its
- * ankle sits at standing height (3 cm), so the boot is planted flat (src/tests/worldImmersion.test.ts).
+ * Kneeling at the unit (rig metres): right knee down, its toes tucked; left foot planted forward, shin upright. Both legs
+ * are placed by IK from these points, so the knee and sole touch the ground whatever the proportions.
  */
 export const KNEEL = {
-  pelvisY: 0.57,
-  legR: [0.05, 0, -0.06] as [number, number, number],
-  shinR: 1.74,
-  footR: -1.2,
-  legL: [-1.414, 0, 0.08] as [number, number, number],
-  shinL: 1.414,
-  footL: 0,
+  pelvisY: 0.506,
+  /** Forward (L) foot: ankle at standing height, far enough out that the shin stands upright. */
+  footL: { x: -STANCE_X - 0.01, y: V.ankleHeight, z: 0.42 },
+  /** Rear (R) foot: ankle raised behind the knee, on tucked toes. */
+  footR: { x: STANCE_X, y: 0.16, z: -0.405 },
+  pitchR: -1.28,
+  toeR: 0.85,
 };
 
-const UPPER_ARM = 0.3;
-const FOREARM = 0.31; // elbow to the middle of the hand
+/** Beyond these distances (m) the character draws its simpler meshes; past the far one its pose also updates less often. */
+const LOD_MID = 13;
+const LOD_FAR = 40;
 
-/**
- * Two-bone arm IK in the character frame (+z forward, +y up, unscaled rig metres): shoulder and elbow
- * rotations that put the hand on the target, given the torso's forward lean and the pelvis height.
- * The arm hangs along -y; Euler XYZ applies the abduction (z) first, then the pitch (x), and the elbow
- * flexes about the arm's local x. Out-of-reach targets are approached along the same line.
- */
-export function armIK(side: 1 | -1, target: { x: number; y: number; z: number }, torsoPitch: number, pelvisY: number, heavy = 1, torsoYaw = 0, torsoRoll = 0): { arm: [number, number, number]; fore: number } {
-  // Into the torso frame: undo the torso's lean, twist and side bend (Euler XYZ about the waist pivot),
-  // then measure from the shoulder.
-  const local = new THREE.Vector3(target.x, target.y - (pelvisY + 0.06), target.z).applyMatrix4(new THREE.Matrix4().makeRotationFromEuler(new THREE.Euler(torsoPitch, torsoYaw, torsoRoll, 'XYZ')).invert());
-  const dx = local.x - side * SHOULDER_X * heavy;
-  const dy = local.y - 0.5;
-  const dz = local.z;
-  const len = Math.max(1e-4, Math.hypot(dx, dy, dz));
-  const d = THREE.MathUtils.clamp(len, Math.abs(UPPER_ARM - FOREARM) + 0.05, UPPER_ARM + FOREARM - 0.005);
-  const n = new THREE.Vector3(dx / len, dy / len, dz / len);
-  const a1 = Math.acos(THREE.MathUtils.clamp((UPPER_ARM * UPPER_ARM + d * d - FOREARM * FOREARM) / (2 * UPPER_ARM * d), -1, 1));
-  const flex = Math.PI - Math.acos(THREE.MathUtils.clamp((UPPER_ARM * UPPER_ARM + FOREARM * FOREARM - d * d) / (2 * UPPER_ARM * FOREARM), -1, 1));
-  // The elbow drops below the shoulder-to-hand line, a little out to its own side and back. (A pole pointing only
-  // back flipped to "up" for targets above and in front of the shoulder, raising the elbow over the head.)
-  const pole = new THREE.Vector3(side * 0.45, -1, -0.3);
-  const m = pole.clone().addScaledVector(n, -pole.dot(n));
-  if (m.lengthSq() < 1e-6) m.set(0, -1, 0).addScaledVector(n, n.y);
-  m.normalize();
-  const u = n.clone().multiplyScalar(Math.cos(a1)).addScaledVector(m, Math.sin(a1)); // shoulder → elbow
-  const elbow = u.clone().multiplyScalar(UPPER_ARM);
-  const fdir = n.clone().multiplyScalar(d).sub(elbow).normalize(); // elbow → hand
-  // Arm frame: local -y along the upper arm, local +z the direction the forearm flexes toward.
-  const yAxis = u.clone().negate();
-  const zAxis = fdir.clone().addScaledVector(u, -fdir.dot(u));
-  if (zAxis.lengthSq() < 1e-8) zAxis.set(0, 0, 1).addScaledVector(yAxis, -yAxis.z);
-  zAxis.normalize();
-  const xAxis = new THREE.Vector3().crossVectors(yAxis, zAxis).normalize();
-  const e = new THREE.Euler().setFromRotationMatrix(new THREE.Matrix4().makeBasis(xAxis, yAxis, zAxis), 'XYZ');
-  return { arm: [e.x, e.y, e.z], fore: -flex };
+const smooth01 = THREE.MathUtils.smoothstep;
+/** What a hand is doing with its fingers, by clip. */
+const OPEN: FingerPose = { curl: 0.16, thumb: 0.2, spread: 0.2 };
+const GRIP: FingerPose = { curl: 0.82, thumb: 1 };
+const PINCH: FingerPose = { curl: 0.5, thumb: 0.8 };
+
+interface LimbState {
+  /** The target last asked for, in rig metres; kept so the IK can fade out from where it was. */
+  at: THREE.Vector3;
+  weight: number;
+  has: boolean;
+  /** For hands: the hand's wanted rotation; for feet: pitch and toe bend. */
+  rot: THREE.Quaternion;
+  hasRot: boolean;
+  pitch: number;
+  toe: number;
 }
+const newLimb = (): LimbState => ({ at: new THREE.Vector3(), weight: 0, has: false, rot: new THREE.Quaternion(), hasRot: false, pitch: 0, toe: 0 });
 
-const THIGH = 0.45;
-const SHIN = 0.42;
-
-/**
- * Two-bone leg IK in the character frame (rig metres): thigh, knee and ankle rotations that put the ankle on the
- * target with the knee bending forward, the sole kept level with the character's frame (plus footPitch).
- */
-export function legIK(side: 1 | -1, target: { x: number; y: number; z: number }, pelvisY: number, pelvisZ = 0, footPitch = 0): { leg: [number, number, number]; shin: number; foot: number } {
-  const dx = target.x - side * 0.1;
-  const dy = target.y - (pelvisY - 0.05);
-  const dz = target.z - pelvisZ;
-  const ds = THREE.MathUtils.clamp(Math.hypot(dy, dz), 0.18, THIGH + SHIN - 0.002);
-  const toward = Math.atan2(-dz, -dy);
-  const a1 = Math.acos(THREE.MathUtils.clamp((THIGH * THIGH + ds * ds - SHIN * SHIN) / (2 * THIGH * ds), -1, 1));
-  const knee = Math.PI - Math.acos(THREE.MathUtils.clamp((THIGH * THIGH + SHIN * SHIN - ds * ds) / (2 * THIGH * SHIN), -1, 1));
-  const thigh = toward - a1;
-  const spread = Math.asin(THREE.MathUtils.clamp(dx / Math.max(0.2, Math.hypot(dx, dy, dz)), -0.5, 0.5));
-  return { leg: [thigh, 0, spread], shin: knee, foot: -(thigh + knee) + footPitch };
-}
-
-/** Beyond this distance (m) the character switches to the distant mesh and stops posing its hands and tools. */
-const FAR_LOD = 26;
+const T_DIR = { f: new THREE.Vector3(), p: new THREE.Vector3(), a: new THREE.Vector3() };
 
 /**
- * Stylized-realistic worker (~1.8 m): a Blender-authored continuous skinned body (technicianModel.ts)
- * whose shoulders, elbows, hips and knees are driven by procedural clips per job state, blended across
- * state changes. Feet stay on the ground.
+ * A technician: the Blender-authored character (technicianModel.ts) driven by clips per job state. Each clip names joint
+ * rotations and places hands and feet; rotations are blended across state changes; the placed limbs are then solved
+ * exactly on the blended body (rigSolver.ts), so what touches something stays on it. Walking is measured in ground
+ * covered (gait.ts): a planted foot cannot slide at any game speed.
  */
 export function Worker({ role, look, anim, scale = 1, pace = 1, work, motion }: WorkerProps) {
   const root = useRef<THREE.Group>(null);
   const { scene: characterScene } = useGLTF(CHARACTER_URL);
   const appearance = useMemo(() => appearanceFor(look), [look]);
   const character = useMemo(() => buildCharacter(characterScene, appearance, role), [characterScene, appearance, role]);
-  const refs = useMemo(() => Object.fromEntries(Object.entries(character.bones).map(([k, b]) => [k, { current: b }])) as unknown as Record<keyof typeof character.bones, { current: THREE.Object3D | null }>, [character]);
   const bag = useRef<THREE.Group>(null);
   const meter = useRef<THREE.Group>(null);
   const wrench = useRef<THREE.Group>(null);
@@ -333,50 +247,47 @@ export function Worker({ role, look, anim, scale = 1, pace = 1, work, motion }: 
   const load = useRef<THREE.Group>(null);
   const phase = ((look % 100) / 100) * Math.PI * 2;
   const build = appearance.height;
-  // The shoulders sit at SHOULDER_X for every build (the builds differ in girth, not joint positions).
-  const heavy = 1;
-  const lod = useRef({ far: false, skipped: 0, skippedDt: 0 });
-  const heightState = useRef({ pelvis: PELVIS_Y, root: 0, z: 0 });
+  const lod = useRef({ level: 0 as Lod, skipped: 0, skippedDt: 0 });
+  const body = useRef({ y: PELVIS_Y, z: RIG_BONES.pelvis.at[2], x: 0 });
   const clockT = useRef(0);
   const lastAnim = useRef<WorkerAnim | null>(null);
   const probe = useRef<THREE.Group>(null);
-  const hands = { relaxedL: useRef<THREE.Mesh>(null), relaxedR: useRef<THREE.Mesh>(null), gripL: useRef<THREE.Mesh>(null), gripR: useRef<THREE.Mesh>(null) };
   const anchors = { socket: useRef<THREE.Group>(null), probeEnd: useRef<THREE.Group>(null) };
   const leads = useRef<LeadsHandle>(null);
-  const blend = useRef<Record<string, THREE.Quaternion>>({});
-  const stride = useRef(0);
+  const blend = useRef<Partial<Record<BoneName, THREE.Quaternion>>>({});
+  const gait = useRef({ phase: (look % 100) / 100, moving: 0, speed: 0, last: new THREE.Vector3(), seen: false, toeL: 0, toeR: 0 });
+  const limbs = useRef({ handL: newLimb(), handR: newLimb(), footL: newLimb(), footR: newLimb() });
+  const fingers = useRef({ L: { ...OPEN }, R: { ...OPEN } });
 
   const materials = useMemo(
     () => ({
-      skin: mat(appearance.skin, 0.62),
       teal: new THREE.MeshStandardMaterial({ color: PALETTE.egoTeal, emissive: PALETTE.egoTeal, emissiveIntensity: 0.2, roughness: 0.7 }),
       tool: mat('#f2c230', 0.6),
       steel: mat('#b9bfc5', 0.4, 0.7),
       dark: mat('#1d1f22', 0.7),
       white: mat('#f4f5f7', 0.7),
-      glove: mat('#2f3338', 0.75),
       probe: mat('#c4262e', 0.5),
       screen: new THREE.MeshStandardMaterial({ color: '#8fd9ff', emissive: '#4fb3ff', emissiveIntensity: 0.6, roughness: 0.3 }),
     }),
-    [appearance],
+    [],
   );
 
   useFrame(({ camera }, frameDt) => {
-    // Level of detail: the distant mesh past FAR_LOD; far away or off screen, the pose updates on every
-    // fourth frame with the time summed, so clips stay in step but cost a quarter.
+    // Level of detail: simpler meshes with distance; far away or off screen, the pose updates on every fourth frame with
+    // the time summed, so clips stay in step but cost a quarter. The hands are only posed when they can be seen.
     const L = lod.current;
     const rootNow = root.current;
     let cheap = false;
     if (rootNow) {
       const p = rootNow.getWorldPosition(LOD_POS);
-      const far = camera.position.distanceTo(p) > FAR_LOD;
-      if (far !== L.far) {
-        L.far = far;
-        character.near.visible = !far;
-        character.far.visible = far;
+      const dist = camera.position.distanceTo(p);
+      const level: Lod = dist > LOD_FAR ? 2 : dist > LOD_MID ? 1 : 0;
+      if (level !== L.level) {
+        L.level = level;
+        character.lods.forEach((m, i) => (m.visible = i === level));
       }
       LOD_FRUSTUM.setFromProjectionMatrix(LOD_MATRIX.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse));
-      cheap = far || !LOD_FRUSTUM.intersectsSphere(LOD_SPHERE.set(p.setY(p.y + 0.9), 1.3));
+      cheap = level === 2 || !LOD_FRUSTUM.intersectsSphere(LOD_SPHERE.set(p.setY(p.y + 0.9), 1.3));
     }
     if (cheap && ++L.skipped % 4 !== 0) {
       L.skippedDt += frameDt;
@@ -384,241 +295,259 @@ export function Worker({ role, look, anim, scale = 1, pace = 1, work, motion }: 
     }
     const dt = frameDt + L.skippedDt;
     L.skippedDt = 0;
-    // Animation time follows the game: paused games freeze the crew, fast-forward brisks them up
-    // (capped so loops never look frantic). Joint blending still settles in real time.
+    // Clip time follows the game: paused games freeze the crew, fast-forward brisks them up (capped so loops never look
+    // frantic). Joint blending still settles in real time.
     const workPace = Math.min(pace, 1.5);
-    // Each clip's loop starts from its beginning when the state changes (diagnosis opens with the survey).
     if (lastAnim.current !== anim) {
       lastAnim.current = anim;
       clockT.current = 0;
     }
     clockT.current += dt * workPace;
     const t = clockT.current + (anim === 'inspect' || anim === 'repair' ? 0 : phase);
-    const r = Object.fromEntries(Object.entries(refs).map(([k, v]) => [k, v.current])) as Record<keyof typeof refs, THREE.Group | null>;
-    if (Object.values(r).some((v) => !v)) return;
+    const r = character.bones;
     const pose: Pose = {};
-    const set = (name: keyof typeof refs, x: number, y = 0, z = 0) => {
+    const set = (name: BoneName, x: number, y = 0, z = 0) => {
       pose[name] = [x, y, z];
     };
     let pelvisY = PELVIS_Y;
-    let rootY = 0;
-    let pelvisZ = 0;
+    let pelvisZ: number = RIG_BONES.pelvis.at[2];
+    let pelvisX = 0;
     let showBag = false;
     let showMeter = false;
     let showProbe = false;
     let showWrench = false;
     let showTablet = false;
     let showLoad = false;
+    let gripL: FingerPose = OPEN;
+    let gripR: FingerPose = OPEN;
     const s = scale * build;
-    const ik = (side: 1 | -1, x: number, y: number, z: number, torsoPitch: number, pY: number, yaw = 0, roll = 0) => {
-      const sol = armIK(side, { x: x / s, y: y / s, z: z / s - pelvisZ }, torsoPitch, pY, heavy, yaw, roll);
-      set(side < 0 ? 'armL' : 'armR', sol.arm[0], sol.arm[1], sol.arm[2]);
-      set(side < 0 ? 'foreL' : 'foreR', sol.fore);
+    const want = limbs.current;
+    want.handL.has = want.handR.has = want.footL.has = want.footR.has = false;
+    want.handL.hasRot = want.handR.hasRot = false;
+
+    /** Places a hand: its palm at a point in the character's frame, optionally with the way fingers and palm point. */
+    const hand = (side: 1 | -1, x: number, y: number, z: number, fingerDir?: [number, number, number], palmDir?: [number, number, number]) => {
+      const h = side < 0 ? want.handL : want.handR;
+      h.at.set(x / s, y / s, z / s);
+      h.has = true;
+      if (fingerDir && palmDir) {
+        handRotation(side, T_DIR.f.fromArray(fingerDir), T_DIR.p.fromArray(palmDir), h.rot);
+        h.hasRot = true;
+      }
     };
-    const look = (x: number, y: number, z: number, torsoPitch: number, pY: number, twist = 0) => {
-      const hy = pY + 0.06 + 0.72 * Math.cos(torsoPitch);
-      const hz = 0.72 * Math.sin(torsoPitch) + pelvisZ;
+    /** Places a foot: ankle in rig metres, sole pitch (toe up positive) and bend at the ball. */
+    const foot = (side: 1 | -1, x: number, y: number, z: number, pitch = 0, toe = 0) => {
+      const f = side < 0 ? want.footL : want.footR;
+      f.at.set(x, y, z);
+      f.has = true;
+      f.pitch = pitch;
+      f.toe = toe;
+    };
+    const look3 = (x: number, y: number, z: number, torsoPitch: number, pY: number, twist = 0) => {
+      const hy = pY + 0.64 * Math.cos(torsoPitch);
+      const hz = 0.64 * Math.sin(torsoPitch) + pelvisZ;
       const dy = y / s - hy;
       const dz = z / s - hz;
       const pitch = THREE.MathUtils.clamp(Math.atan2(-dy, Math.max(0.05, Math.hypot(dz, x / s))) - torsoPitch, -0.5, 0.95);
       set('head', pitch, THREE.MathUtils.clamp(Math.atan2(x / s, dz) - twist, -0.9, 0.9));
     };
-    // Kneeling stance at the unit: right knee down, left foot planted forward, pelvis low.
-    const kneel = () => {
-      set('legR', ...KNEEL.legR);
-      set('shinR', KNEEL.shinR);
-      set('footR', KNEEL.footR);
-      set('legL', ...KNEEL.legL);
-      set('shinL', KNEEL.shinL);
-      set('footL', KNEEL.footL);
-      return KNEEL.pelvisY;
+    /** Feet planted a little apart, knees soft; returns the pelvis height. */
+    const stand = (bend = 0, shift = 0) => {
+      foot(-1, -STANCE_X, V.ankleHeight, 0.015);
+      foot(1, STANCE_X, V.ankleHeight, -0.012);
+      pelvisX = shift;
+      return PELVIS_Y - 0.012 - bend * 0.16;
     };
-    // Standing with soft knees, feet apart.
-    const stand = (bend = 0) => {
-      set('legL', -bend, 0, 0.05);
-      set('legR', -bend * 0.8, 0, -0.05);
-      set('shinL', bend * 1.6);
-      set('shinR', bend * 1.3);
-      set('footL', -bend * 0.8);
-      set('footR', -bend * 0.6);
-      return PELVIS_Y - bend * 0.12;
+    /** The kneeling stance blended toward standing by `up` (0 kneeling, 1 standing). */
+    const kneelToStand = (up: number, bend: number) => {
+      const standY = PELVIS_Y - 0.012 - bend * 0.16;
+      const k = THREE.MathUtils.smootherstep(up, 0, 1);
+      // Rising, the rear foot comes through under him first.
+      foot(-1, THREE.MathUtils.lerp(KNEEL.footL.x, -STANCE_X, k), V.ankleHeight, THREE.MathUtils.lerp(KNEEL.footL.z, 0.015, k));
+      foot(1, THREE.MathUtils.lerp(KNEEL.footR.x, STANCE_X, k), THREE.MathUtils.lerp(KNEEL.footR.y, V.ankleHeight, k), THREE.MathUtils.lerp(KNEEL.footR.z, -0.012, k), KNEEL.pitchR * (1 - k), KNEEL.toeR * (1 - k));
+      pelvisY = THREE.MathUtils.lerp(KNEEL.pelvisY, standY, k);
+      return k;
     };
     const face = work?.face ?? 0.56; // root to the cabinet's service face (m)
     const top = work?.top ?? 0.96; // cabinet height
     // Where a kneeling technician braces the free hand: on the top of a ground condenser, flat on the service panel of a
     // taller cabinet (a rooftop unit's top is out of reach from the knees).
     const brace = (out: number) => (top > 1.2 ? { y: 1.05, z: face - 0.03 } : { y: top + 0.02, z: face + out });
-    // Smooth 0..1 window inside a looping cycle.
-    const win = (u: number, a: number, b: number, fade = 0.5) => THREE.MathUtils.smoothstep(u, a - fade, a) * (1 - THREE.MathUtils.smoothstep(u, b, b + fade));
+    const win = (u: number, a: number, b: number, fade = 0.5) => smooth01(u, a - fade, a) * (1 - smooth01(u, b, b + fade));
     const bump01 = (u: number, a: number, b: number) => (u <= a || u >= b ? 0 : Math.sin(((u - a) / (b - a)) * Math.PI));
+
+    // How fast the character's root is really crossing the ground.
+    const G = gait.current;
+    if (rootNow) {
+      const here = rootNow.getWorldPosition(LOD_POS);
+      const moved = G.seen && dt > 0 ? Math.hypot(here.x - G.last.x, here.z - G.last.z) : 0;
+      G.last.copy(here);
+      G.seen = true;
+      const v = dt > 1e-4 ? Math.min(7, moved / dt) : 0;
+      G.speed += (v - G.speed) * Math.min(1, dt * 14);
+    }
+    /** Legs and hips for walking at the root's real speed, eased from a stand by how much he is moving. */
+    const walkLegs = (carryLoad = 0): { swing: number; size: number } => {
+      const speed = G.speed;
+      const stride = strideLength(Math.max(0.6, speed));
+      G.phase = (G.phase + (speed * dt) / stride) % 1;
+      const target = smooth01(speed, 0.08, 0.5);
+      G.moving += (target - G.moving) * Math.min(1, dt * 9);
+      const k = G.moving;
+      const fL = footAt(G.phase, stride);
+      const fR = footAt(G.phase + 0.5, stride);
+      const mix = (a: number, b: number) => a + (b - a) * k;
+      const lx = -STANCE_X + 0.012 * k;
+      const rx = STANCE_X - 0.012 * k;
+      foot(-1, lx, mix(V.ankleHeight, fL.y), mix(0.015, fL.z), fL.pitch * k, fL.toe * k);
+      foot(1, rx, mix(V.ankleHeight, fR.y), mix(-0.012, fR.z), fR.pitch * k, fR.toe * k);
+      const m = bodyAt(G.phase, stride);
+      pelvisY = PELVIS_Y - 0.012 - m.drop * k;
+      pelvisX = m.shift * k;
+      set('pelvis', 0.03 * k, m.yaw * k * 0.8, m.roll * k);
+      // Shoulders counter the hips; he leans into the walk, more under load.
+      set('torso', (0.045 + 0.05 * carryLoad) * k + 0.01 * Math.sin(G.phase * Math.PI * 4), -m.yaw * k * 1.5, -m.roll * k * 1.2);
+      set('head', -0.05 * k, m.yaw * k * 0.5);
+      return { swing: m.swing * k, size: Math.min(1, stride / 1.3) };
+    };
+    /** Arms hanging, swung opposite the legs; the elbow bends more going forward. */
+    const swingArm = (side: 1 | -1, swing: number, amp: number) => {
+      const fwd = -side * swing; // positive carries that arm forward (the L arm goes back as the L foot leads).
+      const name = side < 0 ? 'L' : 'R';
+      set(`arm${name}` as BoneName, -fwd * amp + 0.03, 0, side * 0.09);
+      set(`fore${name}` as BoneName, -0.26 - Math.max(0, fwd) * 0.38);
+    };
 
     switch (anim) {
       case 'walk':
       case 'carry': {
-        // Stride phase advances with the ground speed so the feet do not slide.
-        stride.current += dt * 7.2 * pace;
-        const sw = Math.sin(stride.current + phase);
-        const c = Math.cos(stride.current + phase);
-        set('legL', sw * 0.55 - 0.05);
-        set('legR', -sw * 0.55 - 0.05);
-        set('shinL', Math.max(0, -c) * 0.95 + 0.08);
-        set('shinR', Math.max(0, c) * 0.95 + 0.08);
-        // Heel strike then toe-off.
-        set('footL', Math.max(0, sw) * 0.25 - Math.max(0, -sw) * 0.15);
-        set('footR', Math.max(0, -sw) * 0.25 - Math.max(0, sw) * 0.15);
-        set('armL', -sw * 0.38, 0, -0.07);
-        set('foreL', -0.32 - Math.max(0, -sw) * 0.25);
+        const { swing, size } = walkLegs(anim === 'carry' ? 0.4 : 0);
+        swingArm(1, swing, 0.34 * size);
         if (anim === 'carry') {
-          set('armR', 0.1, 0, 0.07);
-          set('foreR', -0.1);
+          // The bag's weight straightens that arm and takes the swing out of it.
+          set('armL', 0.04 + swing * 0.05, 0, -0.14);
+          set('foreL', -0.08);
+          set('handL', 0, 0, -0.05);
+          gripL = GRIP;
           showBag = true;
-        } else {
-          set('armR', sw * 0.38, 0, 0.07);
-          set('foreR', -0.32 - Math.max(0, sw) * 0.25);
-        }
-        // Counter-rotation of shoulders against hips, a slight forward lean, a level gaze.
-        set('torso', 0.06, sw * 0.08, c * 0.02);
-        set('head', -0.04, -sw * 0.06);
-        rootY = Math.abs(c) * 0.03;
+        } else swingArm(-1, swing, 0.34 * size);
         break;
       }
       case 'inspect': {
-        // Diagnosis, a 12 s loop: look the unit over, kneel at the service panel and take readings with
-        // the meter (probes on the terminals, meter in the other hand), then rise and read the gauges
-        // hung on the cabinet, and kneel again.
-        const u = (t * 0.083) % 1; // 0..1 over ~12 s
+        // Diagnosis, a 12 s loop: look the unit over, kneel at the service panel and take readings with the meter (probe
+        // on the terminals, meter in the other hand), then rise and read the gauges hung on the cabinet, and kneel again.
+        const u = (t * 0.083) % 1;
         const reading = win(u, 0.68, 0.9, 0.06);
-        const survey = 1 - THREE.MathUtils.smoothstep(u, 0.0, 0.08);
+        const survey = 1 - smooth01(u, 0.0, 0.08);
         const up = Math.max(reading, survey);
-        // Blend between kneeling and a bent-over standing lean by mixing the two poses.
-        const kY = kneel();
-        const kneelPose = { ...pose };
-        const sY = stand(0.12);
-        const standPose = { ...pose };
-        for (const k of Object.keys(kneelPose) as (keyof typeof refs)[]) {
-          const a = kneelPose[k];
-          const b = standPose[k] ?? [0, 0, 0];
-          pose[k] = [a[0] + (b[0] - a[0]) * up, a[1] + (b[1] - a[1]) * up, a[2] + (b[2] - a[2]) * up];
-        }
-        pelvisY = kY + (sY - kY) * up;
-        pelvisZ = -0.1 * up;
-        const lean = 0.38 * (1 - up) + 0.42 * up;
+        kneelToStand(up, 0.12);
+        pelvisZ = 0.007 - 0.09 * up;
+        const lean = 0.34 * (1 - up) + 0.42 * up;
         set('torso', lean, 0.05 * (1 - up));
+        showMeter = true;
+        gripL = PINCH;
         if (up < 0.5) {
           // Probing: tool hand on the panel terminals (small careful moves), meter held up in the other hand.
-          const jitter = Math.sin(t * 2.3) * 0.025;
-          ik(1, 0.14 + jitter, 0.62 + Math.sin(t * 1.7) * 0.03, face - 0.02, lean, pelvisY);
-          ik(-1, -0.12, 0.85, 0.42 + pelvisZ, lean, pelvisY);
-          showMeter = true;
+          const jitter = Math.sin(t * 2.3) * 0.022;
+          hand(1, 0.13 + jitter, 0.62 + Math.sin(t * 1.7) * 0.025, face - 0.035, [0.05, -0.15, 1], [-1, -0.2, 0]);
+          hand(-1, -0.14, 0.84, 0.44, [0.35, 0.1, 1], [0.2, 1, -0.1]);
           showProbe = true;
-          // Glance between meter and terminals.
-          const atMeter = Math.sin(t * 0.9) > 0.35;
-          if (atMeter) look(-0.12, 0.85, 0.45, lean, pelvisY);
-          else look(0.14, 0.6, face + 0.05, lean, pelvisY);
+          gripR = PINCH;
+          if (Math.sin(t * 0.9) > 0.35) look3(-0.12, 0.85, 0.45, lean, pelvisY);
+          else look3(0.14, 0.6, face + 0.05, lean, pelvisY);
         } else {
           // Reading the gauges on the cabinet top; one hand rests on the cabinet edge.
-          ik(1, 0.22, top + 0.02, face + 0.08, lean, pelvisY);
-          ik(-1, -0.18, 1.0, 0.3, lean, pelvisY);
-          showMeter = true;
-          look(0.0, top + 0.1, face + 0.1, lean, pelvisY);
+          hand(1, 0.2, top + 0.015, Math.min(face + 0.07, 0.62), [0.05, -0.1, 1], [0, -1, 0]);
+          hand(-1, -0.16, 1.02, 0.34, [0.35, 0.1, 1], [0.2, 1, -0.1]);
+          look3(0.0, top + 0.1, face + 0.1, lean, pelvisY);
         }
         break;
       }
       case 'repair': {
-        // Repair, a 14 s loop: kneel and work in the panel with the wrench (forearm turning, the free
-        // hand braced on the cabinet top), reach down for a part from the bag, work again, then rise
-        // and lean over the fan guard to check the unit.
+        // Repair, a 14 s loop: kneel and work in the panel with the wrench (forearm turning, the free hand braced on the
+        // cabinet), reach down for a part from the bag, work again, then rise and lean over the fan guard to check the unit.
         const u = (t * 0.0714) % 1;
         const fetch = win(u, 0.4, 0.5, 0.04);
         const check = win(u, 0.84, 0.97, 0.05);
-        const kY = kneel();
-        const kneelPose = { ...pose };
-        const sY = stand(0.18);
-        const standPose = { ...pose };
-        for (const k of Object.keys(kneelPose) as (keyof typeof refs)[]) {
-          const a = kneelPose[k];
-          const b = standPose[k] ?? [0, 0, 0];
-          pose[k] = [a[0] + (b[0] - a[0]) * check, a[1] + (b[1] - a[1]) * check, a[2] + (b[2] - a[2]) * check];
-        }
-        pelvisY = kY + (sY - kY) * check;
-        pelvisZ = -0.12 * check;
-        const bag = work?.bag;
-        const lean = 0.42 + 0.12 * check + (bag ? 0.1 : -0.1) * fetch;
-        // Turning toward the bag (beside the hip on the free-hand side) and bending down to it.
-        const twist = bag ? -0.2 * fetch : 0.55 * fetch;
-        const roll = bag ? 0.6 * fetch : 0;
+        kneelToStand(check, 0.18);
+        pelvisZ = 0.007 - 0.1 * check;
+        const toolBag = work?.bag;
+        const lean = 0.38 + 0.14 * check + (toolBag ? 0.1 : -0.1) * fetch;
+        const twist = toolBag ? -0.2 * fetch : 0.55 * fetch;
+        const roll = toolBag ? 0.5 * fetch : 0;
         set('torso', lean, twist, roll);
         if (check > 0.5) {
-          ik(1, 0.25, top + 0.02, face + 0.25, lean, pelvisY);
-          ik(-1, -0.25, top + 0.02, face + 0.25, lean, pelvisY);
-          look(0, top, face + 0.45, lean, pelvisY);
-        } else if (fetch > 0.5 && bag) {
-          // Reach into the tool bag set down beside the hip: hand to the handles, the other hand on the thigh.
-          ik(-1, bag.x * 0.88, 0.47, bag.z, lean, pelvisY, twist, roll);
-          ik(1, 0.16, 0.5, 0.36, lean, pelvisY, twist, roll);
-          look(bag.x, 0.3, bag.z, lean, pelvisY, twist);
+          hand(1, 0.25, top + 0.015, Math.min(face + 0.2, 0.68), [0.05, -0.1, 1], [0, -1, 0]);
+          hand(-1, -0.25, top + 0.015, Math.min(face + 0.2, 0.68), [-0.05, -0.1, 1], [0, -1, 0]);
+          look3(0, top, face + 0.45, lean, pelvisY);
+        } else if (fetch > 0.5 && toolBag) {
+          // Into the tool bag set down beside the hip: hand to the handles, the other hand on the thigh.
+          hand(-1, toolBag.x * 0.9, 0.34, toolBag.z, [0, -1, 0.1], [1, 0, 0]);
+          hand(1, 0.15, 0.56, 0.36, [0, -0.6, 1], [0, -1, 0]);
+          gripL = GRIP;
+          look3(toolBag.x, 0.3, toolBag.z, lean, pelvisY, twist);
         } else if (fetch > 0.5) {
           // Crew without the bag: reach down beside the knee.
-          ik(1, 0.48, 0.12, 0.2, lean, pelvisY, twist);
-          ik(-1, -0.2, brace(0.1).y, brace(0.1).z, lean, pelvisY, twist);
-          look(0.5, 0.1, 0.25, lean, pelvisY, twist);
+          hand(1, 0.44, 0.14, 0.2, [0, -1, 0.2], [-1, 0, 0]);
+          hand(-1, -0.2, brace(0.1).y, brace(0.1).z);
+          look3(0.5, 0.1, 0.25, lean, pelvisY, twist);
         } else {
-          // Wrench turns: small arcs at the valve/terminal; the forearm rolls with each pull.
+          // Wrench turns: small arcs at the valve or terminal, the wrist rolling with each pull. The hand stops short of
+          // the panel; the wrench's head reaches it.
           const pull = Math.sin(t * 3.2);
-          // The hand stops a little short of the panel; the wrench's head reaches it.
-          ik(1, 0.12 + pull * 0.03, 0.52 + pull * 0.035, face - 0.09, lean, pelvisY);
-          ik(-1, -0.2, brace(0.12).y, brace(0.12).z, lean, pelvisY);
-          const fr = pose.foreR!;
-          pose.foreR = [fr[0], pull * 0.5, fr[2]];
+          const a = pull * 0.35;
+          hand(1, 0.11 + pull * 0.028, 0.56 + pull * 0.03, face - 0.17, [Math.sin(a) * 0.9, 0.15, 0.4], [-Math.cos(a), Math.sin(a) * 0.6, 0]);
+          hand(-1, -0.2, brace(0.12).y, brace(0.12).z, [0.05, -0.1, 1], top > 1.2 ? [0, 0, 1] : [0, -1, 0]);
           showWrench = true;
-          look(0.08, 0.5, face + 0.05, lean, pelvisY);
+          gripR = GRIP;
+          look3(0.08, 0.52, face + 0.05, lean, pelvisY);
         }
         break;
       }
       case 'stand-inspect': {
-        // Waiting on a decision: tablet in both hands, glancing between it and the unit.
+        // Waiting on a decision: tablet in the left hand, the right hand on its edge, glancing between it and the unit.
         pelvisY = stand(0.04);
         set('torso', 0.1);
-        ik(-1, -0.05, 1.05, 0.36, 0.1, pelvisY);
-        ik(1, 0.12, 1.0, 0.33, 0.1, pelvisY);
-        if (Math.sin(t * 0.5) > 0.6) look(0, 0.6, face + 0.4, 0.1, pelvisY);
-        else set('head', 0.55, 0.05);
+        hand(-1, -0.075, 1.08, 0.36, [0.45, 0.1, 1], [0.1, 1, -0.2]);
+        hand(1, 0.1, 1.09, 0.35, [-0.5, 0.2, 1], [-0.1, 0.9, 0.1]);
+        if (Math.sin(t * 0.5) > 0.6) look3(0, 0.6, face + 0.4, 0.1, pelvisY);
+        else set('head', 0.5, 0.02);
         showTablet = true;
+        gripL = PINCH;
+        gripR = PINCH;
         break;
       }
       case 'install': {
+        // Lifting a boxed unit: knees and back working together, hands on its sides.
         const k = (Math.sin(t * 1.6) + 1) / 2;
-        set('legL', -0.9 * k, 0, 0.05);
-        set('legR', -0.9 * k, 0, -0.05);
-        set('shinL', 1.2 * k);
-        set('shinR', 1.2 * k);
-        set('footL', -0.3 * k);
-        set('footR', -0.3 * k);
-        pelvisY = PELVIS_Y - 0.3 * k;
+        pelvisY = stand(0, 0) - 0.3 * k;
         set('torso', 0.2 + 0.25 * k);
-        set('armL', -1.1, 0, 0.2);
-        set('armR', -1.1, 0, -0.2);
-        set('foreL', -0.9);
-        set('foreR', -0.9);
+        const lift = 1.02 - 0.34 * k;
+        hand(-1, -0.285, lift, 0.42, [0.2, 0.1, 1], [1, 0, 0]);
+        hand(1, 0.285, lift, 0.42, [-0.2, 0.1, 1], [-1, 0, 0]);
+        gripL = GRIP;
+        gripR = GRIP;
         showLoad = true;
         break;
       }
       case 'train': {
-        set('armL', -0.9, 0, 0.1);
-        set('foreL', -1.5);
-        set('armR', -0.3 + Math.sin(t * 1.8) * 0.15);
+        pelvisY = stand(0.02, 0.01);
+        hand(-1, -0.075, 1.08, 0.33, [0.45, 0.1, 1], [0.1, 1, -0.2]);
+        set('armR', -0.3 + Math.sin(t * 1.8) * 0.15, 0, 0.08);
         set('foreR', -0.8);
         set('head', 0.2);
         showTablet = true;
+        gripL = PINCH;
         break;
       }
       case 'celebrate': {
         const k = Math.sin(t * 5);
-        set('armR', -2.8 + k * 0.2, 0, -0.3);
+        pelvisY = stand(0.06) + Math.max(0, k) * 0.03;
+        set('armR', -2.75 + k * 0.2, 0, 0.3);
         set('foreR', -0.3);
-        set('armL', -0.4, 0, 0.3);
+        set('armL', -0.4, 0, -0.25);
         set('foreL', -1.0);
-        rootY = Math.max(0, k) * 0.08;
+        gripR = GRIP;
         break;
       }
       case 'ladder-carry':
@@ -629,112 +558,143 @@ export function Worker({ role, look, anim, scale = 1, pace = 1, work, motion }: 
       case 'step-over': {
         const m = motion?.current;
         const mp = m?.pace ?? 0;
+        let torsoPitch = 0;
         if (anim === 'climb' && m?.footL && m.footR) {
-          // On the rungs: pelvis between the feet and hands, legs and arms placed by IK.
-          pelvisY = THREE.MathUtils.clamp((m.footL.y + m.footR.y) / (2 * s) + 0.8, 0.7, 1.0);
-          pelvisZ = -0.03;
-          for (const [side, f] of [[-1, m.footL], [1, m.footR]] as const) {
-            const sol = legIK(side, { x: f.x / s, y: f.y / s, z: f.z / s }, pelvisY, pelvisZ, m.footPitch);
-            set(side < 0 ? 'legL' : 'legR', ...sol.leg);
-            set(side < 0 ? 'shinL' : 'shinR', sol.shin);
-            set(side < 0 ? 'footL' : 'footR', sol.foot);
-          }
-          set('torso', 0.06);
+          // On the rungs: hips over the feet, legs and arms placed on the ladder.
+          pelvisY = THREE.MathUtils.clamp((m.footL.y + m.footR.y) / (2 * s) + 0.7, 0.62, PELVIS_Y);
+          pelvisZ = -0.02;
+          foot(-1, m.footL.x / s, m.footL.y / s, m.footL.z / s, -m.footPitch);
+          foot(1, m.footR.x / s, m.footR.y / s, m.footR.z / s, -m.footPitch);
+          torsoPitch = 0.09;
+          set('torso', torsoPitch);
         } else if (anim === 'step-over') {
           // A high step over the parapet: one knee up, then the other, the body upright.
           const u = m?.u ?? 0;
           const kl = bump01(u, 0.02, 0.55);
           const kr = bump01(u, 0.4, 0.98);
-          set('legL', -1.25 * kl, 0, 0.05);
-          set('shinL', 1.5 * kl);
-          set('footL', -0.25 * kl);
-          set('legR', -1.25 * kr, 0, -0.05);
-          set('shinR', 1.5 * kr);
-          set('footR', -0.25 * kr);
-          pelvisY = PELVIS_Y - 0.06 * Math.max(kl, kr);
-          set('torso', 0.18);
+          foot(-1, -STANCE_X, V.ankleHeight + kl * 0.36, 0.015 + kl * 0.26, 0.15 * kl);
+          foot(1, STANCE_X, V.ankleHeight + kr * 0.36, -0.012 + kr * 0.26, 0.15 * kr);
+          pelvisY = PELVIS_Y - 0.03 - 0.05 * Math.max(kl, kr);
+          torsoPitch = 0.16;
+          set('torso', torsoPitch);
         } else if (mp > 0.01) {
-          // Walking (with the ladder on the shoulder, or stepping while raising it): the walk cycle's legs.
-          stride.current += dt * 7.2 * pace * mp;
-          const sw = Math.sin(stride.current + phase);
-          const c = Math.cos(stride.current + phase);
-          const amp = anim === 'ladder-carry' ? 0.45 : 0.32;
-          set('legL', sw * amp - 0.05);
-          set('legR', -sw * amp - 0.05);
-          set('shinL', Math.max(0, -c) * 0.85 + 0.08);
-          set('shinR', Math.max(0, c) * 0.85 + 0.08);
-          set('footL', Math.max(0, sw) * 0.2 - Math.max(0, -sw) * 0.12);
-          set('footR', Math.max(0, -sw) * 0.2 - Math.max(0, sw) * 0.12);
-          rootY = Math.abs(c) * 0.02;
-          set('torso', anim === 'raise' ? -0.06 : 0.05, sw * 0.05);
+          // Walking with the ladder on the shoulder, or stepping while raising it.
+          walkLegs(anim === 'ladder-carry' ? 1 : 0.4);
+          torsoPitch = anim === 'raise' ? -0.06 : 0.05;
+          pose.torso![0] = torsoPitch;
         } else {
           pelvisY = stand(anim === 'pull' ? 0.08 : 0.03);
-          set('torso', anim === 'raise' || anim === 'reach' ? -0.08 : anim === 'pull' ? 0.1 : 0.04);
+          torsoPitch = anim === 'raise' || anim === 'reach' ? -0.08 : anim === 'pull' ? 0.1 : 0.04;
+          set('torso', torsoPitch);
         }
-        const torsoPitch = pose.torso?.[0] ?? 0;
-        if (m?.handL) ik(-1, m.handL.x, m.handL.y, m.handL.z, torsoPitch, pelvisY);
-        else {
-          set('armL', 0.05, 0, -0.06);
+        if (m?.handL) {
+          if (anim === 'climb') hand(-1, m.handL.x, m.handL.y, m.handL.z, [0.02, 0.62, 0.78], [0, -0.35, 1]);
+          else if (anim === 'ladder-carry') hand(-1, m.handL.x, m.handL.y, m.handL.z, [0.9, 0.25, 0.2], [0, 1, 0]);
+          else if (anim === 'reach') hand(-1, m.handL.x, m.handL.y, m.handL.z, [0.1, 0.25, 1], [0, 1, 0.2]);
+          else hand(-1, m.handL.x, m.handL.y, m.handL.z, [0.1, 0.1, 1], [1, 0, 0]);
+          gripL = GRIP;
+        } else {
+          set('armL', 0.05, 0, -0.09);
           set('foreL', -0.3);
         }
-        if (m?.handR) ik(1, m.handR.x, m.handR.y, m.handR.z, torsoPitch, pelvisY);
-        else {
-          set('armR', 0.05, 0, 0.06);
+        if (m?.handR) {
+          if (anim === 'climb') hand(1, m.handR.x, m.handR.y, m.handR.z, [-0.02, 0.62, 0.78], [0, -0.35, 1]);
+          else if (anim === 'ladder-carry') hand(1, m.handR.x, m.handR.y, m.handR.z, [0.35, 0.2, 1], [0, 1, 0]);
+          else if (anim === 'reach') hand(1, m.handR.x, m.handR.y, m.handR.z, [-0.1, 0.25, 1], [0, 1, 0.2]);
+          else hand(1, m.handR.x, m.handR.y, m.handR.z, [-0.1, 0.1, 1], [-1, 0, 0]);
+          gripR = GRIP;
+        } else {
+          set('armR', 0.05, 0, 0.09);
           set('foreR', -0.3);
         }
         // Eyes on the hands (or ahead).
         const hl = m?.handL;
         const hr = m?.handR;
-        if (hl && hr) look((hl.x + hr.x) / 2, (hl.y + hr.y) / 2, Math.max(0.2, (hl.z + hr.z) / 2), torsoPitch, pelvisY);
+        if (hl && hr) look3((hl.x + hr.x) / 2, (hl.y + hr.y) / 2, Math.max(0.2, (hl.z + hr.z) / 2), torsoPitch, pelvisY);
         else set('head', anim === 'climb' ? -0.25 : -0.04);
         break;
       }
       default: {
-        // Idle: breathing, a weight shift every few seconds, a slow head turn, one hand on the belt.
+        // Idle: breathing, a slow weight shift over one foot, the head looking about, hands loose.
         const shift = Math.sin(t * 0.35);
-        set('legL', 0, 0, 0.05 + shift * 0.025);
-        set('legR', 0, 0, -0.05 + shift * 0.025);
-        set('shinL', 0.03 + Math.max(0, -shift) * 0.06);
-        set('shinR', 0.03 + Math.max(0, shift) * 0.06);
-        set('armL', Math.sin(t * 1.1) * 0.03, 0, -0.06);
-        set('foreL', -0.25);
-        set('armR', 0.1, 0, 0.07);
-        set('foreR', -0.38);
-        set('torso', Math.sin(t * 1.2) * 0.012, 0, shift * 0.025);
-        set('head', 0.03, Math.sin(t * 0.4) * 0.35);
-        pelvisY = PELVIS_Y - Math.abs(shift) * 0.01;
+        const breath = Math.sin(t * 1.15);
+        pelvisY = stand(0.025 + Math.abs(shift) * 0.04, shift * 0.018);
+        set('pelvis', 0, shift * 0.04, shift * 0.018);
+        set('torso', 0.012 + breath * 0.006, -shift * 0.03, -shift * 0.02);
+        set('head', 0.02, Math.sin(t * 0.4) * 0.32, shift * 0.02);
+        set('armL', breath * 0.012 + 0.03, 0, -0.09);
+        set('foreL', -0.26);
+        set('armR', 0.06 - breath * 0.012, 0, 0.09);
+        set('foreR', -0.34);
       }
     }
     // Blend every joint toward its target so state changes never pop. Rotations are slerped: blending Euler angles
-    // component by component swings an arm the long way round (over the head) when an IK solution wraps past ±π.
+    // component by component swings an arm the long way round when a solution wraps past ±π. The torso and head targets
+    // are shared down the spine and neck, so bending is a curve, not a hinge at the waist.
     const k = Math.min(1, dt * 7);
     const cur = blend.current;
-    for (const name of Object.keys(refs) as (keyof typeof refs)[]) {
-      const target = pose[name] ?? [0, 0, 0];
-      const goal = BLEND_Q.setFromEuler(BLEND_E.set(target[0], target[1], target[2]));
-      const c = cur[name] ?? goal.clone();
-      c.slerp(goal, k);
-      cur[name] = c;
-      r[name]!.quaternion.copy(c);
+    const torso = pose.torso;
+    if (torso) {
+      pose.spine = [torso[0] * 0.42, torso[1] * 0.4, torso[2] * 0.45];
+      pose.torso = [torso[0] * 0.58, torso[1] * 0.6, torso[2] * 0.55];
     }
-    const hs = heightState.current;
-    hs.pelvis += (pelvisY - hs.pelvis) * k;
+    const head = pose.head;
+    if (head) {
+      pose.neck = [head[0] * 0.42, head[1] * 0.4, head[2] * 0.4];
+      pose.head = [head[0] * 0.58, head[1] * 0.6, head[2] * 0.6];
+    }
+    for (const name of BODY_BONES) {
+      const target = pose[name];
+      const goal = target ? BLEND_Q.setFromEuler(BLEND_E.set(target[0], target[1], target[2])) : BLEND_Q.identity();
+      const c = cur[name] ?? (cur[name] = goal.clone());
+      c.slerp(goal, k);
+      r[name].quaternion.copy(c);
+    }
+    const hs = body.current;
+    hs.y += (pelvisY - hs.y) * k;
     hs.z += (pelvisZ - hs.z) * k;
-    hs.root += (rootY - hs.root) * Math.min(1, dt * 20);
-    r.pelvis!.position.y = hs.pelvis;
-    r.pelvis!.position.z = hs.z;
-    if (root.current) root.current.position.y = hs.root;
+    hs.x += (pelvisX - hs.x) * k;
+    r.pelvis.position.set(hs.x, hs.y, hs.z);
+
+    // Limbs with a target: fade the solver in and out, ease a target across a change of clip, then solve.
+    const fade = Math.min(1, dt * 8);
+    let worst = 0;
+    const clavicle = (side: 1 | -1, h: LimbState) => {
+      // A hand reaching high or far brings the shoulder blade along.
+      const lift = smooth01(h.at.y, 1.2, 1.75) * h.weight;
+      const fwd = smooth01(h.at.z, 0.3, 0.6) * h.weight;
+      r[side < 0 ? 'clavL' : 'clavR'].quaternion.setFromEuler(BLEND_E.set(0, side * fwd * 0.22 * -1, side * lift * 0.34));
+    };
+    for (const [side, h] of [[-1, want.handL], [1, want.handR]] as const) {
+      h.weight += ((h.has ? 1 : 0) - h.weight) * fade;
+      clavicle(side, h);
+      if (h.weight > 0.002) worst = Math.max(worst, solveArm(r, side, h.at, { hand: h.hasRot ? h.rot : null, weight: h.weight }));
+    }
+    for (const [side, f] of [[-1, want.footL], [1, want.footR]] as const) {
+      f.weight += ((f.has ? 1 : 0) - f.weight) * fade;
+      if (f.weight > 0.002) worst = Math.max(worst, solveLeg(r, side, f.at, { pitch: f.pitch, weight: f.weight }));
+      const toeGoal = f.has ? f.toe : 0;
+      // The toes stay down while the foot rolls over them, which is a bend upward at the ball.
+      r[side < 0 ? 'toeL' : 'toeR'].quaternion.setFromAxisAngle(X_AXIS, -toeGoal);
+    }
+    // Fingers follow their clip's grip, only when near enough to see them.
+    if (L.level === 0) {
+      const F = fingers.current;
+      const close = Math.min(1, dt * 10);
+      for (const [side, goal, state] of [[-1, gripL, F.L], [1, gripR, F.R]] as const) {
+        state.curl += (goal.curl - state.curl) * close;
+        state.thumb += (goal.thumb - state.thumb) * close;
+        state.spread = (state.spread ?? 0) + ((goal.spread ?? 0) - (state.spread ?? 0)) * close;
+        poseFingers(r, side, state);
+      }
+    }
+    if (typeof window !== 'undefined' && window.__egoContact) window.__egoContact[anim] = Math.max(window.__egoContact[anim] ?? 0, worst);
     if (bag.current) bag.current.visible = showBag;
     if (meter.current) meter.current.visible = showMeter;
     if (probe.current) probe.current.visible = showProbe;
     if (wrench.current) wrench.current.visible = showWrench;
     if (tablet.current) tablet.current.visible = showTablet;
     if (load.current) load.current.visible = showLoad;
-    // A hand holding a tool closes round it; free hands stay relaxed.
-    const gripL = showMeter || showTablet || showBag;
-    const gripR = showProbe || showWrench;
-    if (hands.relaxedL.current && hands.gripL.current) { hands.relaxedL.current.visible = !gripL; hands.gripL.current.visible = gripL; }
-    if (hands.relaxedR.current && hands.gripR.current) { hands.relaxedR.current.visible = !gripR; hands.gripR.current.visible = gripR; }
     // Test leads while probing: red from the meter to the probe, black to a clip on the panel edge.
     const rootObj = root.current;
     if (leads.current && rootObj) {
@@ -750,18 +710,6 @@ export function Worker({ role, look, anim, scale = 1, pace = 1, work, motion }: 
 
   const tech = role === 'technician' || role === 'installer';
   const b = character.bones;
-  const hand = (side: 1 | -1) =>
-    tech ? (
-      <>
-        <mesh ref={side < 0 ? hands.relaxedL : hands.relaxedR} geometry={GEO.glove[side < 0 ? 0 : 1]} position={[0, -0.27, 0.005]} material={materials.glove} castShadow />
-        <mesh ref={side < 0 ? hands.gripL : hands.gripR} geometry={GEO.gloveGrip[side < 0 ? 0 : 1]} position={[0, -0.27, 0.005]} material={materials.glove} castShadow visible={false} />
-      </>
-    ) : (
-      <>
-        <mesh ref={side < 0 ? hands.relaxedL : hands.relaxedR} geometry={GEO.glove[side < 0 ? 0 : 1]} position={[0, -0.27, 0.005]} scale={0.9} material={materials.skin} castShadow />
-        <mesh ref={side < 0 ? hands.gripL : hands.gripR} geometry={GEO.gloveGrip[side < 0 ? 0 : 1]} position={[0, -0.27, 0.005]} scale={0.9} material={materials.skin} castShadow visible={false} />
-      </>
-    );
 
   return (
     <group ref={root} scale={scale * build}>
@@ -769,14 +717,8 @@ export function Worker({ role, look, anim, scale = 1, pace = 1, work, motion }: 
       <primitive object={character.root} />
       {createPortal(
         <>
-          {/* EGO HVAC on the back and the left chest, a name patch on the right; prints follow the shirt's curve. */}
-          {role === 'technician' && <mesh geometry={GEO.backPrint} position={[0, 0.37, 0.05]} material={backPrintMaterial()} />}
-          {role !== 'dispatcher' && <mesh geometry={GEO.chestPrint} position={[0, 0.385, -0.056]} material={backPrintMaterial()} />}
-          <mesh position={[0.088, 0.385, 0.094]} rotation={[-0.15, 0.32, 0]} material={materials.white}>
-            <boxGeometry args={[0.07, 0.02, 0.004]} />
-          </mesh>
           {/* Boxed unit carried in front of the chest during installs */}
-          <group ref={load} position={[0, 0.12, 0.42]} visible={false}>
+          <group ref={load} position={[0, -0.16, 0.42]} visible={false}>
             <mesh castShadow>
               <boxGeometry args={[0.56, 0.46, 0.5]} />
               <meshStandardMaterial color="#d9cfbf" roughness={0.9} />
@@ -792,17 +734,10 @@ export function Worker({ role, look, anim, scale = 1, pace = 1, work, motion }: 
         </>,
         b.torso,
       )}
-      {tech &&
-        createPortal(
-          <mesh position={[0, 0.172, 0.094]} rotation={[-0.35, 0, 0]} material={materials.teal}>
-            <boxGeometry args={[0.036, 0.026, 0.006]} />
-          </mesh>,
-          b.head,
-        )}
       {createPortal(
         <>
-          {hand(-1)}
-          <group ref={bag} position={[0, -0.52, 0]} visible={false}>
+          {/* Tools sit in the hand's frame: fingers along -y, the palm facing +x on this side, the thumb forward (+z). */}
+          <group ref={bag} position={[0.01, -0.2, 0]} visible={false}>
             <mesh material={materials.dark} castShadow>
               <boxGeometry args={[0.22, 0.26, 0.4]} />
             </mesh>
@@ -816,7 +751,8 @@ export function Worker({ role, look, anim, scale = 1, pace = 1, work, motion }: 
               <boxGeometry args={[0.02, 0.1, 0.02]} />
             </mesh>
           </group>
-          <group ref={meter} position={[0, -0.36, 0.035]} rotation={[-1.25, 0, 0]} visible={false}>
+          {/* The meter lies in the palm with its back on it, its face toward him and its jaw past the fingertips. */}
+          <group ref={meter} position={[0.03, -0.09, 0.006]} quaternion={IN_PALM_L} visible={false}>
             <mesh geometry={METER.body} material={materials.tool} castShadow />
             <mesh geometry={METER.face} position={[0, -0.005, 0.0205]} material={materials.dark} />
             <mesh geometry={METER.jaw} position={[0, 0.125, 0]} material={materials.dark} />
@@ -827,7 +763,7 @@ export function Worker({ role, look, anim, scale = 1, pace = 1, work, motion }: 
             ))}
             <group ref={anchors.socket} position={[LEAD_SOCKET.x, LEAD_SOCKET.y, LEAD_SOCKET.z]} />
           </group>
-          <group ref={tablet} position={[0.02, -0.34, 0.08]} rotation={[-0.6, 0, 0]} visible={false}>
+          <group ref={tablet} position={[0.018, -0.095, 0.03]} quaternion={IN_PALM_L} visible={false}>
             <mesh material={materials.dark}>
               <boxGeometry args={[0.2, 0.26, 0.015]} />
             </mesh>
@@ -836,12 +772,12 @@ export function Worker({ role, look, anim, scale = 1, pace = 1, work, motion }: 
             </mesh>
           </group>
         </>,
-        b.foreL,
+        b.handL,
       )}
       {createPortal(
         <>
-          {hand(1)}
-          <group ref={probe} position={[0, -0.36, 0.03]} rotation={[0.15, 0, 0]} visible={false}>
+          {/* A pen grip for the probe; the tip runs along the fingers. */}
+          <group ref={probe} position={[-0.02, -0.105, 0.012]} visible={false}>
             <mesh material={materials.probe}>
               <cylinderGeometry args={[0.007, 0.009, 0.15, 8]} />
             </mesh>
@@ -853,7 +789,8 @@ export function Worker({ role, look, anim, scale = 1, pace = 1, work, motion }: 
               <cylinderGeometry args={[0.0015, 0.003, 0.04, 4]} />
             </mesh>
           </group>
-          <group ref={wrench} position={[0, -0.33, 0.04]} rotation={[0.3, 0, 0]} visible={false}>
+          {/* The wrench's handle runs across the closed fist, its head out past the thumb. */}
+          <group ref={wrench} position={[-0.028, -0.075, 0.03]} rotation={[Math.PI / 2, 0, 0]} visible={false}>
             <mesh geometry={WRENCH.handle} material={materials.steel} castShadow />
             <mesh geometry={WRENCH.head} position={[0, 0.13, 0]} material={materials.steel} />
             <mesh geometry={WRENCH.worm} position={[0, 0.105, 0.004]} material={materials.dark} />
@@ -862,7 +799,7 @@ export function Worker({ role, look, anim, scale = 1, pace = 1, work, motion }: 
             </mesh>
           </group>
         </>,
-        b.foreR,
+        b.handR,
       )}
     </group>
   );
@@ -874,3 +811,8 @@ const LOD_POS = new THREE.Vector3();
 const LOD_SPHERE = new THREE.Sphere();
 const LOD_FRUSTUM = new THREE.Frustum();
 const LOD_MATRIX = new THREE.Matrix4();
+const X_AXIS = new THREE.Vector3(1, 0, 0);
+/** Every bone the clips rotate; the fingers have their own pose, and the clavicles and toes are set from what the limbs do. */
+const BODY_BONES: BoneName[] = ['pelvis', 'spine', 'torso', 'neck', 'head', 'armL', 'armR', 'foreL', 'foreR', 'twistL', 'twistR', 'handL', 'handR', 'legL', 'legR', 'shinL', 'shinR', 'footL', 'footR'];
+/** Palm-held tools on the L hand: their face (local +z) away from the palm (+x), their top (local +y) past the fingertips. */
+const IN_PALM_L = new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().makeBasis(new THREE.Vector3(0, 0, 1), new THREE.Vector3(0, -1, 0), new THREE.Vector3(1, 0, 0)));
