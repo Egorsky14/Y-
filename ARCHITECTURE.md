@@ -45,6 +45,10 @@ docs/screenshots/ captured from the real build by the e2e test
 - `applyAction` is a discriminated-union reducer; every action returns `{ ok } | { ok: false, reason }` which the UI surfaces as an error banner.
 - Determinism: `mulberry32` RNG stored in state; identical seed + identical actions produce byte-identical state (tested), independent of step size.
 
+## Opening mission
+
+`game/progression/mission.ts` is a thin record over one ordinary job: its objective is derived from the job and vehicle (`missionStage`), and `syncMission` runs after every action and simulation step. `GameState.mission` and `Job.authorization` are optional (schema 6), so older saves load with no mission. `ui/overlays/MissionCoach.tsx` reads the state and issues camera cues; it never advances the job.
+
 ## Road network and movement
 
 `cityLayout.ts` is the single source of truth for streets, lots, curbs, HQ stalls and condenser positions. `roadGraph.ts` builds nodes (intersections, street ends, curb nodes) and chains them per street. `pathfinding.ts` runs A*. Routes from HQ are `stall → apron → HQ curb → A* path → customer curb` and back. ETA is `remaining length / vehicle speed`, so UI numbers always match what the truck does.

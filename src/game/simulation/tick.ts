@@ -14,6 +14,7 @@ import { runDailyMarketing, updateCompetition } from '../marketing/marketing';
 import { checkMilestones } from '../progression/milestones';
 import { chance, nextInt } from './rng';
 import { BALANCE } from './newGame';
+import { isMissionJob, syncMission } from '../progression/mission';
 
 /** Maximum simulated minutes per sub-step; keeps movement and phase logic stable at 5x. */
 const MAX_STEP = 0.5;
@@ -40,6 +41,7 @@ function step(state: GameState, dt: number): void {
   // Rooftop jobs: crews still packing up (ladder down and stowed) before their vehicle leaves.
   for (const vehicle of Object.values(state.vehicles)) if (vehicle.packUp) advancePackUp(state, vehicle, dt);
   for (const job of Object.values(state.jobs)) if (isActiveJob(job)) advanceJobPhase(state, job, dt);
+  syncMission(state);
   // Operations Center: act on findings and quotes in the same step they appear.
   runOperations(state);
 
@@ -153,7 +155,7 @@ function endOfDay(state: GameState): void {
 
   // Expire any leftover leads, record history, roll the day.
   for (const job of Object.values(state.jobs)) {
-    if (job.status === 'lead') {
+    if (job.status === 'lead' && !isMissionJob(state, job.id)) {
       job.status = 'expired';
       state.stats.leadsExpired++;
     }

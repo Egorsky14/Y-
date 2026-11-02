@@ -14,6 +14,10 @@ Lead arrives → Accept → Dispatch (tech + vehicle) → Drive route → Walk t
 → Payment or receivable → Review, trust, XP, fatigue → Return to HQ → Milestones
 ```
 
+## Opening: Mission 01, Rooftop Rescue
+
+Every new campaign opens on one real, guided rooftop call at Mesquite Plaza (Desert Sun Dental, a dirty condenser coil). It uses the normal job, ladder and ledger, and the summary reports what the job really booked. While it runs, a wrong diagnosis is refused with an explanation, the quote goes through the customer's review (approved up to 115% of book), and other leads wait. Skip guide leaves the same job as an ordinary call. Campaigns saved before this have no mission. See `docs/rooftop-first-mission/`.
+
 ## Time
 
 - One simulated minute is the base unit. At 1× one real second is one game minute; 2× and 5× scale everything (driving, work phases, authorizations). Pause freezes everything.

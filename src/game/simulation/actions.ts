@@ -12,6 +12,7 @@ import { assignTool, purchaseTool, sellTool } from '../equipment/inventory';
 import type { ToolId } from '../equipment/catalog';
 import type { ToolHolder } from './types';
 import { acknowledgeAttention, setAutomation } from '../operations/automation';
+import { acknowledgeMission, skipMission, syncMission } from '../progression/mission';
 
 /** Every player decision is an explicit, serializable action. */
 export type GameAction =
@@ -49,10 +50,24 @@ export type GameAction =
   | { type: 'sell-tool'; itemId: string }
   // Automated Operations Center
   | { type: 'set-automation'; diagnostics?: boolean; closing?: boolean }
-  | { type: 'ack-attention'; jobId: string };
+  | { type: 'ack-attention'; jobId: string }
+  // Mission 01
+  | { type: 'mission-skip' }
+  | { type: 'mission-ack' };
 
 export function applyAction(state: GameState, action: GameAction): ActionResult {
+  const result = perform(state, action);
+  // Declining the mission's call, for example, ends the mission even while the clock is paused.
+  syncMission(state);
+  return result;
+}
+
+function perform(state: GameState, action: GameAction): ActionResult {
   switch (action.type) {
+    case 'mission-skip':
+      return skipMission(state);
+    case 'mission-ack':
+      return acknowledgeMission(state);
     case 'set-speed':
       if (state.campaignComplete) return { ok: false, reason: 'The campaign is complete.' };
       state.speed = action.speed;

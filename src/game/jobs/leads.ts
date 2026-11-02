@@ -77,6 +77,8 @@ export interface SpawnLeadOptions {
   faultId?: string;
   kind?: 'service' | 'callback';
   originJobId?: string;
+  /** What this customer says on the phone, when it is more specific than the fault's usual complaint. */
+  complaint?: string;
 }
 
 /** Creates a new lead for an idle customer. Returns null when nobody is available. */
@@ -103,12 +105,13 @@ export function spawnLead(state: GameState, opts: SpawnLeadOptions = {}): Job | 
   const options = shuffle(state.rng, [fault.id, ...fault.lookalikes.slice(0, 2)]);
   const now = absoluteMinutes(state.clock);
   const lifetime = BALANCE.leadLifetimeMinutes + (state.company.hqUpgrades.includes('dispatch-center') ? 120 : 0);
+  const said = opts.complaint ?? fault.complaint;
   const job: Job = {
     id: `job-${state.nextId++}`,
     kind: opts.kind ?? 'service',
     customerId: customer.id,
     status: 'lead',
-    complaint: opts.kind === 'callback' ? `Callback: the problem came back. ${fault.complaint}` : fault.complaint,
+    complaint: opts.kind === 'callback' ? `Callback: the problem came back. ${said}` : said,
     faultId,
     diagnosisOptions: options,
     evidence: [],
@@ -119,7 +122,7 @@ export function spawnLead(state: GameState, opts: SpawnLeadOptions = {}): Job | 
     phaseRemaining: 0,
     phaseTotal: 0,
     financials: { diagnosticFee: 0, quoteAmount: 0, partsCost: 0, laborCost: 0, revenueCollected: 0 },
-    log: [`${customer.channel === 'warranty' ? customer.warrantyCompany : customer.name} called: "${fault.complaint}"`],
+    log: [`${customer.channel === 'warranty' ? customer.warrantyCompany : customer.name} called: "${said}"`],
     originJobId: opts.originJobId,
   };
   state.jobs[job.id] = job;
@@ -135,6 +138,8 @@ export function spawnLead(state: GameState, opts: SpawnLeadOptions = {}): Job | 
 
 /** Fires scheduled leads whose time has come. Without a dispatcher some calls go unanswered. */
 export function processLeadSchedule(state: GameState): void {
+  // Mission 01 has the owner's full attention: other calls wait, and arrive spaced out when it ends (mission.ts).
+  if (state.mission?.status === 'active') return;
   const due = state.leadSchedule.filter((l) => l.day === state.clock.day && l.minute <= state.clock.minute);
   if (due.length === 0) return;
   state.leadSchedule = state.leadSchedule.filter((l) => !(l.day === state.clock.day && l.minute <= state.clock.minute));

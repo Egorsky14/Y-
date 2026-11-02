@@ -47,6 +47,7 @@ export function migrate(envelope: SaveEnvelope): GameState {
   // Schema 4 → 5: rooftop service. The commercial customers (fixed records) join older campaigns; equipment
   // placement is derived from the customer's system and building, so existing customers keep theirs.
   for (const c of commercialCustomers()) state.customers[c.id] ??= c;
+  // Schema 5 → 6: Mission 01. It opens new campaigns only: a running campaign keeps its jobs and is never given one.
   state.schemaVersion = SAVE_SCHEMA_VERSION;
   return state;
 }

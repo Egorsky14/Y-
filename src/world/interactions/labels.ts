@@ -10,6 +10,8 @@ export interface LabelAnchor {
   getPosition: (out: THREE.Vector3) => boolean;
   /** Reference distance for scaling (labels shrink when the camera is farther than this). */
   referenceDistance: number;
+  /** The label never shrinks below this (default 0.55): for markers the player must find from afar. */
+  minScale?: number;
 }
 
 const registry = new Map<string, LabelAnchor>();

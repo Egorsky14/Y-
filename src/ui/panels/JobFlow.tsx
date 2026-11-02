@@ -11,6 +11,7 @@ import { ROLE_LABELS } from '@/game/employees/roles';
 import { isRoofJob, roofAccess, ROOF_LADDER, vehicleHasLadder } from '@/game/world/rooftops';
 import { performanceSummary, toolsOnSite } from '@/game/equipment/performance';
 import { toolDef } from '@/game/equipment/catalog';
+import { isMissionJob } from '@/game/progression/mission';
 
 /** The interactive heart of a service call: accept → dispatch → diagnose → quote → complete. */
 export function JobFlow({ jobId }: { jobId: string }) {
@@ -88,15 +89,17 @@ function JobStep({ job }: { job: Job }) {
       return <EnrouteStep job={job} />;
     case 'arriving':
     case 'diagnosing':
-      return <PhaseStep job={job} title={job.status === 'arriving' ? (isRoofJob(useApp.getState().engine!.state, job) ? 'Setting up the ladder and climbing to the roof' : 'Technician walking to the equipment') : 'Diagnostic in progress'} body="Measuring: static pressure, capacitance, amperage, refrigerant pressures." />;
+      if (job.status === 'arriving' && isRoofJob(useApp.getState().engine!.state, job)) return <PhaseStep job={job} title="Setting up the ladder and climbing to the roof" body="Ladder off the rack, footed at the access point, then up to the unit." />;
+      return <PhaseStep job={job} title={job.status === 'arriving' ? 'Technician walking to the equipment' : 'Diagnostic in progress'} body="Measuring: static pressure, capacitance, amperage, refrigerant pressures." />;
     case 'awaiting-diagnosis':
       return <DiagnosisStep job={job} />;
     case 'quoted':
       return <QuoteStep job={job} />;
     case 'awaiting-authorization':
+      if (job.authorization) return <PhaseStep job={job} title="Waiting for customer authorization" body={`${job.authorization.approver} is reviewing the quote before approving the work.`} />;
       return <PhaseStep job={job} title="Waiting for warranty authorization" body="The warranty company reviews the findings before approving the work." />;
     case 'repairing':
-      return <PhaseStep job={job} title="Repair in progress" body={`Replacing: ${job.chosenDiagnosis ? faultById(job.chosenDiagnosis).name : ''}`} />;
+      return <PhaseStep job={job} title="Repair in progress" body={`Repairing: ${job.chosenDiagnosis ? faultById(job.chosenDiagnosis).name : ''}`} />;
     case 'installing':
       return <PhaseStep job={job} title="Installation in progress" body="Recovering refrigerant, setting the new condenser, brazing, pressure test, commissioning." />;
     default:
@@ -107,14 +110,17 @@ function JobStep({ job }: { job: Job }) {
 function LeadStep({ job }: { job: Job }) {
   const dispatch = useApp((s) => s.dispatch);
   const now = useGame((s) => absoluteMinutes(s.clock));
+  const mission = useGame((s) => isMissionJob(s, job.id));
   const remaining = Math.max(0, job.expiresAt - now);
   return (
     <Section title={job.kind === 'callback' ? 'Callback request' : 'Incoming service call'}>
       <div className="card">
         <div style={{ fontStyle: 'italic' }}>“{job.complaint}”</div>
-        <div className="muted" style={{ marginTop: 8, fontSize: 12.5 }}>
-          Lead expires in <b style={{ color: remaining < 60 ? 'var(--amber)' : undefined }}>{minutesLabel(remaining)}</b>
-        </div>
+        {!mission && (
+          <div className="muted" style={{ marginTop: 8, fontSize: 12.5 }}>
+            Lead expires in <b style={{ color: remaining < 60 ? 'var(--amber)' : undefined }}>{minutesLabel(remaining)}</b>
+          </div>
+        )}
       </div>
       <div className="grid2">
         <button className="btn primary" onClick={() => dispatch({ type: 'accept-lead', jobId: job.id })} data-testid="accept-lead">
@@ -324,7 +330,11 @@ function DiagnosisStep({ job }: { job: Job }) {
             );
           })}
         </div>
-        <button className="btn primary block" disabled={!choice} onClick={() => choice && dispatch({ type: 'choose-diagnosis', jobId: job.id, faultId: choice })} data-testid="confirm-diagnosis">
+        <button className="btn primary block" disabled={!choice} onClick={() => {
+          if (!choice) return;
+          // A refusal from an earlier try no longer applies once the right answer is in.
+          if (dispatch({ type: 'choose-diagnosis', jobId: job.id, faultId: choice }).ok) useApp.getState().clearError();
+        }} data-testid="confirm-diagnosis">
           Confirm diagnosis
         </button>
       </Section>
@@ -346,6 +356,8 @@ function QuoteStep({ job }: { job: Job }) {
   const tier = EQUIPMENT_TIERS.find((t) => t.id === tierId)!;
   const replaceSensible = useMemo(() => customer.equipment.ageYears >= fault.replacementAgeYears || customer.equipment.ageYears >= 14, [customer, fault]);
   const isWarranty = customer.channel === 'warranty';
+  const limit = job.authorization?.limit;
+  const overLimit = mode === 'repair' && limit !== undefined && price > limit;
   return (
     <Section title="Recommendation">
       <div className="card" style={{ fontSize: 13 }}>
@@ -376,6 +388,11 @@ function QuoteStep({ job }: { job: Job }) {
                 <span>{Math.round(priceAdjust * 100)}% of book price</span>
                 <span>Gross margin <Money value={margin} /> ({Math.round((margin / price) * 100)}%)</span>
               </div>
+              {limit !== undefined && (
+                <div style={{ fontSize: 12, color: overLimit ? 'var(--amber)' : 'var(--muted)' }} data-testid="quote-limit">
+                  {job.authorization!.approver} has approved up to <Money value={limit} />{overLimit ? '. Lower the price to stay within it.' : ', subject to review.'}
+                </div>
+              )}
             </>
           )}
           {isWarranty && <div className="muted" style={{ fontSize: 12 }}>{customer.warrantyCompany} pays 65% of book rate, net 35 days. Authorization required.</div>}
@@ -403,7 +420,7 @@ function QuoteStep({ job }: { job: Job }) {
       )}
       <button
         className="btn primary block"
-        disabled={mode === 'replace' && !replacement.ok}
+        disabled={(mode === 'replace' && !replacement.ok) || overLimit}
         onClick={() => dispatch({ type: 'submit-quote', jobId: job.id, quote: mode === 'repair' ? { recommendation: 'repair', priceAdjust } : { recommendation: 'replace', equipmentTierId: tierId, financed } })}
         data-testid="present-quote"
       >

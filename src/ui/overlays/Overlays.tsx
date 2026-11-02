@@ -111,6 +111,8 @@ export function TutorialHint() {
   const selection = useApp((s) => s.selection);
   const panel = useApp((s) => s.panel);
   const hint = useGame((s) => {
+    // Mission 01 has its own objective card.
+    if (s.mission?.status === 'active' || (s.mission?.status === 'completed' && !s.mission.acknowledged)) return null;
     const jobs = Object.values(s.jobs);
     const lead = jobs.find((j) => j.status === 'lead');
     const accepted = jobs.find((j) => j.status === 'accepted' && j.kind !== 'replacement');

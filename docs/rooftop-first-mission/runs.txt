@@ -1,0 +1,127 @@
+﻿# Regression runs, one worker, one spec at a time
+desktop-1080p|gameplay exit=0 secs=89 freeRamMB=5497
+desktop-1080p|graphics exit=0 secs=28 freeRamMB=5543
+desktop-1080p|rooftop-service exit=0 secs=131 freeRamMB=5578
+desktop-1080p|rooftop-persistence exit=0 secs=79 freeRamMB=5401
+iphone-portrait|mobile exit=0 secs=42 freeRamMB=5434
+# Mission spec, final fixes (2026-11-01 20:05) commit-base 37f1458
+phone-390x844|rooftop-mission exit=1 1 failed, 2 passed (1.8m) secs=111 freeRamMB=5338
+iphone-landscape|rooftop-mission exit=1 1 failed, 2 passed (1.3m) secs=81 freeRamMB=5269
+desktop-1080p|rooftop-mission exit=1 1 failed, 2 passed (3.0m) secs=182 freeRamMB=5348
+# Mission spec, safe-area band and kneeling sight line (2026-11-01 20:12) commit-base 37f1458
+phone-390x844|rooftop-mission exit=0 3 passed (4.6m) secs=276 freeRamMB=5095
+iphone-landscape|rooftop-mission exit=0 3 passed (1.7m) secs=101 freeRamMB=5131
+desktop-1080p|rooftop-mission exit=0 3 passed (4.6m) secs=278 freeRamMB=5196
+# Mission spec at 1x (2026-11-01 20:24) commit-base 37f1458
+iphone-landscape|rooftop-mission exit=0 3 passed (4.6m) secs=277 freeRamMB=5394
+desktop-1080p|rooftop-mission exit=0 3 passed (4.7m) secs=280 freeRamMB=5497
+phone-390x844|rooftop-mission exit=0 3 passed (4.6m) secs=278 freeRamMB=5522
+# Mission spec at 5x (2026-11-01 20:38) commit-base 37f1458
+iphone-landscape|rooftop-mission exit=0 3 passed (1.7m) secs=103 freeRamMB=5583
+desktop-1080p|rooftop-mission exit=0 3 passed (1.7m) secs=102 freeRamMB=5552
+phone-390x844|rooftop-mission exit=0 3 passed (1.6m) secs=98 freeRamMB=5524
+# Affected: phones at 5x, held ladder shot (2026-11-01 20:45) commit-base 37f1458
+phone-390x844|rooftop-mission exit=1 1 failed, 2 passed (1.0m) secs=64 freeRamMB=5561
+iphone-landscape|rooftop-mission exit=1 1 failed, 2 passed (1.0m) secs=63 freeRamMB=5548
+# Affected: landscape and portrait at 1x, panel clear of card (2026-11-01 20:47) commit-base 37f1458
+iphone-landscape|rooftop-mission exit=0 3 passed (4.6m) secs=276 freeRamMB=4717
+phone-390x844|rooftop-mission exit=0 3 passed (4.6m) secs=277 freeRamMB=4812
+# Mission at 5x, property shot on the ladder (2026-11-01 20:57) commit-base 37f1458
+phone-390x844|rooftop-mission exit=0 3 passed (1.7m) secs=101 freeRamMB=4703
+iphone-landscape|rooftop-mission exit=0 3 passed (1.7m) secs=101 freeRamMB=4756
+desktop-1080p|rooftop-mission exit=1 1 failed, 2 passed (53.1s) secs=54 freeRamMB=4863
+# Mission at 1x (2026-11-01 21:02) commit-base 37f1458
+iphone-landscape|rooftop-mission exit=0 3 passed (4.6m) secs=276 freeRamMB=4996
+phone-390x844|rooftop-mission exit=0 3 passed (4.6m) secs=277 freeRamMB=4823
+desktop-1080p|rooftop-mission exit=1 1 failed, 2 passed (54.4s) secs=55 freeRamMB=5615
+# Mission on desktop at 1x (2026-11-01 21:12) commit-base 37f1458
+desktop-1080p|rooftop-mission exit=0 3 passed (4.7m) secs=280 freeRamMB=6108
+# Mission on desktop at 5x (2026-11-01 21:17) commit-base 37f1458
+desktop-1080p|rooftop-mission exit=0 3 passed (1.7m) secs=104 freeRamMB=6118
+# Regression, desktop, final build (2026-11-01 21:19) commit-base 37f1458
+desktop-1080p|gameplay exit=0 1 passed (1.4m) secs=83 freeRamMB=6229
+desktop-1080p|graphics exit=0 1 passed (27.3s) secs=28 freeRamMB=6006
+desktop-1080p|rooftop-service exit=0 1 passed (2.2m) secs=132 freeRamMB=6059
+desktop-1080p|rooftop-persistence exit=0 1 passed (1.3m) secs=80 freeRamMB=6258
+desktop-1080p|rooftop-sites exit=0 1 passed (21.8s) secs=23 freeRamMB=6429
+desktop-1080p|rooftop-camera exit=0 1 passed (1.4m) secs=82 freeRamMB=6165
+desktop-1080p|banking exit=0 1 passed (16.6s) secs=17 freeRamMB=6171
+desktop-1080p|banking-layout exit=0 1 passed (12.0s) secs=13 freeRamMB=6384
+desktop-1080p|automation exit=0 1 passed (23.0s) secs=24 freeRamMB=6476
+desktop-1080p|supply exit=0 1 passed (25.1s) secs=26 freeRamMB=6225
+desktop-1080p|service-camera exit=0 1 passed (52.3s) secs=53 freeRamMB=6379
+desktop-1080p|service-camera-feedback exit=0 1 passed (41.2s) secs=42 freeRamMB=6304
+desktop-1080p|technician-load exit=0 1 passed (29.2s) secs=30 freeRamMB=6433
+desktop-1080p|technician-perf exit=0 1 passed (27.0s) secs=28 freeRamMB=6267
+desktop-1080p|technician-showcase exit=0 1 passed (47.0s) secs=48 freeRamMB=6285
+# Regression, phones, tablet, small screens, final build (2026-11-01 21:31) commit-base 37f1458
+iphone-portrait|mobile exit=0 1 passed (41.4s) secs=42 freeRamMB=6220
+iphone-landscape|mobile exit=0 1 passed (34.5s) secs=35 freeRamMB=6113
+android-portrait|mobile exit=0 1 passed (41.5s) secs=42 freeRamMB=6248
+android-landscape|mobile exit=0 1 passed (35.1s) secs=36 freeRamMB=6191
+tablet-portrait|mobile exit=0 1 passed (36.6s) secs=37 freeRamMB=6176
+iphone-portrait|banking-layout exit=0 1 passed (11.1s) secs=12 freeRamMB=6211
+phone-390x844|banking-layout exit=0 1 passed (11.8s) secs=13 freeRamMB=6089
+small-1024|banking-layout exit=0 1 passed (10.6s) secs=11 freeRamMB=6110
+phone-390x844|supply exit=0 1 passed (21.6s) secs=22 freeRamMB=6229
+iphone-landscape|supply exit=0 1 passed (21.4s) secs=22 freeRamMB=6201
+small-1024|supply exit=0 1 passed (21.1s) secs=22 freeRamMB=6235
+phone-390x844|automation exit=0 1 passed (20.7s) secs=21 freeRamMB=6046
+small-1024|automation exit=0 1 passed (20.4s) secs=21 freeRamMB=5997
+iphone-portrait|service-camera exit=0 1 passed (51.7s) secs=52 freeRamMB=6005
+iphone-landscape|service-camera exit=0 1 passed (51.6s) secs=52 freeRamMB=5943
+laptop-768p|service-camera exit=0 1 passed (51.4s) secs=52 freeRamMB=6171
+small-1024|service-camera exit=0 1 passed (51.1s) secs=52 freeRamMB=6092
+iphone-portrait|service-camera-feedback exit=0 1 passed (39.3s) secs=40 freeRamMB=6184
+iphone-landscape|service-camera-feedback exit=0 1 passed (41.6s) secs=42 freeRamMB=6092
+laptop-768p|service-camera-feedback exit=0 1 passed (39.3s) secs=40 freeRamMB=6177
+small-1024|service-camera-feedback exit=0 1 passed (39.4s) secs=40 freeRamMB=5811
+laptop-768p|graphics exit=0 1 passed (26.7s) secs=27 freeRamMB=5906
+small-1024|graphics exit=0 1 passed (27.3s) secs=28 freeRamMB=5967
+phone-390x844|rooftop-camera exit=0 1 passed (1.3m) secs=80 freeRamMB=6062
+iphone-landscape|rooftop-camera exit=0 1 passed (1.3m) secs=80 freeRamMB=6181
+phone-390x844|technician-showcase exit=0 1 passed (45.7s) secs=46 freeRamMB=5974
+desktop-1080p|rooftop-review exit=0 3 passed (5.1m) secs=308 freeRamMB=5872
+phone-390x844|rooftop-review exit=0 3 passed (5.1m) secs=308 freeRamMB=5970
+desktop-1080p|rooftop-video exit=0 2 passed (4.1m) secs=249 freeRamMB=6007
+# Final: mission at 1x, arrival shot (2026-11-01 22:05) commit-base 37f1458
+desktop-1080p|rooftop-mission exit=0 3 passed (4.7m) secs=280 freeRamMB=5812
+phone-390x844|rooftop-mission exit=0 3 passed (4.6m) secs=275 freeRamMB=6017
+iphone-landscape|rooftop-mission exit=0 3 passed (4.6m) secs=277 freeRamMB=6004
+# Final: mission at 5x, arrival shot (2026-11-01 22:18) commit-base 37f1458
+desktop-1080p|rooftop-mission exit=0 3 passed (1.7m) secs=104 freeRamMB=6108
+phone-390x844|rooftop-mission exit=1 1 failed, 2 passed (1.6m) secs=96 freeRamMB=6104
+iphone-landscape|rooftop-mission exit=0 3 passed (1.7m) secs=101 freeRamMB=6030
+# Final candidate: mission at 5x (2026-11-01 22:25) commit-base 37f1458
+phone-390x844|rooftop-mission exit=1 1 failed, 2 passed (1.1m) secs=67 freeRamMB=5998
+desktop-1080p|rooftop-mission exit=0 3 passed (1.7m) secs=104 freeRamMB=5919
+iphone-landscape|rooftop-mission exit=0 3 passed (1.7m) secs=101 freeRamMB=6002
+# Final candidate: mission at 1x (2026-11-01 22:29) commit-base 37f1458
+desktop-1080p|rooftop-mission exit=0 3 passed (4.6m) secs=277 freeRamMB=6368
+phone-390x844|rooftop-mission exit=0 3 passed (4.6m) secs=275 freeRamMB=6895
+iphone-landscape|rooftop-mission exit=0 3 passed (4.6m) secs=275 freeRamMB=6271
+# Final candidate: specs touching the service camera (2026-11-01 22:43) commit-base 37f1458
+desktop-1080p|rooftop-persistence exit=0 1 passed (1.3m) secs=79 freeRamMB=6429
+desktop-1080p|rooftop-service exit=0 1 passed (2.2m) secs=131 freeRamMB=6524
+desktop-1080p|rooftop-camera exit=0 1 passed (1.3m) secs=81 freeRamMB=6661
+phone-390x844|rooftop-camera exit=0 1 passed (1.3m) secs=79 freeRamMB=6811
+iphone-landscape|rooftop-camera exit=0 1 passed (1.3m) secs=79 freeRamMB=6805
+desktop-1080p|service-camera exit=0 1 passed (51.4s) secs=52 freeRamMB=6650
+iphone-portrait|service-camera exit=0 1 passed (51.4s) secs=52 freeRamMB=5836
+desktop-1080p|service-camera-feedback exit=0 1 passed (40.4s) secs=41 freeRamMB=5991
+desktop-1080p|gameplay exit=0 1 passed (1.4m) secs=82 freeRamMB=6177
+iphone-portrait|mobile exit=0 1 passed (40.0s) secs=41 freeRamMB=6233
+# FINAL mission at 5x (upright phone three times, it was intermittent) (2026-11-01 22:56) commit-base 37f1458
+phone-390x844|rooftop-mission exit=0 3 passed (1.6m) secs=99 freeRamMB=6202
+phone-390x844|rooftop-mission exit=0 3 passed (1.7m) secs=100 freeRamMB=6335
+phone-390x844|rooftop-mission exit=0 3 passed (1.6m) secs=99 freeRamMB=6351
+iphone-landscape|rooftop-mission exit=0 3 passed (1.6m) secs=99 freeRamMB=6365
+desktop-1080p|rooftop-mission exit=0 3 passed (1.7m) secs=101 freeRamMB=6439
+# FINAL mission at 1x (2026-11-01 23:04) commit-base 37f1458
+desktop-1080p|rooftop-mission exit=0 3 passed (4.6m) secs=276 freeRamMB=6309
+phone-390x844|rooftop-mission exit=0 3 passed (4.6m) secs=274 freeRamMB=6342
+iphone-landscape|rooftop-mission exit=0 3 passed (4.6m) secs=274 freeRamMB=6257
+# FINAL specs that use the service camera at 5x (2026-11-01 23:18) commit-base 37f1458
+desktop-1080p|rooftop-persistence exit=0 1 passed (1.3m) secs=79 freeRamMB=6343
+desktop-1080p|service-camera exit=0 1 passed (51.3s) secs=52 freeRamMB=6349
+iphone-portrait|mobile exit=0 1 passed (40.0s) secs=41 freeRamMB=6347

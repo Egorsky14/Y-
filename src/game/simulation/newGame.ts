@@ -13,14 +13,20 @@ import { nameSeed } from '../customers/names';
 import { WORKDAY_START } from './time';
 import { refreshUsedListings } from '../fleet/fleet';
 import { grantStarterKit } from '../equipment/inventory';
+import { startOpeningMission } from '../progression/mission';
 
 export interface NewGameOptions {
   seed?: number;
   companyName?: string;
   ownerName?: string;
   startingCash?: number;
-  /** Spawn the tutorial lead immediately (vertical slice default). */
+  /** Offer the first call immediately. */
   immediateLead?: boolean;
+  /**
+   * The first call: Mission 01 at Mesquite Plaza for every real campaign. 'residential-call' is a fixture for tests
+   * of the ordinary ground-level job (a direct call at lot c-n-4, no mission).
+   */
+  opening?: 'rooftop-rescue' | 'residential-call';
 }
 
 export const BALANCE = {
@@ -179,10 +185,11 @@ export function createNewGame(options: NewGameOptions = {}): GameState {
   roles.forEach((role, i) => state.candidates.push(generateCandidate(rng, role, 1, `cand-${i + 1}`)));
   refreshUsedListings(state);
 
-  // Today's remaining leads plus the tutorial lead.
+  // Today's remaining leads plus the first call.
   scheduleLeadsForDay(state, { minMinute: state.clock.minute + 45 });
   if (options.immediateLead !== false) {
-    spawnLead(state, { channel: 'direct', preferredLotId: 'c-n-4', faultId: 'run-capacitor' });
+    if (options.opening === 'residential-call') spawnLead(state, { channel: 'direct', preferredLotId: 'c-n-4', faultId: 'run-capacitor' });
+    else startOpeningMission(state);
   }
   // Add a few more to make the schedule interesting on day 1.
   state.leadSchedule.push({ day: 1, minute: state.clock.minute + nextInt(rng, 40, 90), channel: 'warranty' });
@@ -194,7 +201,7 @@ export function createNewGame(options: NewGameOptions = {}): GameState {
     minute: state.clock.minute,
     type: 'info',
     title: 'Welcome to EGO HVAC',
-    body: 'Most HVAC companies guess. We measure. Accept the first service call and dispatch Unit 1.',
+    body: state.mission ? 'Most HVAC companies guess. We measure. A rooftop call just came in from Mesquite Plaza.' : 'Most HVAC companies guess. We measure. Accept the first service call and dispatch Unit 1.',
   });
   return state;
 }

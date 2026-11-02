@@ -7,6 +7,7 @@ import { effectiveAccuracy, jobTools, readGain } from '../equipment/performance'
 import { pushEvent } from '../simulation/events';
 import { absoluteMinutes } from '../simulation/time';
 import { isRoofJob } from '../world/rooftops';
+import { isMissionJob } from '../progression/mission';
 
 /**
  * Automated Operations Center (HQ upgrade). Two independent settings:
@@ -174,7 +175,8 @@ export function runOperations(state: GameState): void {
     // A decision the owner made on the job resolves its attention item.
     const att = job.attention;
     if (att && !att.resolved && att.blocking && job.status !== att.waitStatus) att.resolved = { day: state.clock.day, minute: Math.floor(state.clock.minute) };
-    if (!on || job.kind === 'replacement') continue;
+    // Mission 01 is the player's to decide, even if they buy the Operations Center mid-call.
+    if (!on || job.kind === 'replacement' || isMissionJob(state, job.id)) continue;
     if (job.attention && !job.attention.resolved && job.attention.blocking) continue;
     if (job.status === 'awaiting-diagnosis' && a!.diagnostics) autoDiagnose(state, job);
     if (job.status === 'quoted' && a!.closing && job.chosenDiagnosis) autoQuote(state, job);

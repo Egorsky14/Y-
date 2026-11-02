@@ -1,0 +1,3 @@
+# Raw mission captures (about 170 MB) stay local: the labeled sheets in sheets/ carry them.
+# Regenerate with e2e/rooftop-mission.spec.ts (MISSION_PROGRESS.md).
+evidence/

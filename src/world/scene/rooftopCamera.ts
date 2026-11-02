@@ -157,7 +157,7 @@ function groundOrbit(view: ViewSpec) {
   return { target, azimuth: view.azimuth, elevation: Math.asin(cam.y / distance), distance };
 }
 
-export function rooftopServiceCamera(lot: Lot, plan: RoofPlan, mode: ServiceMode, aspect: number, safe: SafeArea = NO_SAFE_AREA, opts: { group: RoofStageGroup; tech: RooftopTech; ladder: LadderPose | null; keepAzimuth?: number }) {
+export function rooftopServiceCamera(lot: Lot, plan: RoofPlan, mode: ServiceMode, aspect: number, safe: SafeArea = NO_SAFE_AREA, opts: { group: RoofStageGroup; tech: RooftopTech; ladder: LadderPose | null; keepAzimuth?: number; holdSite?: boolean }) {
   const t0 = performance.now();
   const attempt = (m: ServiceMode, overhead = false) => {
     const subject = rooftopSubject(plan, m, opts.group, opts.tech, opts.ladder);
@@ -171,7 +171,8 @@ export function rooftopServiceCamera(lot: Lot, plan: RoofPlan, mode: ServiceMode
     return view ? { view, subject } : null;
   };
   // Detail away from the unit has no close work to show: it frames as Watch Work until he is at the unit.
-  const asked: ServiceMode = mode === 'detail' && opts.group !== 'roof' ? 'work' : mode;
+  // holdSite: the moves are over before a follow shot could land, so the wall, ladder, roof edge and van stay in one held view.
+  const asked: ServiceMode = opts.holdSite ? 'property' : mode === 'detail' && opts.group !== 'roof' ? 'work' : mode;
   const shot = attempt(asked) ?? (asked === 'detail' ? attempt('work') : null) ?? (asked !== 'property' ? (attempt('work', true) ?? attempt('property')) : null);
   if (!shot) return null;
   return {

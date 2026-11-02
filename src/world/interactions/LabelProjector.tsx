@@ -22,7 +22,7 @@ export function LabelProjector() {
       const x = (ndc.x * 0.5 + 0.5) * size.width;
       const y = (1 - (ndc.y * 0.5 + 0.5)) * size.height;
       const dist = camera.position.distanceTo(world);
-      const scale = THREE.MathUtils.clamp(anchor.referenceDistance / dist, 0.55, 1.15);
+      const scale = THREE.MathUtils.clamp(anchor.referenceDistance / dist, anchor.minScale ?? 0.55, 1.15);
       el.style.display = '';
       el.style.transform = `translate(-50%, -100%) translate(${x.toFixed(1)}px, ${y.toFixed(1)}px) scale(${scale.toFixed(3)})`;
     }

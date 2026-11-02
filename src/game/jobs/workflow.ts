@@ -21,6 +21,7 @@ import { lotById, workPosition } from '../world/cityLayout';
 import { raiseAttention } from '../operations/automation';
 import { diagMultiplier, effectiveAccuracy, jobTools, qualityStars, readGain, readTools, repairMultiplier, toolsOnSite, vehicleAtJob, workmanship } from '../equipment/performance';
 import { isRoofJob, roofAccess, roofSpec, servicedUnit } from '../world/rooftops';
+import { isMissionJob } from '../progression/mission';
 
 export type ActionResult = { ok: true } | { ok: false; reason: string };
 
@@ -236,6 +237,10 @@ export function chooseDiagnosis(state: GameState, jobId: string, faultId: string
   if (!job) return { ok: false, reason: 'Unknown job.' };
   if (job.status !== 'awaiting-diagnosis') return { ok: false, reason: 'No diagnosis is pending on this job.' };
   if (!job.diagnosisOptions.includes(faultId)) return { ok: false, reason: 'That diagnosis is not among the candidates.' };
+  // Mission 01 teaches the diagnosis: a wrong answer changes nothing and sends the player back to the readings.
+  if (isMissionJob(state, jobId) && faultId !== job.faultId) {
+    return { ok: false, reason: `Not quite: ${faultById(faultId).name.toLowerCase()} doesn't explain this unit. Compare the condenser coil with the high-side pressure, then try again.` };
+  }
   job.chosenDiagnosis = faultId;
   job.diagnosisCorrect = faultId === job.faultId;
   job.status = 'quoted';
@@ -285,6 +290,8 @@ export function submitQuote(state: GameState, jobId: string, req: QuoteRequest):
     job.log.push(`Recommended replacement: ${tier.name} at $${tier.price.toLocaleString()}${req.financed ? ' with financing' : ''}.`);
   } else {
     const price = Math.round(chosen.repairPrice * priceAdjust);
+    const auth = job.authorization;
+    if (auth && price > auth.limit) return { ok: false, reason: `${auth.approver} has approved up to $${auth.limit.toLocaleString()} for this repair. Lower the price to stay within it.` };
     job.financials.quoteAmount = price;
     job.log.push(`Quoted repair: ${chosen.name} for $${price.toLocaleString()}.`);
   }
@@ -294,6 +301,15 @@ export function submitQuote(state: GameState, jobId: string, req: QuoteRequest):
     job.phaseTotal = nextInt(state.rng, 25, 80);
     job.phaseRemaining = job.phaseTotal;
     job.log.push(`Waiting on ${customer.warrantyCompany} authorization (≈${job.phaseTotal} min).`);
+    return { ok: true };
+  }
+
+  // A customer with an approval process reviews the quote before any work starts.
+  if (job.authorization) {
+    job.status = 'awaiting-authorization';
+    job.phaseTotal = job.authorization.minutes;
+    job.phaseRemaining = job.phaseTotal;
+    job.log.push(`Quote sent to ${job.authorization.approver} for approval (≈${job.phaseTotal} min).`);
     return { ok: true };
   }
 
@@ -313,6 +329,11 @@ export function submitQuote(state: GameState, jobId: string, req: QuoteRequest):
 }
 
 function resolveAuthorization(state: GameState, job: Job): void {
+  // The quote was already checked against the approved limit when it was presented.
+  if (job.authorization) {
+    resolveApproval(state, job, true, job.authorization.approver);
+    return;
+  }
   const customer = state.customers[job.customerId];
   const approveChance = job.recommendation === 'replace' ? 0.4 : 0.86;
   const approved = chance(state.rng, approveChance);

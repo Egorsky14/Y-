@@ -1,8 +1,9 @@
 import { GameEngine } from '@/game/simulation/engine';
 import type { GameState, Job } from '@/game/simulation/types';
 
+/** A campaign whose first call is an ordinary residential job (no mission): the fixture for tests of the regular systems. */
 export function newEngine(seed = 42): GameEngine {
-  return GameEngine.newGame({ seed });
+  return GameEngine.newGame({ seed, opening: 'residential-call' });
 }
 
 export function firstLead(state: GameState): Job {

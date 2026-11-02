@@ -27,6 +27,9 @@
   instanced landscaping; rebuilt headquarters; articulated characters; clock and weather driven
   lighting; quality presets; regression at 1920×1080 and 1366×768. See `docs/graphics/`.
 
+### Mission 01: Rooftop Rescue (branch `feature/v3-rooftop-first-mission`) ✅
+- New campaigns open on a guided, real rooftop call at Mesquite Plaza. See `docs/rooftop-first-mission/MISSION_PROGRESS.md`.
+
 ## Pending
 
 ### Priority defect: tutorial diagnosis camera obstruction (P1, next local fix)

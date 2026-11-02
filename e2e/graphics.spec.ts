@@ -31,6 +31,12 @@ test('renders the premium world and drives the branded van with animated wheels'
   await page.getByTestId('seed-input').fill('42');
   await page.getByTestId('new-game').click();
   await expect(page.getByTestId('hud-cash')).toBeVisible();
+  // This suite follows the ordinary residential job: Mission 01 has its own (rooftop-mission.spec.ts).
+  await page.evaluate(() => {
+    const e = window.__ego!;
+    e.dispatch({ type: 'decline-lead', jobId: (e.getState() as S).mission.jobId });
+    e.spawnLead({ channel: 'direct', preferredLotId: 'c-n-4', faultId: 'run-capacitor' });
+  });
 
   // 1. WebGL rendering with real draw calls.
   const canvas = page.locator('canvas').first();

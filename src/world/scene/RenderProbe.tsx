@@ -8,8 +8,12 @@ declare global {
     __egoVehicles?: Record<string, { x: number; z: number; heading: number; wheelSpin: number; steer: number; roll: number; pitch: number }>;
     /** Live renderer, scene and camera for profiling tools. */
     __egoThree?: { gl: THREE.WebGLRenderer; scene: THREE.Scene; camera: THREE.Camera };
+    /** Where a world point is on the canvas, in CSS pixels (checks that a subject is really in view). */
+    __egoProject?: (x: number, y: number, z: number) => { x: number; y: number; inFront: boolean };
   }
 }
+
+const projected = new THREE.Vector3();
 
 /** Publishes renderer statistics and animation state for QA tooling. */
 export function RenderProbe() {
@@ -18,6 +22,11 @@ export function RenderProbe() {
   const camera = useThree((s) => s.camera);
   // Profiling handle: dev server, or a build made with VITE_PROFILE=1. Never in a normal production build.
   if (import.meta.env.DEV || import.meta.env.VITE_PROFILE === '1') window.__egoThree = { gl, scene, camera };
+  window.__egoProject = (x, y, z) => {
+    projected.set(x, y, z).project(camera);
+    const box = gl.domElement.getBoundingClientRect();
+    return { x: box.left + ((projected.x + 1) / 2) * box.width, y: box.top + ((1 - projected.y) / 2) * box.height, inFront: projected.z < 1 };
+  };
   let tick = 0;
   let drawn = 0;
   useFrame(() => {

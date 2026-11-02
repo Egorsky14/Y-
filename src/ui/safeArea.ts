@@ -15,15 +15,20 @@ export function measureSafeArea(canvas: HTMLElement | null): SafeArea {
   // The service camera bar sits under the HUD on phones (on desktop it is a small strip at the bottom centre).
   const bar = visibleRect(document.querySelector<HTMLElement>('.service-bar'));
   const barTop = bar && bar.top - c.top < c.height / 2 ? bar : null;
+  // Mission 01's objective card: shots keep their subject out from under it.
+  const missionCard = visibleRect(document.querySelector<HTMLElement>('.mission-card'));
   // The top HUD bar only matters with the panel or the camera bar up (the close-up and selected-job views).
-  if (!panel && !barTop) return none;
+  if (!panel && !barTop && !missionCard) return none;
   let top = 0;
   for (const el of document.querySelectorAll<HTMLElement>('.top-hud > *')) {
     const r = visibleRect(el);
     if (r) top = Math.max(top, (r.bottom - c.top) / c.height);
   }
   if (barTop) top = Math.max(top, (barTop.bottom - c.top) / c.height);
+  // Across the whole width (upright phones) the card is a band along the top: shots compose below it.
+  const cardBand = !!missionCard && missionCard.width > c.width * 0.7;
   top = Math.min(0.2, top);
+  if (cardBand) top = Math.min(0.26, Math.max(top, (missionCard.bottom - c.top) / c.height));
   // The bottom bars (action bar, world controls, a bottom camera bar) cover a strip along the bottom.
   let bottom = 0;
   for (const el of document.querySelectorAll<HTMLElement>('.action-bar, .world-controls, .service-bar')) {
@@ -36,6 +41,7 @@ export function measureSafeArea(canvas: HTMLElement | null): SafeArea {
   const avoid: [number, number, number, number][] = [];
   const rect = (r: DOMRect): [number, number, number, number] => [(r.left - c.left) / c.width, (r.top - c.top) / c.height, (r.right - c.left) / c.width, (r.bottom - c.top) / c.height];
   if (barTop) avoid.push(rect(barTop));
+  if (missionCard && !cardBand) avoid.push(rect(missionCard));
   if (!panel) return { right: 0, bottom, top, avoid };
   // A sheet spanning most of the width covers the bottom; otherwise it is a side panel.
   if (panel.width > c.width * 0.7) return { right: 0, bottom: clamp01(Math.max(bottom, (c.bottom - panel.top) / c.height)), top, avoid };

@@ -8,7 +8,7 @@ import type { Vec2 } from '../world/geometry';
 import type { RngState } from './rng';
 import type { GameClock } from './time';
 
-export const SAVE_SCHEMA_VERSION = 5;
+export const SAVE_SCHEMA_VERSION = 6;
 
 export type CustomerChannel = 'warranty' | 'direct';
 
@@ -142,6 +142,54 @@ export interface Job {
   auto?: { diagnosis?: boolean; estimate?: boolean };
   /** Owner Attention item, open or resolved (schema 4). */
   attention?: JobAttention;
+  /** The customer's written approval process for this job's repair quote (schema 6; absent on ordinary calls). */
+  authorization?: JobAuthorization;
+}
+
+/** A customer who reviews quotes against an approved limit, rather than deciding on the spot. */
+export interface JobAuthorization {
+  approver: string;
+  /** Highest repair quote they will approve. */
+  limit: number;
+  /** Game minutes the review takes. */
+  minutes: number;
+}
+
+/** The figures on the mission summary, read from the ledger and records when the job closed. */
+export interface MissionSummary {
+  /** All service revenue the job booked (diagnostic fee and repair). */
+  revenue: number;
+  diagnosticFee: number;
+  repairRevenue: number;
+  partsCost: number;
+  laborCost: number;
+  /** Revenue less parts and labor. */
+  netContribution: number;
+  faultName: string;
+  diagnosisCorrect: boolean;
+  reputationBefore: number;
+  reputationAfter: number;
+  trustBefore: number;
+  trustAfter: number;
+  reviewStars?: number;
+  technicianName: string;
+  xpGained: number;
+  levelBefore: number;
+  levelAfter: number;
+}
+
+/** The opening mission of a new campaign (schema 6). Older campaigns have none and never get one. */
+export interface OpeningMission {
+  id: 'rooftop-rescue';
+  jobId: string;
+  status: 'active' | 'completed' | 'skipped' | 'abandoned';
+  /** Readings taken before the job changed them, so the summary can show the real change. */
+  baseline: { reputation: number; trust: number; tech?: { xp: number; level: number } };
+  summary?: MissionSummary;
+  /** The player has read the summary and regular operations have begun. */
+  acknowledged?: boolean;
+  /** The game speed to return to when the summary closes. */
+  resumeSpeed?: 0 | 1 | 2 | 5;
 }
 
 export type EmployeeStatus = 'idle' | 'driving' | 'walking' | 'working' | 'training' | 'returning' | 'off-duty';
@@ -523,4 +571,6 @@ export interface GameState {
     distanceDriven: number;
   };
   campaignComplete: boolean;
+  /** Mission 01: Rooftop Rescue (schema 6; new campaigns only). */
+  mission?: OpeningMission;
 }

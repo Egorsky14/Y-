@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useApp } from './store';
+import { useApp, useGame } from './store';
 import { startGameLoop } from './gameLoop';
 import { GameScene } from '@/world/scene/GameScene';
 import { TopHud } from '@/ui/hud/TopHud';
@@ -23,6 +23,8 @@ import { MainMenu } from '@/ui/menus/MainMenu';
 import { CampaignSummary } from '@/ui/menus/CampaignSummary';
 import { WorldLabels } from '@/ui/overlays/WorldLabels';
 import { PhotoMode } from '@/ui/overlays/PhotoMode';
+import { MissionCoach } from '@/ui/overlays/MissionCoach';
+import { missionActive, missionStage } from '@/game/progression/mission';
 
 function useHotkeys() {
   useEffect(() => {
@@ -90,6 +92,8 @@ export function App() {
   const screen = useApp((s) => s.screen);
   const panel = useApp((s) => s.panel);
   const photo = useApp((s) => s.photo.on);
+  // Lets the stylesheet mark the one control each objective is waiting for, and clear the toasts out of its way.
+  const missionClass = useGame((s) => (missionActive(s) ? ` mission-on mission-s${missionStage(s)}` : s.mission?.status === 'completed' && !s.mission.acknowledged ? ' mission-summary-open' : '')) ?? '';
   useHotkeys();
   useEffect(() => startGameLoop(), []);
   // Mount the 3D world two frames after the loading screen has painted, so the screen is up
@@ -112,7 +116,7 @@ export function App() {
       {/* Desktop only: phones show static vehicle previews and never open a second WebGL context. */}
       {!deviceProfile().touch && <PreviewWarmup />}
       <AdaptiveQuality />
-      <div className={`app-ui ${photo ? 'photo' : ''}`}>
+      <div className={`app-ui ${photo ? 'photo' : ''}${missionClass}`}>
         {photo ? (
           <PhotoMode />
         ) : (
@@ -125,6 +129,7 @@ export function App() {
         <WorldControls />
         <ServiceCameraBar />
         <TutorialHint />
+        <MissionCoach />
         {panel === 'jobs' && <JobsPanel />}
         {panel === 'employees' && <EmployeesPanel />}
         {panel === 'fleet' && <FleetPanel />}

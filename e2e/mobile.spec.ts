@@ -73,6 +73,13 @@ test('mobile: a complete job by touch, touch camera, save and continue', async (
   expect(['low', 'medium']).toContain(quality);
   await expect(page.getByTestId('touch-tutorial')).toBeVisible();
   await page.getByTestId('touch-tutorial-ok').tap();
+  // This suite plays the ordinary residential job: Mission 01 has its own (rooftop-mission.spec.ts).
+  await page.evaluate(() => {
+    const e = window.__ego!;
+    e.dispatch({ type: 'decline-lead', jobId: (e.getState() as S).mission.jobId });
+    e.spawnLead({ channel: 'direct', preferredLotId: 'c-n-4', faultId: 'run-capacitor' });
+    e.app.getState().camera({ type: 'reset' });
+  });
   await page.getByTestId('speed-controls').locator('button').first().tap(); // pause
   await auditLayout(page, 'game HUD');
 

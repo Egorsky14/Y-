@@ -82,6 +82,13 @@ test('full gameplay loop: dispatch, diagnose, repair, grow, train, save and relo
   await expect(page.locator('canvas').first()).toBeVisible();
   const startCash: number = await state(page, (s) => s.finance.cash);
   expect(startCash).toBe(25000);
+  // This suite covers the ordinary residential job: Mission 01 has its own (rooftop-mission.spec.ts).
+  await page.evaluate(() => {
+    const e = window.__ego!;
+    e.dispatch({ type: 'decline-lead', jobId: (e.getState() as S).mission.jobId });
+    e.spawnLead({ channel: 'direct', preferredLotId: 'c-n-4', faultId: 'run-capacitor' });
+    e.app.getState().camera({ type: 'reset' });
+  });
   await page.waitForTimeout(2000);
   await page.screenshot({ path: SHOT('01-overview') });
 

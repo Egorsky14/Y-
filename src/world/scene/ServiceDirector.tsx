@@ -16,6 +16,12 @@ import { roofStageGroup, rooftopServiceCamera, type RoofStageGroup } from './roo
 const ROOF_FOLLOW_STEP = 3;
 const ROOF_LADDER_FOLLOW_STEP = 1.4;
 const ROOF_FOLLOW_MIN_INTERVAL = 1200;
+/** How far ahead of the technician (m, up or down the ladder) a followed ladder shot aims. */
+const ROOF_LADDER_LOOK_AHEAD = 1.1;
+/** Rooftop follow moves run this much quicker at the top game speed; at 1× and 2× they are unchanged. */
+const roofFollowPace = (speed: number) => (speed >= 5 ? 0.4 : 1);
+/** At top speed the way up, the ladder and the whole pack-up pass faster than a camera move: the service camera holds the site view for them. */
+const holdsSite = (speed: number, group: RoofStageGroup, status: JobStatus) => speed >= 5 && (group === 'ladder' || status === 'arriving' || status === 'completed');
 
 /**
  * The service camera's director. While the player uses the service camera at a job (Property,
@@ -144,11 +150,18 @@ export function ServiceDirector() {
     const offset = camera.position.clone().sub(controls.target);
     // Before he steps out (or once back in the van) the van stands in for him; the property view frames the site.
     const stand = tech?.visible ? tech : { pos: new THREE.Vector3(plan.van.x, 0, plan.van.z), heading: plan.van.heading, group: 'ground' as RoofStageGroup, ladder: tech?.ladder ?? null };
-    const shot = rooftopServiceCamera(lot, plan, v.mode, aspect, safe, { group: stand.group, tech: { pos: stand.pos, heading: stand.heading }, ladder: stand.ladder, keepAzimuth: follow ? Math.atan2(offset.x, offset.z) : undefined });
+    // On the ladder the view aims a little ahead of him in the direction he is moving: the next follow move is still
+    // to come, and a tall upright screen has little room above his head.
+    const last = framed.current?.roof;
+    const climbed = stand.group === 'ladder' && last?.group === 'ladder' ? stand.pos.y - last.at3.y : 0;
+    const aimAt = climbed === 0 ? stand.pos : stand.pos.clone().setY(Math.max(0, stand.pos.y + Math.sign(climbed) * ROOF_LADDER_LOOK_AHEAD));
+    const shot = rooftopServiceCamera(lot, plan, v.mode, aspect, safe, { group: stand.group, tech: { pos: aimAt, heading: stand.heading }, ladder: stand.ladder, keepAzimuth: follow ? Math.atan2(offset.x, offset.z) : undefined, holdSite: holdsSite(state.speed, stand.group, job.status) });
     if (!shot) return;
     let command: Omit<CameraCommand, 'id'> = shot.command;
-    if (reason === 'follow') command = { ...command, duration: 1.6 };
-    else if (reason === 'stage') command = { ...command, duration: 1.8 };
+    // At high game speed a whole climb can take less time than one slow glide: the camera keeps up with him.
+    const pace = roofFollowPace(state.speed);
+    if (reason === 'follow') command = { ...command, duration: 1.6 * pace };
+    else if (reason === 'stage') command = { ...command, duration: 1.8 * pace };
     useApp.getState().camera(command);
     const phase = phaseOf(job.status);
     framed.current = { rev: v.rev, phase, safe, tech: { x: stand.pos.x, z: stand.pos.z }, walking: false, at: performance.now(), misses: 0, walk: null, roof: { group: stand.group, at3: stand.pos.clone() } };
@@ -265,7 +278,9 @@ export function ServiceDirector() {
       if (phase !== f.phase) return frameRoof(v, 'phase');
       if (layoutChanged(measureSafeArea(mainCanvas()), f.safe)) return frameRoof(v, 'layout');
       if (v.mode === 'property' || !rt?.visible || cameraMotion.flying) return;
-      if (group !== 'roof' && rt.pos.distanceTo(f.roof.at3) > (group === 'ladder' ? ROOF_LADDER_FOLLOW_STEP : ROOF_FOLLOW_STEP) && performance.now() - f.at > ROOF_FOLLOW_MIN_INTERVAL) frameRoof(v, 'follow', true);
+      // A held site view has nothing to follow.
+      if (holdsSite(state!.speed, group, job.status)) return;
+      if (group !== 'roof' && rt.pos.distanceTo(f.roof.at3) > (group === 'ladder' ? ROOF_LADDER_FOLLOW_STEP : ROOF_FOLLOW_STEP) && performance.now() - f.at > ROOF_FOLLOW_MIN_INTERVAL * roofFollowPace(state!.speed)) frameRoof(v, 'follow', true);
       return;
     }
     const tech = techOf(v);

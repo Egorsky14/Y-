@@ -264,6 +264,81 @@ h4 { font-size: 13px; color: var(--muted); text-transform: uppercase; letter-spa
 .hint { position: absolute; left: 50%; bottom: 84px; transform: translateX(-50%); max-width: 520px; padding: 10px 16px; border-radius: 12px; display: flex; align-items: center; gap: 12px; font-size: 13px; }
 .hint .k { width: 26px; height: 26px; border-radius: 8px; background: var(--teal-soft); color: var(--teal); display: grid; place-items: center; font-weight: 900; flex: none; }
 
+/* ---------- Mission 01 ---------- */
+.app-ui.mission-on .toasts, .app-ui.mission-summary-open .toasts { display: none; }
+.mission-card { position: absolute; left: 14px; top: 86px; width: 340px; padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; z-index: 3; border-color: rgba(25, 211, 197, 0.35); animation: toast-in 0.3s ease-out; }
+.mission-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 20px; }
+.mission-head .close { width: 28px; height: 28px; margin: -4px -6px -4px 0; }
+.mission-eyebrow { color: var(--teal); font-size: 11px; font-weight: 800; letter-spacing: 0.09em; text-transform: uppercase; }
+.mission-progress { display: grid; grid-template-columns: repeat(8, 1fr); gap: 3px; }
+.mission-progress i { height: 4px; border-radius: 999px; background: var(--panel-3); }
+.mission-progress i.done { background: var(--teal-dark); }
+.mission-progress i.now { background: var(--teal); box-shadow: 0 0 8px rgba(25, 211, 197, 0.7); }
+.mission-title { display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 800; line-height: 1.2; }
+.mission-num { flex: none; width: 22px; height: 22px; display: grid; place-items: center; border-radius: 7px; background: var(--teal-soft); color: var(--teal); font-size: 12px; font-weight: 900; }
+.mission-body { color: #d6dde5; font-size: 13px; line-height: 1.4; }
+.mission-actions { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.mission-skip { margin-left: auto; padding: 4px 2px; color: var(--muted); font-size: 12px; font-weight: 600; text-decoration: underline; text-underline-offset: 2px; }
+.mission-skip:hover { color: var(--text); }
+@keyframes mission-pulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(25, 211, 197, 0.55); } 50% { box-shadow: 0 0 0 7px rgba(25, 211, 197, 0); } }
+.app-ui.mission-on [data-testid="mission-open-call"],
+.app-ui.mission-s1 [data-testid="accept-lead"],
+.app-ui.mission-s2 [data-testid="dispatch-go"],
+.app-ui.mission-s5 [data-testid="confirm-diagnosis"]:not(:disabled),
+.app-ui.mission-s6 [data-testid="present-quote"]:not(:disabled) { animation: mission-pulse 1.5s ease-out infinite; }
+.job-pin.mission { padding-inline: 14px; border-color: var(--teal); box-shadow: 0 0 0 3px rgba(25, 211, 197, 0.28), 0 8px 26px rgba(0, 0, 0, 0.5); }
+.world-label.mission-van { border: 1px solid var(--teal); color: var(--teal); }
+.mission-step { color: #d6dde5; font-size: 12px; line-height: 1.25; }
+.mission-figures { display: flex; flex-direction: column; gap: 10px; }
+/* margin:auto rather than centring the grid: a card taller than a short screen must still scroll to its top. */
+.mission-summary-wrap { position: absolute; inset: 0; z-index: 7; display: grid; padding: max(12px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left)); overflow-y: auto; background: rgba(4, 8, 12, 0.34); animation: fade-in 0.25s ease-out; }
+@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+.mission-summary { margin: auto; width: min(430px, 100%); padding: 18px 20px; display: flex; flex-direction: column; gap: 10px; border-color: rgba(25, 211, 197, 0.4); }
+.mission-summary p { margin: 0; line-height: 1.4; }
+.mission-rows { display: flex; flex-direction: column; gap: 5px; padding: 10px 12px; border-radius: 12px; background: var(--panel-2); border: 1px solid var(--border); font-size: 13px; }
+.mission-row { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; color: var(--muted); }
+.mission-row b { color: var(--text); font-variant-numeric: tabular-nums; }
+.mission-row.strong { color: var(--text); font-weight: 700; padding-top: 4px; border-top: 1px solid var(--border); }
+.mission-row.strong b { color: var(--teal); font-size: 14.5px; }
+@media (max-width: 900px), (max-height: 560px) {
+  .mission-card { top: calc(max(8px, env(safe-area-inset-top)) + 58px); left: max(8px, env(safe-area-inset-left)); width: min(320px, 44vw); padding: 8px 10px; gap: 5px; }
+  .mission-card.with-bar { top: calc(max(8px, env(safe-area-inset-top)) + 104px); }
+  /* Folded: one thin line of progress and what is happening, so the shot has the screen. */
+  .mission-card.minimized { padding: 6px 10px; gap: 3px; }
+  .mission-card.minimized .mission-head { position: absolute; top: 2px; right: 2px; min-height: 0; }
+  .mission-card.minimized .mission-eyebrow { display: none; }
+  .mission-card.minimized .mission-head .close { width: 36px; height: 36px; margin: 0; }
+  .mission-card.minimized .mission-progress { margin-right: 36px; }
+  .mission-card.minimized .mission-title { font-size: 12.5px; gap: 6px; margin-right: 36px; }
+  .mission-card.minimized .mission-num { width: 18px; height: 18px; font-size: 11px; border-radius: 5px; }
+  .error-banner { width: max-content; }
+  .mission-title { font-size: 13.5px; }
+  .mission-body { font-size: 12px; line-height: 1.32; }
+  .mission-skip { min-height: 32px; }
+  .mission-actions .btn.small { min-height: 36px; }
+  .mission-summary { padding: 12px 14px; gap: 7px; }
+  .mission-rows { padding: 7px 10px; gap: 3px; font-size: 12.5px; }
+}
+@media (max-width: 600px) and (orientation: portrait) {
+  .mission-card { left: 8px; right: 8px; width: auto; }
+  /* Milestones appear under the card instead of over the objective. */
+  .app-ui.mission-on .celebration, .app-ui.mission-on:has(.service-bar) .celebration { top: calc(max(8px, env(safe-area-inset-top)) + 180px); }
+}
+/* Landscape phones: the two sets of figures side by side, so the button is on screen without scrolling. */
+@media (max-height: 560px) {
+  /* The card takes the top right, under the clock, so it and the camera bar on the left leave the middle free. */
+  .mission-card { left: auto; right: max(8px, env(safe-area-inset-right)); width: min(300px, 38vw); }
+  .mission-card.with-bar { top: calc(max(8px, env(safe-area-inset-top)) + 58px); }
+  .app-ui.mission-on .service-bar { left: max(8px, env(safe-area-inset-left)); transform: none; }
+  /* With the side panel open for a decision, that corner is taken and the camera bar moves to the bottom: the card goes top left. */
+  .app-ui:has(.inspector) .mission-card, .app-ui:has(.inspector) .mission-card.with-bar { top: calc(max(8px, env(safe-area-inset-top)) + 58px); left: max(8px, env(safe-area-inset-left)); right: auto; width: min(320px, 44vw); }
+  .mission-summary { width: min(640px, 100%); gap: 6px; }
+  .mission-summary h2 { font-size: 17px; }
+  .mission-summary > p:not(.mission-next) { display: none; }
+  .mission-next { display: none; }
+  .mission-figures { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+}
+
 /* ---------- World labels (projected DOM) ---------- */
 .world-labels { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
 .world-labels > * { position: absolute; left: 0; top: 0; pointer-events: auto; transform-origin: 50% 100%; will-change: transform; }
