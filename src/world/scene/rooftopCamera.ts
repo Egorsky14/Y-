@@ -157,6 +157,16 @@ function groundOrbit(view: ViewSpec) {
   return { target, azimuth: view.azimuth, elevation: Math.asin(cam.y / distance), distance };
 }
 
+/** The serviced cabinet's box, which zooming in stops short of. */
+function servicedCabinet(plan: RoofPlan) {
+  const u = plan.unit;
+  const deck = plan.spec.deckY + 0.06;
+  const alongX = Math.abs(Math.sin(u.yaw)) > 0.5;
+  const hx = (alongX ? u.size.length : u.size.width) / 2;
+  const hz = (alongX ? u.size.width : u.size.length) / 2;
+  return { min: { x: u.center.x - hx, y: deck, z: u.center.z - hz }, max: { x: u.center.x + hx, y: deck + u.size.height, z: u.center.z + hz } };
+}
+
 export function rooftopServiceCamera(lot: Lot, plan: RoofPlan, mode: ServiceMode, aspect: number, safe: SafeArea = NO_SAFE_AREA, opts: { group: RoofStageGroup; tech: RooftopTech; ladder: LadderPose | null; keepAzimuth?: number; holdSite?: boolean }) {
   const t0 = performance.now();
   const attempt = (m: ServiceMode, overhead = false) => {
@@ -182,7 +192,7 @@ export function rooftopServiceCamera(lot: Lot, plan: RoofPlan, mode: ServiceMode
       targetY: 0,
       orbit: true,
       service: true,
-      watch: { lotIds: lot.kind === 'house' ? [lot.id] : [lot.id], points: shot.subject.key },
+      watch: { lotIds: lot.kind === 'house' ? [lot.id] : [lot.id], points: shot.subject.key, cabinet: servicedCabinet(plan) },
     },
     report: shot.view.report,
     mode: shot.view.report.mode,

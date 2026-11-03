@@ -1,10 +1,10 @@
 # Graphics Revolution 3.0: Mission Progress
 
-Branch `feature/v3-graphics-revolution-3`, from `f463050` (Mission 01). Local only: nothing pushed, merged or deployed.
+Branch `feature/v3-graphics-revolution-3`, from `f463050` (Mission 01). Pushed once, to a Preview at `f6d635d` (`dpl_ASNkMvm97XqSKNWhmcBHNc4Tv4kE`). Nothing merged; production untouched. Later commits are local only.
 
-## Status: READY FOR VERCEL PREVIEW
+## Status: READY FOR VERCEL PREVIEW (camera zoom repair committed locally; the live Preview is still `f6d635d`)
 
-Awaiting the owner's authorization to push. Results, numbers and open items: `REPORT.md`. Pictures: `sheets/`.
+Awaiting the owner's authorization to push the camera zoom repair. Results, numbers and open items: `REPORT.md`, `ZOOM_FIX.md`. Pictures: `sheets/`.
 
 ## Completed
 
@@ -13,6 +13,7 @@ Awaiting the owner's authorization to push. Results, numbers and open items: `RE
 - Ladder hand contact, sidewalk height, cap, hair: `58a6297`, `0e77535`.
 - Paused stride, palm on tall cabinets, before and after sheets: `ed87bd4`.
 - Benchmarks: desktop (three runs each), phone CPU emulation, ten technicians, two rooftop jobs, plus a 60 Hz run.
+- Camera zoom repair: wheel, pinch and buttons in every mode, kept through reframes (`ZOOM_FIX.md`).
 - Regression on desktop, laptop, small screen, phones, tablet and landscape (all Chromium emulation).
 
 ## Evidence

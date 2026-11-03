@@ -11,6 +11,7 @@ import { curbDoor, followFailure, serviceViewCamera, siteFor, WALK_AHEAD, type S
 import { isRoofJob, roofSpec } from '@/game/world/rooftops';
 import { ladderVisuals, roofPlanFor } from './rooftopChoreo';
 import { roofStageGroup, rooftopServiceCamera, type RoofStageGroup } from './rooftopCamera';
+import { resetServiceZoom, serviceZoom, ZOOMED_IN, zoomedCommand, zoomLimits, zoomSubject } from './serviceZoom';
 
 /** Rooftop calls: follow the technician once he has moved this far on the ground (m), and up the ladder (the ladder shot frames the rungs round him). */
 const ROOF_FOLLOW_STEP = 3;
@@ -35,10 +36,11 @@ const holdsSite = (speed: number, group: RoofStageGroup, status: JobStatus) => s
  * While he walks up (or is still stepping out of the van) the shot frames him and the unit, and
  * CameraRig slides the view after him every frame (CameraCommand.track) on the same heading; the
  * director only checks every FOLLOW_STEP that the followed view still sees him, and re-aims if not.
- * It never reframes while the player drags, and holds off for HANDS_OFF ms after any drag, zoom or
- * key; panning away from the site (CameraRig) or any other camera command ends the service view,
- * after which nothing is forced again. The composition search runs only at these moments (a few
- * milliseconds each), never per frame.
+ * It never reframes while the player drags, and holds off for HANDS_OFF ms after any drag or key;
+ * panning away from the site (CameraRig) or any other camera command ends the service view, after
+ * which nothing is forced again. The composition search runs only at these moments (a few
+ * milliseconds each), never per frame. A zoom is not a reason to hold off: each shot carries the
+ * player's zoom (serviceZoom.ts), so the director goes on framing at the distance they chose.
  */
 
 const CHECK_INTERVAL = 0.25;
@@ -135,6 +137,13 @@ export function ServiceDirector() {
     return { pos, heading: o.rotation.y, group: roofStageGroup(stage), ladder: ladderVisuals.get(job.vehicleId) ?? null, visible: o.visible };
   }
 
+  /** Whether the point at his chest is outside the view. */
+  function offScreen(pos: THREE.Vector3): boolean {
+    camera.updateMatrixWorld();
+    const s = pos.clone().setY(pos.y + 1.2).project(camera);
+    return s.z < -1 || s.z > 1 || Math.abs(s.x) > 1 || Math.abs(s.y) > 1;
+  }
+
   function frameRoof(v: ServiceView, reason: string, follow = false) {
     const state = getGameState()!;
     const job = state.jobs[v.jobId];
@@ -162,6 +171,8 @@ export function ServiceDirector() {
     const pace = roofFollowPace(state.speed);
     if (reason === 'follow') command = { ...command, duration: 1.6 * pace };
     else if (reason === 'stage') command = { ...command, duration: 1.8 * pace };
+    const stage = job.technicianId ? window.__egoWorkerStage?.[job.technicianId] : undefined;
+    command = zoomedCommand(command, zoomSubject(stand.pos, stage), serviceZoom.factor, zoomLimits(v.mode, stage));
     useApp.getState().camera(command);
     const phase = phaseOf(job.status);
     framed.current = { rev: v.rev, phase, safe, tech: { x: stand.pos.x, z: stand.pos.z }, walking: false, at: performance.now(), misses: 0, walk: null, roof: { group: stand.group, at3: stand.pos.clone() } };
@@ -204,7 +215,7 @@ export function ServiceDirector() {
       // rather than jumping to the unit's fixed close-up (where he is not).
       if (!shot.report) {
         const dist = offset.length();
-        command = { type: 'focus', target: { x: controls.target.x, z: controls.target.z }, targetY: 0, distance: dist, azimuth: Math.atan2(offset.x, offset.z), elevation: Math.asin(offset.y / Math.max(dist, 1e-6)), orbit: true, service: true, watch: 'watch' in shot.command ? shot.command.watch : undefined };
+        command = { type: 'focus', target: { x: controls.target.x, z: controls.target.z }, targetY: controls.target.y, distance: dist, azimuth: Math.atan2(offset.x, offset.z), elevation: Math.asin(offset.y / Math.max(dist, 1e-6)), orbit: true, service: true, watch: 'watch' in shot.command ? shot.command.watch : undefined };
       }
       const plan = 'plan' in shot ? shot.plan : null;
       if (plan) command = { ...command, track: { object: tech!.object, plan } };
@@ -212,6 +223,13 @@ export function ServiceDirector() {
     // Re-aiming a followed view mid-walk and settling into the work shot on arrival glide more slowly than a mode change.
     if (reason === 'follow') command = { ...command, duration: 2.5 };
     else if (reason === 'arrived') command = { ...command, duration: 1.6 };
+    // The player's zoom stays on the shot. A followed walk takes it from CameraRig; the fallback above is the view they already have.
+    if (!(walking && mode !== 'property' && !shot.report)) {
+      const techId = job.technicianId;
+      const stage = techId ? window.__egoWorkerStage?.[techId] : undefined;
+      const at = tech?.pos ?? { x: command.target?.x ?? lot.center.x, z: command.target?.z ?? lot.center.z };
+      command = zoomedCommand(command, zoomSubject({ x: at.x, y: 0, z: at.z }, stage), serviceZoom.factor, zoomLimits(v.mode, stage));
+    }
     useApp.getState().camera(command);
     const holdsFrom = 'holdsFrom' in shot ? shot.holdsFrom : 0;
     framed.current = { rev: v.rev, phase, safe, tech: tech?.pos ?? null, walking, at: performance.now(), misses: 0, walk: walking ? { from: tech!.pos, spot, holdsFrom } : null };
@@ -240,6 +258,7 @@ export function ServiceDirector() {
   useEffect(() => {
     if (!view) {
       framed.current = null;
+      resetServiceZoom();
       return;
     }
     let raf = requestAnimationFrame(() => (raf = requestAnimationFrame(() => {
@@ -280,6 +299,12 @@ export function ServiceDirector() {
       if (v.mode === 'property' || !rt?.visible || cameraMotion.flying) return;
       // A held site view has nothing to follow.
       if (holdsSite(state!.speed, group, job.status)) return;
+      // Zoomed in tight, CameraRig slides the view along with him and a stepped follow move would lose him. It can only keep
+      // him where he is on screen, though: if he is not on it, this brings him back, at the player's distance.
+      if (serviceZoom.factor < ZOOMED_IN) {
+        if (offScreen(rt.pos) && performance.now() - f.at > ROOF_FOLLOW_MIN_INTERVAL * roofFollowPace(state!.speed)) frameRoof(v, 'follow', true);
+        return;
+      }
       if (group !== 'roof' && rt.pos.distanceTo(f.roof.at3) > (group === 'ladder' ? ROOF_LADDER_FOLLOW_STEP : ROOF_FOLLOW_STEP) && performance.now() - f.at > ROOF_FOLLOW_MIN_INTERVAL * roofFollowPace(state!.speed)) frameRoof(v, 'follow', true);
       return;
     }
@@ -296,6 +321,7 @@ export function ServiceDirector() {
     // He has reached the unit: the full Watch Work or Detail shot (on the player's heading if they turned the view meanwhile).
     if (f.walking && tech && !walking) return frame(v, 'arrived', cameraInput.lastInput > f.at);
     if (!walking || !tech || cameraMotion.flying) return;
+    if (serviceZoom.factor < ZOOMED_IN) return;
     if (f.tech && Math.hypot(tech.pos.x - f.tech.x, tech.pos.z - f.tech.z) < FOLLOW_STEP) return;
     f.tech = tech.pos;
     // Re-aim only once he has been out of the view for two checks running: a head passing behind a trunk for a moment

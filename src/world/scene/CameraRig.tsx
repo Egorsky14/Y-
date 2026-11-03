@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import * as THREE from 'three';
 import { useFrame, useThree } from '@react-three/fiber';
 import { MapControls } from '@react-three/drei';
@@ -9,6 +9,7 @@ import { occluderKind, solveClearView, verticalFovFor, viewOffsetFor, visibility
 import { occludersOf, walkFocus, walkPose, type WalkPlan } from './serviceCall';
 import { obstaclesNear } from './cameraObstacles';
 import { measureSafeArea } from '@/ui/safeArea';
+import { requestZoom, scaleView, serviceZoom, wheelRatio, ZOOMED_IN, zoomLimits, zoomSubject } from './serviceZoom';
 
 export const DEFAULT_TARGET = new THREE.Vector3(22, 0, 14);
 export const DEFAULT_OFFSET = new THREE.Vector3(-74, 54, 92);
@@ -76,6 +77,16 @@ interface Track {
   last: THREE.Vector3 | null;
 }
 
+/** After a drag or key the director holds off this long (ServiceDirector HANDS_OFF); the view slides along with him meanwhile. */
+const HANDS_ON = 8000;
+/** Closer than this to him (m) the near clipping plane comes in with the camera; back out past FAR_ENOUGH it returns, for depth precision across the city. */
+const CLOSE_VIEW = 3.2;
+const FAR_ENOUGH = 4;
+const CLOSE_NEAR = 0.25;
+const FAR_NEAR = 1;
+/** Larger steps than this in a frame are a cut (back in the van, a loaded game), not him moving. */
+const FOLLOW_JUMP = 3;
+
 /** How quickly the followed view catches up with the plan (1/s): at walking pace it trails by ~0.3 m, and never jerks. */
 const TRACK_RATE = 3.5;
 
@@ -133,8 +144,12 @@ export function CameraRig() {
   const followLast = useRef<THREE.Vector3 | null>(null);
   const watch = useRef<Watch | null>(null);
   const track = useRef<Track | null>(null);
-  // The last frame's distance to the orbit target and whether the work was on screen there (zooming in then heads for it).
-  const zoomed = useRef<{ distance: number; seen: boolean } | null>(null);
+  // The view as this frame left it. A pinch moves the camera between frames, through the controls' own touch handlers.
+  const lastView = useRef<{ pos: THREE.Vector3; target: THREE.Vector3 } | null>(null);
+  // Whether he was on screen last frame: a zoom then goes about him, otherwise about the orbit target.
+  const subjectSeen = useRef(false);
+  // Where he was last frame, for sliding the view along with him.
+  const followLastTech = useRef<THREE.Vector3 | null>(null);
   const interacting = useRef(false);
   const gl = useThree((s) => s.gl);
   const scene = useThree((s) => s.scene);
@@ -158,6 +173,25 @@ export function CameraRig() {
       window.removeEventListener('keyup', up);
       window.removeEventListener('blur', blur);
     };
+  }, []);
+
+  // The wheel, trackpad included: taken here so it goes by how far they scrolled and eases in, and because a zoom is not
+  // a drag (it must not stop a flight, a followed truck or the director). Photo Mode keeps the controls' own wheel.
+  useEffect(() => {
+    window.__egoServiceZoom = serviceZoom;
+    const onWheel = (e: WheelEvent) => {
+      if (useApp.getState().photo.on) return;
+      const el = e.target as Element | null;
+      // Over the world or a label floating on it; panels scroll themselves.
+      if (!el?.closest?.('.app-world, .world-labels')) return;
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      requestZoom(wheelRatio(e));
+      if (flight.current && !useApp.getState().serviceView) flight.current = null;
+      if (watch.current) watch.current.checkAt = performance.now() + 450;
+    };
+    window.addEventListener('wheel', onWheel, { capture: true, passive: false });
+    return () => window.removeEventListener('wheel', onWheel, { capture: true });
   }, []);
 
   useEffect(() => {
@@ -217,11 +251,33 @@ export function CameraRig() {
     flight.current = { fromTarget, toTarget, fromPos, toPos, t: 0, duration: 0.9 };
   }, [command, camera]);
 
+  // Stable on purpose. drei's MapControls disconnects and reconnects when these props change, and this component renders
+  // about ten times a second while the game runs. Each reconnect dropped the controls' move and release listeners but
+  // kept their list of pointers down: a held finger was never released, and every later gesture was ignored for good.
+  const onControlsStart = useCallback(() => {
+    interacting.current = true;
+    cameraInput.dragging = true;
+    cameraInput.lastInput = performance.now();
+    flight.current = null;
+    if (useApp.getState().followVehicleId) useApp.getState().setFollow(null);
+  }, []);
+  const onControlsEnd = useCallback(() => {
+    interacting.current = false;
+    cameraInput.dragging = false;
+    cameraInput.lastInput = performance.now();
+    // Let damping settle before checking whether the watched view is blocked.
+    if (watch.current) watch.current.checkAt = performance.now() + 450;
+  }, []);
+
   useFrame((_, dt) => {
     const c = controls.current;
     if (!c) return;
+    // How far a pinch has dollied the view since the last frame.
+    const was = lastView.current;
+    const pinched = was ? camera.position.distanceTo(c.target) / Math.max(was.pos.distanceTo(was.target), 1e-6) : 1;
     const follow = useApp.getState().followVehicleId;
     followWalker(c, dt);
+    followSubject(c);
     if (flight.current) {
       const f = flight.current;
       f.t = Math.min(1, f.t + dt / f.duration);
@@ -290,19 +346,43 @@ export function CameraRig() {
     const clamped = c.target.clone();
     clamped.x = THREE.MathUtils.clamp(clamped.x, -PAN_LIMIT, PAN_LIMIT);
     clamped.z = THREE.MathUtils.clamp(clamped.z, -PAN_LIMIT, PAN_LIMIT);
-    clamped.y = 0;
+    // A zoomed service view may aim above the ground (it scales about the technician). Everything else aims at the ground:
+    // leaving that view, the aim point slides down its own sight line, so nothing on screen moves.
+    const { photo: ph, serviceView } = useApp.getState();
+    const raised = !!serviceView && !ph.on;
+    if (!raised && c.target.y !== 0) {
+      const look = c.target.clone().sub(camera.position);
+      if (look.y < -1e-3) c.target.addScaledVector(look, -c.target.y / look.y);
+    }
+    clamped.x = THREE.MathUtils.clamp(c.target.x, -PAN_LIMIT, PAN_LIMIT);
+    clamped.z = THREE.MathUtils.clamp(c.target.z, -PAN_LIMIT, PAN_LIMIT);
+    clamped.y = raised ? c.target.y : 0;
     const correction = clamped.sub(c.target);
     if (correction.lengthSq() > 0) {
       c.target.add(correction);
       camera.position.add(correction);
     }
     applyLimits(c);
+    const offsetBefore = camera.position.clone().sub(c.target);
+    const targetBefore = c.target.clone();
+    // Zoom asked for by the wheel or the buttons, eased in. A pinch arrives through the controls' own update below.
+    if (Math.abs(serviceZoom.pendingLog) > 1e-4) {
+      const step = serviceZoom.pendingLog * (1 - Math.exp(-dt * 14));
+      serviceZoom.pendingLog -= step;
+      camera.position.copy(c.target).addScaledVector(offsetBefore, Math.exp(step));
+    } else {
+      serviceZoom.pendingLog = 0;
+    }
     c.update();
+    zoomAboutSubject(c, offsetBefore, targetBefore, pinched);
     cameraMotion.flying = !!flight.current;
     if (!flight.current) keepClearOfWork(c);
-    else zoomed.current = null;
+    updateNearPlane();
     applySafeArea(dt);
     settleWatchedView(c);
+    if (!lastView.current) lastView.current = { pos: new THREE.Vector3(), target: new THREE.Vector3() };
+    lastView.current.pos.copy(camera.position);
+    lastView.current.target.copy(c.target);
   });
 
   /**
@@ -337,6 +417,9 @@ export function CameraRig() {
     const pose = walkPose(t.plan, p);
     const target = new THREE.Vector3(pose.target.x, 0, pose.target.z);
     const pos = target.clone().add(offsetOf(pose));
+    // The player's zoom stays on the followed view.
+    const walkStage = window.__egoWorkerStage?.[t.object.replace('employee:', '')];
+    scaleView(pos, target, zoomSubject(p, walkStage), serviceZoom.factor, zoomLimits(useApp.getState().serviceView!.mode, walkStage));
     const f = flight.current;
     if (f) {
       f.toTarget.copy(target);
@@ -355,40 +438,124 @@ export function CameraRig() {
     watch.current?.target.add(c.target.clone().sub(before));
   }
 
+  /** The watched technician: where he is and what he is doing. Null while he is out of sight (in the van). */
+  function watchedTech() {
+    const view = useApp.getState().serviceView;
+    if (!view) return null;
+    const job = getGameState()?.jobs[view.jobId];
+    if (!job?.technicianId) return null;
+    const o = scene.getObjectByName(`employee:${job.technicianId}`);
+    if (!o?.visible) return null;
+    return { pos: o.getWorldPosition(new THREE.Vector3()), stage: window.__egoWorkerStage?.[job.technicianId], mode: view.mode };
+  }
+
   /**
-   * While the service camera is on, zooming or orbiting stops short of the technician's body and
-   * the serviced cabinet: the camera is moved back out along its line to the target, never sideways,
-   * so the player's angle is kept and only the zoom is limited. Zooming in goes toward the work
-   * while it is on screen: the orbit target is a ground point behind the work, so after an orbit the
-   * zoom line passes beside it and would end facing the wall behind. Each step in moves the target and
-   * camera toward the ground under the work by the share the zoom took off the distance, which keeps the
-   * work where it is on screen (the view is scaled about that point); a later orbit then turns round it.
+   * The view slides along with him while the director will not: for a while after the player's hands were on the camera,
+   * and all the time when zoomed in tight, where its stepped moves would lose him. Flights under way move with him too,
+   * so a reframe lands on him and not where he was.
+   */
+  function followSubject(c: MapControlsImpl) {
+    const tech = watchedTech();
+    const t = track.current;
+    if (!tech || useApp.getState().photo.on || t) {
+      followLastTech.current = null;
+      return;
+    }
+    const last = followLastTech.current;
+    followLastTech.current = tech.pos;
+    if (!last) return;
+    const tight = serviceZoom.factor < ZOOMED_IN;
+    const hands = cameraInput.dragging || performance.now() - cameraInput.lastInput < HANDS_ON;
+    if (!tight && (!hands || tech.mode === 'property')) return;
+    const step = tech.pos.clone().sub(last);
+    if (step.lengthSq() < 1e-8 || step.length() > FOLLOW_JUMP) return;
+    c.target.add(step);
+    camera.position.add(step);
+    watch.current?.target.add(step);
+    const f = flight.current;
+    if (f) {
+      f.fromTarget.add(step);
+      f.toTarget.add(step);
+      f.fromPos.add(step);
+      f.toPos.add(step);
+    }
+  }
+
+  /**
+   * A zoom this frame (the wheel, the buttons or a pinch through the controls) becomes a scale about the technician while he
+   * is on screen, within the limits for what he is doing, and goes into the player's persistent zoom. Otherwise the
+   * controls would have dollied toward the orbit target, a ground point: on a roof, down through it.
+   */
+  function zoomAboutSubject(c: MapControlsImpl, offsetBefore: THREE.Vector3, targetBefore: THREE.Vector3, pinched: number) {
+    const { serviceView, photo } = useApp.getState();
+    if (!serviceView || photo.on) return;
+    const offset = camera.position.clone().sub(c.target);
+    const inFrame = offset.length() / Math.max(offsetBefore.length(), 1e-6);
+    const ratio = inFrame * pinched;
+    if (Math.abs(ratio - 1) < 1e-5) return;
+    const tech = watchedTech();
+    const about = tech && subjectSeen.current;
+    const subject = about ? zoomSubject(tech.pos, tech.stage) : c.target.clone();
+    let k = ratio;
+    if (about) {
+      const limits = zoomLimits(tech.mode, tech.stage);
+      // Where this zoom started from: what was on the camera this frame, undoing what a pinch already did to it.
+      const from = targetBefore.clone().add(offsetBefore).distanceTo(subject) / pinched;
+      // Stops at the limit; a view already outside it may only come back toward it.
+      const lo = Math.min(limits.min, from);
+      const hi = Math.max(limits.max, from);
+      k = THREE.MathUtils.clamp(from * ratio, lo, hi) / Math.max(from, 1e-6);
+      if (k === 1) serviceZoom.pendingLog = 0;
+    }
+    const before = c.target.clone();
+    c.target.sub(subject).multiplyScalar(k).add(subject);
+    camera.position.copy(c.target).addScaledVector(offset, k / ratio);
+    watch.current?.target.add(c.target.clone().sub(before));
+    serviceZoom.factor *= k;
+    const f = flight.current;
+    if (f) {
+      for (const p of [f.fromTarget, f.toTarget, f.fromPos, f.toPos]) p.sub(subject).multiplyScalar(k).add(subject);
+      if (f.orbit) {
+        f.orbit.from.distance *= k;
+        f.orbit.to.distance *= k;
+      }
+    }
+  }
+
+  /** Close views need the near clipping plane closer than the far-off city can afford, so it moves only for them. */
+  function updateNearPlane() {
+    if (!(camera instanceof THREE.PerspectiveCamera)) return;
+    const { serviceView, photo } = useApp.getState();
+    const tech = !photo.on && serviceView ? watchedTech() : null;
+    const d = tech ? camera.position.distanceTo(zoomSubject(tech.pos, tech.stage)) : Infinity;
+    const near = d < CLOSE_VIEW ? CLOSE_NEAR : d > FAR_ENOUGH ? FAR_NEAR : camera.near;
+    if (near !== camera.near) {
+      camera.near = near;
+      camera.updateProjectionMatrix();
+    }
+  }
+
+  /**
+   * While the service camera is on, zooming or orbiting stops short of the technician's body, the
+   * serviced cabinet and the ground or deck: the camera is moved back out along its line to the target,
+   * never sideways, so the player's angle is kept and only the zoom is limited.
    */
   function keepClearOfWork(c: MapControlsImpl) {
     const view = useApp.getState().serviceView;
     if (!view) {
-      zoomed.current = null;
+      subjectSeen.current = false;
       return;
     }
-    const job = getGameState()?.jobs[view.jobId];
-    const tech = job?.technicianId ? scene.getObjectByName(`employee:${job.technicianId}`) : undefined;
-    const body = tech?.visible ? tech.getWorldPosition(new THREE.Vector3()) : null;
+    const tech = watchedTech();
+    const body = tech?.pos ?? null;
     const unit = watch.current?.cabinet ?? null;
-    // The work: between him and the cabinet.
-    const parts = [...(body ? [body] : []), ...(unit ? [unit.getCenter(new THREE.Vector3())] : [])];
-    const work = parts.length ? parts.reduce((a, p) => a.add(p), new THREE.Vector3()).divideScalar(parts.length).setY(0.6) : null;
-    const distance = camera.position.distanceTo(c.target);
-    const last = zoomed.current;
-    if (work && last?.seen && distance < last.distance - 1e-4) {
-      const shift = new THREE.Vector3(work.x - c.target.x, 0, work.z - c.target.z).multiplyScalar(1 - distance / last.distance);
-      c.target.add(shift);
-      camera.position.add(shift);
-    }
     camera.updateMatrixWorld();
-    const s = work?.clone().project(camera);
-    zoomed.current = { distance: camera.position.distanceTo(c.target), seen: !!s && s.z > -1 && s.z < 1 && Math.abs(s.x) < 1 && Math.abs(s.y) < 1 };
+    const s = tech ? zoomSubject(tech.pos, tech.stage).project(camera) : null;
+    subjectSeen.current = !!s && s.z > -1 && s.z < 1 && Math.abs(s.x) < 1 && Math.abs(s.y) < 1;
+    // The floor under him: the deck while he is up there.
+    const floor = (tech?.stage === 'roof:work' || tech?.stage === 'roof:roof-walk' ? tech.pos.y : 0) + 0.45;
     const inside = (p: THREE.Vector3) =>
-      p.y < 0.45 ||
+      p.y < floor ||
       (body !== null && p.y < BODY_HEIGHT && Math.hypot(p.x - body.x, p.z - body.z) < BODY_CLEARANCE) ||
       (unit !== null && p.x > unit.min.x - CABINET_CLEARANCE && p.x < unit.max.x + CABINET_CLEARANCE && p.y < unit.max.y + CABINET_CLEARANCE && p.z > unit.min.z - CABINET_CLEARANCE && p.z < unit.max.z + CABINET_CLEARANCE);
     if (!inside(camera.position)) return;
@@ -418,7 +585,8 @@ export function CameraRig() {
       c.minDistance = 1.5;
       c.maxPolarAngle = 1.5;
     } else if (serviceView) {
-      c.minDistance = SERVICE_MIN_DISTANCE;
+      // The zoom limits are about the technician (zoomAboutSubject), not this aim point.
+      c.minDistance = 0.3;
       c.maxPolarAngle = SERVICE_MAX_POLAR;
     } else {
       c.minDistance = THREE.MathUtils.clamp(dist - 0.01, SERVICE_MIN_DISTANCE, MIN_DISTANCE);
@@ -508,6 +676,8 @@ export function CameraRig() {
       for (let d = from.distance - 0.25; d >= SERVICE_MIN_DISTANCE; d -= 0.25) {
         if (solid(d)) continue;
         const toPos = c.target.clone().add(offsetOf({ ...from, distance: d }));
+        // A zoom out that ended inside a wall stops there, and the player's zoom says so.
+        serviceZoom.factor *= d / from.distance;
         flight.current = { fromTarget: c.target.clone(), toTarget: c.target.clone(), fromPos: camera.position.clone(), toPos, t: 0, duration: 0.5 };
         return;
       }
@@ -536,20 +706,8 @@ export function CameraRig() {
       panSpeed={1.0}
       rotateSpeed={0.6}
       screenSpacePanning={false}
-      onStart={() => {
-        interacting.current = true;
-        cameraInput.dragging = true;
-        cameraInput.lastInput = performance.now();
-        flight.current = null;
-        if (useApp.getState().followVehicleId) useApp.getState().setFollow(null);
-      }}
-      onEnd={() => {
-        interacting.current = false;
-        cameraInput.dragging = false;
-        cameraInput.lastInput = performance.now();
-        // Let damping settle before checking whether the watched view is blocked.
-        if (watch.current) watch.current.checkAt = performance.now() + 450;
-      }}
+      onStart={onControlsStart}
+      onEnd={onControlsEnd}
     />
   );
 }
