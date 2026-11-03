@@ -275,3 +275,45 @@ test('the whole rooftop sequence', async ({ page }) => {
   console.log(`[contact] worst hand or foot shortfall by stage/clip (m): ${JSON.stringify(worst)}`);
   expect(errors).toEqual([]);
 });
+
+test('a rooftop job with the game speed changing all the way through', async ({ page }) => {
+  test.setTimeout(600_000);
+  const errors: string[] = [];
+  page.on('pageerror', (e) => errors.push(e.message));
+  await start(page);
+  await page.evaluate(() => { (window as S).__egoContact = {}; });
+  const jobId = await dispatchTo(page, ROOF_LOT, 'contactor');
+  await page.waitForFunction(() => { window.__ego!.advanceMinutes(0.25); return (window.__ego!.getState() as S).vehicles['veh-1'].status === 'onsite'; }, null, { timeout: 120_000, polling: 30 });
+  // Speed changes every few seconds, including pauses, until he is at the unit.
+  const speeds = [1, 5, 2, 0, 5, 1, 2, 5];
+  let i = 0;
+  const seen = new Set<string>();
+  while (!(await page.evaluate((id) => (window.__ego!.getState() as S).jobs[id].status === 'diagnosing' && (window as S).__egoWorkerStage?.['emp-owner'] === 'roof:work', jobId))) {
+    await speed(page, speeds[i++ % speeds.length]);
+    await page.waitForTimeout(1500);
+    seen.add(String(await page.evaluate(() => (window as S).__egoWorkerStage?.['emp-owner'])));
+    expect(i, 'he should reach the unit').toBeLessThan(200);
+  }
+  await page.evaluate((id) => {
+    const e = window.__ego!;
+    e.advanceMinutes((e.getState() as S).jobs[id].phaseRemaining + 0.1);
+    const j = (e.getState() as S).jobs[id];
+    e.dispatch({ type: 'choose-diagnosis', jobId: id, faultId: j.faultId });
+    e.dispatch({ type: 'submit-quote', jobId: id, quote: { recommendation: 'repair', priceAdjust: 0.8 } });
+    e.advanceMinutes((e.getState() as S).jobs[id].phaseRemaining + 0.1);
+  }, jobId);
+  // Down again, the same way, until the van leaves with the ladder on its rack.
+  i = 0;
+  while ((await page.evaluate(() => (window.__ego!.getState() as S).vehicles['veh-1'].status)) === 'onsite') {
+    await speed(page, speeds[i++ % speeds.length]);
+    await page.waitForTimeout(1500);
+    seen.add(String(await page.evaluate(() => (window as S).__egoWorkerStage?.['emp-owner'])));
+    expect(i, 'the van should leave').toBeLessThan(200);
+  }
+  const worst = await page.evaluate(() => (window as S).__egoContact ?? {});
+  console.log(`[speed] stages seen: ${[...seen].join(', ')}`);
+  console.log(`[speed] worst shortfall by clip (m): ${JSON.stringify(worst)}`);
+  mkdirSync('test-results/character-qa', { recursive: true });
+  writeFileSync(`test-results/character-qa/${LABEL}-${ROOF_LOT}-speed-contact.json`, JSON.stringify({ worst, stages: [...seen] }, null, 2));
+  expect(errors).toEqual([]);
+});

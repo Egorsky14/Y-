@@ -750,8 +750,9 @@ def scalp_mask(p, recede=0.0):
     y = p[:, 1] - head[1]
     z = p[:, 2] - head[2]
     # Hairline height rises toward the forehead and drops to the nape; cut clear of the ears.
-    line = 0.07 + 0.075 * smoothstep(-0.02, 0.09, z) + recede * smoothstep(0.02, 0.09, z) - 0.05 * smoothstep(-0.03, -0.1, z)
-    ear = (np.abs(p[:, 0]) > 0.062) & (np.abs(z + 0.0) < 0.042) & (y < 0.135)
+    line = 0.07 + 0.062 * smoothstep(-0.02, 0.09, z) + recede * smoothstep(0.02, 0.09, z) - 0.05 * smoothstep(-0.03, -0.1, z)
+    # Round the ear only: above it, the hair comes down the side of the head.
+    ear = (np.abs(p[:, 0]) > 0.062) & (np.abs(z + 0.0) < 0.042) & (y < 0.082)
     return (y > line) & ~ear
 
 
@@ -800,6 +801,8 @@ def beard_piece(style, head, name):
     t = 0.0034 if style == "full" else 0.003
     p = q[ids] + n * t
     rim = np.unique(boundary_edges(inv))
+    # A smoothed edge, so the head's topology does not show as steps along it.
+    p = laplace(p, inv, 5, 0.5, weight=np.isin(np.arange(len(p)), rim).astype(float))
     p[rim] -= n[rim] * (t + 0.0005)
     uv = acc_uv("hair", (p[:, 0] * 4.3 + 0.5) % 1, (p[:, 1] * 4.3 + 0.5) % 1)[inv]
     return Piece(f"beard_{style}_{name}", "hair", p, inv, uv, head.weights[ids])
@@ -929,7 +932,7 @@ def cap_piece():
     I, J = 8, 14
     wx = rx * 0.99
     zc = z_front - 0.018
-    reach_z = 0.098
+    reach_z = 0.09
     rows = []
     for layer, dy in ((0, 0.0042), (1, -0.0042)):
         for i in range(I + 1):
@@ -940,7 +943,7 @@ def cap_piece():
                 sx = -1 + 2 * j / J
                 x = half * sx
                 # Out of the forehead level, then curving down and across, so it reads as a bill from straight in front.
-                y = base - 0.002 - (0.012 + 0.018 * t) * (x / wx) ** 2 - 0.052 * t * t + dy
+                y = base - 0.002 - (0.012 + 0.018 * t) * (x / wx) ** 2 - 0.042 * t * t + dy
                 rows.append([x, y, z])
     bv = np.array(rows)
     grid = (I + 1) * (J + 1)
@@ -1188,8 +1191,8 @@ def build_atlas(boot_info, cap_info):
     # Close-cropped hair on the scalp: a density that fades out at a soft hairline, ready for a cap or a bare head.
     hz = P[..., 2] - h0[2]
     hy = P[..., 1] - h0[1]
-    hline = 0.07 + 0.075 * smoothstep(-0.02, 0.09, hz) - 0.05 * smoothstep(-0.03, -0.1, hz)
-    side_clear = smoothstep(0.052, 0.068, np.abs(P[..., 0])) * smoothstep(0.052, 0.03, np.abs(hz)) * (hy < 0.135)
+    hline = 0.07 + 0.062 * smoothstep(-0.02, 0.09, hz) - 0.05 * smoothstep(-0.03, -0.1, hz)
+    side_clear = smoothstep(0.052, 0.068, np.abs(P[..., 0])) * smoothstep(0.052, 0.03, np.abs(hz)) * (hy < 0.082)
     density = smoothstep(-0.006, 0.012, hy - hline) * (1 - side_clear) * (R == 1)
     grain = 0.82 + 0.18 * np.sin(P[..., 0] * 1500 + 2.0 * np.sin(P[..., 2] * 700)) * np.sin(P[..., 2] * 1400 + P[..., 1] * 500)
     hair_tone = np.array([0.2, 0.17, 0.155])
