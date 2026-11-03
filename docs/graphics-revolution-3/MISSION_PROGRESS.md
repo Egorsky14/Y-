@@ -2,63 +2,52 @@
 
 Branch `feature/v3-graphics-revolution-3`, from `f463050` (Mission 01). Local only: nothing pushed, merged or deployed.
 
-**If resuming after a compaction or restart: read this file and `DECISIONS.md`, check `git log` and `git status`, then
-continue from "Next exact action". Do not restart: the character pipeline works.**
+## Status: READY FOR VERCEL PREVIEW
 
-## Current phase
-
-Phase C/D: hero model integrated, ladder contact being finished; then variants, LOD and performance, full regression.
+Awaiting the owner's authorization to push. Results, numbers and open items: `REPORT.md`. Pictures: `sheets/`.
 
 ## Completed
 
-- Router; skills: threejs-gltf-loading, threejs-materials-lighting, create-game-assets, performance-optimization.
-- Baseline (`evidence/before/`): showcase, perf, rooftop review, rooftop video, all at `f463050`'s build.
-- CC0 MakeHuman data fetched at a pinned commit (`tools/character/makehuman/`, `SOURCE.txt`, license read and kept).
-- `tools/blender/technician_v3.py`, `tools/character/build.mjs` (one command: GLB, WebP atlas, rig table).
-- `src/world/characters/`: `rigData.generated.ts`, `rigSolver.ts` (late IK), `gait.ts` (distance-driven walk), new
-  `technicianModel.ts`, rewritten `Worker.tsx` (same props and clip names).
-- `src/tests/characterRig.test.ts`, `e2e/character-qa.spec.ts` (shader check, 12 states, contact report by clip).
-- Checkpoint commit `37395c2`.
-
-## Tools for iterating (outside the repo, recreate if lost)
-
-Build: `node tools/character/build.mjs`, then `VITE_PROFILE=1 npx vite build` (shader errors reported).
-Capture: `QA_LABEL=x npx playwright test e2e/character-qa.spec.ts --project=desktop-1080p --workers=1`.
+- Real human mesh (CC0 MakeHuman data), garments as geometry, 43-bone rig, late IK, distance-driven walk, three levels of
+  detail, crew variants: commits `37395c2`, `7ebde5c`.
+- Ladder hand contact, sidewalk height, cap, hair: `58a6297`, `0e77535`.
+- Paused stride, palm on tall cabinets, before and after sheets: `ed87bd4`.
+- Benchmarks: desktop (three runs each), phone CPU emulation, ten technicians, two rooftop jobs, plus a 60 Hz run.
+- Regression on desktop, laptop, small screen, phones, tablet and landscape (all Chromium emulation).
 
 ## Evidence
 
-Raw (git-ignored): `docs/graphics-revolution-3/evidence/<label>/`. `before` is the baseline.
+Committed: `sheets/`. On this machine only, git-ignored: `evidence/` (`after/video/*.webm`, `before/rooftop-video-*/`, raw
+captures, `perf2/*.json`, `regress/runs.txt` and logs).
 
-## Known visual defects (open)
+## Re-running
 
-- Ladder hand shortfall at pick-up from the ground and at the first frames of retrieve: last measured 0.59 m (reach) and
-  0.33 m (raise) before the squat. Climb was 15 mm, inspect 14 mm. Step-over 0.15 m.
-- Not yet reviewed in the game: shirt tuck behind the belt, finer brows, EGO bolt on the cap, squat when reaching low.
-- Beards are blocky shells; upright standing pose is a little stiff; sleeve hem has a slight zigzag.
+```
+npx vite build                                                                              # or: npm run build
+node tools/run-guarded.mjs <log> <label> -- npx playwright test e2e/<spec>.spec.ts --project=<project> --workers=1
+QA_LABEL=x ROOF_LOT=a-n-4 npx playwright test e2e/character-qa.spec.ts --project=desktop-1080p --workers=1
+PERF_LABEL=x [PERF_CPU=4] [PERF_CAPPED=1] [PERF_URL=...] npx playwright test e2e/character-perf.spec.ts --project=<project> --workers=1
+node tools/perf-table.mjs docs/graphics-revolution-3/evidence/perf2 <before label> <after label>
+```
 
-## Blockers
+Keep any one command under the 10-minute foreground limit. A command that overruns moves to the background, and the next one
+then overlaps it; that happened once in this mission and made two runs fail for no game-related reason.
 
-**Paused 2026-11-02 at the system's request:** the head-to-head benchmark was stopped because the machine ran critically
-low on memory while the session was idle. It must not be restarted until the owner says so. Only `baseline-desktop`
-finished; `gen3-desktop` and both phone runs did not.
+Playwright empties `test-results/` at each start, so copy results out after each run. Several specs overwrite the tracked
+`docs/screenshots/`: restore with `git checkout -- docs/screenshots`.
 
-## Next exact action (on the owner's go-ahead)
-
-1. Check free memory, and close other heavy applications if needed.
-2. `playwright.config.ts`: add `character-qa` and `character-perf` to `phone-390x844`, and `character-qa` to
-   `iphone-landscape` (the scratchpad script's edit did not land).
-3. Re-run the benchmark, one run at a time: `gen3-desktop`, then `baseline-phone-cpu4`, `gen3-phone-cpu4`.
-   The baseline copy is a temporary worktree of `f463050`; serve it with `npx vite preview --port 4174` and point
-   `PERF_URL` at it. Remove the worktree afterward: `git worktree remove`.
-4. Review the unreviewed fixes above in `character-qa`; fix contact defects.
-5. Full regression, videos, before/after sheets, final report.
+The baseline copy for comparing builds is a temporary worktree of `f463050` in an earlier session's scratchpad, with a cost
+timer added to its `Worker.tsx` (uncommitted). It is still there, in case the owner wants more comparisons. To remove it:
+`git worktree list`, then `git worktree remove --force <path>`.
 
 ## Final acceptance checklist
 
-- [ ] Hero reads as a real professional at close, three-quarter, side, isometric
-- [ ] Variants are different people
-- [ ] Hands and feet on ladder and equipment; contact report clean
-- [ ] Walk without sliding at 1×, 2×, 5×
-- [ ] LODs, measured desktop and emulated phone performance, ten technicians, two rooftop jobs
-- [ ] Mission 01, ground jobs, rooftop jobs, save/load, full regression
-- [ ] Before/after sheets, gameplay videos, documentation, licenses
+- [x] Hero reads as a real professional at close, three-quarter, side and gameplay distance
+- [x] Variants are different people
+- [x] Hands and feet on ladder and equipment: contact report within 5 cm, except 7 to 8 cm for moments at floor level
+- [x] Walk: planted foot cannot slide by construction (unit test); 1×, 2× and 5× played without errors. Foot slide was not
+      separately measured in the browser at each speed
+- [x] Levels of detail, measured desktop and emulated phone performance, ten technicians, two rooftop jobs
+- [x] Mission 01, ground jobs, rooftop jobs, save/load, full regression
+- [x] Before and after sheets, gameplay videos, documentation, licenses
+- [ ] A real phone: not tested. Owner to check on the Preview
