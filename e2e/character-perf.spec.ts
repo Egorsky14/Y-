@@ -1,4 +1,5 @@
-import { test, type Page } from '@playwright/test';
+import { test, type CDPSession, type Page } from '@playwright/test';
+import { execSync } from 'node:child_process';
 import { mkdirSync, writeFileSync } from 'node:fs';
 
 /**
@@ -10,8 +11,13 @@ import { mkdirSync, writeFileSync } from 'node:fs';
  * PERF_CPU=4 slows the page's CPU fourfold through the browser's emulation, to approximate a midrange phone's CPU. It does
  * not emulate a phone's GPU, heat or memory: real hardware is still the real test.
  *
- * Numbers depend on this machine, and vsync caps the frame interval from below; compare runs on the same machine.
+ * Vsync would cap every frame at 16.7 ms and hide any real difference, so the browser runs with vsync and its frame limit
+ * off: the frame interval is what the machine can really do. Set PERF_CAPPED=1 to see what a player's 60 Hz screen gets.
+ * Touch devices' automatic quality step-down is turned off so both builds are measured at the same preset; the preset is
+ * recorded. Numbers depend on this machine; compare runs made on the same machine.
  */
+
+if (!process.env.PERF_CAPPED) test.use({ launchOptions: { args: ['--ignore-gpu-blocklist', '--disable-gpu-vsync', '--disable-frame-rate-limit'] } });
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type S = any;
@@ -19,8 +25,20 @@ const LABEL = process.env.PERF_LABEL ?? 'run';
 const URL_ = process.env.PERF_URL ?? '/';
 const CPU = Number(process.env.PERF_CPU ?? 1);
 
-async function sample(page: Page, seconds: number) {
-  return page.evaluate(
+/** Memory of this test's own browser (all its processes), in MB. */
+function browserMemory() {
+  try {
+    const out = execSync(`powershell -NoProfile -Command "$p = Get-CimInstance Win32_Process -Filter \\"Name='chrome.exe'\\" | Where-Object { $_.CommandLine -match 'playwright_chromiumdev_profile' }; $g = $p | Where-Object { $_.CommandLine -match 'type=gpu-process' }; '{0} {1} {2}' -f (($p | Measure-Object WorkingSetSize -Sum).Sum), (($g | Measure-Object WorkingSetSize -Sum).Sum), $p.Count"`, { encoding: 'utf8', timeout: 20_000 }).trim().split(' ');
+    return { allProcessesMB: Math.round(Number(out[0]) / 1048576), gpuProcessMB: Math.round(Number(out[1]) / 1048576), processes: Number(out[2]) };
+  } catch {
+    return null;
+  }
+}
+
+async function sample(page: Page, seconds: number, cdp: CDPSession) {
+  const metrics = async () => Object.fromEntries((await cdp.send('Performance.getMetrics')).metrics.map((m) => [m.name, m.value]));
+  const m0 = await metrics();
+  const r = await page.evaluate(
     (ms) =>
       new Promise<Record<string, number | null>>((resolve) => {
         const times: number[] = [];
@@ -57,14 +75,17 @@ async function sample(page: Page, seconds: number) {
       }),
     seconds * 1000,
   );
+  const m1 = await metrics();
+  const frames = r.frames!;
+  // Main-thread time per frame by the browser's own count: all of it, and the part in JavaScript.
+  return { ...r, fps: 1000 / r.meanMs!, mainThreadMsPerFrame: ((m1.TaskDuration - m0.TaskDuration) * 1000) / frames, scriptMsPerFrame: ((m1.ScriptDuration - m0.ScriptDuration) * 1000) / frames, quality: await page.evaluate(() => (window.__ego!.app.getState() as S).settings.quality), browser: browserMemory() };
 }
 
 test('character frame-time benchmark', async ({ page, context }) => {
   test.setTimeout(900_000);
-  if (CPU > 1) {
-    const cdp = await context.newCDPSession(page);
-    await cdp.send('Emulation.setCPUThrottlingRate', { rate: CPU });
-  }
+  const cdp = await context.newCDPSession(page);
+  await cdp.send('Performance.enable');
+  if (CPU > 1) await cdp.send('Emulation.setCPUThrottlingRate', { rate: CPU });
   await page.addInitScript(() => { (window as S).__egoCharCostEnabled = true; (window as S).__egoCharCost = { ms: 0 }; });
   const t0 = Date.now();
   await page.goto(URL_);
@@ -75,13 +96,19 @@ test('character frame-time benchmark', async ({ page, context }) => {
   else await page.getByTestId('new-game').click();
   await page.waitForFunction(() => window.__ego?.app.getState().sceneReady, null, { timeout: 400_000 });
   const load = { titleMs: t1 - t0, newGameToSceneMs: Date.now() - t1 };
+  await page.evaluate(() => (window.__ego!.app.getState() as S).setSettings({ qualityAuto: false }));
+  const gpu = await page.evaluate(() => {
+    const gl = document.createElement('canvas').getContext('webgl2');
+    const ext = gl?.getExtension('WEBGL_debug_renderer_info');
+    return ext ? gl!.getParameter(ext.UNMASKED_RENDERER_WEBGL) : 'unknown';
+  });
   const assets = await page.evaluate(() => performance.getEntriesByType('resource').filter((e) => /technician|characters\/tex/.test(e.name)).map((e) => ({ file: e.name.split('/').pop(), kb: Math.round((e as PerformanceResourceTiming).encodedBodySize / 1024), ms: Math.round(e.duration) })));
   const tutorial = page.getByTestId('touch-tutorial-ok');
   if (await tutorial.isVisible().catch(() => false)) await tutorial.tap();
   await page.addStyleTag({ content: '.mission-card { display: none !important; }' });
   await page.evaluate(() => window.__ego!.dispatch({ type: 'set-speed', speed: 1 }));
   await page.waitForTimeout(4000);
-  const opening = await sample(page, 6);
+  const opening = await sample(page, 6, cdp);
 
   // Ten technicians in front of a close camera, all animating.
   await page.evaluate(() => {
@@ -95,7 +122,7 @@ test('character frame-time benchmark', async ({ page, context }) => {
     window.__ego!.app.getState().camera({ type: 'focus', target: { x: 43.2, z: 31.1 }, distance: 9, azimuth: -Math.PI / 2 + 0.3, elevation: 0.35, targetY: 0 } as S);
   });
   await page.waitForTimeout(4000);
-  const tenTechs = await sample(page, 6);
+  const tenTechs = await sample(page, 6, cdp);
   mkdirSync('test-results/character-perf', { recursive: true });
   await page.screenshot({ path: `test-results/character-perf/${LABEL}-ten-techs.png` });
 
@@ -125,10 +152,10 @@ test('character frame-time benchmark', async ({ page, context }) => {
     window.__ego!.app.getState().camera({ type: 'focus', target: { x: w.x, z: w.z }, distance: 16, azimuth: 0.9, elevation: 0.7, targetY: 0 } as S);
   });
   await page.waitForTimeout(1500);
-  const rooftops = await sample(page, 14);
+  const rooftops = await sample(page, 14, cdp);
   const stages = await page.evaluate(() => (window as S).__egoWorkerStage);
 
-  const result = { label: LABEL, cpuThrottle: CPU, viewport: page.viewportSize(), load, assets, opening, tenTechs, rooftops: { jobsStarted: started, stagesAtEnd: stages, ...rooftops } };
+  const result = { label: LABEL, capped: !!process.env.PERF_CAPPED, gpu, cpuThrottle: CPU, viewport: page.viewportSize(), load, assets, opening, tenTechs, rooftops: { jobsStarted: started, stagesAtEnd: stages, ...rooftops } };
   writeFileSync(`test-results/character-perf/${LABEL}.json`, JSON.stringify(result, null, 2));
   console.log(JSON.stringify(result));
 });

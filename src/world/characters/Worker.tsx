@@ -9,6 +9,7 @@ import { appearanceFor, buildCharacter, CHARACTER_URL, PELVIS_Y, type BoneName, 
 import { RIG_BONES, RIG_MEASURES } from './rigData.generated';
 import { handRotation, poseFingers, solveArm, solveLeg, type FingerPose } from './rigSolver';
 import { bodyAt, footAt, strideLength } from './gait';
+import { reachPosture } from './reachPosture';
 
 useGLTF.preload(CHARACTER_URL);
 
@@ -324,6 +325,7 @@ export function Worker({ role, look, anim, scale = 1, pace = 1, work, motion }: 
     let showWrench = false;
     let showTablet = false;
     let showLoad = false;
+    let blendRate = 7;
     let gripL: FingerPose = OPEN;
     let gripR: FingerPose = OPEN;
     const s = scale * build;
@@ -564,7 +566,7 @@ export function Worker({ role, look, anim, scale = 1, pace = 1, work, motion }: 
       case 'step-over': {
         const m = motion?.current;
         const mp = m?.pace ?? 0;
-        let torsoPitch = 0;
+        let torsoPitch: number;
         if (anim === 'climb' && m?.footL && m.footR) {
           // On the rungs: hips over the feet, legs and arms placed on the ladder.
           pelvisY = THREE.MathUtils.clamp((m.footL.y + m.footR.y) / (2 * s) + 0.7, 0.62, PELVIS_Y);
@@ -587,18 +589,19 @@ export function Worker({ role, look, anim, scale = 1, pace = 1, work, motion }: 
           // Walking with the ladder on the shoulder, or stepping while raising it.
           walkLegs(anim === 'ladder-carry' ? 1 : 0.4);
           torsoPitch = anim === 'raise' ? -0.06 : 0.05;
+          // Stepping with the ladder at arm's length: he leans in to keep his hands on it.
+          if (anim === 'raise') torsoPitch = reachPosture(scaled(PT_L, m?.handL, s), scaled(PT_R, m?.handR, s), pelvisY, pelvisZ, torsoPitch).pitch;
           pose.torso![0] = torsoPitch;
         } else {
           pelvisY = stand(anim === 'pull' ? 0.08 : 0.03);
           torsoPitch = anim === 'raise' || anim === 'reach' ? -0.08 : anim === 'pull' ? 0.1 : 0.04;
-          // Anything to pick up from low down is a squat and a bent back, not an arm stretched through the air.
-          const lowest = Math.min(m?.handL ? m.handL.y / s : 2, m?.handR ? m.handR.y / s : 2);
-          const low = THREE.MathUtils.clamp((0.95 - lowest) / 0.8, 0, 1);
-          if (low > 0) {
-            pelvisY -= low * 0.42;
-            pelvisZ -= low * 0.1;
-            torsoPitch = THREE.MathUtils.lerp(torsoPitch, 0.82, low);
-          }
+          // Anything low is a squat and a bent back, anything far a lean: never an arm stretched through the air.
+          const body = reachPosture(scaled(PT_L, m?.handL, s), scaled(PT_R, m?.handR, s), pelvisY, pelvisZ, torsoPitch);
+          pelvisY = body.pelvisY;
+          pelvisZ = body.pelvisZ;
+          torsoPitch = body.pitch;
+          // Going down with something in his hands, the body keeps up with them.
+          if (pelvisY < PELVIS_Y - 0.08) blendRate = 18;
           set('torso', torsoPitch);
         }
         if (m?.handL) {
@@ -645,7 +648,7 @@ export function Worker({ role, look, anim, scale = 1, pace = 1, work, motion }: 
     // Blend every joint toward its target so state changes never pop. Rotations are slerped: blending Euler angles
     // component by component swings an arm the long way round when a solution wraps past ±π. The torso and head targets
     // are shared down the spine and neck, so bending is a curve, not a hinge at the waist.
-    const k = Math.min(1, dt * 7);
+    const k = Math.min(1, dt * blendRate);
     const cur = blend.current;
     const torso = pose.torso;
     if (torso) {
@@ -832,6 +835,10 @@ export function Worker({ role, look, anim, scale = 1, pace = 1, work, motion }: 
   );
 }
 
+const PT_L = new THREE.Vector3();
+const PT_R = new THREE.Vector3();
+/** A target in the rig's own unscaled metres (undefined stays undefined). */
+const scaled = (out: THREE.Vector3, v: THREE.Vector3 | undefined, s: number) => (v ? out.copy(v).divideScalar(s) : undefined);
 const BLEND_Q = new THREE.Quaternion();
 const BLEND_E = new THREE.Euler();
 const LOD_POS = new THREE.Vector3();

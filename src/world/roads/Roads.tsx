@@ -1,10 +1,11 @@
 import { useMemo } from 'react';
 import * as THREE from 'three';
-import { STREETS, ROAD_WIDTH, SIDEWALK_WIDTH, HOUSE_LOTS, inwardDir, HQ_LOT, WAREHOUSE_LOT, COMPETITOR_LOT, COMMERCIAL_LOTS } from '@/game/world/cityLayout';
+import { STREETS, ROAD_WIDTH, SIDEWALK_WIDTH } from '@/game/world/cityLayout';
 import { MeshBuilder } from '../assets/pbr';
 import { STATIC_MATERIALS, UV_SCALES } from '../buildings/materials';
 import { signTexture } from '../assets/textures';
 import { STREET_LIGHT_HEIGHT, streetLights } from './streetFurniture';
+import { APRON_H, CURB_H, drivewayAprons } from './walkSurface';
 
 /**
  * Street network as merged static geometry: asphalt with PBR detail, crisp markings,
@@ -12,7 +13,6 @@ import { STREET_LIGHT_HEIGHT, streetLights } from './streetFurniture';
  * stop signs and street-name blades. Everything here is decorative (not selectable).
  */
 
-const CURB_H = 0.15;
 const LIGHTS = streetLights();
 
 function buildRoads(): THREE.Group {
@@ -132,18 +132,8 @@ function buildRoads(): THREE.Group {
   }
 
   // Driveway aprons (curb cut) for every lot that touches a street, including commercial lots.
-  const lots = [...HOUSE_LOTS, HQ_LOT, WAREHOUSE_LOT, COMPETITOR_LOT, ...COMMERCIAL_LOTS];
-  for (const lot of lots) {
-    const dir = inwardDir(lot.facing);
-    const horizontal = dir.z !== 0;
-    const sideSign = lot.facing === 'north' || lot.facing === 'west' ? -1 : 1;
-    const wide = lot.kind === 'house' ? (lot.style === 'premium' ? 8.5 : lot.style === 'two-story' ? 5.2 : 5.5) : lot.kind === 'hq' ? 10 : 9;
-    const offset = lot.kind === 'house' ? (lot.style === 'premium' ? 11 : lot.style === 'two-story' ? 9.5 : lot.style === 'modern' ? 5 : lot.style === 'spanish' ? 5.4 : 5) : 0;
-    const ax = lot.curb.x + dir.x * (half + 0.3 + walk / 2) + (horizontal ? sideSign * offset : 0);
-    const az = lot.curb.z + dir.z * (half + 0.3 + walk / 2) + (horizontal ? 0 : sideSign * offset);
-    // Apron replaces the curb: a sloped concrete wedge from the gutter up to sidewalk level
-    b.box('concrete', horizontal ? [wide, CURB_H + 0.02, walk + 0.9] : [walk + 0.9, CURB_H + 0.02, wide], [ax, CURB_H / 2 + 0.005, az]);
-  }
+  // Apron replaces the curb: a sloped concrete wedge from the gutter up to sidewalk level
+  for (const a of drivewayAprons()) b.box('concrete', [a.sx, APRON_H, a.sz], [a.x, CURB_H / 2 + 0.005, a.z]);
   const g = b.build('roads');
   if (import.meta.env.DEV) console.debug(`[build] roads ${(performance.now() - t0).toFixed(0)} ms`);
   return g;

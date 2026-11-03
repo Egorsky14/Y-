@@ -1,4 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
+import { mkdirSync, writeFileSync } from 'node:fs';
 
 /**
  * Graphics Revolution 3.0 evidence: the technician in the real game, at real jobs, in the same twelve states before and
@@ -15,6 +16,8 @@ type S = any;
 const LABEL = process.env.QA_LABEL ?? 'shot';
 const ONLY = process.env.CHARACTER_MOMENTS?.split(',');
 const wanted = (m: string) => !ONLY || ONLY.includes(m);
+/** Which roof: Mesquite Plaza by default; ROOF_LOT=a-n-4 for a modern home. */
+const ROOF_LOT = process.env.ROOF_LOT ?? 'cm-plaza';
 
 async function frame(page: Page, azimuthOffset: number, distance: number, targetY: number, elevation = 0.18) {
   await page.evaluate(
@@ -149,7 +152,7 @@ test('standing, and a ground-level job', async ({ page }) => {
   await page.evaluate(() => {
     const w = window.__egoWorkers!['emp-owner'];
     // The normal free-play view of him: nothing here is closer than a player's camera goes.
-    (window.__ego!.app.getState() as S).camera({ type: 'focus', target: { x: w.x, z: w.z }, distance: 22, azimuth: -0.5, elevation: 0.9, targetY: 0 } as S);
+    (window.__ego!.app.getState() as S).camera({ type: 'focus', target: { x: w.x, z: w.z }, distance: 22, azimuth: 2.4, elevation: 0.75, targetY: 0 } as S);
   });
   await page.waitForTimeout(1700);
   await shot(page, '01-gameplay-distance');
@@ -191,15 +194,30 @@ test('standing, and a ground-level job', async ({ page }) => {
   expect(errors).toEqual([]);
 });
 
-test('the whole rooftop sequence at Mesquite Plaza', async ({ page }) => {
+test('the whole rooftop sequence', async ({ page }) => {
   test.setTimeout(900_000);
   const errors: string[] = [];
   page.on('pageerror', (e) => errors.push(e.message));
   await start(page);
   const vw = page.viewportSize()!.width;
   const close = vw < 800 ? 5 : 3.6;
-  await page.evaluate(() => { (window as S).__egoContact = {}; });
-  const jobId = await dispatchTo(page, 'cm-plaza', 'contactor');
+  // Each frame, the worst hand or foot shortfall goes to the stage he is in.
+  await page.evaluate(() => {
+    const w = window as S;
+    w.__egoContact = {};
+    w.__egoStageContact = {};
+    const tick = () => {
+      const stage = w.__egoWorkerStage?.['emp-owner'] ?? '-';
+      for (const [clip, v] of Object.entries(w.__egoContact) as [string, number][]) {
+        const key = `${stage}/${clip}`;
+        w.__egoStageContact[key] = Math.max(w.__egoStageContact[key] ?? 0, v);
+      }
+      w.__egoContact = {};
+      requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  });
+  const jobId = await dispatchTo(page, ROOF_LOT, 'contactor');
   await page.waitForFunction(() => { window.__ego!.advanceMinutes(0.25); return (window.__ego!.getState() as S).vehicles['veh-1'].status === 'onsite'; }, null, { timeout: 120_000, polling: 30 });
   await speed(page, 1);
   const at = async (stage: string, wait: number, moment: string, views: [string, number, number, number, number][]) => {
@@ -251,7 +269,9 @@ test('the whole rooftop sequence at Mesquite Plaza', async ({ page }) => {
   await at('climb', 2600, '11-descending-ladder', [['', 2.55, close, 0.9, 0.05], ['-side', 1.57, close, 0.9, 0.05]]);
   await at('carry', 2400, '11b-carrying-back', [['', 1.0, close + 1.5, 1.0, 0.14]]);
   await at('stow', 1100, '11c-stowing-ladder', [['', 2.2, close + 1.4, 1.4, 0.14]]);
-  const worst = await page.evaluate(() => (window as S).__egoContact ?? {});
-  console.log(`[contact] worst hand or foot shortfall by clip (m): ${JSON.stringify(worst)}`);
+  const worst = await page.evaluate(() => (window as S).__egoStageContact ?? {});
+  mkdirSync('test-results/character-qa', { recursive: true });
+  writeFileSync(`test-results/character-qa/${LABEL}-${ROOF_LOT}-contact.json`, JSON.stringify(worst, null, 2));
+  console.log(`[contact] worst hand or foot shortfall by stage/clip (m): ${JSON.stringify(worst)}`);
   expect(errors).toEqual([]);
 });

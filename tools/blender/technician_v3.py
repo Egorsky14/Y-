@@ -931,7 +931,7 @@ def cap_piece():
     zc = z_front - 0.018
     reach_z = 0.098
     rows = []
-    for layer, dy in ((0, 0.0028), (1, -0.0028)):
+    for layer, dy in ((0, 0.0042), (1, -0.0042)):
         for i in range(I + 1):
             t = i / I
             z = (z_front - 0.03) + (zc + reach_z - (z_front - 0.03)) * t
@@ -939,7 +939,8 @@ def cap_piece():
             for j in range(J + 1):
                 sx = -1 + 2 * j / J
                 x = half * sx
-                y = base - 0.002 - 0.02 * (x / wx) ** 2 - 0.012 * t + dy
+                # Out of the forehead level, then curving down and across, so it reads as a bill from straight in front.
+                y = base - 0.002 - (0.012 + 0.018 * t) * (x / wx) ** 2 - 0.052 * t * t + dy
                 rows.append([x, y, z])
     bv = np.array(rows)
     grid = (I + 1) * (J + 1)

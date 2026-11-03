@@ -1,3 +1,4 @@
+import { walkSurfaceY } from '../roads/walkSurface';
 import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { useFrame } from '@react-three/fiber';
@@ -348,14 +349,18 @@ function WorkerView({ id }: { id: string }) {
         g.visible = !!frame || seq === 'work';
       } else if (frame) {
         g.position.copy(frame.pos);
+        // On the ground he walks on what is there; a ladder on his shoulder rises with him, and so do the hands holding it.
+        const lift = frame.pos.y < 0.5 ? walkSurfaceY(frame.pos.x, frame.pos.z) : 0;
+        g.position.y += lift;
         g.rotation.order = 'YXZ';
         g.rotation.set(frame.lean, frame.heading, 0);
         g.visible = !(seq === 'down' && r.t >= plan.downTotal);
-        ladderVisuals.set(vehicle.id, frame.ladder);
+        const shouldered = frame.anim === 'ladder-carry' && lift > 0;
+        ladderVisuals.set(vehicle.id, shouldered ? { ...frame.ladder, foot: frame.ladder.foot.clone().setY(frame.ladder.foot.y + lift) } : frame.ladder);
         // Hands and feet into the character's frame.
         g.updateMatrixWorld(true);
         const inv = g.matrixWorld.clone().invert();
-        const local = (v?: THREE.Vector3) => (v ? v.clone().applyMatrix4(inv) : undefined);
+        const local = (v?: THREE.Vector3) => (v ? v.clone().setY(v.y + (shouldered ? lift : 0)).applyMatrix4(inv) : undefined);
         motion.current = { handL: local(frame.limbs.handL), handR: local(frame.limbs.handR), footL: local(frame.limbs.footL), footR: local(frame.limbs.footR), pace: frame.pace, u: frame.u, footPitch: -frame.lean };
         const wanted: WorkerAnim = frame.anim === 'hidden' || frame.anim === 'work' ? 'idle' : frame.anim;
         if (roofAnim !== wanted) setRoofAnim(wanted);
@@ -413,7 +418,9 @@ function WorkerView({ id }: { id: string }) {
       } else if (a.stage === 'exit') {
         a.t = Math.min(1, a.t + step / EXIT_SECONDS);
         const k = ease(a.t);
-        g.position.set(a.from.x + (a.out.x - a.from.x) * k, 0, a.from.z + (a.out.z - a.from.z) * k);
+        const ox = a.from.x + (a.out.x - a.from.x) * k;
+        const oz = a.from.z + (a.out.z - a.from.z) * k;
+        g.position.set(ox, walkSurfaceY(ox, oz), oz);
         if (a.t >= 1) go('walk');
       } else if (a.stage === 'walk') {
         const total = pathLength(a.path);
@@ -421,7 +428,7 @@ function WorkerView({ id }: { id: string }) {
         const gait = Math.max(0.35, Math.min(1, 0.45 + a.walked / 1.6, (total - a.walked) / 1.2 + 0.25));
         a.walked = Math.min(total, a.walked + step * WALK_SPEED * gait);
         const p = samplePath(a.path, a.walked);
-        g.position.set(p.x, 0, p.z);
+        g.position.set(p.x, walkSurfaceY(p.x, p.z), p.z);
         const d = Math.atan2(Math.sin(p.heading - g.rotation.y), Math.cos(p.heading - g.rotation.y));
         g.rotation.y += d * Math.min(1, dt * 8);
         if (a.walked >= total) go('turn');
