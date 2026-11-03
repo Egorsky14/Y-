@@ -514,7 +514,14 @@ export function CameraRig() {
     serviceZoom.factor *= k;
     const f = flight.current;
     if (f) {
-      for (const p of [f.fromTarget, f.toTarget, f.fromPos, f.toPos]) p.sub(subject).multiplyScalar(k).add(subject);
+      if (about) {
+        for (const p of [f.fromTarget, f.toTarget, f.fromPos, f.toPos]) p.sub(subject).multiplyScalar(k).add(subject);
+      } else {
+        // Nobody to scale about (he is in the van, or off screen): the flight goes where it was going, at the new distance.
+        // Scaling its destination about the aim point, which may still be far off, would land it short of the site.
+        f.fromPos.sub(f.fromTarget).multiplyScalar(k).add(f.fromTarget);
+        f.toPos.sub(f.toTarget).multiplyScalar(k).add(f.toTarget);
+      }
       if (f.orbit) {
         f.orbit.from.distance *= k;
         f.orbit.to.distance *= k;

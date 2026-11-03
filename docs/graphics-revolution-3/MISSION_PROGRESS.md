@@ -1,10 +1,10 @@
 # Graphics Revolution 3.0: Mission Progress
 
-Branch `feature/v3-graphics-revolution-3`, from `f463050` (Mission 01). Pushed once, to a Preview at `f6d635d` (`dpl_ASNkMvm97XqSKNWhmcBHNc4Tv4kE`). Nothing merged; production untouched. Later commits are local only.
+Branch `feature/v3-graphics-revolution-3`, from `f463050` (Mission 01). Pushed to Vercel Previews only. Nothing merged; production untouched. `git log origin/feature/v3-graphics-revolution-3` shows what was last pushed.
 
-## Status: READY FOR VERCEL PREVIEW (camera zoom repair committed locally; the live Preview is still `f6d635d`)
+## Status: camera zoom repair on a Vercel Preview, awaiting the owner's test
 
-Awaiting the owner's authorization to push the camera zoom repair. Results, numbers and open items: `REPORT.md`, `ZOOM_FIX.md`. Pictures: `sheets/`.
+Results, numbers and open items: `REPORT.md`, `ZOOM_FIX.md`. Pictures: `sheets/`.
 
 ## Completed
 

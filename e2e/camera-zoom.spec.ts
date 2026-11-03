@@ -360,6 +360,143 @@ test('rooftop service: zoom holds through carrying, climbing and the roof, at ev
   expect(errors).toEqual([]);
 });
 
+test('van arrival: the wheel works while he is still inside, and the zoom carries over as he steps out', async ({ page }) => {
+  test.setTimeout(300_000);
+  const errors: string[] = [];
+  page.on('pageerror', (e) => errors.push(e.message));
+  await start(page);
+  test.skip(await isTouch(page), 'wheel test: touch has its own below');
+
+  // Residential, at full running speed: straight in as the van pulls up, during the service camera's first flight.
+  const home = await dispatchTo(page, 'n-o-1');
+  await untilOnsite(page);
+  await setSpeed(page, 1);
+  await watch(page, home);
+  expect((await metrics(page)).stage, 'residential: he is still in the van').toBe('riding');
+  await wheel(page, -3);
+  const rides = await metrics(page);
+  expect(rides.factor, 'residential: the wheel took while he rides in').toBeLessThan(0.8);
+  await stageIs(page, 'walk');
+  // A zoom during the flight to the site used to drag its destination short of the site, which ended the service camera.
+  expect(await page.evaluate(() => (window.__ego!.app.getState() as S).serviceView?.mode), 'residential: the service camera stayed on').toBe('work');
+  await expect.poll(async () => (await metrics(page)).onScreen, { message: 'residential: framed as he walks', timeout: 8000 }).toBe(true);
+  const walks = await metrics(page);
+  expect(near(walks.factor, rides.factor, 0.05), `residential: zoom kept as he steps out (${rides.factor.toFixed(2)} → ${walks.factor.toFixed(2)})`).toBe(true);
+  await page.screenshot({ path: shotName(page, 'arrival-residential-walking') });
+  expect(errors).toEqual([]);
+});
+
+test('van arrival at a roof: the camera answers while he is in the van, and the zoom carries over', async ({ page }) => {
+  test.setTimeout(300_000);
+  const errors: string[] = [];
+  page.on('pageerror', (e) => errors.push(e.message));
+  await start(page);
+  test.skip(await isTouch(page), 'wheel test: touch has its own below');
+  // With nobody to scale about, the zoom pivots on the shot's aim point on the ground, so the camera's height is in direct proportion to it.
+  const height = () => page.evaluate(() => window.__egoRender!.cam[1]);
+  const roof = await dispatchTo(page, 'cm-plaza');
+  await untilOnsite(page);
+  await setSpeed(page, 1);
+  await watch(page, roof);
+  await setSpeed(page, 0);
+  expect((await metrics(page)).stage, 'rooftop: he is still in the van').toBe('roof:riding');
+  await page.waitForTimeout(2000);
+  const v0 = await height();
+  const before = await page.screenshot({ path: shotName(page, 'arrival-rooftop-1-default') });
+  await wheel(page, -4);
+  const v1 = await height();
+  expect(v1, `rooftop: wheel in brings the camera in (height ${v0.toFixed(2)} → ${v1.toFixed(2)} m)`).toBeLessThan(v0 * 0.85);
+  await differs(page, before, 'arrival-rooftop-2-zoomed-in');
+  await wheel(page, 4);
+  const v2 = await height();
+  expect(near(v2, v0, 0.05), `rooftop: wheel out undoes it (height ${v0.toFixed(2)} → ${v2.toFixed(2)} m)`).toBe(true);
+  await wheel(page, -3);
+  const held = (await metrics(page)).factor;
+  expect(held).toBeLessThan(0.8);
+  await setSpeed(page, 1);
+  await stageIs(page, 'roof:to-rack');
+  await page.waitForTimeout(600);
+  const out = await metrics(page);
+  expect(near(out.factor, held, 0.05), `rooftop: zoom kept as he steps out (${held.toFixed(2)} → ${out.factor.toFixed(2)})`).toBe(true);
+  await expect.poll(async () => (await metrics(page)).onScreen, { message: 'rooftop: framed once he is out', timeout: 8000 }).toBe(true);
+  await page.screenshot({ path: shotName(page, 'arrival-rooftop-3-out-of-the-van') });
+  expect(errors).toEqual([]);
+});
+
+test('ladder at 5×: the wheel works mid-climb and mid-descent, and the camera keeps him', async ({ page }) => {
+  test.setTimeout(300_000);
+  const errors: string[] = [];
+  page.on('pageerror', (e) => errors.push(e.message));
+  await start(page);
+  test.skip(await isTouch(page), 'wheel test: touch has its own below');
+  const job = await dispatchTo(page, 'cm-plaza');
+  await untilOnsite(page);
+  await setSpeed(page, 1);
+  await watch(page, job);
+  await setSpeed(page, 5);
+
+  // Going up.
+  await stageIs(page, 'roof:climb');
+  const start0 = await metrics(page);
+  expect(start0.factor).toBe(1);
+  // No settling time here: at 5× the climb is over in moments.
+  await overWorld(page);
+  for (let i = 0; i < 4; i++) {
+    await page.mouse.wheel(0, -120);
+    await page.waitForTimeout(30);
+  }
+  const mid = await metrics(page);
+  await page.screenshot({ path: shotName(page, 'ladder-5x-up') });
+  expect(mid.stage, 'still on the ladder as the wheel turned').toMatch(/roof:(climb|transfer)/);
+  await page.waitForTimeout(250);
+  const zoomed = await metrics(page);
+  expect(zoomed.factor, 'climbing at 5×: the wheel took').toBeLessThan(0.8);
+  expect(zoomed.d, 'climbing at 5×: not inside him').toBeGreaterThan(0.9);
+
+  // On the roof at the unit: he is framed at that zoom, and closer than the default framing, which is the visible proof.
+  await stageIs(page, 'roof:work');
+  await setSpeed(page, 1);
+  await page.waitForTimeout(2600);
+  const onRoof = await metrics(page);
+  expect(near(onRoof.factor, zoomed.factor, 0.1), `zoom kept to the roof (${zoomed.factor.toFixed(2)} → ${onRoof.factor.toFixed(2)})`).toBe(true);
+  expect(onRoof.onScreen, 'on the roof: on screen').toBe(true);
+  expect(onRoof.camY, 'on the roof: above the deck').toBeGreaterThan(onRoof.techY + 0.4);
+  await page.screenshot({ path: shotName(page, 'ladder-5x-on-roof-zoomed') });
+  await press(page, 'service-zoom-reset');
+  await page.waitForTimeout(2300);
+  const fresh = await metrics(page);
+  expect(fresh.factor).toBe(1);
+  expect(onRoof.d, `the zoom made him closer than the default framing (${onRoof.d.toFixed(2)} vs ${fresh.d.toFixed(2)} m)`).toBeLessThan(fresh.d * 0.85);
+  expect(onRoof.px, 'and larger on screen').toBeGreaterThan(fresh.px * 1.15);
+
+  // Coming down at 5×, out and back in on the rungs.
+  await wheel(page, -3);
+  const kept = (await metrics(page)).factor;
+  await page.evaluate((id) => {
+    const e = window.__ego!;
+    e.advanceMinutes((e.getState() as S).jobs[id].phaseRemaining + 0.1);
+    const j = (e.getState() as S).jobs[id];
+    e.dispatch({ type: 'choose-diagnosis', jobId: id, faultId: j.faultId });
+    e.dispatch({ type: 'submit-quote', jobId: id, quote: { recommendation: 'repair', priceAdjust: 0.8 } });
+    e.advanceMinutes((e.getState() as S).jobs[id].phaseRemaining + 0.1);
+  }, job);
+  await setSpeed(page, 5);
+  await stageIs(page, 'roof:climb');
+  const down0 = await metrics(page);
+  expect(near(down0.factor, kept, 0.1), `zoom kept to the descent (${kept.toFixed(2)} → ${down0.factor.toFixed(2)})`).toBe(true);
+  await overWorld(page);
+  for (let i = 0; i < 3; i++) {
+    await page.mouse.wheel(0, 120);
+    await page.waitForTimeout(30);
+  }
+  await page.waitForTimeout(200);
+  const down1 = await metrics(page);
+  expect(down1.factor, 'descending at 5×: the wheel took').toBeGreaterThan(down0.factor * 1.2);
+  await page.screenshot({ path: shotName(page, 'ladder-5x-down') });
+  await page.waitForFunction(() => (window.__ego!.getState() as S).vehicles['veh-1'].status !== 'onsite', null, { timeout: 120_000 });
+  expect(errors).toEqual([]);
+});
+
 test('free play: the wheel zooms the city, keeps a followed truck, leaves the panels alone; Photo Mode unchanged', async ({ page }) => {
   test.setTimeout(240_000);
   await start(page);

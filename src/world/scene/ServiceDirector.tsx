@@ -321,7 +321,12 @@ export function ServiceDirector() {
     // He has reached the unit: the full Watch Work or Detail shot (on the player's heading if they turned the view meanwhile).
     if (f.walking && tech && !walking) return frame(v, 'arrived', cameraInput.lastInput > f.at);
     if (!walking || !tech || cameraMotion.flying) return;
-    if (serviceZoom.factor < ZOOMED_IN) return;
+    // Zoomed in tight the view slides along with him, which only keeps him where he is on screen: if he is not on it, this
+    // brings him back, at the player's distance.
+    if (serviceZoom.factor < ZOOMED_IN) {
+      if (offScreen(new THREE.Vector3(tech.pos.x, 0, tech.pos.z)) && performance.now() - f.at > ROOF_FOLLOW_MIN_INTERVAL) frame(v, 'follow', true);
+      return;
+    }
     if (f.tech && Math.hypot(tech.pos.x - f.tech.x, tech.pos.z - f.tech.z) < FOLLOW_STEP) return;
     f.tech = tech.pos;
     // Re-aim only once he has been out of the view for two checks running: a head passing behind a trunk for a moment

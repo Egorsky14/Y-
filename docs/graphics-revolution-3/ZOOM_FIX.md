@@ -49,16 +49,25 @@ Two more things limited close-ups: the near clipping plane was 1 m out, and the 
 | Residential: walking; Property, Watch Work, Detail; held 10 s; in and out; phase change; closest; Reset | Desktop |
 | Rooftop: carrying, climbing, roof; Detail, Watch Work, Property; 1×, 2×, 5×; descending | Desktop |
 | Free play: city, repeated drags with the game running, panels, followed truck, Photo Mode | Desktop |
+| Van arrival: house at full speed during the first flight; roof measured, reversed, carried over as he steps out | Desktop |
+| Ladder at 5×: mid-climb and mid-descent, kept to the roof, closer and larger than the default framing | Desktop |
 | Touch: three pinches in a row on the city; rooftop in all three modes; held 9 s; buttons; Reset; no page scroll | iPhone portrait, iPhone landscape |
 
 Regression, one at a time, all passing with this code: Mission 01 at 1× and 5× (desktop); `rooftop-service` at both sites; `rooftop-persistence`; `gameplay`; `graphics`; `service-camera` (desktop, laptop, iPhone portrait and landscape); `service-camera-feedback`; `rooftop-camera` (desktop, 390×844); `mobile` (iPhone, Android portrait). Results: `evidence/regress/runs.txt`, `evidence/zoom/runs.txt`.
 
 While building these, some tests failed because of the tests themselves: a wrong mode order, an unstable mid-move baseline, a pinch so large it hit the limit, a finger landing on a card. One failure was a real flaw in my design: zoomed in with him off screen, nothing brought him back. That is fixed, and the spec covers it.
 
+## Pre-Preview smoke tests
+
+Three scenes the first pass had not exercised. Two of them found real bugs:
+
+- **Zooming during the van's arrival ended the service camera.** With him still in the van, the zoom scaled about the aim point, and a flight to the site was under way, so its destination was dragged a third of the way back along its route. The camera landed 85 m short, and the rule for "the player panned away" ended the service view. A flight now keeps its destination when there is nobody to scale about.
+- **At a house, zoomed in, he could walk out of frame.** The recovery that brings him back existed only for rooftop jobs. It now covers both.
+- **Mission 01 on phone emulation and zooming on the ladder at 5×** passed.
+
 ## Limitations
 
 - **No real phone or trackpad has been used.** Pinch is real touch input through Chromium's emulation. Trackpad handling has only a unit test of its scaling.
 - **Face:** the director's work shots often sit behind him as he faces the unit. Zooming shows hands, tools and uniform at once; seeing his face also takes an orbit (right-drag, or two fingers) or Photo Mode.
-- **Not exercised directly:** Mission 01 on phones after this fix; zooming during the van's arrival while he is still inside (the zoom falls back to the aim point there); zooming during the ladder at 5×, where the game holds the site view.
 - **Very close in Property mode** works but is a tighter view than that mode's composition intends.
 - Zooming out against a wall stops at the wall, by design, so in narrow side yards the range is shorter.
