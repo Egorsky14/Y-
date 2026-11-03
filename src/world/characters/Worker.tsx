@@ -392,15 +392,17 @@ export function Worker({ role, look, anim, scale = 1, pace = 1, work, motion }: 
       G.last.copy(here);
       G.seen = true;
       const v = dt > 1e-4 ? Math.min(7, moved / dt) : 0;
-      G.speed += (v - G.speed) * Math.min(1, dt * 14);
+      // A paused game holds him mid-stride: standing still because nothing moves is not the same as stopping.
+      if (pace > 0) G.speed += (v - G.speed) * Math.min(1, dt * 14);
     }
     /** Legs and hips for walking at the root's real speed, eased from a stand by how much he is moving. */
     const walkLegs = (carryLoad = 0): { swing: number; size: number } => {
       const speed = G.speed;
       const stride = strideLength(Math.max(0.6, speed));
-      G.phase = (G.phase + (speed * dt) / stride) % 1;
-      const target = smooth01(speed, 0.08, 0.5);
-      G.moving += (target - G.moving) * Math.min(1, dt * 9);
+      if (pace > 0) {
+        G.phase = (G.phase + (speed * dt) / stride) % 1;
+        G.moving += (smooth01(speed, 0.08, 0.5) - G.moving) * Math.min(1, dt * 9);
+      }
       const k = G.moving;
       const fL = footAt(G.phase, stride);
       const fR = footAt(G.phase + 0.5, stride);
@@ -505,7 +507,9 @@ export function Worker({ role, look, anim, scale = 1, pace = 1, work, motion }: 
           const pull = Math.sin(t * 3.2);
           const a = pull * 0.35;
           hand(1, 0.11 + pull * 0.028, 0.56 + pull * 0.03, face - 0.17, [Math.sin(a) * 0.9, 0.15, 0.4], [-Math.cos(a), Math.sin(a) * 0.6, 0]);
-          hand(-1, -0.2, brace(0.12).y, brace(0.12).z, [0.05, -0.1, 1], top > 1.2 ? [0, 0, 1] : [0, -1, 0]);
+          // On a tall cabinet the palm lies flat on the panel, fingers up; on a low one it rests on top, fingers forward.
+          if (top > 1.2) hand(-1, -0.2, brace(0.12).y, brace(0.12).z, [0.12, 1, 0.02], [0, 0, 1]);
+          else hand(-1, -0.2, brace(0.12).y, brace(0.12).z, [0.05, -0.1, 1], [0, -1, 0]);
           showWrench = true;
           gripR = GRIP;
           look3(0.08, 0.52, face + 0.05, lean, pelvisY);
