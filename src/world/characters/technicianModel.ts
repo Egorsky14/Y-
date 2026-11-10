@@ -51,19 +51,25 @@ const FACES: FaceShape[] = ['oval', 'square', 'round', 'long', 'broad', 'weather
 const HAIRS: HairStyle[] = ['crop', 'buzz', 'curly', 'swept', 'receding', 'bald'];
 const BEARDS: Beard[] = ['none', 'none', 'mustache', 'none', 'goatee', 'full', 'none'];
 
-/** Deterministic appearance from an employee's look seed. */
+/**
+ * Deterministic appearance from an employee's look seed.
+ * The seed is an unsigned 32-bit name hash (nameSeed), so it is decoded with unsigned shifts: a signed `>>` turns
+ * every seed of 2^31 or more negative, the indices below go negative, and there is no face to draw. Below 2^31 the
+ * two shifts agree, so nobody's appearance changes.
+ */
 export function appearanceFor(look: number): Appearance {
-  const heavy = (look >> 2) % 5;
-  const face = FACES[(look >> 4) % FACES.length];
+  const u = look >>> 0;
+  const heavy = (u >>> 2) % 5;
+  const face = FACES[(u >>> 4) % FACES.length];
   const palette = FACE_LOOKS[face];
   return {
     build: heavy === 0 ? 'slim' : heavy === 4 ? 'heavy' : 'avg',
     face,
-    hair: HAIRS[(look >> 7) % HAIRS.length],
-    beard: BEARDS[(look >> 10) % BEARDS.length],
-    skin: palette.skin[look % palette.skin.length],
-    hairColor: palette.hair[(look >> 3) % palette.hair.length],
-    height: 0.94 + ((look >> 5) % 7) * 0.02,
+    hair: HAIRS[(u >>> 7) % HAIRS.length],
+    beard: BEARDS[(u >>> 10) % BEARDS.length],
+    skin: palette.skin[u % palette.skin.length],
+    hairColor: palette.hair[(u >>> 3) % palette.hair.length],
+    height: 0.94 + ((u >>> 5) % 7) * 0.02,
   };
 }
 
