@@ -38,21 +38,33 @@ Occurrences of each marker in the main script of each build:
 | `rooftop-mission.spec.ts` (Mission 01) | test | desktop 1080p | 3 of 3 |
 | `mobile.spec.ts` | test | iPhone portrait | 1 of 1 |
 | `camera-zoom.spec.ts` | test | iPhone portrait | 1 passed, 6 skipped |
+| `rooftop-service.spec.ts` (reads `__egoRoofSpec`) | test | desktop 1080p | 1 of 1 |
+| `rooftop-review.spec.ts` (reads `__egoRoofSpec`) | test | phone 390x844 | 3 of 3 |
+| `rooftop-persistence.spec.ts` | test | desktop 1080p | 1 of 1 |
+| `supply.spec.ts` | test | desktop 1080p | 1 of 1 |
+| `banking.spec.ts` | test | desktop 1080p | 1 of 1 |
+| `automation.spec.ts` | test | desktop 1080p | 1 of 1 |
+| `camera-zoom.spec.ts` (reads `__egoServiceZoom`) | test | desktop 1080p | 6 passed, 1 skipped |
 | `crash-recovery.spec.ts` (including the hook-set check) | crash test | desktop 1080p, iPhone portrait, iPhone landscape | 5 of 5 on each |
 
-Skips: the six unit skips are probe files that run only on request; `camera-zoom` skips its six mouse-wheel tests on a
-touch device.
+The production-release spec was run again last, after the final change to `package.json`: 2 of 2 on desktop and on
+iPhone portrait.
+
+Skips, all decided by the specs themselves: the six unit skips are probe files that run only on request;
+`camera-zoom` skips its six mouse-wheel tests on a touch device and its pinch test on desktop.
+
+The two globals that moved to test builds are both exercised: `__egoRoofSpec` by `rooftop-service` and
+`rooftop-review`, `__egoServiceZoom` by `camera-zoom` on desktop and phone.
 
 Not run in this pass:
 
-- `rooftop-service.spec.ts` and `rooftop-review.spec.ts`, the two specs that read `__egoRoofSpec`. Free memory was
-  5.1 GB, under the threshold, when their turn came. `__egoRoofSpec` is confirmed present in the test bundle and
-  `camera-zoom` (which reads `__egoServiceZoom`, gated the same way) passes.
-- The desktop `camera-zoom`, `automation`, `banking`, `supply` and `rooftop-persistence` specs, and the graphics,
-  service-camera, character and performance specs. They use the same hooks through the same test build as the specs
-  above; none was run against it.
+- The graphics, service-camera, rooftop-camera, rooftop-sites, rooftop-video, banking-layout, character,
+  technician and performance specs. They use the same hooks through the same test build as the specs above. Several
+  also need `window.__egoThree`, which was and still is limited to profiling builds.
 - Android and tablet profiles.
 - `playwright.remote.config.ts` against a deployment: nothing was deployed.
+- The capture and benchmark scripts under `docs/**/scripts` (see `CAPTURE_SCRIPTS.md`): they need a test build and
+  were not re-run.
 
 ## What the production play-through does
 
