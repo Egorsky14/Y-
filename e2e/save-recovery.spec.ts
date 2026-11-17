@@ -78,7 +78,12 @@ async function companyWithTwoSaves(page: Page) {
   return { manual, auto };
 }
 
-/** The menu fits this screen: the card on screen side to side, no sideways scroll, Continue and its source line readable. */
+/**
+ * The menu is usable on this screen: the card on screen side to side, no sideways scroll, and each control can be
+ * scrolled to, is not covered by anything, and is big enough to press. Being "in view" is checked by what a player
+ * needs (at least 98% showing: a control scrolled to the edge of a short screen can sit a fraction of a pixel under
+ * it), and never on its own: the control must also be the thing a tap in its middle would hit.
+ */
 async function expectMenuFits(page: Page) {
   const view = page.viewportSize()!;
   const card = (await page.getByTestId('main-menu').boundingBox())!;
@@ -88,13 +93,41 @@ async function expectMenuFits(page: Page) {
   for (const id of ['continue-game', 'continue-source', 'new-game']) {
     const el = page.getByTestId(id);
     await el.scrollIntoViewIfNeeded();
-    // Scrolled to the edge of a short screen, a control can sit a fraction of a pixel under it.
     await expect(el).toBeInViewport({ ratio: 0.98 });
     const box = (await el.boundingBox())!;
     expect(box.x, `${id} inside the card`).toBeGreaterThanOrEqual(card.x);
     expect(box.x + box.width).toBeLessThanOrEqual(card.x + card.width + 0.5);
+    // Whatever sliver is out of view is under a pixel and a half, not a hidden row of the control.
+    const hidden = Math.max(0, -box.y) + Math.max(0, box.y + box.height - view.height);
+    expect(hidden, `${id}: ${hidden.toFixed(2)} px out of view`).toBeLessThanOrEqual(1.5);
+    const hit = await el.evaluate((node) => {
+      const r = node.getBoundingClientRect();
+      const top = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+      return !!top && (top === node || node.contains(top));
+    });
+    expect(hit, `${id} is not covered by another element`).toBe(true);
   }
-  if (touch()) expect((await page.getByTestId('continue-game').boundingBox())!.height).toBeGreaterThanOrEqual(44);
+  if (touch()) for (const id of ['continue-game', 'new-game']) expect((await page.getByTestId(id).boundingBox())!.height, `${id} is tall enough for a finger`).toBeGreaterThanOrEqual(44);
+}
+
+/** The control answers a real tap (or click): starting a company asks first, and the question can be dismissed. */
+async function expectNewGameResponds(page: Page) {
+  await page.getByTestId('new-game').scrollIntoViewIfNeeded();
+  await press(page.getByTestId('new-game'));
+  await expect(page.getByRole('alertdialog')).toBeVisible();
+  await press(page.getByTestId('cancel-new-game'));
+  await expect(page.getByRole('alertdialog')).toHaveCount(0);
+}
+
+/** Turning the phone: the menu is still usable the other way up, and again when turned back. */
+async function expectMenuSurvivesRotation(page: Page) {
+  const view = page.viewportSize()!;
+  await page.setViewportSize({ width: view.height, height: view.width });
+  await expectMenuFits(page);
+  await expectNewGameResponds(page);
+  await page.setViewportSize(view);
+  await expectMenuFits(page);
+  await expectNewGameResponds(page);
 }
 
 test('Continue resumes from the newer autosave after a real reload, and the manual save is still there to load', async ({ page }) => {
@@ -190,6 +223,9 @@ test('a damaged or incompatible save is skipped with an explanation, never delet
   await expect(page.getByTestId('continue-notice')).toHaveText('Your autosave is damaged and cannot be opened, so this continues from your manual save. Nothing has been deleted.');
   await expect(page.getByTestId('unreadable-autosave')).toContainText('damaged, cannot be opened. It is kept on this device.');
   await expectMenuFits(page);
+  await expectNewGameResponds(page);
+  // The longest menu (a notice and the list of other saves) is the one to turn the phone on.
+  if (touch()) await expectMenuSurvivesRotation(page);
   await page.screenshot({ path: SHOT('05-menu-autosave-damaged') });
   await press(page.getByTestId('continue-game'));
   await ready(page);

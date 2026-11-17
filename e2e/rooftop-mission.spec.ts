@@ -353,13 +353,18 @@ test('an existing company continues where it was: no mission, no second call', a
     delete s.mission;
     for (const j of Object.keys(s.jobs)) if (j !== id) delete s.jobs[j];
     s.schemaVersion = 5;
-    localStorage.setItem('ego-hvac-v3:save', JSON.stringify({ schemaVersion: 5, savedAt: new Date().toISOString(), appVersion: '0.1.0', state: s }));
-    localStorage.removeItem('ego-hvac-v3:autosave');
-    // Leaving the page autosaves a running game, and Continue loads the newest save: back at the menu, nothing is written.
-    (window.__ego!.app as S).setState({ screen: 'menu' });
-    return { id, jobs: Object.keys(s.jobs), ledger: s.finance.ledger.length };
+    return { id, jobs: Object.keys(s.jobs), ledger: s.finance.ledger.length, text: JSON.stringify({ schemaVersion: 5, savedAt: new Date().toISOString(), appVersion: '0.1.0', state: s }) };
   });
+  // The device as that player's was: only the previous version's manual save on it. Leaving a running game autosaves
+  // it (and Continue loads the newest save), so the store is arranged from the main menu, where the game writes nothing.
   await page.reload();
+  await expect(page.getByTestId('continue-game')).toBeVisible();
+  await page.evaluate((text) => {
+    for (const key of Object.keys(localStorage)) if (key.startsWith('ego-hvac-v3:') && !key.endsWith(':settings') && !key.endsWith('touch-tutorial-seen')) localStorage.removeItem(key);
+    localStorage.setItem('ego-hvac-v3:save', text);
+  }, saved.text);
+  await page.reload();
+  expect(await page.evaluate(() => Object.keys(localStorage).filter((k) => /:(save|autosave)(:kept)?$/.test(k))), 'only the old manual save is on the device').toEqual(['ego-hvac-v3:save']);
   await press(page, 'continue-game', touch);
   await page.waitForFunction(() => window.__ego?.app.getState().sceneReady, null, { timeout: 180_000 });
   await page.waitForTimeout(1000);
