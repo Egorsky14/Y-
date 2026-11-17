@@ -1,6 +1,6 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react';
 import { recordCrash, type CrashReport, type CrashScope } from '@/app/diagnostics';
-import { useApp, type CrashTestScope } from '@/app/store';
+import { CRASH_HOOKS, useApp, type CrashTestScope } from '@/app/store';
 
 export interface RecoveryProps {
   /** What was recorded about the failure (null for the instant between the throw and the commit). */
@@ -62,13 +62,16 @@ export class ErrorBoundary extends Component<Props, State> {
 }
 
 /**
- * Test hook: throws while rendering when window.__ego.crash(scope) asked for it. One placed in each boundary's
- * subtree lets the end-to-end tests break exactly that part. A one-shot request is cleared as it fires, so
- * "try again" then succeeds; a sticky one keeps failing. Renders nothing and costs one store read otherwise.
+ * Crash-test builds and the dev server only: throws while rendering when window.__ego.crash(scope) asked for it.
+ * One placed in each boundary's subtree lets the end-to-end tests break exactly that part. A one-shot request is
+ * cleared as it fires, so "try again" then succeeds; a sticky one keeps failing.
+ *
+ * In a production build __CRASH_HOOKS__ is the literal false: the component is an empty function, nothing can make
+ * it throw, and the bundler drops the rest.
  */
 export function CrashProbe({ scope, also }: { scope: CrashTestScope; also?: CrashTestScope }) {
-  const test = useApp((s) => s.crashTest);
-  if (test && (test.scope === scope || test.scope === also)) {
+  const test = useApp((s) => (CRASH_HOOKS ? s.crashTest : null));
+  if (CRASH_HOOKS && test && (test.scope === scope || test.scope === also)) {
     // 'fatal' is two probes (the app and its recovery screen): it stays set so both fire.
     if (!test.sticky && test.scope !== 'fatal') queueMicrotask(() => useApp.getState().setCrashTest(null));
     throw new Error(`Simulated ${scope} rendering failure (window.__ego.crash).`);

@@ -515,7 +515,8 @@ describe('a ten-technician company on automation', () => {
     simulate(c, 3, (e) => {
       for (let i = 0; i < 3; i++) e.tick(1);
     });
-    const norm = (e: GameEngine) => serialize(e.state).replace(/"savedAt":"[^"]+"/, '').replace(/"speed":\d/, '"speed":1');
+    // The envelope's checksum covers the state text, speed included, so it is set aside with the speed it differs by.
+    const norm = (e: GameEngine) => serialize(e.state).replace(/"savedAt":"[^"]+"/, '').replace(/"checksum":"[^"]+"/, '').replace(/"speed":\d/, '"speed":1');
     expect(norm(b)).toBe(norm(a));
     expect(norm(c)).toBe(norm(a));
   });

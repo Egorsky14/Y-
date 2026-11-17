@@ -4,8 +4,8 @@ interface EgoTestHook {
   dispatch: (action: unknown) => { ok: boolean; reason?: string };
   advanceMinutes: (minutes: number) => void;
   spawnLead: (opts: { channel?: 'warranty' | 'direct'; preferredLotId?: string; faultId?: string }) => string | null;
-  /** Make part of the game fail on its next render or simulation step (src/app/store.ts); sticky keeps it failing. */
-  crash: (scope: 'app' | 'world' | 'hud' | 'panel' | 'simulation' | 'fatal', sticky?: boolean) => void;
+  /** Crash-test build only (playwright.crash.config.ts): make part of the game fail on its next render or simulation step; sticky keeps it failing. */
+  crash?: (scope: 'app' | 'world' | 'hud' | 'panel' | 'simulation' | 'fatal', sticky?: boolean) => void;
   crashLog: () => { scope: string; name: string; message: string; count: number; stack: string[]; componentStack: string[] }[];
   app: { getState: () => { camera: (cmd: { type: 'focus' | 'reset' | 'hq' | 'follow'; target?: { x: number; z: number }; vehicleId?: string; distance?: number; azimuth?: number; elevation?: number; targetY?: number }) => void; photo: { on: boolean }; setPhoto: (p: { on?: boolean; minute?: number | null; weather?: string | null }) => void; sceneReady: boolean; settings: { quality: 'low' | 'medium' | 'high' | 'ultra' }; select: (sel: { kind: string; id: string } | null) => void } };
 }

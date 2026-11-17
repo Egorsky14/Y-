@@ -1,4 +1,4 @@
-import { useApp } from './store';
+import { CRASH_HOOKS, useApp } from './store';
 import { AUTOSAVE_KEY, saveToStorage } from '@/persistence/save';
 import { recordCrash } from './diagnostics';
 
@@ -14,20 +14,25 @@ export function startGameLoop(): () => void {
   let lastDay = -1;
   const STEP = 1 / 30; // real seconds per simulation step
   let accumulator = 0;
+  /** Real seconds the game has been up (scene drawn, no fault) since a load: after a few, the load is confirmed. */
+  let healthy = 0;
+  const LOAD_CONFIRM_SECONDS = 4;
 
   const frame = (now: number) => {
     // Clamp catch-up to one second so a hitch or a slow frame never spirals, while a 2 fps
     // software renderer still keeps the simulation on real time.
     const dt = Math.min(1.0, (now - last) / 1000);
     last = now;
-    const { engine, screen, settings, simFault, crashTest } = useApp.getState();
+    const { engine, screen, settings, simFault, crashTest, loadPending, sceneReady } = useApp.getState();
+    if (!loadPending) healthy = 0;
+    else if (engine && sceneReady && !simFault && (healthy += dt) >= LOAD_CONFIRM_SECONDS) useApp.getState().confirmLoaded();
     if (engine && screen === 'game' && !simFault) {
       accumulator += dt;
       // An exception here used to end the loop for good (the next frame was never requested): a frozen game with
       // no message. Now the step stops, the failure is recorded and the recovery overlay says so. The state may be
       // half-updated, so nothing is saved from here on; the saves on the device stay as they were.
       try {
-        if (crashTest?.scope === 'simulation') throw new Error('Simulated simulation failure (window.__ego.crash).');
+        if (CRASH_HOOKS && crashTest?.scope === 'simulation') throw new Error('Simulated simulation failure (window.__ego.crash).');
         while (accumulator >= STEP) {
           engine.tick(STEP);
           accumulator -= STEP;

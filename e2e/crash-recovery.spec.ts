@@ -142,7 +142,7 @@ test('a rendering failure in a panel, the interface, the 3D world or the whole a
   // ---- 1. One panel fails: only that panel is replaced. ----
   await page.evaluate(() => (window.__ego!.app.getState() as S).openPanel('employees'));
   await expect(page.getByTestId('panel-employees')).toBeVisible();
-  await page.evaluate(() => window.__ego!.crash('panel'));
+  await page.evaluate(() => window.__ego!.crash!('panel'));
   await expectUsable(page, 'recovery-panel');
   await page.screenshot({ path: SHOT('01-panel') });
   await expect(page.getByTestId('panel-employees')).toHaveCount(0);
@@ -154,7 +154,7 @@ test('a rendering failure in a panel, the interface, the 3D world or the whole a
   await expect(page.getByTestId('panel-employees')).toBeVisible();
   await expect(page.getByTestId('recovery-panel')).toHaveCount(0);
   // A panel that keeps failing says so, and can be closed; another panel then opens normally.
-  await page.evaluate(() => window.__ego!.crash('panel', true));
+  await page.evaluate(() => window.__ego!.crash!('panel', true));
   await expect(page.getByTestId('recovery-panel')).toBeVisible();
   await press(page.getByTestId('recovery-panel').getByTestId('recovery-retry'));
   await expect(page.getByTestId('recovery-repeat')).toBeVisible();
@@ -167,7 +167,7 @@ test('a rendering failure in a panel, the interface, the 3D world or the whole a
   await page.evaluate(() => (window.__ego!.app.getState() as S).openPanel(null));
 
   // ---- 2. The interface fails: the world keeps drawing, the game pauses, the controls can be restored. ----
-  await page.evaluate(() => window.__ego!.crash('hud'));
+  await page.evaluate(() => window.__ego!.crash!('hud'));
   await expectUsable(page, 'recovery-hud');
   await expect(page.getByTestId('hud-cash')).toHaveCount(0);
   await expectWorldDrawing(page);
@@ -195,7 +195,7 @@ test('a rendering failure in a panel, the interface, the 3D world or the whole a
   expect((await game(page)).speed).toBe(1);
 
   // ---- 3. The 3D world fails (inside the real canvas): the interface carries on and the view can be restarted. ----
-  await page.evaluate(() => window.__ego!.crash('world'));
+  await page.evaluate(() => window.__ego!.crash!('world'));
   await expectUsable(page, 'recovery-world');
   await page.screenshot({ path: SHOT('03-world') });
   await expect(page.locator('.app-world canvas')).toHaveCount(0);
@@ -219,7 +219,7 @@ test('a rendering failure in a panel, the interface, the 3D world or the whole a
   await expect(page.getByTestId('recovery-world')).toHaveCount(0);
   await expectWorldDrawing(page);
   // A world that keeps failing says so and stays recoverable.
-  await page.evaluate(() => window.__ego!.crash('world', true));
+  await page.evaluate(() => window.__ego!.crash!('world', true));
   await expect(page.getByTestId('recovery-world')).toBeVisible();
   await press(page.getByTestId('recovery-world').getByTestId('recovery-retry'));
   await expect(page.getByTestId('recovery-repeat')).toBeVisible({ timeout: 60_000 });
@@ -232,11 +232,11 @@ test('a rendering failure in a panel, the interface, the 3D world or the whole a
   // ---- 4. The whole application fails: a recovery screen, not an empty page; nothing saved or deleted on its own. ----
   const beforeAppCrash = await game(page);
   const savedBefore = await saves(page);
-  await page.evaluate(() => window.__ego!.crash('app'));
+  await page.evaluate(() => window.__ego!.crash!('app'));
   await expectUsable(page, 'recovery-app');
   await page.screenshot({ path: SHOT('04-app') });
   await expect(page.locator('canvas')).toHaveCount(0);
-  await expect(page.getByTestId('recovery-save-note')).toContainText('Reloading returns to the company saved today at');
+  await expect(page.getByTestId('recovery-save-note')).toContainText(/Reloading returns to the (manual save|autosave) from today at /);
   await page.waitForTimeout(1500);
   expect(await saves(page), 'no save was written or removed by the failure').toEqual(savedBefore);
   const during = await game(page);
@@ -311,17 +311,23 @@ test('a failed simulation step stops the game with a message and leaves the save
   await page.evaluate(() => window.__ego!.dispatch({ type: 'set-speed', speed: 0 }));
   expect(await page.evaluate(() => (window.__ego!.app.getState() as S).save())).toBe(true);
   const saved = await game(page);
-  // Play on past the save, so the difference between memory and the save is visible.
+  // Play on past the manual save and let the game autosave, as it does when the page is hidden: the newest save
+  // from before the failure is now the autosave.
   await page.evaluate(() => window.__ego!.advanceMinutes(30));
+  await page.evaluate(() => { window.dispatchEvent(new Event('pagehide')); });
+  const autosaved = await game(page);
+  expect(autosaved.minutes).toBeGreaterThan(saved.minutes);
+  // And on again, so the moment of the failure is later than any save.
+  await page.evaluate(() => window.__ego!.advanceMinutes(20));
   const manualSave = (await saves(page)).save;
 
-  await page.evaluate(() => window.__ego!.crash('simulation'));
+  await page.evaluate(() => window.__ego!.crash!('simulation'));
   await expectUsable(page, 'recovery-simulation');
   // (Read once the game has stopped: until then the 45-second autosave may still land.)
   const before = await saves(page);
   expect(before.save, 'the manual save is the one the player made').toBe(manualSave);
   await page.screenshot({ path: SHOT('06-simulation') });
-  await expect(page.getByTestId('recovery-save-note')).toContainText('anything after that is not kept');
+  await expect(page.getByTestId('recovery-save-note')).toContainText(/Reloading returns to the autosave from today at .*anything after that is not kept/);
   const stopped = (await game(page)).minutes;
   // Nothing steps and nothing is saved from here: not on a timer, not when the page is hidden or left.
   await page.evaluate(() => { window.dispatchEvent(new Event('pagehide')); });
@@ -331,17 +337,19 @@ test('a failed simulation step stops the game with a message and leaves the save
   expect(await saves(page), 'the saves on the device are untouched').toEqual(before);
   await expectWorldDrawing(page);
 
-  // Main menu without saving, then Continue: the company as it was last saved.
+  // Main menu without saving, then Continue: the company as of the newest save from before the failure (the autosave).
   await press(page.getByTestId('recovery-simulation').getByTestId('recovery-menu'));
   await expect(page.getByTestId('main-menu')).toBeVisible();
   expect(await saves(page)).toEqual(before);
+  await expect(page.getByTestId('continue-source')).toHaveAttribute('data-slot', 'autosave');
   await page.getByTestId('continue-game').click();
   await page.waitForFunction(() => window.__ego?.app.getState().sceneReady, null, { timeout: 180_000 });
   await expect(page.getByTestId('recovery-simulation')).toHaveCount(0);
   const back = await game(page);
-  expect(back.minutes).toBe(saved.minutes);
-  expect(back.cash).toBe(saved.cash);
-  expect(back.employees).toEqual(saved.employees);
+  expect(back.minutes).toBe(autosaved.minutes);
+  expect(back.cash).toBe(autosaved.cash);
+  expect(back.employees).toEqual(autosaved.employees);
+  expect(await saves(page), 'loading wrote no save').toEqual(before);
   // And it runs.
   await page.evaluate(() => window.__ego!.dispatch({ type: 'set-speed', speed: 1 }));
   await page.waitForFunction((m) => (window.__ego!.getState() as S).elapsedMinutes > m + 1, back.minutes, { timeout: 30_000 });
@@ -358,7 +366,7 @@ test('a failure that keeps coming back, and one that takes the recovery screen w
   const playing = await game(page);
 
   // The whole app keeps failing: trying again says so, and "Save and go to the main menu" is offered.
-  await page.evaluate(() => window.__ego!.crash('app', true));
+  await page.evaluate(() => window.__ego!.crash!('app', true));
   await expect(page.getByTestId('recovery-app')).toBeVisible();
   await press(page.getByTestId('recovery-app').getByTestId('recovery-retry'));
   await expect(page.getByTestId('recovery-repeat')).toBeVisible();
@@ -378,7 +386,7 @@ test('a failure that keeps coming back, and one that takes the recovery screen w
 
   // The worst case: the app fails and so does its recovery screen. A plain page takes over; the saves are as they were.
   const before = await saves(page);
-  await page.evaluate(() => window.__ego!.crash('fatal'));
+  await page.evaluate(() => window.__ego!.crash!('fatal'));
   const fallback = page.getByTestId('recovery-static');
   await expect(fallback).toBeVisible();
   await expect(fallback).toContainText('has not been changed or deleted');
@@ -393,5 +401,76 @@ test('a failure that keeps coming back, and one that takes the recovery screen w
   await expect(page.getByTestId('main-menu')).toBeVisible({ timeout: 60_000 });
   await expect(page.getByTestId('continue-game')).toBeEnabled();
   expect(await saves(page)).toEqual(before);
+  log.onlySimulated();
+});
+
+test('reloading from a recovery screen returns to the newest autosave; a save that fails as it loads is skipped next time, not deleted', async ({ page }) => {
+  test.setTimeout(480_000);
+  const log = watch(page);
+  const guard = () => page.evaluate(() => JSON.parse(localStorage.getItem('ego-hvac-v3:load-guard') ?? 'null') as { key: string; attempts: number; failed: boolean } | null);
+  await startCompany(page);
+  // Paused and moved by hand, so each moment is exact: a manual save, then more play, then the autosave.
+  await page.evaluate(() => window.__ego!.dispatch({ type: 'set-speed', speed: 0 }));
+  await page.evaluate(() => window.__ego!.advanceMinutes(30));
+  expect(await page.evaluate(() => (window.__ego!.app.getState() as S).save())).toBe(true);
+  const manual = await game(page);
+  await page.evaluate(() => {
+    const s = window.__ego!.getState() as S;
+    window.__ego!.dispatch({ type: 'hire', candidateId: (s.candidates as S[]).find((c) => c.role === 'installer').id });
+    window.__ego!.advanceMinutes(60);
+  });
+  await page.evaluate(() => { window.dispatchEvent(new Event('pagehide')); });
+  const autosaved = await game(page);
+  const stored = await saves(page);
+
+  // ---- The game fails to draw; the player reloads from the recovery screen. ----
+  await page.evaluate(() => window.__ego!.crash!('app'));
+  await expectUsable(page, 'recovery-app');
+  await expect(page.getByTestId('recovery-save-note')).toContainText(/Reloading returns to the autosave from today at /);
+  await page.screenshot({ path: SHOT('09-app-reload-note') });
+  expect(await saves(page), 'the failure wrote no save').toEqual(stored);
+  await press(page.getByTestId('recovery-app').getByTestId('recovery-reload'));
+  await expect(page.getByTestId('main-menu')).toBeVisible({ timeout: 60_000 });
+  expect(await saves(page), 'reloading from the recovery screen wrote no save').toEqual(stored);
+  await expect(page.getByTestId('continue-source')).toHaveAttribute('data-slot', 'autosave');
+  await expect(page.getByTestId('continue-notice')).toHaveCount(0);
+  await page.getByTestId('continue-game').click();
+  await page.waitForFunction(() => window.__ego?.app.getState().sceneReady, null, { timeout: 180_000 });
+  const back = await game(page);
+  expect(back.minutes, 'back at the autosave, not the older manual save').toBe(autosaved.minutes);
+  expect(back.employees).toEqual(autosaved.employees);
+  expect(back.cash).toBe(autosaved.cash);
+  await expectWorldDrawing(page);
+  // Once it has run for a few seconds the load counts as good.
+  await page.waitForFunction(() => localStorage.getItem('ego-hvac-v3:load-guard') === null, null, { timeout: 30_000 });
+
+  // ---- Now the autosave fails every time it is loaded (the kind of failure that used to mean a blank page on every visit). ----
+  await page.reload();
+  const beforeLoop = await saves(page);
+  expect(beforeLoop.save).toBe(stored.save);
+  await page.getByTestId('continue-game').click();
+  await page.evaluate(() => window.__ego!.crash!('app'));
+  await expect(page.getByTestId('recovery-app')).toBeVisible();
+  expect(await guard(), 'the failure is counted against the save that was loading').toMatchObject({ key: 'ego-hvac-v3:autosave', failed: true });
+  expect(await saves(page), 'but the save itself is not touched').toEqual(beforeLoop);
+  await press(page.getByTestId('recovery-app').getByTestId('recovery-reload'));
+  await expect(page.getByTestId('main-menu')).toBeVisible({ timeout: 60_000 });
+
+  // Next time, Continue does not walk into the same failure: it uses the manual save and says why.
+  await expect(page.getByTestId('continue-source')).toHaveAttribute('data-slot', 'manual');
+  await expect(page.getByTestId('continue-notice')).toHaveText('The game did not start properly from your autosave last time, so this continues from your manual save instead. The autosave is still here if you want to try it again.');
+  await expect(page.getByTestId('load-autosave'), 'the autosave is still offered, by choice').toBeVisible();
+  await page.screenshot({ path: SHOT('10-menu-after-failed-load') });
+  expect(await saves(page), 'nothing was deleted').toEqual(beforeLoop);
+  await page.getByTestId('continue-game').click();
+  await page.waitForFunction(() => window.__ego?.app.getState().sceneReady, null, { timeout: 180_000 });
+  const fallback = await game(page);
+  expect(fallback.minutes).toBe(manual.minutes);
+  expect(fallback.employees).toEqual(manual.employees);
+  await expectWorldDrawing(page);
+  await page.waitForFunction(() => localStorage.getItem('ego-hvac-v3:load-guard') === null, null, { timeout: 30_000 });
+  // The newer autosave it did not come from is set aside before this game's autosave replaces it.
+  await page.evaluate(() => { window.dispatchEvent(new Event('pagehide')); });
+  expect(await page.evaluate(() => localStorage.getItem('ego-hvac-v3:autosave:kept'))).toBe(beforeLoop.autosave);
   log.onlySimulated();
 });

@@ -658,3 +658,12 @@ h4 { font-size: 13px; color: var(--muted); text-transform: uppercase; letter-spa
   .recovery-actions .btn.block { width: auto; flex: 1 1 150px; }
   .world-recovery-card { padding-top: calc(max(8px, env(safe-area-inset-top)) + 56px); padding-bottom: calc(max(8px, env(safe-area-inset-bottom)) + 68px); }
 }
+
+/* ---------- Main menu: which save Continue loads, and the others (save.ts planRecovery) ---------- */
+.menu-save-line { margin-top: -4px; font-size: 12.5px; color: var(--muted); text-align: center; }
+.menu .menu-save-notice { font-size: 12.5px; line-height: 1.45; color: var(--amber); padding: 8px 10px; border: 1px solid rgba(255, 179, 71, 0.35); border-radius: 10px; background: rgba(255, 179, 71, 0.08); }
+.menu-saves { font-size: 12.5px; color: var(--muted); }
+.menu-saves summary { cursor: pointer; padding: 6px 0; }
+.menu-saves ul { list-style: none; margin: 4px 0 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.menu-saves li { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 10px; border: 1px solid var(--border); border-radius: 10px; line-height: 1.4; }
+.menu .menu-saves .btn.small { padding: 6px 12px; font-size: 12.5px; flex: none; }

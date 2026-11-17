@@ -210,6 +210,13 @@ let log: CrashReport[] | null = null;
 let recorded = 0;
 let providers: { context: () => CrashContext | null; device: () => CrashDevice | null } | null = null;
 
+let crashListener: ((scope: CrashScope) => void) | null = null;
+
+/** Called once for every recorded failure (the store uses it to notice a load that went wrong). */
+export function setCrashListener(listener: ((scope: CrashScope) => void) | null): void {
+  crashListener = listener;
+}
+
 /** The store registers how to describe the current situation (kept out of this module so it has no game imports). */
 export function setDiagnosticProviders(p: NonNullable<typeof providers>): void {
   providers = p;
@@ -246,6 +253,11 @@ function safely<T>(read: (() => T) | undefined): T | null {
 
 /** Records a failure and returns its report (the stored one when it is a repeat). Never throws. */
 export function recordCrash(scope: CrashScope, thrown: unknown, componentStack?: string | null): CrashReport {
+  try {
+    crashListener?.(scope);
+  } catch {
+    /* a listener must not stop the failure being recorded */
+  }
   let report: CrashReport;
   try {
     report = buildReport(scope, thrown, {

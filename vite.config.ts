@@ -15,9 +15,12 @@ function buildId(): string {
   }
 }
 
-export default defineConfig({
+// Deliberate crash injection (window.__ego.crash, CrashProbe) exists only in the dev server and in the dedicated
+// test build (`vite build --mode crashtest`, see package.json). In a standard production build the flag is the
+// literal `false`, so the hook and the code behind it are removed from the bundle.
+export default defineConfig(({ command, mode }) => ({
   base: './',
-  define: { __APP_VERSION__: JSON.stringify(version), __BUILD_ID__: JSON.stringify(buildId()) },
+  define: { __APP_VERSION__: JSON.stringify(version), __BUILD_ID__: JSON.stringify(buildId()), __CRASH_HOOKS__: JSON.stringify(command === 'serve' || mode === 'crashtest') },
   plugins: [react()],
   resolve: {
     alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) },
@@ -37,4 +40,4 @@ export default defineConfig({
       },
     },
   },
-});
+}));

@@ -355,6 +355,8 @@ test('an existing company continues where it was: no mission, no second call', a
     s.schemaVersion = 5;
     localStorage.setItem('ego-hvac-v3:save', JSON.stringify({ schemaVersion: 5, savedAt: new Date().toISOString(), appVersion: '0.1.0', state: s }));
     localStorage.removeItem('ego-hvac-v3:autosave');
+    // Leaving the page autosaves a running game, and Continue loads the newest save: back at the menu, nothing is written.
+    (window.__ego!.app as S).setState({ screen: 'menu' });
     return { id, jobs: Object.keys(s.jobs), ledger: s.finance.ledger.length };
   });
   await page.reload();

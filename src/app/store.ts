@@ -5,9 +5,9 @@ import { GameEngine } from '@/game/simulation/engine';
 import type { GameAction } from '@/game/simulation/actions';
 import type { GameState } from '@/game/simulation/types';
 import type { ActionResult } from '@/game/jobs/workflow';
-import { AUTOSAVE_KEY, SAVE_KEY, loadFromStorage, saveToStorage } from '@/persistence/save';
+import { SAVE_KEY, beginLoad, beginSession, confirmLoad, currentPlan, failLoad, readSlot, saveToStorage, type SlotInfo } from '@/persistence/save';
 import { spawnLead, type SpawnLeadOptions } from '@/game/jobs/leads';
-import { browserFamily, crashLog, setDiagnosticProviders, type CrashReport, type CrashScope } from './diagnostics';
+import { browserFamily, crashLog, setCrashListener, setDiagnosticProviders, type CrashReport, type CrashScope } from './diagnostics';
 
 export type SelectionKind = 'lot' | 'vehicle' | 'employee' | 'job';
 export interface Selection {
@@ -114,12 +114,22 @@ interface AppState {
    * written over a save); the recovery overlay offers the last save. Cleared by loading or starting a game.
    */
   simFault: CrashReport | null;
-  /** Test hook (window.__ego.crash): the part of the game that should fail on its next render. Never set by the game. */
+  /** The save the running company was loaded from (null for a company started in this session). */
+  loadedFrom: SlotInfo | null;
+  /** A load has started and the game has not yet been seen running from it (see the load guard in save.ts). */
+  loadPending: boolean;
+  /**
+   * Crash-test builds only (window.__ego.crash): the part of the game that should fail on its next render. Never
+   * set by the game, and in a production build nothing reads it and setCrashTest ignores it.
+   */
   crashTest: { scope: CrashTestScope; sticky: boolean } | null;
 
   newGame: (seed?: number) => void;
+  /** Loads the newest valid save (the manual save or the autosave; see planRecovery). Reading never writes a slot. */
   continueGame: () => boolean;
   loadFromKey: (key: string) => boolean;
+  /** The game has run for a few seconds from the loaded save: the load worked. */
+  confirmLoaded: () => void;
   save: () => boolean;
   toMenu: () => void;
   /** inline: the caller shows the result itself, so a failure does not also raise the error banner. */
@@ -149,6 +159,9 @@ interface AppState {
   setCrashTest: (test: AppState['crashTest']) => void;
   bump: () => void;
 }
+
+/** Whether deliberate crash injection is compiled in: the dev server and the crash-test build only (vite.config.ts). */
+export const CRASH_HOOKS: boolean = typeof __CRASH_HOOKS__ !== 'undefined' && __CRASH_HOOKS__;
 
 /** What window.__ego.crash can break: a boundary's subtree, the simulation step, or the app together with its own recovery screen. */
 export type CrashTestScope = Extract<CrashScope, 'app' | 'world' | 'hud' | 'panel' | 'simulation' | 'fatal'>;
@@ -213,23 +226,42 @@ export const useApp = create<AppState>((set, get) => ({
   lastSavedAt: null,
   lastEventId: 0,
   simFault: null,
+  loadedFrom: null,
+  loadPending: false,
   crashTest: null,
 
   newGame: (seed) => {
     const engine = GameEngine.newGame({ seed: seed ?? Math.floor(Math.random() * 1_000_000) });
     attachEngine(engine);
-    set({ engine, screen: 'game', selection: null, panel: null, toasts: [], celebrations: [], sceneReady: false, lastEventId: 0, followVehicleId: null, version: 0, serviceView: null, simFault: null });
+    confirmLoad();
+    beginSession(null);
+    set({ engine, screen: 'game', selection: null, panel: null, toasts: [], celebrations: [], sceneReady: false, lastEventId: 0, followVehicleId: null, version: 0, serviceView: null, simFault: null, loadedFrom: null, loadPending: false });
     saveToStorage(engine.state, SAVE_KEY);
     get().camera({ type: 'reset' });
   },
-  continueGame: () => get().loadFromKey(SAVE_KEY) || get().loadFromKey(AUTOSAVE_KEY),
+  continueGame: () => {
+    const plan = currentPlan();
+    // The plan's choice first; if that one will not start after all, the other loadable saves, newest first.
+    for (const slot of plan.primary ? [plan.primary, ...plan.others] : []) if (get().loadFromKey(slot.key)) return true;
+    return false;
+  },
   loadFromKey: (key) => {
-    const state = loadFromStorage(key);
+    const { info, state } = readSlot(key);
     if (!state) return false;
-    const engine = new GameEngine(state);
+    // From here until the game has been seen running, a failure counts against this save (not against the player:
+    // the save stays where it is, the menu just stops picking it first).
+    beginLoad(info);
+    let engine: GameEngine;
+    try {
+      engine = new GameEngine(state);
+    } catch {
+      failLoad();
+      return false;
+    }
+    beginSession(info);
     attachEngine(engine);
     const lastEventId = state.events.length ? state.events[state.events.length - 1].id : 0;
-    set({ engine, screen: state.campaignComplete ? 'summary' : 'game', selection: null, panel: null, toasts: [], celebrations: [], sceneReady: false, lastEventId, followVehicleId: null, version: 0, serviceView: null, simFault: null });
+    set({ engine, screen: state.campaignComplete ? 'summary' : 'game', selection: null, panel: null, toasts: [], celebrations: [], sceneReady: false, lastEventId, followVehicleId: null, version: 0, serviceView: null, simFault: null, loadedFrom: info, loadPending: true });
     get().camera({ type: 'reset' });
     return true;
   },
@@ -288,9 +320,16 @@ export const useApp = create<AppState>((set, get) => ({
   setSceneReady: (sceneReady) => set({ sceneReady }),
   notify: (title, body) => set((s) => ({ toasts: [...s.toasts, { id: toastId++, type: 'info' as const, title, body, createdAt: Date.now() }].slice(-6) })),
   setContextLost: (contextLost) => set({ contextLost }),
+  confirmLoaded: () => {
+    if (!get().loadPending) return;
+    confirmLoad();
+    set({ loadPending: false });
+  },
   setSimFault: (simFault) => set({ simFault }),
   leaveWithoutSaving: () => set({ screen: 'menu', panel: null, selection: null, serviceView: null, engine: null, simFault: null }),
-  setCrashTest: (crashTest) => set({ crashTest }),
+  setCrashTest: (crashTest) => {
+    if (CRASH_HOOKS) set({ crashTest });
+  },
   bump: () => {
     const { engine, lastEventId } = get();
     if (!engine) return;
@@ -363,15 +402,22 @@ declare global {
       spawnLead: (opts: SpawnLeadOptions) => string | null;
       app: typeof useApp;
       /**
-       * Test hook: make part of the game fail on its next render (or the next simulation step), to exercise the
-       * recovery screens. sticky keeps it failing on every retry. Not reachable from the UI.
+       * Crash-test builds and the dev server only; absent from a production build. Makes part of the game fail on
+       * its next render (or the next simulation step), to exercise the recovery screens. sticky keeps it failing
+       * on every retry. Not reachable from the UI.
        */
-      crash: (scope: CrashTestScope, sticky?: boolean) => void;
+      crash?: (scope: CrashTestScope, sticky?: boolean) => void;
       /** The crash reports kept in this browser (src/app/diagnostics.ts). */
       crashLog: () => CrashReport[];
     };
   }
 }
+
+// A failure that takes the game (or a part the player cannot play without) down while a load is still unconfirmed
+// counts against the save being loaded. A failed panel or a stray script error does not.
+setCrashListener((scope) => {
+  if (useApp.getState().loadPending && (scope === 'app' || scope === 'world' || scope === 'hud' || scope === 'simulation' || scope === 'fatal')) failLoad();
+});
 
 // What a crash report says about the situation: no names, no money, nothing from the save but the seed, the clock and counts.
 setDiagnosticProviders({
@@ -414,7 +460,7 @@ if (typeof window !== 'undefined') {
       return job?.id ?? null;
     },
     app: useApp,
-    crash: (scope, sticky = false) => useApp.getState().setCrashTest({ scope, sticky }),
     crashLog: () => crashLog(),
   };
+  if (CRASH_HOOKS) window.__ego.crash = (scope, sticky = false) => useApp.getState().setCrashTest({ scope, sticky });
 }

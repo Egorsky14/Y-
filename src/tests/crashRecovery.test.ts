@@ -3,7 +3,7 @@ import { CRASH_LOG_KEY, CRASH_LOG_LIMIT, appendReport, browserFamily, buildRepor
 import { useApp } from '@/app/store';
 import { startGameLoop } from '@/app/gameLoop';
 import { ErrorBoundary } from '@/ui/overlays/ErrorBoundary';
-import { AUTOSAVE_KEY, SAVE_KEY, continueSaveTime, deserialize } from '@/persistence/save';
+import { AUTOSAVE_KEY, SAVE_KEY, deserialize } from '@/persistence/save';
 
 /**
  * Crash resilience, the parts that run without a browser: what a crash report keeps and leaves out, the rule that
@@ -201,17 +201,6 @@ describe('recovery never changes a save on its own', () => {
     expect(useApp.getState().continueGame()).toBe(true);
     expect(useApp.getState().simFault).toBeNull();
     expect(useApp.getState().engine!.state.elapsedMinutes).toBe(deserialize(before.save).elapsedMinutes);
-  });
-
-  it('reports when the save that Continue loads was written', () => {
-    expect(continueSaveTime()).toBeNull();
-    companyWithSaves();
-    const at = continueSaveTime()!;
-    expect(Math.abs(at.getTime() - Date.now())).toBeLessThan(60_000);
-    g.localStorage!.setItem(SAVE_KEY, 'not json');
-    expect(continueSaveTime(), 'falls back to the autosave, as Continue does').toBeInstanceOf(Date);
-    g.localStorage!.setItem(AUTOSAVE_KEY, '{}');
-    expect(continueSaveTime()).toBeNull();
   });
 });
 

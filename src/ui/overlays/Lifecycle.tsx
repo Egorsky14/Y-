@@ -46,8 +46,8 @@ export function ContextLostOverlay() {
   const lost = useApp((s) => s.contextLost);
   useEffect(() => {
     if (!lost) return;
-    const engine = useApp.getState().engine;
-    if (engine) saveToStorage(engine.state, AUTOSAVE_KEY);
+    const { engine, simFault } = useApp.getState();
+    if (engine && !simFault) saveToStorage(engine.state, AUTOSAVE_KEY);
   }, [lost]);
   if (!lost) return null;
   return (

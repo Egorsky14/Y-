@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from 'react';
 import { useApp } from '@/app/store';
 import { formatReport, type CrashReport } from '@/app/diagnostics';
-import { continueSaveTime } from '@/persistence/save';
+import { currentPlan, savedWhen, slotName } from '@/persistence/save';
 import { CrashProbe, type RecoveryProps } from './ErrorBoundary';
 
 /**
@@ -16,13 +16,11 @@ function reload(): void {
   location.reload();
 }
 
-/** "today at 2:14 PM" / "Mar 3 at 2:14 PM" for the save that Continue would load. */
+/** "the autosave from today at 2:14 PM (Day 3, 9:40 AM)": the save that Continue would load after a reload. */
 function lastSaveText(): string | null {
-  const at = continueSaveTime();
-  if (!at) return null;
-  const time = at.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
-  const sameDay = at.toDateString() === new Date().toDateString();
-  return sameDay ? `today at ${time}` : `${at.toLocaleDateString([], { month: 'short', day: 'numeric' })} at ${time}`;
+  const slot = currentPlan().primary;
+  if (!slot?.summary) return null;
+  return `the ${slotName(slot).toLowerCase()} from ${savedWhen(slot.savedAt)} (Day ${slot.summary.day}, ${slot.summary.time})`;
 }
 
 async function copyText(text: string): Promise<boolean> {
@@ -78,7 +76,7 @@ function ReloadNote({ unsavedSince }: { unsavedSince?: boolean }) {
   const saved = lastSaveText();
   return (
     <p className="muted recovery-note" data-testid="recovery-save-note">
-      {saved ? `Reloading returns to the company saved ${saved}${unsavedSince ? '; anything after that is not kept.' : '.'}` : 'There is no saved company on this device yet.'}
+      {saved ? `Reloading returns to ${saved}${unsavedSince ? '; anything after that is not kept.' : '.'}` : 'There is no saved company on this device that can be loaded.'}
     </p>
   );
 }

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useApp } from '@/app/store';
-import { hasSave, SAVE_KEY, AUTOSAVE_KEY } from '@/persistence/save';
+import { currentPlan, describeNotice, describeSlot, slotName, type SlotInfo } from '@/persistence/save';
 
 const SHARE_TEXT = 'Run your own HVAC company in Las Vegas: EGO HVAC Empire, free in the browser.';
 
@@ -41,7 +41,17 @@ export function MainMenu() {
   const [seed, setSeed] = useState('');
   const [confirming, setConfirming] = useState(false);
   const [shareState, setShareState] = useState<'' | 'shared' | 'copied' | 'failed'>('');
-  const canContinue = hasSave(SAVE_KEY) || hasSave(AUTOSAVE_KEY);
+  // Which save Continue loads (the newest valid one, manual or autosave) and what else is on the device. Read once
+  // when the menu opens; reading changes nothing.
+  const [plan] = useState(() => currentPlan());
+  const [loadFailed, setLoadFailed] = useState(false);
+  const canContinue = !!plan.primary;
+  // Something is stored here, even if it cannot be opened: starting a company still asks first.
+  const hasStored = canContinue || plan.unreadable.length > 0;
+  const notice = describeNotice(plan);
+  const extra = plan.others.length + plan.unreadable.length;
+  const slotId = (s: SlotInfo) => `${s.kind}${s.kept ? '-kept' : ''}`;
+  const load = (ok: boolean) => setLoadFailed(!ok);
   const start = () => newGame(seed ? parseInt(seed, 10) || undefined : undefined);
   const flash = (s: typeof shareState) => {
     setShareState(s);
@@ -61,18 +71,43 @@ export function MainMenu() {
           Run a diagnostics-first heating and air company in sunny Las Vegas. Take service calls, dispatch your van, diagnose and repair, hire a team and grow the business. <b>Most HVAC companies guess. We measure.</b>
         </p>
         <div className="col">
-          {canContinue && (
-            <button className="btn primary" onClick={() => continueGame()} data-testid="continue-game">
+          {plan.primary && (
+            <button className="btn primary" onClick={() => load(continueGame())} data-testid="continue-game">
               Continue my company
             </button>
           )}
-          <button className={`btn ${canContinue ? '' : 'primary'}`} onClick={() => (canContinue ? setConfirming(true) : start())} data-testid="new-game">
+          {plan.primary && (
+            <div className="menu-save-line" data-testid="continue-source" data-slot={slotId(plan.primary)}>
+              {describeSlot(plan.primary)}
+            </div>
+          )}
+          {notice && <p className="menu-save-notice" role="status" data-testid="continue-notice">{notice}</p>}
+          {loadFailed && <p className="menu-save-notice" role="alert" data-testid="load-failed">That save could not be started. It has been left as it is.</p>}
+          <button className={`btn ${canContinue ? '' : 'primary'}`} onClick={() => (hasStored ? setConfirming(true) : start())} data-testid="new-game">
             {canContinue ? 'Start a new company' : 'Play: start my company'}
           </button>
           {!canContinue && (
             <button className="btn" disabled data-testid="continue-game">
-              No saved company yet
+              {plan.unreadable.length ? 'No saved company can be opened' : 'No saved company yet'}
             </button>
+          )}
+          {extra > 0 && (
+            <details className="menu-saves" data-testid="other-saves" open={!!plan.notice}>
+              <summary>Other saves on this device ({extra})</summary>
+              <ul>
+                {plan.others.map((s) => (
+                  <li key={s.key}>
+                    <span>{describeSlot(s)}</span>
+                    <button className="btn small" onClick={() => load(useApp.getState().loadFromKey(s.key))} data-testid={`load-${slotId(s)}`}>Load</button>
+                  </li>
+                ))}
+                {plan.unreadable.map((s) => (
+                  <li key={s.key} data-testid={`unreadable-${slotId(s)}`}>
+                    <span>{slotName(s)} · {s.status === 'incompatible' ? 'from a newer version of the game' : 'damaged'}, cannot be opened. It is kept on this device.</span>
+                  </li>
+                ))}
+              </ul>
+            </details>
           )}
         </div>
         <div className="row menu-share">
@@ -101,7 +136,7 @@ export function MainMenu() {
         <div className="lifecycle-overlay" role="alertdialog" aria-label="Start a new company?">
           <div className="glass lifecycle-card">
             <h2>Start a new company?</h2>
-            <p className="muted">This replaces the company saved on this device. It cannot be undone.</p>
+            <p className="muted">{canContinue ? 'This replaces the company saved on this device. It cannot be undone.' : 'The save on this device that cannot be opened is set aside, not deleted, and a new company starts.'}</p>
             <div className="row" style={{ gap: 8 }}>
               <button className="btn" onClick={() => setConfirming(false)} data-testid="cancel-new-game">Keep my company</button>
               <button className="btn danger" onClick={start} data-testid="confirm-new-game">Start over</button>
