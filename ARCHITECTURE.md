@@ -184,4 +184,4 @@ In a production build `window.__ego` is a frozen object with the first two membe
 - Test hooks: the specs drive the game through `window.__ego`, which only the test builds have. See "Development, test and production interfaces".
 - Save recovery: `src/tests/saveRecovery.test.ts` (the selection policy and every fallback, against a map standing in for `localStorage`) and `e2e/save-recovery.spec.ts` (real reloads on desktop and both phone orientations).
 - Crash recovery: `src/tests/crashRecovery.test.ts`; `npm run test:e2e:crash` for the browser side (crash-test build only).
-- Production build: `npm run test:e2e:release` (`e2e/production-release.spec.ts`, no hooks). Capture scripts under `docs/**/scripts` use the hooks: serve the test build for them with `npm run preview:e2e`.
+- Production build: `npm run test:e2e:release` (`e2e/production-release.spec.ts`, no hooks). Capture and benchmark scripts under `docs/**/scripts` use the hooks and need a test build; see `docs/release-hardening/CAPTURE_SCRIPTS.md`.
