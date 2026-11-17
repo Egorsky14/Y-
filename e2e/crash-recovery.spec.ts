@@ -128,6 +128,11 @@ async function startCompany(page: Page) {
   }
 }
 
+test('the crash-test build exposes the test hooks plus crash injection, and nothing more', async ({ page }) => {
+  await page.goto('/');
+  expect(await page.evaluate(() => Object.keys(window.__ego ?? {}).sort())).toEqual(['advanceMinutes', 'app', 'build', 'crash', 'crashLog', 'dispatch', 'getState', 'spawnLead']);
+});
+
 test('a rendering failure in a panel, the interface, the 3D world or the whole app is recovered without losing the company', async ({ page }) => {
   test.setTimeout(600_000);
   const log = watch(page);

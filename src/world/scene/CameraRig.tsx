@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import { useFrame, useThree } from '@react-three/fiber';
 import { MapControls } from '@react-three/drei';
 import type { MapControls as MapControlsImpl } from 'three-stdlib';
-import { getGameState, useApp } from '@/app/store';
+import { TEST_HOOKS, getGameState, useApp } from '@/app/store';
 import { HQ_LOT } from '@/game/world/cityLayout';
 import { occluderKind, solveClearView, verticalFovFor, viewOffsetFor, visibility, type SafeArea, type V3 } from './cameraOcclusion';
 import { occludersOf, walkFocus, walkPose, type WalkPlan } from './serviceCall';
@@ -178,7 +178,8 @@ export function CameraRig() {
   // The wheel, trackpad included: taken here so it goes by how far they scrolled and eases in, and because a zoom is not
   // a drag (it must not stop a flight, a followed truck or the director). Photo Mode keeps the controls' own wheel.
   useEffect(() => {
-    window.__egoServiceZoom = serviceZoom;
+    // Test builds only: the live zoom object (writing to it moves the player's camera).
+    if (TEST_HOOKS) window.__egoServiceZoom = serviceZoom;
     const onWheel = (e: WheelEvent) => {
       if (useApp.getState().photo.on) return;
       const el = e.target as Element | null;

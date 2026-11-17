@@ -17,7 +17,7 @@ export default defineConfig({
   retries: 0,
   reporter: [['list']],
   projects: [
-    { name: 'desktop-1080p', use: { viewport: { width: 1920, height: 1080 } }, testIgnore: /(mobile|crash-recovery)\.spec\.ts/ },
+    { name: 'desktop-1080p', use: { viewport: { width: 1920, height: 1080 } }, testIgnore: /(mobile|crash-recovery|production-release)\.spec\.ts/ },
     { name: 'laptop-768p', use: { viewport: { width: 1366, height: 768 } }, testMatch: /(graphics|service-camera(-feedback)?)\.spec\.ts/ },
     { name: 'small-1024', use: { viewport: { width: 1024, height: 768 } }, testMatch: /(graphics|banking-layout|supply|automation|service-camera(-feedback)?)\.spec\.ts/ },
     // Phones and a tablet, emulated in Chromium (touch, coarse pointer, mobile viewport and DPR).
@@ -40,10 +40,14 @@ export default defineConfig({
       args: softwareGl ? ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] : ['--ignore-gpu-blocklist'],
     },
   },
+  // The specs drive the game through window.__ego test hooks, which a production build does not have: they run
+  // against the test build (`vite build --mode e2e` into dist-e2e). The production build itself is checked by
+  // playwright.release.config.ts, crash injection by playwright.crash.config.ts.
   webServer: {
-    command: 'npm run preview',
+    command: 'npm run preview:e2e',
     url: 'http://127.0.0.1:4173',
-    reuseExistingServer: true,
-    timeout: 60_000,
+    // Always a fresh test build: a server left running could be serving a production build, or old code.
+    reuseExistingServer: false,
+    timeout: 180_000,
   },
 });

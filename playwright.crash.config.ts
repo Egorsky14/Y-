@@ -2,11 +2,10 @@ import { defineConfig } from '@playwright/test';
 import base from './playwright.config';
 
 /**
- * The crash-recovery spec breaks parts of the game on purpose through window.__ego.crash, which a standard
- * production build does not contain. This configuration builds the dedicated crash-test bundle (the same
- * production build with the injection hook compiled in, `vite build --mode crashtest`), serves it on its own port
- * and runs only that spec against it. Every other spec runs against the standard build (playwright.config.ts),
- * where e2e/release-hooks.spec.ts checks the hook is absent.
+ * The crash-recovery spec breaks parts of the game on purpose through window.__ego.crash, which only the crash-test
+ * build contains (`vite build --mode crashtest`: the test build plus crash injection). This configuration builds
+ * it, serves it on its own port and runs only that spec against it. The other specs run against the test build
+ * (playwright.config.ts), and the production build is checked by playwright.release.config.ts.
  */
 const PROJECTS = ['desktop-1080p', 'iphone-portrait', 'iphone-landscape'];
 

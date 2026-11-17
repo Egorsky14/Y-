@@ -1,4 +1,7 @@
-/* Test-only typing of the debug hook exposed by src/app/store.ts. */
+/*
+ * Test-only typing of window.__ego as the test builds have it (src/app/store.ts). A production build has only
+ * `build` and `crashLog`; e2e/production-release.spec.ts is the one spec that runs against it.
+ */
 interface EgoTestHook {
   getState: () => Record<string, never> | null;
   dispatch: (action: unknown) => { ok: boolean; reason?: string };
@@ -6,6 +9,8 @@ interface EgoTestHook {
   spawnLead: (opts: { channel?: 'warranty' | 'direct'; preferredLotId?: string; faultId?: string }) => string | null;
   /** Crash-test build only (playwright.crash.config.ts): make part of the game fail on its next render or simulation step; sticky keeps it failing. */
   crash?: (scope: 'app' | 'world' | 'hud' | 'panel' | 'simulation' | 'fatal', sticky?: boolean) => void;
+  /** Version and commit of the build. */
+  build: string;
   crashLog: () => { scope: string; name: string; message: string; count: number; stack: string[]; componentStack: string[] }[];
   app: { getState: () => { camera: (cmd: { type: 'focus' | 'reset' | 'hq' | 'follow'; target?: { x: number; z: number }; vehicleId?: string; distance?: number; azimuth?: number; elevation?: number; targetY?: number }) => void; photo: { on: boolean }; setPhoto: (p: { on?: boolean; minute?: number | null; weather?: string | null }) => void; sceneReady: boolean; settings: { quality: 'low' | 'medium' | 'high' | 'ultra' }; select: (sel: { kind: string; id: string } | null) => void } };
 }

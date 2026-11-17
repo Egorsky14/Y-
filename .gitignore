@@ -2,6 +2,7 @@ node_modules
 dist
 dist-ssr
 dist-crashtest
+dist-e2e
 *.local
 .DS_Store
 playwright-report

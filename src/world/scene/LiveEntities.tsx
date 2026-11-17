@@ -3,7 +3,7 @@ import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { useFrame } from '@react-three/fiber';
 import { useGLTF } from '@react-three/drei';
-import { getGameState, useApp, useGame } from '@/app/store';
+import { TEST_HOOKS, getGameState, useApp, useGame } from '@/app/store';
 import { VehicleGltf, WHEEL_RADIUS, type VehicleRig } from '../vehicles/VehicleGltf';
 import { contactBlob } from '../assets/contactShadow';
 import { useCallback } from 'react';
@@ -33,7 +33,8 @@ declare global {
     __egoRoofSpec?: typeof roofSpec;
   }
 }
-if (typeof window !== 'undefined') window.__egoRoofSpec = roofSpec;
+// Test builds only: it returns the cached rooftop layouts themselves, which the walk and ladder paths are built from.
+if (TEST_HOOKS && typeof window !== 'undefined') window.__egoRoofSpec = roofSpec;
 
 /** Vehicles read their live position from the simulation every frame and smooth toward it. */
 export function Vehicles() {

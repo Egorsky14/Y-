@@ -56,6 +56,9 @@ Production build and preview:
 ```powershell
 npm run build        # type-check + production bundle in dist/
 npm run preview      # serves dist/ at http://127.0.0.1:4173
+npm run test:e2e            # Playwright specs, against the test build (dist-e2e, has the test hooks)
+npm run test:e2e:release    # the production build itself, through the real interface, no hooks
+npm run test:e2e:crash      # crash recovery, against the crash-test build
 ```
 
 Quality gates:

@@ -391,26 +391,71 @@ export function getGameState(): GameState | null {
   return useApp.getState().engine?.state ?? null;
 }
 
-// Expose for end-to-end tests and debugging.
+/**
+ * Whether the test hooks are compiled in: the dev server and the test builds only (vite.config.ts). In a production
+ * build this is the literal false and the hooks below do not exist.
+ */
+export const TEST_HOOKS: boolean = typeof __TEST_HOOKS__ !== 'undefined' && __TEST_HOOKS__;
+
+/**
+ * window.__ego. What is on it depends on the build (ARCHITECTURE.md, "Development, test and production interfaces"):
+ *
+ * - Every build: `build` and `crashLog()`. Read-only: a string, and a copy of the crash reports kept in this browser.
+ * - Test builds and the dev server (TEST_HOOKS): `getState`, `dispatch`, `advanceMinutes`, `spawnLead`, `app`. These
+ *   read and change the running company; the Playwright specs drive the game through them. None is in a production
+ *   build, and none is reachable from the UI in any build.
+ * - Crash-test build and the dev server (CRASH_HOOKS): `crash`.
+ */
 declare global {
   interface Window {
     __ego?: {
-      getState: () => GameState | null;
-      dispatch: (action: GameAction) => ActionResult;
-      advanceMinutes: (minutes: number) => void;
-      /** Test hook: force a lead for a lot/fault. Not reachable from the UI. */
-      spawnLead: (opts: SpawnLeadOptions) => string | null;
-      app: typeof useApp;
+      /** Version and commit of this build. */
+      readonly build: string;
+      /** A copy of the crash reports kept in this browser (src/app/diagnostics.ts). */
+      readonly crashLog: () => CrashReport[];
+      /** Test builds only. The live simulation state (not a copy: changing it changes the game). */
+      getState?: () => GameState | null;
+      /** Test builds only. Any player action. */
+      dispatch?: (action: GameAction) => ActionResult;
+      /** Test builds only. Skips game time. */
+      advanceMinutes?: (minutes: number) => void;
+      /** Test builds only. Forces a lead for a lot/fault. */
+      spawnLead?: (opts: SpawnLeadOptions) => string | null;
+      /** Test builds only. The whole UI store. */
+      app?: typeof useApp;
       /**
-       * Crash-test builds and the dev server only; absent from a production build. Makes part of the game fail on
-       * its next render (or the next simulation step), to exercise the recovery screens. sticky keeps it failing
-       * on every retry. Not reachable from the UI.
+       * Crash-test builds and the dev server only. Makes part of the game fail on its next render (or the next
+       * simulation step), to exercise the recovery screens. sticky keeps it failing on every retry.
        */
       crash?: (scope: CrashTestScope, sticky?: boolean) => void;
-      /** The crash reports kept in this browser (src/app/diagnostics.ts). */
-      crashLog: () => CrashReport[];
     };
   }
+}
+
+if (typeof window !== 'undefined') {
+  const hook: NonNullable<Window['__ego']> = {
+    build: typeof __APP_VERSION__ === 'string' ? `${__APP_VERSION__} (${__BUILD_ID__})` : 'dev',
+    crashLog: () => crashLog(),
+  };
+  if (TEST_HOOKS) {
+    hook.getState = () => getGameState();
+    hook.dispatch = (action) => useApp.getState().dispatch(action);
+    hook.advanceMinutes = (minutes) => {
+      useApp.getState().engine?.advanceMinutes(minutes);
+      useApp.getState().bump();
+    };
+    hook.spawnLead = (opts) => {
+      const engine = useApp.getState().engine;
+      if (!engine) return null;
+      const job = spawnLead(engine.state, opts);
+      useApp.getState().bump();
+      return job?.id ?? null;
+    };
+    hook.app = useApp;
+  }
+  if (CRASH_HOOKS) hook.crash = (scope, sticky = false) => useApp.getState().setCrashTest({ scope, sticky });
+  // In a production build there is nothing to add to it, and nothing can be: two read-only members, frozen.
+  window.__ego = TEST_HOOKS ? hook : Object.freeze(hook);
 }
 
 // A failure that takes the game (or a part the player cannot play without) down while a load is still unconfirmed
@@ -444,23 +489,4 @@ setDiagnosticProviders({
     return { viewport: `${window.innerWidth}x${window.innerHeight}`, pixelRatio: Math.round((window.devicePixelRatio || 1) * 100) / 100, touch: p.touch, phone: p.phone, tablet: p.tablet, lowEnd: p.lowEnd, webgl2: p.webgl2, browser: browserFamily(navigator.userAgent) };
   },
 });
-if (typeof window !== 'undefined') {
-  window.__ego = {
-    getState: () => getGameState(),
-    dispatch: (action) => useApp.getState().dispatch(action),
-    advanceMinutes: (minutes) => {
-      useApp.getState().engine?.advanceMinutes(minutes);
-      useApp.getState().bump();
-    },
-    spawnLead: (opts) => {
-      const engine = useApp.getState().engine;
-      if (!engine) return null;
-      const job = spawnLead(engine.state, opts);
-      useApp.getState().bump();
-      return job?.id ?? null;
-    },
-    app: useApp,
-    crashLog: () => crashLog(),
-  };
-  if (CRASH_HOOKS) window.__ego.crash = (scope, sticky = false) => useApp.getState().setCrashTest({ scope, sticky });
-}
+

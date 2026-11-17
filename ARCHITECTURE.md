@@ -137,11 +137,51 @@ An exception while React renders unmounts the tree it happened in; with no error
 - Limits, on purpose: a boundary sees exceptions thrown during rendering, effects and lifecycles, nothing else. A lost WebGL context is not an exception. It is handled by the `webglcontextlost` listener in `GameScene` and the "Graphics paused" overlay, and whether the context comes back is up to the browser and the device; "Restart the 3D view" asks for a new context and can fail for the same reason the old one was lost. A failure caused by the saved state itself will repeat after "Try again" and after a reload, until the build is fixed; the recovery screens say when a retry did not help.
 - Test hook: `window.__ego.crash(scope, sticky?)` makes a `CrashProbe` inside the named boundary throw on its next render (or the next simulation step). It exists only in the dev server and in the crash-test build: `vite.config.ts` defines `__CRASH_HOOKS__` as `true` for `vite` (serve) and `vite build --mode crashtest`, and as the literal `false` for a standard `vite build`, where the hook is not installed, `setCrashTest` does nothing, the probes are empty and the bundler removes the code. `e2e/release-hooks.spec.ts` checks the standard build (no hook, no trace in the shipped scripts, cannot be armed through the store). `e2e/crash-recovery.spec.ts` runs only through `npm run test:e2e:crash` (`playwright.crash.config.ts`), which builds the crash-test bundle into `dist-crashtest`, serves it on port 4174 and runs that spec on desktop, iPhone portrait and iPhone landscape. Never deploy `dist-crashtest`.
 
+## Development, test and production interfaces
+
+The game publishes things on `window` for tests and diagnostics. What a build publishes depends on which build it is. Two compile-time flags in `vite.config.ts` decide; in a production build both are the literal `false`, so the gated code is removed from the bundle, not merely switched off.
+
+| Build | Command | Output | `__TEST_HOOKS__` | `__CRASH_HOOKS__` | Used by |
+| --- | --- | --- | --- | --- | --- |
+| Production | `npm run build` (`vite build`) | `dist` | false | false | players; Vercel; `npm run test:e2e:release` |
+| Test | `vite build --mode e2e` | `dist-e2e` | true | false | `npm run test:e2e` (every spec but the two below) |
+| Crash test | `vite build --mode crashtest` | `dist-crashtest` | true | true | `npm run test:e2e:crash` |
+| Dev server | `npm run dev` | - | true | true | development |
+
+Only `dist` is ever deployed. `dist-e2e` and `dist-crashtest` are ignored by Git.
+
+**`window.__ego`** (`src/app/store.ts`)
+
+| Member | What it can do | Production | Test | Crash test |
+| --- | --- | --- | --- | --- |
+| `build` | read the version and commit | yes | yes | yes |
+| `crashLog()` | read a copy of the crash reports kept in this browser | yes | yes | yes |
+| `getState()` | read the live simulation state; it is the object itself, so writing to it changes the company | no | yes | yes |
+| `dispatch(action)` | perform any player action (hire, buy, borrow, set prices…) without the UI | no | yes | yes |
+| `advanceMinutes(n)` | skip game time | no | yes | yes |
+| `spawnLead(opts)` | force a service call | no | yes | yes |
+| `app` | the whole UI store: start or load a company, save, change any UI or settings state | no | yes | yes |
+| `crash(scope)` | make part of the game fail on purpose | no | no | yes |
+
+In a production build `window.__ego` is a frozen object with the first two members. Nothing in a production build gives the page a reference to the engine or the store.
+
+**Other `window.__ego*` globals**
+
+- Needed by the game itself: `__egoWorkerStage` (the service camera reads the technician's current stage from it). Kept in every build.
+- Read-only telemetry, rewritten by the game every frame or on change: `__egoRender`, `__egoVehicles`, `__egoWorkers`, `__egoWorkerHeading`, `__egoAtmo`, `__egoBayDoors`, `__egoServiceView`, `__egoServiceViewApi`, `__egoServiceFollow`, and `__egoProject` (a function that only projects a world point to the screen). Writing to these changes nothing in the simulation. Kept in every build: the production-release spec and remote checks use them to see that the world is drawing.
+- Opt-in profiling switches the page may set and the game only reads: `__egoContact`, `__egoCharCost`, `__egoTiming`. They make the game record timings; they change no state. Kept.
+- Live objects, now test builds only: `__egoServiceZoom` (the player's camera zoom; writing to it moves the camera) and `__egoRoofSpec` (returns the cached rooftop layouts that walk and ladder paths are built from).
+- `__egoThree` (renderer, scene and camera) was already limited to the dev server and `VITE_PROFILE=1` builds, and still is.
+
+**Why the specs run against a test build.** They need to set up situations (a specific call, a day later, a company with staff) that would take minutes through the interface, and they did this through the hooks on the production bundle, which meant every player had them too. The test build is the same code with `__TEST_HOOKS__` true and nothing else different. What that leaves unchecked, that the bundle players get works without the hooks, is covered by `e2e/production-release.spec.ts`: it runs against `dist` (and, through `playwright.remote.config.ts`, against a deployed URL) using only the real interface, checks the hooks and their code are absent, and plays a new company through a hire, the mission's call, a save, a reload and a continue on a desktop and a phone.
+
+**Scope.** This removes the ready-made console controls. It is not tamper-proofing: the game runs entirely in the player's browser and keeps its saves in `localStorage`, so a determined player can still edit a save or the script. There is no server, account or shared state for that to harm.
+
 ## Testing
 
 - Vitest: road graph connectivity, A* validity, route sampling, determinism, full job loop (movement, arrival, diagnosis, payment, return), pause/speed semantics, wrong-diagnosis callbacks, warranty receivables, hiring and fleet capacity, training effects, loan accounting, save round-trip, and a 90-day autopilot campaign with ledger reconciliation.
 - Playwright: the full gameplay flow in the production build (see `QA_REPORT.md`), producing the screenshots in `docs/screenshots`.
-- Debug hook: `window.__ego` exposes `getState`, `dispatch`, `advanceMinutes`, `spawnLead` for tests; it is not reachable from the UI.
-- Release hardening, open: `window.__ego` ships in the production build. Besides the read-only `getState` and `crashLog`, it exposes hooks that change the game: `dispatch` (any player action), `advanceMinutes` (skips game time), `spawnLead` (forces a call) and `app` (the whole UI store, including `setState`, `newGame`, `save` and `loadFromKey`). They are console-only and act on the player's own local company, so the exposure is cheating and self-inflicted damage rather than a security hole, but the end-to-end specs depend on them against the production build. Gating them the way crash injection is gated (`__CRASH_HOOKS__`) means running every spec against a test build instead; that is a separate decision.
+- Test hooks: the specs drive the game through `window.__ego`, which only the test builds have. See "Development, test and production interfaces".
 - Save recovery: `src/tests/saveRecovery.test.ts` (the selection policy and every fallback, against a map standing in for `localStorage`) and `e2e/save-recovery.spec.ts` (real reloads on desktop and both phone orientations).
 - Crash recovery: `src/tests/crashRecovery.test.ts`; `npm run test:e2e:crash` for the browser side (crash-test build only).
+- Production build: `npm run test:e2e:release` (`e2e/production-release.spec.ts`, no hooks). Capture scripts under `docs/**/scripts` use the hooks: serve the test build for them with `npm run preview:e2e`.
