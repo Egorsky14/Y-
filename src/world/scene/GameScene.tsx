@@ -27,6 +27,7 @@ import { ParkedCars } from '../vehicles/ParkedCars';
 import { YardProps } from '../city/YardProps';
 import { Hinterland } from '../city/Hinterland';
 import { AmbientTraffic } from '../vehicles/AmbientTraffic';
+import { CrashProbe } from '@/ui/overlays/ErrorBoundary';
 
 preloadVehicleModels();
 
@@ -81,6 +82,9 @@ export function GameScene() {
         // Phones drop the GPU context under memory pressure or after long backgrounding.
         // Logged as well, so a loss during start-up (the scene never becomes ready) shows in console captures and traces.
         gl.domElement.addEventListener('webglcontextlost', (e) => {
+          // A canvas that has left the page lost its context because the renderer released it (the canvas was
+          // remounted: a preset change, or the 3D view restarted after a failure). Not a device reset.
+          if (!gl.domElement.isConnected) return;
           e.preventDefault();
           console.warn('[graphics] WebGL context lost');
           useApp.getState().setContextLost(true);
@@ -96,6 +100,7 @@ export function GameScene() {
       style={{ position: 'absolute', inset: 0 }}
     >
       <Suspense fallback={null}>
+        <CrashProbe scope="world" />
         <Atmosphere />
         <NightLights />
         <StudioEnvironment withNight />

@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { defaultQuality } from './device';
+import { defaultQuality, deviceProfile } from './device';
 import { create } from 'zustand';
 import { GameEngine } from '@/game/simulation/engine';
 import type { GameAction } from '@/game/simulation/actions';
@@ -7,6 +7,7 @@ import type { GameState } from '@/game/simulation/types';
 import type { ActionResult } from '@/game/jobs/workflow';
 import { AUTOSAVE_KEY, SAVE_KEY, loadFromStorage, saveToStorage } from '@/persistence/save';
 import { spawnLead, type SpawnLeadOptions } from '@/game/jobs/leads';
+import { browserFamily, crashLog, setDiagnosticProviders, type CrashReport, type CrashScope } from './diagnostics';
 
 export type SelectionKind = 'lot' | 'vehicle' | 'employee' | 'job';
 export interface Selection {
@@ -108,6 +109,13 @@ interface AppState {
   lastSavedAt: number | null;
   /** Last processed game event id for toast generation. */
   lastEventId: number;
+  /**
+   * The simulation step threw. Stepping and autosaving stop (the state may be half-updated, so it is never
+   * written over a save); the recovery overlay offers the last save. Cleared by loading or starting a game.
+   */
+  simFault: CrashReport | null;
+  /** Test hook (window.__ego.crash): the part of the game that should fail on its next render. Never set by the game. */
+  crashTest: { scope: CrashTestScope; sticky: boolean } | null;
 
   newGame: (seed?: number) => void;
   continueGame: () => boolean;
@@ -135,8 +143,15 @@ interface AppState {
   /** A UI-originated toast (not from the simulation), e.g. an automatic graphics change. */
   notify: (title: string, body?: string) => void;
   setContextLost: (lost: boolean) => void;
+  setSimFault: (report: CrashReport | null) => void;
+  /** Back to the main menu without writing a save (the simulation state is not trusted after a fault). */
+  leaveWithoutSaving: () => void;
+  setCrashTest: (test: AppState['crashTest']) => void;
   bump: () => void;
 }
+
+/** What window.__ego.crash can break: a boundary's subtree, the simulation step, or the app together with its own recovery screen. */
+export type CrashTestScope = Extract<CrashScope, 'app' | 'world' | 'hud' | 'panel' | 'simulation' | 'fatal'>;
 
 const DEFAULT_QUALITY = defaultQuality();
 const DEFAULT_SETTINGS: Settings = { quality: DEFAULT_QUALITY, shadows: DEFAULT_QUALITY !== 'low', autosave: true, sound: false, showLabels: true, qualityAuto: true };
@@ -197,11 +212,13 @@ export const useApp = create<AppState>((set, get) => ({
   contextLost: false,
   lastSavedAt: null,
   lastEventId: 0,
+  simFault: null,
+  crashTest: null,
 
   newGame: (seed) => {
     const engine = GameEngine.newGame({ seed: seed ?? Math.floor(Math.random() * 1_000_000) });
     attachEngine(engine);
-    set({ engine, screen: 'game', selection: null, panel: null, toasts: [], celebrations: [], sceneReady: false, lastEventId: 0, followVehicleId: null, version: 0, serviceView: null });
+    set({ engine, screen: 'game', selection: null, panel: null, toasts: [], celebrations: [], sceneReady: false, lastEventId: 0, followVehicleId: null, version: 0, serviceView: null, simFault: null });
     saveToStorage(engine.state, SAVE_KEY);
     get().camera({ type: 'reset' });
   },
@@ -212,20 +229,20 @@ export const useApp = create<AppState>((set, get) => ({
     const engine = new GameEngine(state);
     attachEngine(engine);
     const lastEventId = state.events.length ? state.events[state.events.length - 1].id : 0;
-    set({ engine, screen: state.campaignComplete ? 'summary' : 'game', selection: null, panel: null, toasts: [], celebrations: [], sceneReady: false, lastEventId, followVehicleId: null, version: 0, serviceView: null });
+    set({ engine, screen: state.campaignComplete ? 'summary' : 'game', selection: null, panel: null, toasts: [], celebrations: [], sceneReady: false, lastEventId, followVehicleId: null, version: 0, serviceView: null, simFault: null });
     get().camera({ type: 'reset' });
     return true;
   },
   save: () => {
     const engine = get().engine;
-    if (!engine) return false;
+    if (!engine || get().simFault) return false;
     const ok = saveToStorage(engine.state, SAVE_KEY);
     if (ok) set({ lastSavedAt: Date.now() });
     return ok;
   },
   toMenu: () => {
     const engine = get().engine;
-    if (engine) saveToStorage(engine.state, SAVE_KEY);
+    if (engine && !get().simFault) saveToStorage(engine.state, SAVE_KEY);
     set({ screen: 'menu', panel: null, selection: null });
   },
   dispatch: (action, opts) => {
@@ -271,6 +288,9 @@ export const useApp = create<AppState>((set, get) => ({
   setSceneReady: (sceneReady) => set({ sceneReady }),
   notify: (title, body) => set((s) => ({ toasts: [...s.toasts, { id: toastId++, type: 'info' as const, title, body, createdAt: Date.now() }].slice(-6) })),
   setContextLost: (contextLost) => set({ contextLost }),
+  setSimFault: (simFault) => set({ simFault }),
+  leaveWithoutSaving: () => set({ screen: 'menu', panel: null, selection: null, serviceView: null, engine: null, simFault: null }),
+  setCrashTest: (crashTest) => set({ crashTest }),
   bump: () => {
     const { engine, lastEventId } = get();
     if (!engine) return;
@@ -342,9 +362,42 @@ declare global {
       /** Test hook: force a lead for a lot/fault. Not reachable from the UI. */
       spawnLead: (opts: SpawnLeadOptions) => string | null;
       app: typeof useApp;
+      /**
+       * Test hook: make part of the game fail on its next render (or the next simulation step), to exercise the
+       * recovery screens. sticky keeps it failing on every retry. Not reachable from the UI.
+       */
+      crash: (scope: CrashTestScope, sticky?: boolean) => void;
+      /** The crash reports kept in this browser (src/app/diagnostics.ts). */
+      crashLog: () => CrashReport[];
     };
   }
 }
+
+// What a crash report says about the situation: no names, no money, nothing from the save but the seed, the clock and counts.
+setDiagnosticProviders({
+  context: () => {
+    const a = useApp.getState();
+    const g = a.engine?.state;
+    return {
+      screen: a.screen,
+      panel: a.panel,
+      selection: a.selection?.kind ?? null,
+      serviceCamera: a.serviceView?.mode ?? null,
+      photoMode: a.photo.on,
+      quality: a.settings.quality,
+      sceneReady: a.sceneReady,
+      contextLost: a.contextLost,
+      game: g
+        ? { seed: g.seed, day: g.clock.day, minute: Math.round(g.elapsedMinutes), speed: g.speed, schema: g.schemaVersion, employees: Object.keys(g.employees).length, vehicles: Object.keys(g.vehicles).length, jobs: Object.keys(g.jobs).length }
+        : null,
+    };
+  },
+  device: () => {
+    if (typeof window === 'undefined') return null;
+    const p = deviceProfile();
+    return { viewport: `${window.innerWidth}x${window.innerHeight}`, pixelRatio: Math.round((window.devicePixelRatio || 1) * 100) / 100, touch: p.touch, phone: p.phone, tablet: p.tablet, lowEnd: p.lowEnd, webgl2: p.webgl2, browser: browserFamily(navigator.userAgent) };
+  },
+});
 if (typeof window !== 'undefined') {
   window.__ego = {
     getState: () => getGameState(),
@@ -361,5 +414,7 @@ if (typeof window !== 'undefined') {
       return job?.id ?? null;
     },
     app: useApp,
+    crash: (scope, sticky = false) => useApp.getState().setCrashTest({ scope, sticky }),
+    crashLog: () => crashLog(),
   };
 }

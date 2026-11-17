@@ -81,6 +81,26 @@ Vegetation is one `InstancedMesh` per species with vertex colors and per-instanc
 
 `serialize(state)` → `{ schemaVersion, savedAt, appVersion, state }` in `localStorage` under `ego-hvac-v3:save` (manual) and `ego-hvac-v3:autosave`. `deserialize` validates and migrates. Settings are stored separately. Loading recreates the engine from the state; determinism tests prove a loaded game continues identically.
 
+## Crash resilience
+
+An exception while React renders unmounts the tree it happened in; with no error boundary that is the whole page (the hiring bug fixed in `ed15557` showed as an empty page for this reason). Boundaries now limit a failure to the part that failed, and each shows a recovery view in its place (`src/ui/overlays/ErrorBoundary.tsx`, `Recovery.tsx`).
+
+| Boundary | Around | The player keeps | Recovery |
+| --- | --- | --- | --- |
+| `panel` | the open panel (keyed by panel) | world, HUD, running game | Close, or try again |
+| `hud` | bars, inspector, overlays, panels | the 3D world; game paused | Restore the controls (closes the panel, clears the selection), save and go to the menu, reload |
+| `world` | the 3D canvas | HUD and panels (saving works); game paused | Restart the 3D view (new canvas, new WebGL context), reload |
+| `preview` | the vehicle preview warm-up | everything | none needed: previews start cold |
+| `app` | the whole tree (`main.tsx`) | the company in memory (the store is outside React); the game loop stops with the tree | Try again, save and go to the menu, reload |
+
+- The canvas is a separate React renderer; it passes what its tree throws to the boundary around it, so `world` catches failures from inside the scene.
+- If the `app` recovery screen itself cannot render, React unmounts everything; `onUncaughtError` in `main.tsx` then puts up a plain DOM message with a reload button.
+- The simulation step is not React: `startGameLoop` catches an exception from `engine.tick`, stops stepping and autosaving (the state may be half-updated) and raises `simFault`; the overlay offers the last save. Before this, the first exception ended the loop silently.
+- Saves: recovery never deletes a save or starts a company, and writes one only from a button that says so ("Save and go to the main menu", the normal Settings save). After a simulation fault nothing can be written. Every screen with a reload button says which save reloading returns to.
+- Diagnostics (`src/app/diagnostics.ts`): each failure becomes a report with the scope, error, trimmed stack and component stack, build, screen, panel, graphics preset, campaign seed and clock, entity counts and device class. The last five are kept in `localStorage` under `ego-hvac-v3:crash-log`; nothing is sent anywhere, and the player can copy a report from "Technical details". No names, money or save contents; addresses in stacks are cut to file names; the user agent is reduced to browser family and major version. Script errors and rejected promises outside any boundary (event handlers, frame callbacks) are recorded too but show nothing, since they unmount nothing.
+- Limits, on purpose: a boundary sees exceptions thrown during rendering, effects and lifecycles, nothing else. A lost WebGL context is not an exception. It is handled by the `webglcontextlost` listener in `GameScene` and the "Graphics paused" overlay, and whether the context comes back is up to the browser and the device; "Restart the 3D view" asks for a new context and can fail for the same reason the old one was lost. A failure caused by the saved state itself will repeat after "Try again" and after a reload, until the build is fixed; the recovery screens say when a retry did not help.
+- Test hook: `window.__ego.crash(scope, sticky?)` makes a `CrashProbe` inside the named boundary throw on its next render (or the next simulation step). It is not reachable from the UI.
+
 ## Testing
 
 - Vitest: road graph connectivity, A* validity, route sampling, determinism, full job loop (movement, arrival, diagnosis, payment, return), pause/speed semantics, wrong-diagnosis callbacks, warranty receivables, hiring and fleet capacity, training effects, loan accounting, save round-trip, and a 90-day autopilot campaign with ledger reconciliation.

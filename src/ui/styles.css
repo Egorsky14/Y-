@@ -618,3 +618,43 @@ h4 { font-size: 13px; color: var(--muted); text-transform: uppercase; letter-spa
 .btn.watching { border-color: var(--teal); background: var(--teal-soft); color: var(--teal); }
 .btn.watching:hover:not(:disabled) { background: rgba(25, 211, 197, 0.24); }
 .watching-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--teal); flex: none; }
+
+/* ---------- Crash recovery (ErrorBoundary.tsx, Recovery.tsx) ---------- */
+/* The whole app failed, or the simulation stopped: over everything, scrolls on short screens. */
+.recovery-screen { position: fixed; inset: 0; z-index: 70; display: grid; place-items: center; overflow-y: auto; padding: max(12px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left)); background: radial-gradient(ellipse at 30% 20%, rgba(25,211,197,0.14), transparent 50%), radial-gradient(ellipse at 80% 80%, rgba(255,160,60,0.1), transparent 50%), #0b0f14; }
+.recovery-screen.over-game { background: rgba(5, 8, 12, 0.78); }
+.recovery-card { width: min(460px, 100%); padding: 22px; display: flex; flex-direction: column; gap: 12px; }
+.recovery-card h2 { margin: 0; font-size: 20px; }
+.recovery-card p { margin: 0; line-height: 1.5; }
+.recovery-actions { gap: 8px; }
+.recovery-note { font-size: 12.5px; }
+.recovery-warn { color: var(--amber); font-size: 13px; }
+.recovery-details { font-size: 12.5px; color: var(--muted); }
+.recovery-details summary { cursor: pointer; padding: 6px 0; }
+.recovery-details pre { margin: 6px 0 8px; padding: 10px; max-height: 190px; overflow: auto; border-radius: 10px; background: rgba(0, 0, 0, 0.35); border: 1px solid var(--border); color: var(--text); font: 11px/1.45 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; white-space: pre-wrap; overflow-wrap: anywhere; user-select: text; -webkit-user-select: text; }
+/*
+ * The 3D view failed. The backdrop fills the world layer under the interface; the card is raised over the objective
+ * card and the in-world labels (which would otherwise sit on top of it on a phone) but stays under an open panel
+ * and the inspector, and keeps clear of the bars at the screen edges so saving and Settings stay reachable.
+ */
+.world-recovery { position: absolute; inset: 0; background: radial-gradient(ellipse at 50% 30%, rgba(25,211,197,0.1), transparent 55%), #0b0f14; }
+.world-recovery-card { position: fixed; inset: 0; z-index: 4; display: grid; place-items: center; pointer-events: none; padding: calc(max(12px, env(safe-area-inset-top)) + 64px) max(12px, env(safe-area-inset-right)) calc(max(12px, env(safe-area-inset-bottom)) + 76px) max(12px, env(safe-area-inset-left)); }
+.world-recovery-card > .recovery-card { pointer-events: auto; max-height: 100%; overflow-y: auto; background: var(--panel-solid); }
+/* The labels follow things in a world that is no longer drawn. */
+.app:has(.world-recovery) .world-labels { display: none; }
+@media (max-width: 700px) and (orientation: portrait) {
+  /* Phones in portrait stack the camera and save row above the bottom bar. */
+  .world-recovery-card { padding-bottom: calc(max(12px, env(safe-area-inset-bottom)) + 150px); }
+}
+/* The interface failed: over the world, which keeps drawing behind. */
+.hud-recovery { position: absolute; inset: 0; z-index: 8; display: grid; place-items: center; overflow-y: auto; padding: max(12px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left)); background: rgba(5, 8, 12, 0.6); }
+/* One panel failed: a card where the panel would be. */
+.panel-recovery { position: absolute; inset: 0; z-index: 5; display: grid; place-items: center; overflow-y: auto; padding: max(12px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left)); pointer-events: none; }
+.panel-recovery > * { pointer-events: auto; }
+@media (max-height: 480px) {
+  .recovery-card { padding: 14px 16px; gap: 8px; }
+  .recovery-card h2 { font-size: 17px; }
+  .recovery-actions { flex-direction: row; flex-wrap: wrap; }
+  .recovery-actions .btn.block { width: auto; flex: 1 1 150px; }
+  .world-recovery-card { padding-top: calc(max(8px, env(safe-area-inset-top)) + 56px); padding-bottom: calc(max(8px, env(safe-area-inset-bottom)) + 68px); }
+}

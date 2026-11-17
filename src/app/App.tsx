@@ -25,6 +25,20 @@ import { WorldLabels } from '@/ui/overlays/WorldLabels';
 import { PhotoMode } from '@/ui/overlays/PhotoMode';
 import { MissionCoach } from '@/ui/overlays/MissionCoach';
 import { missionActive, missionStage } from '@/game/progression/mission';
+import { CrashProbe, ErrorBoundary } from '@/ui/overlays/ErrorBoundary';
+import { HudRecovery, PanelRecovery, SimFaultOverlay, WorldRecovery } from '@/ui/overlays/Recovery';
+
+/** A part of the game the player needs in order to play has failed: stop the clock until they have dealt with it. */
+function pauseGame(): void {
+  const app = useApp.getState();
+  if (app.engine && app.engine.state.speed !== 0) app.dispatch({ type: 'set-speed', speed: 0 }, { inline: true });
+}
+
+/** The 3D world failed: pause, and take the loading screen away (there is no first frame left to wait for). */
+function worldFailed(): void {
+  pauseGame();
+  useApp.getState().setSceneReady(true);
+}
 
 function useHotkeys() {
   useEffect(() => {
@@ -109,45 +123,73 @@ export function App() {
   }, [screen]);
 
   if (!deviceProfile().webgl2) return <UnsupportedScreen />;
-  if (screen === 'menu') return <MainMenu />;
+  if (screen === 'menu')
+    return (
+      <>
+        <CrashProbe scope="app" also="fatal" />
+        <MainMenu />
+      </>
+    );
+  // Error boundaries, innermost first: a panel, the interface, the 3D world; main.tsx holds the one around all of this.
+  // A failure costs the player only the part that failed (ErrorBoundary.tsx, Recovery.tsx).
   return (
     <div className="app">
-      <div className="app-world">{worldMounted && <GameScene />}</div>
+      <CrashProbe scope="app" also="fatal" />
+      <div className="app-world">
+        <ErrorBoundary scope="world" fallback={(p) => <WorldRecovery {...p} />} onCatch={worldFailed}>
+          {worldMounted && <GameScene />}
+        </ErrorBoundary>
+      </div>
       {/* Desktop only: phones show static vehicle previews and never open a second WebGL context. */}
-      {!deviceProfile().touch && <PreviewWarmup />}
+      {/* The warm-up is an optimization: if it fails, the previews simply start cold. */}
+      {!deviceProfile().touch && (
+        <ErrorBoundary scope="preview" fallback={() => null}>
+          <PreviewWarmup />
+        </ErrorBoundary>
+      )}
       <AdaptiveQuality />
       <div className={`app-ui ${photo ? 'photo' : ''}${missionClass}`}>
-        {photo ? (
-          <PhotoMode />
-        ) : (
-          <>
-        <WorldLabels />
-        <TopHud />
-        <Toasts />
-        <Inspector />
-        <ActionBar />
-        <WorldControls />
-        <ServiceCameraBar />
-        <TutorialHint />
-        <MissionCoach />
-        {panel === 'jobs' && <JobsPanel />}
-        {panel === 'employees' && <EmployeesPanel />}
-        {panel === 'fleet' && <FleetPanel />}
-        {panel === 'supply' && <SupplyPanel />}
-        {panel === 'hq' && <HqPanel />}
-        {panel === 'marketing' && <MarketingPanel />}
-        {panel === 'finance' && <FinancePanel />}
-        {panel === 'settings' && <SettingsPanel />}
-        {/* After the panels: notifications raised from a panel ("Hired", an action error) are never hidden or blocked by it. */}
-        <Celebration />
-        <ErrorBanner />
-        {screen === 'summary' && <CampaignSummary />}
-          </>
-        )}
+        <ErrorBoundary scope="hud" fallback={(p) => <HudRecovery {...p} />} onCatch={pauseGame}>
+          <CrashProbe scope="hud" />
+          {photo ? (
+            <PhotoMode />
+          ) : (
+            <>
+              <WorldLabels />
+              <TopHud />
+              <Toasts />
+              <Inspector />
+              <ActionBar />
+              <WorldControls />
+              <ServiceCameraBar />
+              <TutorialHint />
+              <MissionCoach />
+              {panel && (
+                // Keyed by panel: opening another one starts with a clean boundary.
+                <ErrorBoundary key={panel} scope="panel" fallback={(p) => <PanelRecovery {...p} />}>
+                  <CrashProbe scope="panel" />
+                  {panel === 'jobs' && <JobsPanel />}
+                  {panel === 'employees' && <EmployeesPanel />}
+                  {panel === 'fleet' && <FleetPanel />}
+                  {panel === 'supply' && <SupplyPanel />}
+                  {panel === 'hq' && <HqPanel />}
+                  {panel === 'marketing' && <MarketingPanel />}
+                  {panel === 'finance' && <FinancePanel />}
+                  {panel === 'settings' && <SettingsPanel />}
+                </ErrorBoundary>
+              )}
+              {/* After the panels: notifications raised from a panel ("Hired", an action error) are never hidden or blocked by it. */}
+              <Celebration />
+              <ErrorBanner />
+              {screen === 'summary' && <CampaignSummary />}
+            </>
+          )}
+        </ErrorBoundary>
       </div>
       <TouchTutorial />
       <LoadingScreen />
       <ContextLostOverlay />
+      <SimFaultOverlay />
     </div>
   );
 }

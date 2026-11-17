@@ -96,3 +96,23 @@ export function hasSave(key = SAVE_KEY): boolean {
 export function clearSave(key = SAVE_KEY): void {
   storage()?.removeItem(key);
 }
+
+/**
+ * When the save that "Continue my company" would load was written (the manual save, else the autosave), or
+ * null with none. Reads the envelope only; nothing is migrated or changed.
+ */
+export function continueSaveTime(): Date | null {
+  const s = storage();
+  if (!s) return null;
+  for (const key of [SAVE_KEY, AUTOSAVE_KEY]) {
+    try {
+      const json = s.getItem(key);
+      if (!json) continue;
+      const at = new Date((JSON.parse(json) as SaveEnvelope).savedAt);
+      if (!Number.isNaN(at.getTime())) return at;
+    } catch {
+      /* unreadable slot: try the next */
+    }
+  }
+  return null;
+}

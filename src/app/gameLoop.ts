@@ -1,5 +1,6 @@
 import { useApp } from './store';
 import { AUTOSAVE_KEY, saveToStorage } from '@/persistence/save';
+import { recordCrash } from './diagnostics';
 
 /**
  * Fixed real-time loop driving the simulation. Independent of React render timing:
@@ -19,12 +20,24 @@ export function startGameLoop(): () => void {
     // software renderer still keeps the simulation on real time.
     const dt = Math.min(1.0, (now - last) / 1000);
     last = now;
-    const { engine, screen, settings } = useApp.getState();
-    if (engine && screen === 'game') {
+    const { engine, screen, settings, simFault, crashTest } = useApp.getState();
+    if (engine && screen === 'game' && !simFault) {
       accumulator += dt;
-      while (accumulator >= STEP) {
-        engine.tick(STEP);
-        accumulator -= STEP;
+      // An exception here used to end the loop for good (the next frame was never requested): a frozen game with
+      // no message. Now the step stops, the failure is recorded and the recovery overlay says so. The state may be
+      // half-updated, so nothing is saved from here on; the saves on the device stay as they were.
+      try {
+        if (crashTest?.scope === 'simulation') throw new Error('Simulated simulation failure (window.__ego.crash).');
+        while (accumulator >= STEP) {
+          engine.tick(STEP);
+          accumulator -= STEP;
+        }
+      } catch (error) {
+        accumulator = 0;
+        if (crashTest?.scope === 'simulation' && !crashTest.sticky) useApp.getState().setCrashTest(null);
+        useApp.getState().setSimFault(recordCrash('simulation', error));
+        raf = requestAnimationFrame(frame);
+        return;
       }
       autosaveAccumulator += dt;
       const day = engine.state.clock.day;
@@ -41,8 +54,8 @@ export function startGameLoop(): () => void {
   // tab): autosave whenever the page is hidden. requestAnimationFrame pauses while hidden, so the
   // simulation waits too, and catch-up on return is capped at one second by the clamp above.
   const persist = () => {
-    const { engine, screen, settings } = useApp.getState();
-    if (engine && screen === 'game' && settings.autosave) saveToStorage(engine.state, AUTOSAVE_KEY);
+    const { engine, screen, settings, simFault } = useApp.getState();
+    if (engine && screen === 'game' && settings.autosave && !simFault) saveToStorage(engine.state, AUTOSAVE_KEY);
   };
   const onVisibility = () => {
     if (document.visibilityState === 'hidden') persist();
